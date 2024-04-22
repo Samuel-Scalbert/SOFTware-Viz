@@ -50,7 +50,7 @@ def insert_json_db (data_path,db):
 
                 data_json_get_document = {key: value for key, value in data_json.items() if key not in ['references', 'mentions', 'original_file_path']}
                 data_file = data_file.replace('.software.json','')
-                data_json_get_document['file_id'] = data_file
+                data_json_get_document['file_hal_id'] = data_file
                 document_document = documents_collection.createDocument(data_json_get_document)
                 document_document.save()
 
