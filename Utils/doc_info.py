@@ -5,7 +5,10 @@ def doc_info_from_id(file_id,db):
     try:
         file_meta = db.AQLQuery("FOR file_meta in documents FILTER file_meta.file_hal_id == '"+ file_id +"'  RETURN file_meta", rawResults=True)
         print(file_meta)
-        file_meta_id = file_meta[0]['_id']
+        if len(file_meta) > 0:
+            file_meta_id = file_meta[0]['_id']
+        else:
+            return file_meta
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta

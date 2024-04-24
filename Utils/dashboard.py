@@ -13,7 +13,7 @@ def dashboard(db):
     nb_mention = 0
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list:
+    for file_id in file_id_list[:]:
         hal_id = file_id['hal_id']
         file_id = file_id['_id']
         edges_id_software_doc = db['edge_software'].getEdges(file_id)
@@ -37,7 +37,6 @@ def dashboard(db):
                     if max_attribute == 'created':
                         if software not in dic_created.keys():
                             dic_created[software] = []
-                        print(dic_created)
                         if hal_id not in dic_created[software]:
                             dic_created[software].append(hal_id)
                     if max_attribute == 'shared':
