@@ -1,0 +1,1210 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">PDiscoNet: Semantically consistent part discovery for fine-grained recognition</title>
+				<funder ref="#_YvySSxa">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+				<funder ref="#_PWWRrBF">
+					<orgName type="full">European Research Council</orgName>
+					<orgName type="abbreviated">ERC</orgName>
+				</funder>
+				<funder ref="#_2Becqva">
+					<orgName type="full">Tübingen AI Center (BMBF</orgName>
+				</funder>
+				<funder ref="#_3cnWHPE">
+					<orgName type="full">DFG</orgName>
+				</funder>
+				<funder ref="#_rN3m37E">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder ref="#_psbr6Gr">
+					<orgName type="full">NextGen-erationEU</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Robert</forename><surname>Van Der Klis</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">WUR</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stephan</forename><surname>Alaniz</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Tübingen</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Massimiliano</forename><surname>Mancini</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Trento</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cassio</forename><forename type="middle">F</forename><surname>Dantas</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">INRAE</orgName>
+								<orgName type="institution" key="instit2">UMR TETIS</orgName>
+							</affiliation>
+							<affiliation key="aff5">
+								<orgName type="institution">University of Montpellier</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Dino</forename><surname>Ienco</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">INRAE</orgName>
+								<orgName type="institution" key="instit2">UMR TETIS</orgName>
+							</affiliation>
+							<affiliation key="aff5">
+								<orgName type="institution">University of Montpellier</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Zeynep</forename><surname>Akata</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Tübingen</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Diego</forename><surname>Marcos</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution">Inria</orgName>
+							</affiliation>
+							<affiliation key="aff5">
+								<orgName type="institution">University of Montpellier</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">PDiscoNet: Semantically consistent part discovery for fine-grained recognition</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">D38E01DF0D762D3476BCB2C61D95C22E</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Fine-grained classification often requires recognizing specific object parts, such as beak shape and wing patterns for birds. Encouraging a fine-grained classification model to first detect such parts and then using them to infer the class could help us gauge whether the model is indeed looking at the right details better than with interpretability methods that provide a single attribution map. We propose <software>PDiscoNet</software> to discover object parts by using only image-level class labels along with priors encouraging the parts to be: discriminative, compact, distinct from each other, equivariant to rigid transforms, and active in at least some of the images. In addition to using the appropriate losses to encode these priors, we propose to use part-dropout, where full part feature vectors are dropped at once to prevent a single part from dominating in the classification, and part feature vector modulation, which makes the information coming from each part distinct from the perspective of the classifier. Our results on CUB, CelebA, and <software ContextAttributes="used">PartImageNet</software> show that the proposed method provides substantially better part discovery performance than previous methods while not requiring any additional hyper-parameter tuning and without penalizing the classification performance. The code is available at https:</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Introduction</head><p>Commonly used approaches to inspect a deep learning model's inner workings yield a saliency map that indicates which regions contributed the most to the output <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b28">29]</ref>. If the model seems to focus on image regions that are known to be irrelevant, (e.g. the background or the wrong object), it becomes clear that the model has picked up on spurious correlations and cannot be trusted. This observation could then be used to improve future iterations of the model, for instance, by eliminating or compensating for the detected spurious correlations. However, this type of approach offers little information when the model provides an incorrect answer but the saliency map suggests that it is attending to the correct image regions.</p><p>Other approaches aim at modifying the model architecture itself in order to ensure that the provided explanation actually reflects the decision process of the model <ref type="bibr">[10,</ref><ref type="bibr">6]</ref>. In particular, the saliency map explanation can be enriched by dividing it in multiple semantically interpretable parts, mimicking the traditional approaches of tackling finegrained visual categorization (FGVC), in which image-level part annotations were leveraged <ref type="bibr" target="#b21">[22]</ref> in order to help the model differentiate between similar classes by helping it focus on the relevant parts. In this manner, we have more information to judge the adequacy of the model's reasoning: even if the correct object is highlighted, we will be suspicious of the result if the part map that the model generally associated to the head of a bird seems to highlight the feet in one particular image. We thus posit that a model that classifies images based on just a few discriminative regions that are semantically consistent across images would be more interpretable than one which highlights the whole object, as one can immediately visualise the parts of the image that have been attended to and interpret their semantics across images. By inspecting a few images and their corresponding detected parts, we can easily assign semantic meaning to each part (e.g., bird beak, vehicle wheel) and judge whether the correct parts are being detected in a new image.</p><p>Even if the model correctly assigns high saliency to the object of interest, we will know to mistrust the result in case the discovered part semantics are not respected. This way of interpreting the models has an additional advantage over post-hoc methods in that we can be more certain that the model only uses information from the indicated regions. Such models have also been shown to be more robust; irrelevant parts are filtered out by only looking at the discovered discriminative regions, which can have a positive impact on generalization capability and thus robustness to occlusion <ref type="bibr" target="#b36">[37]</ref> and adversarial attacks <ref type="bibr" target="#b29">[30]</ref>.</p><p>Discovering meaningful and discriminative parts using only image-level class labels requires the use of additional priors that encode our expectations on the characteristics of these parts along with a model architecture that allows for these priors to be implemented. We design a model, based on a Convolutional Neural Network (CNN) backbone, which discovers discriminative parts of objects by being forced to use the discovered parts as a bottleneck for fine-grained classification. The fine-grained setting ensures a high level of similarity between classes, enabling the possibility of discovering semantic parts that are shared by multiple classes. In our part bottleneck, class logits are independently extracted from each of the discovered parts before being combined for the final classification, along with a dropout layer that affects whole parts at a time, ensures that all discovered parts are relevant to classification.</p></div>
+<div><head n="2.">Related work</head><p>Fine-grained recognition FGVC is a classification setting in which objects of multiple sub-classes of the same superclass are present, thus constituting a challenging task where subtle intra-class and large inter-class variation need to be simultaneously addressed <ref type="bibr" target="#b32">[33]</ref>. Solving fine-grained tasks usually requires one to closely inspect the object for the telltale differences between closely related classes. Traditional methods exploit shared keypoints <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b21">22]</ref>, parts <ref type="bibr">[16,</ref><ref type="bibr" target="#b34">35]</ref>, attributes <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b23">24]</ref>, or a pre-segmentation of the object of interest <ref type="bibr" target="#b3">[4]</ref> in order to effectively discriminate between similar sub-classes, although deep learning approaches using large quantities of data have since also proved effective <ref type="bibr">[23]</ref>. Our <software ContextAttributes="used">PDiscoNet</software> belongs to a family of approaches that facilitate injecting some of the structure provided by partbased <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b16">17]</ref> or attribute-based <ref type="bibr" target="#b12">[13]</ref> reasoning via weaklysupervised learning without part or attribute annotations.</p></div>
+<div><head>Interpretability via attribution maps</head><p>In saliency-based attribution methods, the goal is to highlight important regions of the image that are used by the network to form its decision. Examples include perturbation-based <ref type="bibr">[27,</ref><ref type="bibr" target="#b27">28]</ref>, activation-based <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b38">39]</ref>, and gradient-based <ref type="bibr" target="#b28">[29,</ref><ref type="bibr" target="#b30">31]</ref> explanations methods. Despite their popularity, these modelagnostic methods often cannot guarantee that their explanations are faithful to the model <ref type="bibr" target="#b1">[2]</ref>. In contrast, inherently interpretable models aim to directly expose the decision process of the network <ref type="bibr" target="#b6">[7,</ref><ref type="bibr">10]</ref>. In this work, we focus on incorporating interpretable components into the network architecture to reveal the learned structure transparently. Attention rollout <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b8">9]</ref> is a popular way to understand whether attention modules can provide such explanations <ref type="bibr" target="#b18">[19,</ref><ref type="bibr">34]</ref>. However, deep transformer architectures model complex functions such that reliable interpretation is often limited to inspecting single self-attention layers <ref type="bibr" target="#b7">[8,</ref><ref type="bibr">3]</ref>. Based on this observation we employ a shallow attention structure into our network that allows to directly explain the attention maps with the correspondence to object parts.</p><p>Unsupervised part discovery Some previous works discover parts by using image reconstruction <ref type="bibr">[36,</ref><ref type="bibr" target="#b10">11]</ref>, where a landmark bottleneck is used to discover object parts. However, the model having no learning signal indicating which parts of the image may represent an object of interest limits the applicability of these approaches to cases where the objects of interest are either dominating the image and depicted in similar poses <ref type="bibr">[36]</ref> or are endowed with foreground segmentation masks that can be used as an additional training signal <ref type="bibr" target="#b10">[11]</ref>. On datasets where most parts are common to all images, pre-trained Vision Transformer [3] is typically able to find the parts of the most relevant object in a semantically consistent manner. However, it breaks down when the assumption that salient parts occur in almost all images does not hold, since parts tend to become polysemous in such a setting. Unlike these approaches, <software ContextAttributes="used">PDiscoNet</software> is able to leverage the class labels, requiring no additional annotations in fine-grained classification datasets, to learn parts that are specific to similar classes, making them more semantically consistent and suitable for interpretation.</p><p>Weakly-supervised part discovery via FGVC MA-CNN <ref type="bibr" target="#b37">[38]</ref> and <software ContextAttributes="used">ProtoPNet</software> <ref type="bibr">[10]</ref> propose to directly enforce that the CNN activation maps develop a part-like behaviour, showing that an architecture with enhanced interpretability does not result in a loss of performance. However, their focus is more on downstream fine-grained classification than on evaluating the discovered parts. SCOPS <ref type="bibr" target="#b17">[18]</ref>, a model for part co-segmentation, puts more emphasis on the quality of the discovered parts by adding several losses on the part maps that encourage them to be compact and distinct, the latter via decorrelation of the learned part prototypes. It also encourages part maps to be equivariant under geometric transforms of the image. Taken together, these incentives ensure that the discovered parts are semantically consistent across images. This method assumes that all the parts should be active in every image of the dataset. Huang and Li <ref type="bibr" target="#b16">[17]</ref> aim to solve this issue by encouraging the presence of each part across a batch of images to follow a beta distribution with manually defined parameters. Depending on the chosen parameters, this encourages a pre-defined proportion of images in a batch to display the part, while it is discouraged in the rest of the images in the batch.</p></div>
+<div><head n="3.">PDiscoNet Method</head><p>We design an approach to discover K discriminative parts that are relevant to a fine-grained classification task, based solely on the image-level class labels. Let X ∈ R 3×A×B denote an image in the dataset, and let y ∈ {1, 2, ..., C} be its corresponding label. Using a CNN base model f θ we obtain a feature tensor Z = f θ (X) with Z ∈ R D×H×W . Following <ref type="bibr" target="#b17">[18]</ref> and <ref type="bibr" target="#b16">[17]</ref>, from this tensor we compute K + 1 (K parts plus one background element) attention maps A k = [0, 1] H×W , k ∈ {1, . . . , K + 1} by applying a negative squared Euclidean distance function between feature vectors z ij (with z ij ∈ R D , i ∈ {1, ..., H}, j ∈ {1, ..., W }) and K part prototypes p k ∈ R D in a 1 × 1 convolutional manner, followed by a softmax across the K + 1 channels:</p><formula xml:id="formula_0">a k ij = exp(-∥z ij -p k ∥ 2 ) k exp(-∥z ij -p k ∥ 2 ) ,<label>(1)</label></formula><p>Each attention map is then used to compute its corresponding part vector v k ∈ R D by using the attention values to calculate a weighted average over the feature vectors in Z:</p><formula xml:id="formula_1">v k = i j z ij a k ij HW<label>(2)</label></formula><p>Each of these part vectors could then be used to obtain a vector of class scores s k ∈ R C calculated as</p><formula xml:id="formula_2">s k = W class v k</formula><p>by applying the same linear classifier W class ∈ R C×D to all part feature vectors, but we use the modification in Eq. ( <ref type="formula">3</ref>). The scores are then averaged into a single score vector s = 1 K k s k on which a softmax is applied to obtain the final classification probabilities ŷ. Part vector modulation In the above formulation, all parts share the same classifier weights W class . This poses the problem that, from the perspective of the classifier, all parts are equivalent, meaning that the classifier could be encouraging all parts of the same object to result in the similar feature representation. The classifier can also profit from part misdetection, since a wrongly detected part would still provide a useful feature vector. Although it would, in principle, be possible to learn part-specific classifiers, this would not scale well to fine-grained classification scenarios where the classification head already contains the majority of learnable weights. As an alternative, we propose to keep a modulation vector m k ∈ R D per landmark that multiplies element-wise each part vector before classification:</p><formula xml:id="formula_3">s k = W class • (m k ⊙ v k ).</formula><p>(3)</p><p>Part dropout We would like the learned parts to be as discriminative as possible. In order to prevent the most discriminative parts (such as the head in birds) to discourage other parts from becoming discriminative by rendering them unnecessary, we propose to randomly drop out a proportion of all parts during training. This encourages the model to find a variety of discriminative parts.</p></div>
+<div><head>Loss functions</head><p>The main learning signal for our model comes from fine-grained classification, for which we use cross-entropy on the output classification probabilities L class (y, ŷ). Although this signal itself would suffice for the model to perform well in the classification task, it does not guarantee that the learned attention maps will be interpretable as parts. There are several desirable properties we wish to enforce in the learned parts. First, parts must be discriminative. This is taken care of by the classification as described previously. However, we also wish parts to be: Compact (L conc ): We would like each detected part to consist of a compact and contiguous image region. Distinct (L orth ): We want to avoid overlap between parts. This is encouraged by decorrelating part feature vectors. Consistent (L equiv ): The same parts should be detected under translation, rotation or scaling of the image. This can be enforced via a loss that encourages the equivariance of the attention maps to random rigid transforms. Present in the dataset (L pres ): All parts should be present in some of the images of the dataset. For this, we penalize the absence of a part across a whole batch during training.</p><p>To enforce these priors, we use as many loss functions. Our concentration loss over the attention maps A k :</p><formula xml:id="formula_4">L conc = K k=1 σ 2 v (A k ) + σ 2 h (A k ) K ,<label>(4)</label></formula><p>where σ v and σ h represent the vertical and horizontal spatial variance respectively. We calculate an orthogonality loss over the part vectors by applying the cosine distance between all pairs:</p><formula xml:id="formula_5">L orth = k l̸ =k v k • v l ∥v k ∥ • ∥v l ∥ .<label>(5)</label></formula><p>Our equivariance loss creates a transformed image by applying a random rigid transformation T to the input image. We then pass both the original and the transformed image through the model and invert the transformation on the attention maps from the transformed ones. If A k (X) is a function that returns the k th attention map for image X, the equivariance loss is computed using the cosine distance between the attention maps from the original image and the transformed image:</p><formula xml:id="formula_6">L equiv = 1 - 1 K k A k (X) ⊙ T -1 (A k (T (X))) ∥A k (X)∥ • ∥A k (T (X))∥ .<label>(6)</label></formula><p>Lastly, a presence loss encourages each part to be present at least once per batch. Given a batch {X 1 , . . . , X B }:</p><formula xml:id="formula_7">L pres = 1 - 1 K k max b,i,j avgpool(a k ij (X b )),<label>(7)</label></formula><p>where <software>avgpool</software>() is a 2D average pooling with a small kernel size and a stride of 1. This operator is applied to prevent encouraging single pixel attention maps. A weighted combination of these losses is used as the final loss.</p></div>
+<div><head n="4.">Experiments</head><p>We compare our method, for different values of K, against the results obtained by the most closely related methods in the recent literature <ref type="bibr" target="#b16">[17]</ref>. We also compare our method to a few other methods, among which the most recent method on part discovery [3], which is not aimed at fine-grained classification but showcases high quality part discovery by using self-supervised pretraining with a visual transformer architecture.</p><p>Datasets Our aim is to perform part discovery with the only assumption being that we have image-level class labels where parts are shared by some of the classes, which is typically the case in FGVC tasks. In order to investigate this, we have chosen three datasets with a varying proportions of shared parts across images: a face image dataset where the vast majority of images display all relevant parts (i.e. facial landmarks), a bird species recognition dataset, where the assumption of the presence of all parts is limited due to the effects of pose and occlusion, and a more challenging dataset in which several fine-grained class categories (e.g. birds and cars) are mixed together, resulting in specific parts only being shared by a small subset of the images in the dataset. To assess the quality of the discovered parts, we have selected datasets for which semantic part annotations are available.</p><p>CUB <ref type="bibr" target="#b31">[32]</ref> contains 11,788 images of 200 bird species that include manual part annotations of 15 body parts. The images are split approximately in half for training and half for evaluating. During the development phase of this work we used a 90%-10% split of the training set of CUB in order to find a good set of hyperparameters for our model and used the same across all experiments on all datasets.</p><p>CelebA <ref type="bibr" target="#b25">[26]</ref> is a dataset of face images of 10,177 celebrities. We follow earlier approaches <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b16">17]</ref> and use the unaligned training set of 45,609 images to train our models and use the 283 MAFL test images to evaluate the part detection, and the 5,379 images of the MAFL training set were used for training the keypoint regressor. We use identity classification as the downstream task.</p><p><software ContextAttributes="used">PartImageNet</software> <ref type="bibr" target="#b14">[15]</ref> consist of 158 classes split among a diverse set of categories (e.g., 10 species of fish, 14 of birds, 15 of snakes, 23 types of car). We train all models on 14,876 images of the train set, which is limited to 109 classes, and test on 1,664 images.</p></div>
+<div><head>Evaluation metrics The part annotations in CUB and</head><p>CelebA are in the form of points, meant to represent part centroids in CUB and facial landmarks in CelebA. We first evaluate the quality of the part discovery methods by performing part location regression based on the centroids of the discovered parts. However, as noted by <ref type="bibr" target="#b10">[11]</ref>, keypoint regression may not be a good indicator of overall part quality. We therefore employ also the Normalized Mutual infor- mation (NMI) and the Adjusted Rand Index (ARI), metrics commonly used for evaluating clustering quality. In Par-tImageNet the part annotations are in the form of semantic segmentation masks, from which we extract the centroids to compute NMI and ARI. Note that NMI and ARI are computed on the annotation/prediction correspondences across the whole datasets, meaning that they capture part semantic consistency (i.e. a perfect score can only be obtained if the same discovered part matches exactly with the same annotated part). In CUB and <software ContextAttributes="used">PartImageNet</software> we report, in addition, the classification score on the same test set used for part quality evaluation. In the case of CelebA, the classes on the test set do not overlap with those in the training set.</p></div>
+<div><head>Implementation details</head><p>We trained all our models with Adam, with a starting learning rate of 10 -4 for the ResNet-101 backbone, 10 -3 for the new layers, and 10 -2 for the modulation vectors. We apply 5 reductions by 0.5 every 5 epochs for CUB and <software ContextAttributes="used">PartImageNet</software> and every 3 for CelebA. The loss weights were all set to 1 except for L conc , where a weight of 1000 was used because of its much lower magnitude. This setting was decided based on the results on the CUB validation set and kept constant on all experiments afterwards. For <ref type="bibr" target="#b16">[17]</ref>, we used α = 1 on CUB and CelebA and α = 0.002 on <software ContextAttributes="used">PartImageNet</software>.</p></div>
+<div><head n="4.1.">Quantitative results</head><p>The results in Table <ref type="table" target="#tab_0">1</ref> show that, on CUB with K = 4 parts, our method already performs comparably to <ref type="bibr" target="#b10">[11]</ref>, with 9.12% keypoint regression error vs. 9.20% in <ref type="bibr" target="#b10">[11]</ref>, even though <ref type="bibr" target="#b10">[11]</ref> use spatially explicit foreground masks at train time. Our method obtains better results than all other methods in all settings and on all metrics, improving over the second best method [3] from 50.57 to 56.87 NMI and 26.14 to 38.05 ARI for K = 16, all while improving the classification accuracy over <ref type="bibr" target="#b16">[17]</ref> and a ResNet101 trained in the same setting. Interestingly, increasing the number of parts not only results in a substantial improvement on the part quality metrics, but also in classification accuracy, from 86.17% with K = 4 to 87.49% with K = 16, unlike for <ref type="bibr" target="#b16">[17]</ref>, with which the classification accuracy is reduced as the number of parts increases.</p><p>On CelebA, our method obtains the best clustering scores on all settings, improving for K = 4 over <ref type="bibr" target="#b16">[17]</ref> from 56.69 to 75.97 NMI and from 34.74 to 69.53 ARI, thus doubling the result of the best competing method. However, <ref type="bibr" target="#b16">[17]</ref> does result in lower keypoint regression errors. We also obtain better keypoint regression errors than [3], 11.11% vs. 11.36%, although this method completely fails when evaluated in terms of the clustering metrics. As can be seen in Section 4.4, this is related to the fact that this method is task agnostic and focuses on elements not related to facial landmarks, such as clothing and hair, which are not as useful for locating facial landmarks. With a single part being assigned to the face, Dino ViT [3] obtains much lower clustering scores than the other methods.</p><p>In the case of <software ContextAttributes="used">PartImageNet</software>, a more challenging dataset in terms of class diversity, Table <ref type="table" target="#tab_0">1</ref> shows that both our method and Dino ViT [3] are competitive, with our method taking the lead in terms of NMI: 41.49 with <software ContextAttributes="used">PDiscoNet</software> vs. 37.81 with Dino ViT, and Dino ViT in terms of ARI: 14.17 with <software ContextAttributes="used">PDiscoNet</software> and 16.50 with Dino ViT. The method by Huang and Li <ref type="bibr" target="#b16">[17]</ref>  </p></div>
+<div><head n="4.2.">Ablation studies</head><p>The ablation results in Table <ref type="table" target="#tab_1">2</ref> confirm that all ingredients in the method are important to obtain competitive results on part discovery. On CUB, L orth , L equiv and part dropout seem to individually contribute the most to part quality in terms of the clustering metrics, while L conc seems to play an important role to improve the keypoint regression results. On the other hand, L orth and part feature vector modulation are the elements with the highest impact on classification performance, which on CUB is positively impacted by all terms. L pres seems to only have a very marginal impact on both part discovery and classification performance on CUB. However, on <software ContextAttributes="used">PartImageNet</software> it is the most important of all terms and the only one that does not hurt the classification accuracy. This is likely to stem from the very different distribution of parts in each dataset. On CUB, on the one hand, all parts are shared by all objects in the dataset, since they are all birds, and a majority of them is visible in all images. On <software ContextAttributes="used">PartImagenet</software>, on the other hand, the different categories of classes do not naturally share the exact same parts (e.g. snakes, vehicles and birds). Forcing all parts to be present in each batch would prevent one single part prototype from dominating and becoming an object detector rather than a part detector, as happens in <software ContextAttributes="used">PartIma-geNet</software> with the method of <ref type="bibr" target="#b16">[17]</ref>, as seen in Fig. <ref type="figure" target="#fig_4">4</ref>.</p></div>
+<div><head n="4.3.">Sensitivity studies</head><p>We have performed a part-dropout rate sensitivity analysis, shown in Table <ref type="table" target="#tab_2">3</ref>. In general, increasing the dropout rate improves the part discovery performance, with the best results obtained with the highest tested rate of 0.9, with NMI going up to 54.42 from 49.22 when a part dropout rate of 0.3 is used. Such a high rate means that every part needs to capture enough information to be able to classify the image, since very often all parts except one are dropped-out. This poses a very strict constraint on the part discovery process that prevents the appearance of spurious part prototypes. However, this tends to negatively impact the classification performance, which drops from 87.31% to 83.34%, probably due to the fact that, by trying to learn parts that are able to perform classification on their own, there is a lack of incentives for the model to learn the complementarities between parts. A value between 0.3 and 0.7 provides a good compromise between the two tasks. We also investigate the behaviour of our method with respect to the presence of noise at test time. The results in Table <ref type="table" target="#tab_3">4</ref> show that the classification accuracy of our method is higher than the most closely related method <ref type="bibr" target="#b16">[17]</ref> when the input images are subjected to Gaussian noise. Apart from the absolute accuracy of our method being higher, the percentual decrease between each increase in noise is lower, suggesting that an improved ability in part localization also carries advantages in terms of robustness to noise. Noise SD 0.03 0.07 0.15 0.30 0.75 1.50 Huang <ref type="bibr" target="#b16">[17]</ref>  </p></div>
+<div><head n="4.4.">Qualitative results</head><p>In Figs. <ref type="figure">3</ref> and<ref type="figure" target="#fig_4">4</ref> we showcase the effect of increasing the number of parts for the compared methods on CUB (K = 4 and K = 16) and <software ContextAttributes="used">PartImageNet</software> (K = 8 and K = 25). For the method in <ref type="bibr" target="#b16">[17]</ref>, we show the part assignment maps for all parts and for those with an assigned attention value higher than 0.1, in order to highlight only the image regoins that contribute substantially towards the classification output. We can see that <ref type="bibr">[3]</ref> and <software ContextAttributes="used">PDiscoNet</software> are able to correctly assign most parts to the foreground objects in the shown examples, even with the increased number of parts (bottom three rows), with [3] resulting in the best adherence to object boundaries. <ref type="bibr" target="#b16">[17]</ref>, on the other hand, assigns only a few parts to the foreground objects, even when more parts are available. In the third column ( <ref type="bibr" target="#b16">[17]</ref> (all)), we see how the rest of parts are assigned to the background in ways that do &gt; 0.1), we confirm that only two or three parts are used in CUB (Fig. <ref type="figure">3</ref>) with both K = 4 and K = 16. In the case of <software ContextAttributes="used">PartImageNet</software> (Fig. <ref type="figure" target="#fig_4">4</ref>), <ref type="bibr" target="#b16">[17]</ref> assigns one single part to the foreground object with K = 8 and none with K = 16, while again both [3] and <software ContextAttributes="used">PDiscoNet</software> tend to assign a diverse set of parts to the foreground. Also in this case we observe that Dino ViT [3] results in better boundary adherence than <software ContextAttributes="used">PDiscoNet</software>, since we did not explicitly add any element towards this objective.</p><p>In Figs. 5 to 6 we show the assignment maps for the three methods, with an attention threshold of 0.1 for <ref type="bibr" target="#b16">[17]</ref>, across ten images for each dataset in order to explore the semantic consistency of the discovered parts across a diverse set of examples. As can be seen in Fig. <ref type="figure">6</ref>, <ref type="bibr" target="#b16">[17]</ref> tends to find symmetric part assignment maps, while our method finds independent parts for the areas around each eye. This figure also explains why [3] fails in the clustering metrics: the whole face tends to be assigned to a single part, making all the facial landmarks indistinguishable from each other. This phenomenon showcases that, although the self-supervised approach of [3] provides remarkable results in terms of seman-  tics and boundary adherence, it may also miss the relevant partitions due to not making use of the fine-grained recognition signal. This drawback of the Dino ViT approach is also visible in the CUB results in Fig. <ref type="figure">5</ref>, where in some examples some parts either mix with background elements (first column) or are completely missed (last column), while our method is consistent across all samples. The method by Huang and Li <ref type="bibr" target="#b16">[17]</ref> also displays a problem with mixing in background parts in CUB and, even more markedly, in Par<software ContextAttributes="used">-tImageNet</software>. Fig. <ref type="figure">3</ref> shows that a majority of the available parts tend to be used on background areas that ultimately receive a low attention weight, leading to only two or three parts being used even in the case of K = 16. In Fig. <ref type="figure" target="#fig_4">4</ref> we can see that <ref type="bibr" target="#b16">[17]</ref> assigns one single part to foreground objects with K = 8 and fails to assign any parts to foreground objects for K = 25, which explains the low part discovery and classification scores in Table <ref type="table" target="#tab_0">1</ref>. Both our method and [3] are generally able to identify the object of interest in <software ContextAttributes="used">PartImagenet</software> (Figs. <ref type="figure" target="#fig_4">4</ref> and<ref type="figure" target="#fig_6">7</ref>), with [3] often providing better boundary adherence, while our method tends to provide better semantic consistency. For instance, notice how our method uses the same part (in cyan) for the head of mammals and birds, while another one (in purple) is used for the head of reptiles and amphibians.</p><p>This better semantic consistency is further reinforced by Fig. <ref type="figure" target="#fig_7">8</ref>, where we show the histograms of part presence per <software ContextAttributes="used">PartImageNet</software> supercategory for Dino ViT [3] and our method with K = 8. We omit the results on <ref type="bibr" target="#b16">[17]</ref> because only one part tended to be active in high attention areas (see Fig. <ref type="figure" target="#fig_6">7</ref>). This figure confirms the notion that <software ContextAttributes="used">PDiscoNet</software> discovers parts with strong semantic consitency. We can see that similar supercategories (such as Aeroplane and Boat, or Biped and Quadruped) tend to share the same parts, and parts tend to specialize on only a subset of supercategories. For instance, we note that the cyan part (number 5) is indeed mostly present in Biped, Quadruped and Bird, while the orange part (number 7), is only present in Fish, Reptile and Snake. On the other hand, all parts are almost equally shared by all supercategories in the case of Dino ViT, indicating that parts are less semantically consistent across the dataset and acquire multiple semantic interpretations.</p><p>The quantitative and qualitative results indicate that recent methods for part discovery seem to be tailored to datasets with specific characteristics: Dino ViT [3] thrives with a diverse set of natural images belonging to different supercategories such as <software ContextAttributes="used">PartImageNet</software> but fails to provide the sought after results on the more narrow CelebA, where the parts of interest are restricted to facial landmarks, and the opposite is true for <ref type="bibr" target="#b16">[17]</ref>. Our proposed method, on the other hand, is able to extract semantically consistent parts on all tested datasets without the need for any datasetspecific adjustment, showing its potential for out-of-the-box application to datasets with different characteristics.  </p></div>
+<div><head n="5.">Conclusion</head><p>We propose a method for fine-grained visual categorization that uses part representations as an information bottleneck and thus learns to detect semantically consistent parts that are useful for that task. Our method requires no additional annotation effort and leverages the fine-grained class labels as the sole supervision signal. The quantitative and qualitative comparisons against recent part discovery methods shows that our approach improves upon the state-of-theart in part localization and semantic consistency, with parts specializing in certain categories and consistently overlapping with the same semantic elements of the objects of interest, without sacrificing accuracy on the down-stream classification task.</p><p>There are several directions in which more work is needed to improve this approach. The first relates to the fact that, by applying a mask to a high-level feature map in a deep model, we have no guarantee that only the underlying regions of the image influence the corresponding part feature representation. Information from the background or neighboring parts can leak into the feature representation of a part due to the large receptive field of most modern ar-chitectures, limiting the interpretability of the approach. In addition to this, our results show that <software>PDiscoNet</software> displays a lower level of contour adherence than a method trained with a very large dataset with self-supervision. This, in turn, could affect the interpretability of the part maps and allow background information to substantially affect the part feature representation.</p><p>We hope that this approach will contribute towards making models for fine-grained visual categorization more interpretable by facilitating inspection of some aspects of the model's internal reasoning, thus allowing a much richer interaction between the model and its end users.</p></div><figure xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Our PDiscoNet extracts semantically consistent parts, without any part annotations, and reasons on these parts before combining the results into a final fine-grained classification output.</figDesc><graphic coords="1,390.88,277.06,68.56,67.67" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Diagram of the proposed method. The part discovery process is driven by the fine-grained classification loss and the losses that applied on the part attention maps (red boxes).</figDesc><graphic coords="3,54.10,174.67,90.40,63.80" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head /><label /><figDesc>Figure 3. Qualitative results on CUB for our method, [17] w/ and w/o part map thresholding, and [3]. Top rows: all methods with k = 4. Bottom rows: K = 16.</figDesc></figure>
+<figure xml:id="fig_3"><head /><label /><figDesc>all [17] &gt; 0.1 PDiscoNet</figDesc></figure>
+<figure xml:id="fig_4"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Qualitative results on PartImageNet for our method, [17] w/ and w/o part map thresholding, and [3]. Top rows: all methods with k = 8. Bottom rows: K = 25.</figDesc></figure>
+<figure xml:id="fig_5"><head>Figure 5 .Figure 6 .</head><label>56</label><figDesc>Figure 5. Discovered part segmentation with K = 4 on CUB for [3] (top), [17] (middle) and our method (bottom).</figDesc></figure>
+<figure xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Discovered part segmentation with K = 8 on PartImageNet for [3] (top), [17] (middle) and our method (bottom).</figDesc></figure>
+<figure xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. Histograms of part presence per PartImageNet supercategory for Dino ViT [3] (top) and our method (bottom), with K = 8. Same color code as the figure above.</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>CUB CelebA PartImageNet Kp.↓ NMI↑ ARI↑ Class.↑ Kp. reg. ↓ NMI↑ ARI↑ NMI↑ ARI↑ Class. ↑ Part discovery results on CUB, CelebA and PartImageNet. * Methods use foreground masks in training. ** Methods do not use class supervision. In the case of PartImageNet the number of parts are K = [8, 25, 50] instead of K = [4, 8, 16] used in CUB and CelebA. A ResNet101 baseline trained in the same setting as our model results in accuracies of 85.35% on CUB and 90.81% on PartImageNet.</figDesc><table><row><cell>Choudhury [11]  *</cell><cell>9.20</cell><cell cols="2">43.50 19.60</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>SCOPS [18]  *  *</cell><cell cols="2">12.60 24.40</cell><cell>7.10</cell><cell>-</cell><cell>15.00</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>DFF [12]  *  *</cell><cell>-</cell><cell cols="2">25.90 12.40</cell><cell>-</cell><cell>31.30</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell>Dino [3]  *  *  (K=4)</cell><cell>-</cell><cell cols="2">31.18 11.21</cell><cell>-</cell><cell>11.36</cell><cell>1.38</cell><cell>0.01</cell><cell>19.17</cell><cell>7.59</cell><cell>-</cell></row><row><cell>Dino [3]  *  *  (K=8)</cell><cell>-</cell><cell cols="2">47.21 19.76</cell><cell>-</cell><cell>10.74</cell><cell>1.12</cell><cell>0.01</cell><cell cols="2">31.46 14.16</cell><cell>-</cell></row><row><cell>Dino [3]  *  *  (K=16)</cell><cell>-</cell><cell cols="2">50.57 26.14</cell><cell>-</cell><cell>-</cell><cell>3.29</cell><cell>0.06</cell><cell cols="2">37.81 16.50</cell><cell>-</cell></row><row><cell>Huang [17] (K=4)</cell><cell cols="3">11.51 29.74 14.04</cell><cell>87.30</cell><cell>8.75</cell><cell cols="2">56.69 34.74</cell><cell>5.88</cell><cell>1.53</cell><cell>74.22</cell></row><row><cell>Huang [17] (K=8)</cell><cell cols="3">11.60 35.72 15.90</cell><cell>86.05</cell><cell>7.96</cell><cell cols="2">54.80 34.74</cell><cell>7.56</cell><cell>1.25</cell><cell>73.56</cell></row><row><cell cols="4">Huang [17] (K=16) 12.60 43.92 21.10</cell><cell>85.93</cell><cell>7.62</cell><cell cols="3">62.22 41.01 10.19</cell><cell>1.05</cell><cell>73.20</cell></row><row><cell>PDiscoNet (K=4)</cell><cell>9.12</cell><cell cols="2">37.82 15.26</cell><cell>86.17</cell><cell>11.11</cell><cell cols="3">75.97 69.53 27.13</cell><cell>8.76</cell><cell>88.58</cell></row><row><cell>PDiscoNet (K=8)</cell><cell>8.52</cell><cell cols="2">50.08 26.96</cell><cell>86.72</cell><cell>9.82</cell><cell cols="4">62.61 51.89 32.41 10.69</cell><cell>89.00</cell></row><row><cell>PDiscoNet (K=16)</cell><cell>7.67</cell><cell cols="2">56.87 38.05</cell><cell>87.49</cell><cell>9.46</cell><cell cols="4">77.43 70.48 41.49 14.17</cell><cell>86.06</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>fails to capture the diversity in terms of part semantics, resulting in very low NMI and ARI, 10.19 and 1.05, and much lower classification scores, with a maximum of 74.22% with K = 4, while our model reaches 89.00% with K = 25, close to the 90.81% obtained by ResNet101 in the same training settings. NMI ↑ ARI ↑ Class. ↑ NMI ↑ ARI ↑ Class. ↑ Ablation studies on CUB with K = 16 and PartImageNet with K = 8.</figDesc><table><row><cell /><cell /><cell /><cell>CUB</cell><cell /><cell cols="3">PartImageNet</cell></row><row><cell cols="2">Kp. ↓ Full model 7.67</cell><cell>56.87</cell><cell>38.05</cell><cell>87.49</cell><cell>27.13</cell><cell>8.76</cell><cell>88.58</cell></row><row><cell>No L orth</cell><cell cols="2">10.29 36.12</cell><cell>19.41</cell><cell>86.17</cell><cell>16.25</cell><cell>4.59</cell><cell>89.12</cell></row><row><cell>No L equiv</cell><cell cols="2">10.31 40.22</cell><cell>21.32</cell><cell>86.60</cell><cell>17.55</cell><cell>4.22</cell><cell>89.90</cell></row><row><cell>No L pres</cell><cell>7.72</cell><cell>55.18</cell><cell>35.69</cell><cell>87.21</cell><cell>12.22</cell><cell>3.84</cell><cell>88.52</cell></row><row><cell>No L conc</cell><cell>8.58</cell><cell>52.44</cell><cell>32.17</cell><cell>86.77</cell><cell>19.71</cell><cell>7.39</cell><cell>90.32</cell></row><row><cell>No modulation</cell><cell>8.05</cell><cell>53.45</cell><cell>35.90</cell><cell>86.36</cell><cell>19.83</cell><cell>6.02</cell><cell>89.42</cell></row><row><cell cols="2">No part dropout 8.48</cell><cell>46.37</cell><cell>25.36</cell><cell>86.93</cell><cell>19.97</cell><cell>4.65</cell><cell>89.72</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Part-dropout rate sensitivity on CUB with K = 8.</figDesc><table><row><cell>Dropout rate</cell><cell>0.1</cell><cell>0.3</cell><cell>0.5</cell><cell>0.7</cell><cell>0.9</cell></row><row><cell>NMI ↑</cell><cell cols="5">45.30 49.22 50.08 49.63 54.42</cell></row><row><cell>ARI ↑</cell><cell cols="5">22.78 27.27 26.96 29.15 34.56</cell></row><row><cell>Class. ↑</cell><cell cols="5">86.90 87.31 86.72 86.26 83.34</cell></row></table></figure>
+<figure type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Class. acc. with Gaussian noise on CUB with K = 16.</figDesc><table><row><cell>84.2 82.1 78.2 71.4 50.5 22.1</cell></row><row><cell>PDiscoNet 85.6 85.6 82.2 77.9 63.3 38.2</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by the <rs type="funder">French National Research Agency</rs> under the <rs type="programName">Investments for the Future Program</rs>, referred as <rs type="grantNumber">ANR-16-CONV-0004</rs> (<rs type="projectName">DigitAg</rs>), by the <rs type="funder">ERC</rs> (<rs type="grantNumber">853489 -DEXIM</rs>), by the <rs type="funder">DFG</rs> (<rs type="grantNumber">2064/1 -</rs>Project number <rs type="grantNumber">390727645</rs>), by the <rs type="funder">Tübingen AI Center (BMBF</rs>, FKZ: <rs type="grantNumber">01IS18039A</rs>), and by the <rs type="programName">MUR PNRR</rs> project <rs type="projectName">FAIR -Future AI Research</rs> (<rs type="grantNumber">PE00000013</rs>) funded by the <rs type="funder">NextGen-erationEU</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_YvySSxa">
+					<idno type="grant-number">ANR-16-CONV-0004</idno>
+					<orgName type="project" subtype="full">DigitAg</orgName>
+					<orgName type="program" subtype="full">Investments for the Future Program</orgName>
+				</org>
+				<org type="funding" xml:id="_PWWRrBF">
+					<idno type="grant-number">853489 -DEXIM</idno>
+				</org>
+				<org type="funding" xml:id="_3cnWHPE">
+					<idno type="grant-number">2064/1 -</idno>
+				</org>
+				<org type="funding" xml:id="_2Becqva">
+					<idno type="grant-number">390727645</idno>
+				</org>
+				<org type="funded-project" xml:id="_rN3m37E">
+					<idno type="grant-number">01IS18039A</idno>
+					<orgName type="project" subtype="full">FAIR -Future AI Research</orgName>
+					<orgName type="program" subtype="full">MUR PNRR</orgName>
+				</org>
+				<org type="funding" xml:id="_psbr6Gr">
+					<idno type="grant-number">PE00000013</idno>
+				</org>
+			</listOrg>
+
+			<div type="availability">
+<div><p>//github.com/robertdvdk/part_detection</p></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Quantifying attention flow in transformers</title>
+		<author>
+			<persName><forename type="first">Samira</forename><surname>Abnar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Willem</forename><forename type="middle">H</forename><surname>Zuidema</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL. Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Sanity checks for saliency maps</title>
+		<author>
+			<persName><forename type="first">Julius</forename><surname>Adebayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Gilmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Muelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><forename type="middle">J</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moritz</forename><surname>Hardt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Been</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Deep ViT Features as Dense Visual Descriptors</title>
+		<author>
+			<persName><forename type="first">Shir</forename><surname>Amir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yossi</forename><surname>Gandelsman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shai</forename><surname>Bagon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tali</forename><surname>Dekel</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2112.05814</idno>
+		<imprint>
+			<date type="published" when="2009">2022. 5, 6, 7, 8, 9</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Efficient object detection and segmentation for fine-grained recognition</title>
+		<author>
+			<persName><forename type="first">Anelia</forename><surname>Angelova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shenghuo</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">On pixel-wise explanations for non-linear classifier decisions by layer-wise relevance propagation</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Bach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Binder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grégoire</forename><surname>Montavon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frederick</forename><surname>Klauschen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaus-Robert</forename><surname>Müller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Samek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PloS one</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page">130140</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Convolutional dynamic alignment networks for interpretable classifications</title>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Moritz Bohle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernt</forename><surname>Fritz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">B-cos networks: Alignment is all we need for interpretability</title>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Moritz Böhle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernt</forename><surname>Fritz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Emerging properties in self-supervised vision transformers</title>
+		<author>
+			<persName><forename type="first">Mathilde</forename><surname>Caron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><surname>Touvron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ishan</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hervé</forename><surname>Jégou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Mairal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Transformer interpretability beyond attention visualization</title>
+		<author>
+			<persName><forename type="first">Hila</forename><surname>Chefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shir</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lior</forename><surname>Wolf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">This looks like that: deep learning for interpretable image recognition</title>
+		<author>
+			<persName><forename type="first">Chaofan</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oscar</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alina</forename><surname>Barnett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Rudin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">K</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Unsupervised Part Discovery from Contrastive Reconstruction</title>
+		<author>
+			<persName><forename type="first">Subhabrata</forename><surname>Choudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iro</forename><surname>Laina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Rupprecht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Vedaldi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">5</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Deep feature factorization for concept discovery</title>
+		<author>
+			<persName><forename type="first">Edo</forename><surname>Collins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Radhakrishna</forename><surname>Achanta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sabine</forename><surname>Susstrunk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">5</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Discovering localized attributes for fine-grained recognition</title>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Kun Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristen</forename><surname>Crandall</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grauman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Weakly supervised complementary parts models for fine-grained image classification from the bottom up</title>
+		<author>
+			<persName><forename type="first">Weifeng</forename><surname>Ge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangru</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">PartImageNet: A Large, High-Quality Dataset of Parts</title>
+		<author>
+			<persName><forename type="first">Ju</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuo</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaokang</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Kortylewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoding</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie-Neng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuai</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qihang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Yuille</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">4</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Partstacked CNN for fine-grained visual categorization</title>
+		<author>
+			<persName><forename type="first">Shaoli</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhe</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dacheng</forename><surname>Tao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ya</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Interpretable and Accurate Finegrained Recognition via Region Grouping</title>
+		<author>
+			<persName><forename type="first">Zixuan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Li</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2009">2020. 6, 7, 8, 9</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">SCOPS: Self-Supervised Co-Part Segmentation</title>
+		<author>
+			<persName><forename type="first">Wei-Chih</forename><surname>Hung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Varun</forename><surname>Jampani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sifei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pavlo</forename><surname>Molchanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Hsuan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Kautz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page">5</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Attention is not explanation</title>
+		<author>
+			<persName><forename type="first">Sarthak</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Byron</forename><forename type="middle">C</forename><surname>Wallace</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL-HLT. Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Interpretability beyond feature attribution: Quantitative testing with concept activation vectors (TCAV)</title>
+		<author>
+			<persName><forename type="first">Been</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wattenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Gilmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carrie</forename><forename type="middle">J</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Wexler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fernanda</forename><forename type="middle">B</forename><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rory</forename><surname>Sayres</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML. PMLR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Learning features and parts for fine-grained recognition</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timnit</forename><surname>Gebru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICPR</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Fine-grained recognition without part annotations</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hailin</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianchao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">The unreasonable effectiveness of noisy data for fine-grained recognition</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Sapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Howard</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Toshev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Duerig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Philbin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Localizing by describing: Attribute-guided attention localization for fine-grained recognition</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shilei</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Errui</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuanqing</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Deepfashion: Powering robust clothes recognition and retrieval with rich annotations</title>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shi</forename><surname>Qiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaogang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoou</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Deep learning face attributes in the wild</title>
+		<author>
+			<persName><forename type="first">Ziwei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaogang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaoou</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">A unified approach to interpreting model predictions</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Scott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Su-In</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">RISE: randomized input sampling for explanation of black-box models</title>
+		<author>
+			<persName><forename type="first">Abir</forename><surname>Vitali Petsiuk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kate</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Saenko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">BMVC</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Grad-cam: Visual explanations from deep networks via gradient-based localization</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ramprasaath R Selvaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abhishek</forename><surname>Cogswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ramakrishna</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Devi</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dhruv</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Part-based models improve adversarial robustness</title>
+		<author>
+			<persName><forename type="first">Chawin</forename><surname>Sitawarin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kornrapat</forename><surname>Pongmala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizheng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Carlini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Wagner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS ML Safety Workshop</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Axiomatic attribution for deep networks</title>
+		<author>
+			<persName><forename type="first">Mukund</forename><surname>Sundararajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ankur</forename><surname>Taly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiqi</forename><surname>Yan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">The caltech-ucsd birds-200-2011 dataset</title>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Wah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><surname>Branson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Welinder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Fine-grained image analysis with deep learning: A survey</title>
+		<author>
+			<persName><forename type="first">Xiu-Shen</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Zhe</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oisin</forename><surname>Mac Aodha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianxin</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuxin</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jinhui</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><forename type="middle">J</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Pattern Anal. Mach. Intell</title>
+		<imprint>
+			<biblScope unit="volume">44</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="8927" to="8948" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Attention is not not explanation</title>
+		<author>
+			<persName><forename type="first">Sarah</forename><surname>Wiegreffe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuval</forename><surname>Pinter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP-IJCNLP. Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Fine-grained person re-identification</title>
+		<author>
+			<persName><forename type="first">Jiahang</forename><surname>Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ancong</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei-Shi</forename><surname>Zheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Comput. Vis</title>
+		<imprint>
+			<biblScope unit="volume">128</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1654" to="1672" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Unsupervised discovery of object landmarks as structural representations</title>
+		<author>
+			<persName><forename type="first">Yuting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijie</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijun</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honglak</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Deepvoting: A robust and explainable deep network for semantic part detection under partial occlusion</title>
+		<author>
+			<persName><forename type="first">Zhishuai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cihang</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianyu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alan</forename><forename type="middle">L</forename><surname>Yuille</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Learning multi-attention convolutional neural network for finegrained image recognition</title>
+		<author>
+			<persName><forename type="first">Heliang</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianlong</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Mei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiebo</forename><surname>Luo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Learning deep features for discriminative localization</title>
+		<author>
+			<persName><forename type="first">Bolei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Khosla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Àgata</forename><surname>Lapedriza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aude</forename><surname>Oliva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Torralba</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

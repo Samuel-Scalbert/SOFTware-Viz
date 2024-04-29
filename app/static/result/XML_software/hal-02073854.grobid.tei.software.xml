@@ -1,0 +1,600 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Learning URI Selection Criteria to Improve the Crawling of Linked Open Data</title>
+				<funder ref="#_EQBUgyk">
+					<orgName type="full">Inria</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Hai</forename><surname>Huang</surname></persName>
+							<email>hai.huang@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fabien</forename><surname>Gandon</surname></persName>
+							<email>fabien.gandon@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Learning URI Selection Criteria to Improve the Crawling of Linked Open Data</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">7A8FC039EEA6083A422EAB69EF50FC88</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Linked Data</term>
+					<term>Crawling Strategy</term>
+					<term>Machine Learning</term>
+					<term>Online Prediction</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>As the Web of Linked Open Data is growing the problem of crawling that cloud becomes increasingly important. Unlike normal Web crawlers, a Linked Data crawler performs a selection to focus on collecting linked RDF (including RDFa) data on the Web. From the perspectives of throughput and coverage, given a newly discovered and targeted URI, the key issue of Linked Data crawlers is to decide whether this URI is likely to dereference into an RDF data source and therefore it is worth downloading the representation it points to. Current solutions adopt heuristic rules to filter irrelevant URIs. Unfortunately, when the heuristics are too restrictive this hampers the coverage of crawling. In this paper, we propose and compare approaches to learn strategies for crawling Linked Data on the Web by predicting whether a newly discovered URI will lead to an RDF data source or not. We detail the features used in predicting the relevance and the methods we evaluated including a promising adaptation of FTRL-proximal online learning algorithm. We compare several options through extensive experiments including existing crawlers as baseline methods to evaluate their efficacy.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>Linked Data extends the principles of the World Wide Web from linking documents to that of linking pieces of data to weave a Web of Data. This relies on the well-known linked data principles <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b0">1]</ref> including the use of HTTP URIs that can be dereferenced and the provision of useful and linked description upon access so that we can discover more things.</p><p>Recently, a large amount of data are being made available as linked data in various domains such as health, publication, agriculture, music, etc., and the Web of Linked Data is growing exponentially <ref type="bibr" target="#b7">[8]</ref>. In order to harvest this enormous data repository, crawling techniques for Linked Data are becoming increasingly important. Different from conventional crawlers, crawling for Linked Data is performed selectively to collect structured data connected by RDF links. The target of interest makes it distinct from focused crawlers which select the collection of Web pages to crawl based on their relevance to a specific topic.</p><p>The design objective of Linked Data crawlers is to fetch linked RDF data in different formats -RDF/XML, N3, RDFa, JSON-LD, etc. -as much as possible within a reasonable time while minimizing the download of irrelevant URIs -i.e. leading to resources without RDF content. Therefore our challenge is to identify as soon as possible the URIs referencing RDF sources without downloading them. The research question here is: can we learn efficient URI selection criteria to identify sources of Linked Open Data?.</p><p>To solve this problem, in this paper we propose and compare methods on real data to predict whether a newly discovered URI will lead to RDF data source or not. We extract information from the targeting and referring URI and from the context (RDF data graph) where URIs and their links were discovered in order to produce features fed to learning algorithms and in particular to an FTRLproximal online method employed to build the prediction model. FTRL-proximal is a time efficient and space efficient online learning algorithm, which can handle significantly larger data sets. It is also effective at producing sparse models which is important when the feature space is huge. FTRL-proximal outperforms the other online learning algorithms in terms of accuracy and sparsity.</p><p>The contributions of this work include: 1) we identify the features to predict whether a target URI will lead to some RDF data or not; 2) we adapt the FTRLproximal algorithm to our task and build an online prediction model; and 3) we implement a Linked Data crawler with the online prediction model and evaluate its performance.</p><p>The paper is organized as follows. Section 2 introduces related work, followed by preliminary knowledge in Section 3. Section 4 describes feature extraction and online prediction model. In Section 5 we present the implementation of the proposed crawler. The experimental setup and results are described in Section 6. We conclude our work in Section 7.</p></div>
+<div><head n="2">Related Work</head><p>Semantic Web/Linked Data Crawlers. Semantic web crawlers differ from traditional web crawlers in only two aspects: the format of the source (RDF format) it is traversing, and the means to link RDF across data sources. There exist some work <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b11">12]</ref> in the field of Semantic Web/Linked Data crawling. The two main representative crawlers for Linked Data are LDSpider <ref type="bibr" target="#b12">[13]</ref> and SWSE crawler <ref type="bibr" target="#b11">[12]</ref>. They crawl the Web of Linked Data by traversing RDF links between data sources and follow the Linked Data principles <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b0">1]</ref>. They offer different crawling strategies such as breadth-first and load-balancing traversal.</p><p>In order to reduce the amount of HTTP lookups and downloading wasted on URIs referencing non-RDF resources, these previous works apply heuristic rules to identify relevant URIs <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b11">12]</ref>. The URIs with common file extensions (e.g., html/htm, jpg, pdf, etc.) and those without appropriate HTTP Content-Type Header (such as application/rdf+xml) are classified as non-RDF content URIs. The content of these URIs would not be retrieved by these crawlers. Although this heuristic-based method is efficient, it impairs the recall of the crawling. This method makes the assumption that data publishers have provided correct HTTP Content-Type Header but this is not always the case. It can happen that the server does not provide the desired content type. Moreover, it may happen that the server returns an incorrect content type. For example, Freebase does not provide any content negotiation or HTML resource representation <ref type="bibr" target="#b8">[9]</ref>, and only text/plain is returned as content type. In <ref type="bibr" target="#b10">[11]</ref>, it is reported that 17% of RDF/XML documents are returned with a content-type other than application/rdf+xml. As a result, a huge volume of RDF data is missed by these methods.</p><p>Focused Crawlers on the Web. Traditional focused crawlers on the Web aim to crawl a subset of Web pages based on their relevance to a specific topic <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref>. These methods build a relevancy model typically encoded as a classifier to evaluate the web documents for topical relevancy. Our work here is different in the sense that we do not filter on the topics but on the type of content. Meusel et al. <ref type="bibr" target="#b16">[17]</ref> proposed a focused crawling approach to fetch microdata embedded in HTML pages. Umbrich et al. <ref type="bibr" target="#b17">[18]</ref> built a crawler focused on gathering files of a particular media type and based on heuristics.</p><p>Online Prediction. Our problem is also related to the classic online binary prediction in which data becomes available in a sequential order and the learner must make real-time decisions and continuously improve performance with the sequential arrival of data. Some methods have been developed such as Stochastic Gradient Descent (SGD) <ref type="bibr" target="#b2">[3]</ref>, RDA <ref type="bibr" target="#b19">[20]</ref>, FOBOS <ref type="bibr" target="#b6">[7]</ref> and FTRL-Proximal <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b14">15]</ref>. Among them, <software ContextAttributes="used">FTRL-Proximal</software> which is developed by <software ContextAttributes="used">Google</software> has been proven to work well on the massive online learning problem of predicting ad click-through rates (CTR). We adapt the FTRL-Proximal to our prediction task in this work.</p></div>
+<div><head n="3">Preliminary Knowledge</head><p>In this section, we introduce some basic definitions and notations used throughout the paper. The Linked Data crawler targets a kind of structured data represented in RDF format on the Web. The Resource Description Framework (RDF) provides a structured means of publishing information describing entities and their relationships in RDF triples. The main concepts of RDF and Linked Data we need here are:</p><formula xml:id="formula_0">Definition 1. (RDF Triple) A triple t = (s, p, o) ∈ (U ∪ B) × U × (U ∪ B) × (U × B × L)</formula><p>is called an RDF triple where U denotes the set of URI, B the set of blank nodes and L the set of literals. In such a triple, s is called subject, p predicate, and o object. Definition 2. (RDF Graph) An RDF graph G = (V, E) is a set of RDF triples such that V is the node set and E is the edge set of G. Definition 3. (HTTP Dereferencing) The act of retrieving a representation of a resource identified by a URI is known as dereferencing that URI. We define HTTP dereferencing as the function deref : U → R which maps a given URI to the representation of a resource returned by performing the HTTP lookup operations upon that URI and following redirections when needed.</p></div>
+<div><head n="4">Prediction Model for Crawling Criteria</head><p>In this section, we present the prediction task, the feature sets extracted for the task of prediction and then describe the prediction model based on FTRLproximal online learning algorithm.</p></div>
+<div><head n="4.1">Task description</head><p>Since the task of Linked Data crawler is to fetch RDF data on the Web we are interested in a kind of URIs that we call RDF-relevant URIs: Definition 4. (RDF-Relevant) Given a URI u, we consider that u is RDFrelevant if the representation obtained by dereferencing u contains RDF data. Otherwise, u is called non RDF-relevant. We note U R the set of RDF relevant URIs and U I the set of non RDF-relevant URIs with U = U R ∪U I .</p><p>For the URIs that have certain file extensions such as *.rdf/owl or HTTP Content Types Headers such as application/rdf+xml, text/turtle, etc., it is trivial to know the RDF-relevance of them. In this work, we focus on a knid of URIs called hard URIs whose RDF-relevance cannot be known by these heuristics.</p></div>
+<div><head>Definition 5. (Hard URI)</head><p>We call u a hard URI if the RDF relevance of u cannot be known straightforwardly by its file extension or HTTP Content-Type Header.</p><p>For example, URI u with HTTP Content-Type header text/html is a hard URI since RDFa data could be embedded in u. As reported in <ref type="bibr" target="#b8">[9]</ref>, the URIs with HTTP Content-Type Header text/plain may contain RDF data so they are hard URIs too.</p><p>Then, for our prediction task, we consider four types of URIs involved in the prediction we want to make: the target URI, the referring URI, direct property URIs and sibling URIs. Definition 6. (Target URI) We call target URI and note u t the URI for which we want to predict if the deref (u t ) will lead to a representation that contains RDF data i.e. if u t is RDF-Relevant. Definition 7. (Context RDF Graph) Given an RDF relevant URI u r containing the RDF graph G r t , we define G r t = (V, E) as the context RDF graph of URI u t if u t appears in G r t as a node, i.e., u t ∈ V .</p><p>Definition 8. (Referring URI) Given a target URI u t , we call "referring URI" and note u r the RDF-relevant URI that was dereferenced into a representation deref (u r ) containing the context RDF graph G r t in which we discovered the target URI u t . Definition 9. (Sibling Set) The sibling set of u t in the context RDF Graph G r t denoted by Sib ut is the set of all other URIs that have common subject-property or property-object pair with u t in G r t . Sib ut is formally defined as:</p><formula xml:id="formula_1">Sib ut = {s|∃p, o ∈ G r t , s.t.(u t , p, o) ∈ G r t ∧ (s, p, o) ∈ G r t } ∨ {o|∃s, p ∈ G r t , s.t.(s, p, u t ) ∈ G r t ∧ (s, p, o) ∈ G r t }<label>(1)</label></formula><p>Definition 10. (Direct property Set) The direct property set P S t is the set of properties that connect u t in the context graph G r t :</p><formula xml:id="formula_2">P S t = {p|∃s, o ∈ G c t , s.t.(u t , p, o) ∈ G r t ∨ (s, p, u t ) ∈ G r t }<label>(2)</label></formula><p>Prediction Task. Using these definitions we can now define our prediction task. Suppose that a hard URI u t is discovered from the context graph G r t obtained by dereferencing a referring URI u r . We want to predict if u t is RDFrelevant based on some features extracted from u t , u r , P S t and Sib ut . Our task is to learn the mapping Relevant :</p><formula xml:id="formula_3">U → {0, 1} with Relevant(u) equals 1 if u is RDF-relevant ( Relevant| U R → 1) and equals 0 if u is not RDF-relevant (Relevant| U I → 0)</formula></div>
+<div><head n="4.2">Feature Extraction</head><p>We distinguish between two kinds of features that can be exploited for the prediction intrinsic and extrinsic.</p></div>
+<div><head>Definition 11. (intrinsic URI features)</head><p>The intrinsic features of a URI u are features obtained by an extraction F int : U → F that relies exclusively on the URI identifier itself.</p><p>An example of an intrinsic feature is the protocol used e.g. http.</p><p>Definition 12. (extrinsic URI features) The extrinsic features of a URI u are features obtained by performing some network call on the URI F ext : U → F .</p><p>The URI generic syntax consists of a hierarchical sequence of several components <ref type="foot" target="#foot_0">1</ref> . An example of URI is shown in Fig. <ref type="figure" target="#fig_0">1</ref>.</p><p>The intrinsic features F int (u) consider that the different components of a URI u are informative and contain helpful information for prediction. The components include: scheme, authority, host, path, query, fragment information. We generate the intrinsic features of u based on these components.</p><p>For example, the features F int (u) when u equals the URI shown in Fig. <ref type="figure" target="#fig_0">1</ref> are described as follows: We distinguish F head and F get because they have different costs in terms of network access time. The URI header feature we will consider in this paper is the content type e.g. feature u t contentType='text/html'.</p><p>URI representation features come from the content of the referring URI u r , namely the context graph G r t of u t which include the direct properties and siblings information of u t . Definition 15. (URI similarity features) The similarity between two URIs u s and u t denoted by simV alue(u s , u t ) is defined using the Levenshtein distance <ref type="bibr" target="#b13">[14]</ref> between the two strings representing these URIs. In order to reduce the feature space, a threshold τ is set for the similarity value and if the similarity value is larger than τ , we discretize the similarity as simV alue(u t , u s ) = high and otherwise simV alue(u t , u s ) = low.</p></div>
+<div><head>Definition 16. (RDF relevance features)</head><p>The boolean characteristic of being RDF-relevant for a URI u is noted F RDF rel (u) and returns true if u is RDFrevelant and false otherwise.</p><p>With the types of features explained above we can now define four atomic feature sets based on the sources the features come from to explore and evaluate when training and predicting the RDF-relevance of a target URI u t :</p><p>-F +t = F int (u t ) + F head (u t ) is a feature set considering the intrinsic and header features of the target URI u t . -F +r = F int (u r ) is a feature set considering the intrinsic features of the referring URI u r . -F +p = p∈P St F int (p) is a feature set including the intrinsic features of each direct property of the target URI u t . -F +x = us∈Sibu t F x (u s ) is a feature set including feature crosses that combine the intrinsic, header, similarity and relevance features of the sibling URIs of u t . This supports predictive abilities beyond what those features can provide individually and can be interpreted as using a logical conjunction 'AND' to combine these features</p><formula xml:id="formula_4">F x (u s ) = F int (u s )× F head (u s ) × F sim (u s , u t ) × F RDF rel (u s )</formula><p>With these definitions we can now consider and evaluate any combination of feature sets. We note F +a the feature set with a being a combination of the atomic feature sets as defined above. For instance an experiment using the feature set F +t+r will only consider as inputs the intrinsic and header features of the target URI u t and the intrinsic feature of referring URI u r . In Section 6.1, the predictive abilities of different combinations of the feature sets are examined.</p></div>
+<div><head n="4.3">Feature Hashing</head><p>During the process of crawling, the crawler will encounter URIs belonging to millions of domains, and the number of properties could be tens of thousands. Obviously, the potential feature space will be huge. Thus, we use feature hashing <ref type="bibr" target="#b18">[19]</ref> technique to map high-dimensional features into binary vectors. Feature hashing uses a random sparse projection matrix A : R n → R m (where n m ) in order to reduce the dimension of the data from n to m while approximately preserving the Euclidean norm. In this work, hash function <software ContextAttributes="used">MurmurHash3</software><ref type="foot" target="#foot_1">2</ref> is adopted to map the feature vectors into binary vectors. By hashing the features we can gain significant advantages in memory usage since we can bound the size of generated binary vectors and we do not need a pre-built dictionary.</p></div>
+<div><head n="4.4">Online Prediction</head><p>We now present our prediction method. In this paper we assume that data becomes available in a sequential order during the crawling process. The predictor makes a prediction at each step and can also update itself: it operates in an online style. Compared to batch methods, online methods are more appropriate for the task of crawling since the predictor has to work in a dynamic learning environment. <software ContextAttributes="used">FTRL-Proximal</software> <ref type="bibr" target="#b15">[16,</ref><ref type="bibr" target="#b14">15]</ref> developed by Google has been proven to work well on the massive online learning problems. <software ContextAttributes="used">FTRL-proximal</software> outperforms the other online learning algorithms in terms of accuracy and sparsity, and has been widely used in industry, e.g., recommender systems and advertisement systems. We adopt this learning algorithm in our work.</p><p>We use x t to denote the feature vector of URI u t and y t ∈ {0, 1} the true class label of u t . Given a sequence of URIs u 1 , u 2 , • • • , u r , • • • , u t , the process of online prediction based on FTRL-Proximal algorithm is shown in Algorithm 1. We adapted the original algorithm to make it output binary values by setting a decision threshold τ . If the predicted probability p t is greater than the decision threshold τ ∈ [0, 1], it outputs prediction ŷt = 1; otherwise ŷt = 0.</p></div>
+<div><head>Algorithm 1: Online prediction with the FTRL-Proximal algorithm</head><p>Input:  </p><formula xml:id="formula_5">URIs u 1 , u 2 , • • • , u T Result: ŷ1 , • • • , ŷT 1 for t =</formula><p>In equation ( <ref type="formula" target="#formula_6">3</ref>), w t+1 is the target model parameters to be updated in each round. In the first item of equation (3), g s is the gradient of loss function for training instance s. The second item of equation ( <ref type="formula" target="#formula_6">3</ref>) is a smoothing term which aims to speed up convergence and improve accuracy, and σ s is a non-increasing learning rate defined as</p><formula xml:id="formula_7">t s=1 σ s = √ t.</formula><p>The third item of equation ( <ref type="formula" target="#formula_6">3</ref>) is a convex regularization term, namely L1-norm which is used to prevent over-fitting and induce sparsity.</p><p>Subsampling. Not all URIs are considered as training instances since we are interested in hard URIs. We exclude from training URIs with the extensions such as *.rdf/owl. Inversely, URIs with the file extension *.html/htm are included in the training set since they may contain RDFa data.</p><p>The true class label y t is required to update the predictor online. In our scenario, to observe the true class label of a URI we have to download it and check whether it contains RDF data or not. We cannot afford to download all URIs because of the network overhead, and our target is to build a prediction model that avoids downloading unnecessary URIs. There, an appropriate subsampling strategy is needed. We found that the positive URIs are rare (much less than 50%) and relatively more valuable. For each round, if URI u t is predicted positive namely ŷt = 1, we retrieve the content of u t and observe the real class label y t . Then the predictor can be updated by new training instance (y t , x t ). For those URIs predicted negative, we only select a fraction ∈]0, 1] of them to download and observe their true class label. Here is a balance between online prediction precision (which requires as many URIs as possible for online training) and downloading overhead (which requires as few non-RDF relevant URIs downloaded as possible). To deal with the bias of this subsampled data, we assign an importance weight 1 to these examples. In our experiment (Section 6.2), we set as the ratio of the number of positive URIs to the number of negative URIs in the training set.</p></div>
+<div><head n="5">Implementation of Crawler</head><p>We now detail the prototype we tested for the Linked Data crawler and explain the Algorithm 2 it implements.</p><p>Initialization. As shown in Algorithm 2, the proposed crawler starts from a list of seed URIs and operates an breadth-first crawling since this often leads to a more diverse dataset instead of traversing deep paths within some given sites. The maximum crawl depth d max is set for crawling. The F rontier data structure is initialized by the seed URI list S.</p><p>Politeness. At the beginning of each round, a naive crawler obtains a URI from F rontier to retrieve. However, it would lead to the problem that the crawler issues too many consecutive HTTP requests to a server and is considered "impolite" by the server. Thus, we group the URIs in F rontier into different sets pld 0..n based on their Pay Level Domains(PLDs). URIs are polled from PLD sets in a round-robin fashion, which means in a round each set pld i has one chance to select a URI to retrieve (Line 6). We also set a minimum time delay min delay for each round. If the minimum crawl time of a round is less than min delay, the crawler will sleep until the condition of minimum time delay is satisfied (Line 36 -Line 39).</p><p>Prediction. This is the core of crawling (Line 8 -Line 29). Once a URI u t with feature vector x t is polled, the predictor predicts the class label ŷt of u t , ŷt ∈ {0, 1}. If ŷt = 1, we retrieve the content of u t and get the real class label y t , and the predictor can be updated by the new training example (y t , x t ). If the prediction is correct (u t is RDF relevant), the RDF graph G t of u t is written to local storage and the child URIs in G t with their feature vector are added to F rontier for future rounds (Line 9 -Line 17). However, as discussed in Section 4.4, naively training on this subsampled data would lead to significantly biased predictions. To deal with this bias (Line 19-Line 28), the crawler downloads a fraction of URIs that are predicted negative (Line 19 -Line 21). For the case of false negative (Line 22 -Line 26), the RDF graph is written to local storage and the child URIs with their feature vector are added in F rontier. The predictor is updated by the example (y t , x t ) with importance weight 1 (Line 27). Reducing HTTP Lookup. To generate the feature vector of a URI u t , the crawler has to send HTTP header requests to get the content type of u t . There exists a large number of redundant HTTP lookups during crawl. To overcome this issue, we build a bloom filter <ref type="bibr" target="#b1">[2]</ref> for each kind of MIME types. Bloom filter is a space-efficient probabilistic data structure which is able to fit a billion of URIs in main memory. Once the content type of a URI is known by HTTP lookup, the URI is added to the corresponding bloom filter. For a newly discovered URI u, we submit u to each bloom filter. If a bloom filter reports positive, it indicates that u has the corresponding content type<ref type="foot" target="#foot_2">3</ref> . If no bloom filter reports positive, we have to get the content type of u by sending HTTP request and then store u in the corresponding bloom filter based on its content type.</p></div>
+<div><head n="6">Evaluation</head><p>In this section, we firstly evaluate the predictive ability of different combinations of atomic feature sets introduced in Section 4.2 and then compare the performance of the proposed crawler with some baseline methods including offline methods. Lastly, we report on experiments on the processing time to evaluate the efficiency of the proposed method.</p></div>
+<div><head n="6.1">Feature Set Evaluation</head><p>In this experiment, we evaluate the predictive ability of different combinations of feature sets introduced in Section 4.2 by several offline/batch classifiers. We firstly introduce the dataset, metrics and offline classifiers used in the experiment and then discuss the results of the experiment.</p><p>Dataset. The dataset used in the experiment is generated by operating a Breadth-First Search (BFS) crawl. The crawl starts a set of 50 seed URIs which are RDF relevant and randomly selected from 26 hosts. During the crawl, we only keep the hard URIs whose RDF relevance cannot be known straightforwardly. Finally we generate a dataset with 103K URIs. The dataset includes 9,825 different hosts. For each URI, we generate features and the class label. To check RDF relevance for each URI, we use the library <software ContextAttributes="used">Any23</software><ref type="foot" target="#foot_3">4</ref> .</p><p>Static classifiers and metrics. The static classifiers including SVM, KNN and Naive Bayesian are used to examine the performance of different combinations of feature sets. We use accuracy and F-measure as metrics to measure the performance, which are defined as:</p><formula xml:id="formula_8">accuracy = #correct predictions #predictions F -measure = 2 • precision • recall precision + recall</formula><p>Evaluation of combinations of feature sets. The aim of the experiment is to explore the predictive performance of the combinations of feature sets. As described in Section 4.2, the feature sets include F +t derived from the target URI u t , F +r derived from the referring URI u r , F +p derived from the direct properties of u t and F +x derived from the siblings of u t .</p><p>In Table <ref type="table" target="#tab_1">1</ref> we report the results for the 4-element combination of feature sets ( F +t+r+p+x ), all 3-element combinations and the 2-element combinations ( F +t+x , F r+p , F +p+x ) which have the best performance in their class. Generally speaking, from Table <ref type="table" target="#tab_1">1</ref> we can see the feature sets are helpful to the prediction task. Among all combinations, the 3-element combination F +t+r+p outperforms the other combinations with F-measure 0.8216 and accuracy 0.7902. The 4-element combination F +t+r+p+x as the second best combination scores Fmeasure 0.7944 and accuracy 0.7722. We found that augmenting sibling features to F +t+r+p is not helpful to improve the performance in the cases of three classifiers. We also found that the performance of F +r+p+x which is derived by excluding feature set F +t from F +t+r+p+x decreases a lot (the worst in all 3element combinations) compared to the performance of F +t+r+p+x . It indicates that the features from target URI u t are important.</p><p>Although the batch classifiers performs well in the experiment, it does not mean they are suited for the task nor that they work well too in an online scenario. We show the performance of crawlers with offline classifiers and the proposed crawler with online classifier in the next section.</p></div>
+<div><head n="6.2">Online Versus Offline</head><p>In this experiment, we evaluate the performance of the proposed online prediction method against several baseline methods.</p><p>Metrics. The aim of the Linked Data crawler is to maximize the number of RDF-relevant URIs collected while minimizing the number of irrelevant URIs downloaded during the crawl. For our proposed method, the crawler has to download a fraction of URIs even though they are predicted negative. To better evaluate the performance of our approach, we use a percentage measure that equals the ratio of retrieved RDF-relevant URIs to the total number of URIs<ref type="foot" target="#foot_4">5</ref> crawled:</p><formula xml:id="formula_9">percentage = #Retrieved RDF relevant U RIs #All retrieved U RIs</formula><p>Methods. We implemented the proposed crawler denoted by LDCOC (Linked Data Crawler with Online Classifier). The decision threshold τ in Algorithm 1 is set to 0.5 and the parameter of LDCOC is set to 0.17 according to the ratio of the number of positive URIs to the number of negative URIs in the training set used in Section 6.1. As baselines, we also implemented three crawlers with offline classifiers including SVM, KNN and Naive Bayes to select URIs. The classifiers are pre-trained with two training sets (with size 20K and 40K). The BFS crawler is another baseline method to be compared to. As suggested in Section 6.1, we use the feature set F +t+r+p for the experiment. Results. Table <ref type="table" target="#tab_2">2</ref> shows the percentage of retrieved RDF relevant URIs by different crawlers after crawling 300K URIs. The results show that the crawlers with offline classifiers perform slightly better than BFS crawler. Considering that the Linked Data Web is a dynamic environment, the crawlers with offline classifiers pre-trained by a small size training set would not improve the performance a lot. This is the reason why we developed the crawler with an online classifier.</p><p>The results show that our proposed crawler LDCOC outperforms crawlers based on static classifiers.</p></div>
+<div><head n="6.3">Processing Time of of Per Selection</head><p>The processing time of selecting a URI is important since it affects the throughput of the crawling. The time to select one URIs mainly includes two parts: (1) feature generation; (2) prediction and predictor updating. Table <ref type="table" target="#tab_3">3</ref> shows the average processing time per selection. LDCOC performs better than the other three crawlers with respect to processing time. Different from LDCOC crawlers with offline classifiers do not have to update during the crawl and only the prediction time is counted. LDCOC is based on FTRL-proximal algorithm which has been proven to work efficiently on the massive online learning problem of predicting ad click-through rates. The online efficiency of LDCOC can be guaranteed. </p></div>
+<div><head n="7">Conclusion</head><p>We have presented a solution to learn URI selection criteria in order to improve the crawling of Linked Open Data by predicting their RDF-relevance. The prediction component is able to predict whether a newly discovered URI contains RDF content or not by extracting features from several sources and building a prediction model based on FTRL-proximal online learning algorithm.</p><p>The experimental results demonstrate that the coverage of the crawl is improved compared to baseline methods. Currently, this work focuses on crawling linked RDF (RDFa) data. Our method can now be generalized to crawl other kinds of Linked Data such as JSON-LD, Microdata, etc. For future work, we are investigating more features such as the subgraphs induced by URIs and additional techniques such as graph embedding to further improve the predictions.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Example of a URI with component parts.</figDesc></figure>
+<figure xml:id="fig_1"><head>10 updateσ s w -w s 2 2</head><label>102</label><figDesc>w t+1 by equation (3); 11 end At round t + 1, the FTRL-Proximal algorithm uses the update formula (3): w t+1 = argmin w ( +λ 1 w 1 ).</figDesc></figure>
+<figure xml:id="fig_2"><head>Algorithm 2 : 3 add 5 foreach pldi do 6 get uri ut from pldi; 7 if 15 add 19 if</head><label>235671519</label><figDesc>Crawling on Linked DataData: A seed list of URIs S, maximum crawl depth d max, minimum time delay min delay Result: A collection of RDF triples 1 initialize F rontier=S, pld0..n = ∅; 2 while depth &lt; d max do URIs in F rontier to pld0..n; 4 startT ime=current time(); ut = dref (ut) then 8 ŷt ∈ {0, 1} = predict(xt, w); 9 if ŷt=1 then 10 download the content of ut; 11 observe class label yt ∈ {0, 1}; 12 if yt = 1 then 13 write RDF graph Gt contained in ut to the local storage; 14 generate feature vectors for URIs in Gt; URIs with their feature vectors in Frontier; 16 end 17 update the predictor by the new example (yt,xt) ; 18 else random[0,1] &lt; then 20 download the content of ut; 21 observe class label yt ∈ {0, 1}; 22 if yt = 1 then 23 write RDF graph Gt contained in ut to the local storage; 24 generate feature vectors for URIs in Gt; 25 add URIs with their feature vectors in Frontier; 26 end 27 update the predictor by the new example (yt,xt) with important weight 1 ; dref (ut) is unseen then 32 add uri dref (ut) in F rontier ;</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head /><label /><figDesc>1 to T do do</figDesc><table><row><cell>4</cell><cell>if p t &gt; τ then</cell></row><row><cell>5</cell><cell>output ŷt =1;</cell></row><row><cell>6</cell><cell>else</cell></row><row><cell>7</cell><cell>output ŷt =0;</cell></row></table><note><p>2 get feature vector x t of u t ; 3 probability p t = sigmoid(x t • w t ); 8 end 9 observe real label y t ∈ {0, 1};</p></note></figure>
+<figure type="table" xml:id="tab_1"><head>Table 1 .</head><label>1</label><figDesc>Performance of the combinations of feature sets</figDesc><table><row><cell>Combination</cell><cell>KNN</cell><cell /><cell cols="2">Naive Bayes</cell><cell cols="2">SVM</cell></row><row><cell>of Feature Sets</cell><cell cols="6">F-measure Accuracy F-measure Accuracy F-measure Accuracy</cell></row><row><cell>F+t+r+p+x</cell><cell>0.6951</cell><cell>0.7407</cell><cell>0.7154</cell><cell>0.7462</cell><cell>0.7944</cell><cell>0.7722</cell></row><row><cell>F+t+p+x</cell><cell>0.6261</cell><cell>0.6832</cell><cell>0.7094</cell><cell>0.7413</cell><cell>0.7801</cell><cell>0.7643</cell></row><row><cell>F+t+r+x</cell><cell>0.6773</cell><cell>0.7121</cell><cell>0.7111</cell><cell>0.7448</cell><cell>0.7829</cell><cell>0.7650</cell></row><row><cell>F+t+r+p</cell><cell>0.7592</cell><cell>0.7731</cell><cell>0.7660</cell><cell>0.7701</cell><cell>0.8216</cell><cell>0.7902</cell></row><row><cell>F+r+p+x</cell><cell>0.6015</cell><cell>0.7010</cell><cell>0.6328</cell><cell>0.7075</cell><cell>0.6839</cell><cell>0.7074</cell></row><row><cell>F+t+x</cell><cell>0.5582</cell><cell>0.6912</cell><cell>0.6012</cell><cell>0.6172</cell><cell>0.6828</cell><cell>0.6277</cell></row><row><cell>Fr+p</cell><cell>0.3953</cell><cell>0.5810</cell><cell>0.4874</cell><cell>0.6097</cell><cell>0.6790</cell><cell>0.6424</cell></row><row><cell>F+p+x</cell><cell>0.4392</cell><cell>0.5739</cell><cell>0.6086</cell><cell>0.6238</cell><cell>0.6689</cell><cell>0.6269</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 2 .</head><label>2</label><figDesc>Percentage of retrieved RDF relevant URIs by different crawlers</figDesc><table><row><cell>Crawler</cell><cell>Percentage</cell></row><row><cell>BFS</cell><cell>0.302</cell></row><row><cell>crawler NB (20K)</cell><cell>0.341</cell></row><row><cell>crawler NB (40K)</cell><cell>0.345</cell></row><row><cell>crawler SVM (20K)</cell><cell>0.402</cell></row><row><cell>crawler SVM (40K)</cell><cell>0.413</cell></row><row><cell>crawler KNN (20K)</cell><cell>0.331</cell></row><row><cell>crawler KNN (40K)</cell><cell>0.324</cell></row><row><cell>LDCOC (τ = 0.5, = 0.17)</cell><cell>0.655</cell></row></table></figure>
+<figure type="table" xml:id="tab_3"><head>Table 3 .</head><label>3</label><figDesc>Avg. processing time per selection</figDesc><table><row><cell cols="2">Crawler Avg. processing time</cell></row><row><cell>crawler NB</cell><cell>52.98 ms</cell></row><row><cell>crawler SVM</cell><cell>66.62 ms</cell></row><row><cell>crawler KNN</cell><cell>70.22 ms</cell></row><row><cell>LDCOC</cell><cell>49.78 ms</cell></row></table></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>RFC 3986, section 3(2005).</p></note>
+			<note place="foot" n="2" xml:id="foot_1"><p>https://github.com/aappleby/smhasher/wiki/<software>MurmurHash3</software></p></note>
+			<note place="foot" n="3" xml:id="foot_2"><p>Bloom filter may report false positive results (but not false negatives) with a low chance. Thus it is possible that a URI has a wrong content type feature.</p></note>
+			<note place="foot" n="4" xml:id="foot_3"><p>https://any23.apache.org/</p></note>
+			<note place="foot" n="5" xml:id="foot_4"><p>We only consider hard URIs.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>This work is supported by the <rs type="projectName">ANSWER</rs> project <rs type="grantNumber">PIA FSN2 N • P159564-2661789/ DOS0060094</rs> between <rs type="funder">Inria</rs> and Qwant.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_EQBUgyk">
+					<idno type="grant-number">PIA FSN2 N • P159564-2661789/ DOS0060094</idno>
+					<orgName type="project" subtype="full">ANSWER</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<author>
+			<persName><forename type="first">T</forename><surname>Berners-Lee</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/DesignIssues/LinkedData.html" />
+		<title level="m">Linked data -design issues</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Space/time trade-offs in hash coding with allowable errors</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Bloom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="422" to="426" />
+			<date type="published" when="1970">1970</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A nonlinear programming algorithm for solving semidefinite programs via low-rank factorization</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Burer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D C</forename><surname>Monteiro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Math. Program</title>
+		<imprint>
+			<biblScope unit="volume">95</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="329" to="357" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Focused crawling: A new approach to topic-specific web resource discovery</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chakrabarti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Van Den Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Networks</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">11-16</biblScope>
+			<biblScope unit="page" from="1623" to="1640" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Focused crawling using context graphs</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diligenti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Coetzee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lawrence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Giles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gori</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="527" to="534" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Slug : A Semantic Web Crawler</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Dodds</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Efficient learning using forward-backward splitting</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Duchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Singer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="495" to="503" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Lodstats: The data web census dataset</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ermilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Auer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Semantic Web Conference (2)</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<date type="published" when="2016">9982. 2016</date>
+			<biblScope unit="page" from="38" to="46" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Linked data quality of dbpedia, freebase, opencyc, wikidata, and YAGO</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Färber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bartscherer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Menne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rettinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="77" to="129" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Linked Data: Evolving the Web Into a Global Data Space</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Heath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bizer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>Morgan &amp; Claypool Publishers</publisher>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Weaving the pedantic web</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Harth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Decker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polleres</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>LDOW</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Searching and browsing linked data with SWSE: the semantic web search engine</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Harth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Umbrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kinsella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Polleres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Decker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Sem</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="365" to="401" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Ldspider: An open-source crawling framework for the web of linked data</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Isele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Umbrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bizer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Harth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ISWC 2010 Posters &amp; Demonstrations Track</title>
+		<meeting>the ISWC 2010 Posters &amp; Demonstrations Track</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Binary codes capable of correcting deletions, insertions and reversals</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">I</forename><surname>Levenshtein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sov. Phys. Dokl</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="707" to="710" />
+			<date type="published" when="1966">1966</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Follow-the-regularized-leader and mirror descent: Equivalence theorems and L1 regularization</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="525" to="533" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Ad click prediction: a view from the trenches</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Holt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Sculley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Young</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ebner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grady</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Nie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Phillips</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Davydov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Golovin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chikkerur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wattenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Hrafnkelsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Boulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kubica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGKDD</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1222" to="1230" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Focused crawling for structured data</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Meusel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mika</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Blanco</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1039" to="1048" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Four heuristics to guide structured content crawling</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Umbrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Harth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Decker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICWE</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="196" to="202" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Feature hashing for large scale multitask learning</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Langford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Smola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Attenberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1113" to="1120" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Dual averaging method for regularized stochastic learning and online optimization</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="2116" to="2124" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

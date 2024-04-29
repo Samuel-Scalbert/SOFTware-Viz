@@ -1,0 +1,1209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Querying and Repairing Inconsistent Prioritized Knowledge Bases: Complexity Analysis and Links with Abstract Argumentation</title>
+				<funder>
+					<orgName type="full">ANR AI Chair INTENDED</orgName>
+				</funder>
+				<funder ref="#_hzTATnz">
+					<orgName type="full">Camille Bourgaux&apos;s CNRS</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Meghyn</forename><surname>Bienvenu</surname></persName>
+							<email>meghyn.bienvenu@u-bordeaux.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">CNRS &amp; University of Bordeaux</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Camille</forename><surname>Bourgaux</surname></persName>
+							<email>camille.bourgaux@ens.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">ENS</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">PSL University &amp; Inria</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Querying and Repairing Inconsistent Prioritized Knowledge Bases: Complexity Analysis and Links with Abstract Argumentation</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">12B32B3A57399D31E7B9DC9943ACE826</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper, we explore the issue of inconsistency handling over prioritized knowledge bases (KBs), which consist of an ontology, a set of facts, and a priority relation between conflicting facts. In the database setting, a closely related scenario has been studied and led to the definition of three different notions of optimal repairs (global, Pareto, and completion) of a prioritized inconsistent database. After transferring the notions of globally-, Pareto-and completion-optimal repairs to our setting, we study the data complexity of the core reasoning tasks: query entailment under inconsistencytolerant semantics based upon optimal repairs, existence of a unique optimal repair, and enumeration of all optimal repairs. Our results provide a nearly complete picture of the data complexity of these tasks for ontologies formulated in common DL-Lite dialects. The second contribution of our work is to clarify the relationship between optimal repairs and different notions of extensions for (set-based) argumentation frameworks. Among our results, we show that Pareto-optimal repairs correspond precisely to stable extensions (and often also to preferred extensions), and we propose a novel semantics for prioritized KBs which is inspired by grounded extensions and enjoys favourable computational properties. Our study also yields some results of independent interest concerning preference-based argumentation frameworks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Ontology-mediated query answering (OMQA) improves data access through the use of an ontology, which provides a convenient vocabulary for query formulation and captures domain knowledge that is exploited during query evaluation <ref type="bibr" target="#b42">(Poggi et al. 2008;</ref><ref type="bibr" target="#b10">Bienvenu and Ortiz 2015;</ref><ref type="bibr" target="#b48">Xiao et al. 2018)</ref>. There is now a large literature on OMQA, with much of the work adopting description logics (DLs) <ref type="bibr" target="#b3">(Baader et al. 2017)</ref>, or the closely related OWL (2) standard <ref type="bibr" target="#b41">(OWL Working Group 2009)</ref>, as the ontology specification language. In particular, the DL-Lite family of lightweight DLs <ref type="bibr" target="#b17">(Calvanese et al. 2007;</ref><ref type="bibr" target="#b2">Artale et al. 2009</ref>) (which underpin the OWL 2 QL profile <ref type="bibr" target="#b39">(Motik et al. 2012</ref>)) has been a main focus of both theoretical and practical research due to its favourable computational properties.</p><p>While it is often reasonable to assume that the ontology has been debugged and contains only trusted knowledge, real-world datasets are plagued by data quality issues, which may render the KB inconsistent. This has led to a large body of work on how to handle data inconsistencies in OMQA, with the proposal of several inconsistency-tolerant semantics to provide meaningful answers to queries posed over inconsistent KBs (see e.g. the surveys <ref type="bibr" target="#b8">(Bienvenu and Bourgaux 2016</ref>) and <ref type="bibr" target="#b14">(Bienvenu 2019)</ref>). Many of these semantics are based upon some notion of repair, defined as an inclusion-maximal subset of the data that is consistent with the ontology. This is in particular the case for the AR, brave, and IAR semantics, which correspond respectively to a query answer holding w.r.t. all repairs, at least one repair, or the intersection of all repairs <ref type="bibr" target="#b33">(Lembo et al. 2010;</ref><ref type="bibr" target="#b11">Bienvenu and Rosati 2013)</ref>. The computational properties of these and other semantics are now quite well understood, and some practical algorithms and implementations have begun to be developed, see e.g. <ref type="bibr" target="#b34">(Lembo et al. 2015;</ref><ref type="bibr" target="#b13">Bienvenu, Bourgaux, and Goasdoué 2019;</ref><ref type="bibr" target="#b47">Tsalapati et al. 2016;</ref><ref type="bibr" target="#b46">Trivela, Stoilos, and Vassalos 2018)</ref>.</p><p>In many scenarios, there is some information about the dataset that can be used to select the most relevant repairs (e.g. we might know which relations or sources are most reliable, or the likelihood of certain kinds of facts being correct). To exploit such information, variants of the preceding semantics have been considered in which we restrict attention to the most preferred repairs based upon cardinality, weight, or a stratification of the dataset into priority levels <ref type="bibr" target="#b12">(Bienvenu, Bourgaux, and Goasdoué 2014)</ref>. While the latter forms of preferences are quite natural, there are other relevant ways of defining preferred repairs that are worth exploring. In particular, in the database area, the seminal work of <ref type="bibr" target="#b44">Staworko, Chomicki, and Marcinkowski (2012)</ref> supposes that preferences are given in terms of a priority relation (i.e. acyclic binary relation) between conflicting facts. Such 'fact-level' preferences have been shown to naturally arise in applications like information extraction and can e.g. be declaratively specified using rules <ref type="bibr" target="#b25">(Fagin et al. 2016)</ref>. To lift a priority relation between facts to the level of repairs, three different methods were proposed by <ref type="bibr">Staworko et al.</ref> Pareto-optimal and globally-optimal repairs are defined as those for which there is no possible substitution of facts that leads to a (Pareto / global) improvement, while completion-optimal repairs correspond to greedily constructing a repair based upon some compatible total order (see Section 3 for formal definitions). The complexity of reasoning with these three kinds of optimal repair has been investigated, primarily focusing on constraints given as functionality dependencies <ref type="bibr" target="#b26">(Fagin, Kimelfeld, and Kolaitis 2015;</ref><ref type="bibr" target="#b32">Kimelfeld, Livshits, and Peterfreund 2017;</ref><ref type="bibr" target="#b35">Livshits and Kimelfeld 2017)</ref>.</p><p>In this paper, we explore the use of fact-level preferences and optimal repairs for inconsistency handling in OMQA. Our first contribution is a data complexity analysis of the central reasoning problems related to optimal repairs: conjunctive query entailment under inconsistency-tolerant semantics based upon optimal repairs, uniqueness of optimal repairs, and enumeration of all optimal repairs. Our results provide a nearly complete picture of the data complexity for the three types of optimal repair and for ontologies formulated in DL-Lite core and DL-Lite H horn ; however, as we make precise later, many of our results transfer to other datatractable ontology languages. Not surprisingly, we find that reasoning with optimal repairs is generally more challenging than for standard repairs. In particular, query entailment under variants of the AR, IAR, and brave semantics based upon any of the three notions of optimal repair is intractable in data complexity, whereas with standard repairs, the IAR and brave semantics allow for tractable query answering.</p><p>Our second contribution is to establish connections with abstract argumentation frameworks (AFs). More precisely, we show that every prioritized KB with only binary conflicts naturally corresponds to a preference-based AF <ref type="bibr" target="#b30">(Kaci, van der Torre, and Villata 2018)</ref>. To handle general prioritized KBs, we need preference-based set-based AFs (SETAFs), which we introduce as a natural extension of SETAFs <ref type="bibr" target="#b27">(Flouris and Bikakis 2019)</ref>. This correspondence enables us to compare repairs and extensions. We determine that Pareto-optimal repairs are precisely the stable extensions of the corresponding preference-based (SET)AF, and under reasonable assumptions, also coincide with the preferred extensions. To establish the latter result, we prove a technically challenging result about symmetric preferencebased SETAFs that we believe is of independent interest. Globally-optimal and completion-optimal repairs correspond to proper subsets of the stable extensions, but do not at present have any analog in the argumentation setting.</p><p>The argumentation connection situates optimal repairs within a broader context and lays the foundations for importing ideas and results from the argumentation literature. Indeed, our third contribution is to propose a new notion of grounded repair, directly inspired by grounded extensions from argumentation. We show that the (unique) grounded repair is contained in the intersection of Pareto-optimal repairs. As the grounded repair can be computed in polynomial time from the dataset and conflicts, it yields a tractable approximation of the Pareto variant of the IAR semantics for the considered DLs. Moreover, we show that it is more productive than the recently proposed Elect semantics (Belabbes, <ref type="bibr" target="#b6">Benferhat, and Chomicki 2019;</ref><ref type="bibr">Belabbes and Benferhat 2019)</ref>. These advantages motivate us to take a closer look at the computational properties of the grounded semantics. We prove in particular a matching P lower bound and show how the semantics can be computed via the wellfounded semantics of logic programs.</p><p>Proofs are omitted due to lack of space but can be found in the long version <ref type="bibr" target="#b9">(Bienvenu and Bourgaux 2020)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>Even if many of our results apply to more general settings, our focus is on description logic (DL) knowledge bases, and we will in particular consider the DL-Lite core and DL-Lite H horn dialects of the DL-Lite family.</p><p>Syntax. A DL knowledge base (KB) K = T , A consists of an ABox A and a TBox T , both constructed from a set N C of concept names (unary predicates), a set of N R of role names (binary predicates), and a set N I of individuals (constants).</p><p>The ABox (dataset) consists of a finite number of concept assertions of the form A(a) and role assertions of the form R(a, b), where</p><formula xml:id="formula_0">A ∈ N C , R ∈ N R , a, b ∈ N I .</formula><p>The TBox (ontology) consists of a set of axioms whose form depends on the DL in question. In DL-Lite core , TBox axioms are concept inclusions B C built according to the following grammar, where A ∈ N C and R ∈ N R :</p><formula xml:id="formula_1">B := A | ∃S, C := B | ¬B, S := R | R -.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>DL-Lite H</head><p>horn extends DL-Lite core with role inclusions of the form S Q where Q := S | ¬S and concept inclusions of the form</p><formula xml:id="formula_2">B 1 • • • B n C.</formula><p>Semantics. An interpretation has the form I = (∆ I , • I ), where ∆ I is a non-empty set and </p><formula xml:id="formula_3">• I maps each A ∈ N C to A I ⊆ ∆ I , each R ∈ N R to R I ⊆ ∆ I ×∆ I ,</formula><formula xml:id="formula_4">= ∆ I \ B I 1 , (B 1 B 2 ) I = B I 1 ∩ B I 2 , (R -) I = {(c, d) | (d, c) ∈ R I } and (∃Q) I = {c | ∃d : (c, d) ∈ Q I }. An interpretation I satisfies G H if G I ⊆ H I ; it satisfies A(a) (resp. R(a, b)) if a I ∈ A I (resp. (a I , b I ) ∈ R I ). We call I a model of K = T , A if I satisfies all axioms in T and assertions in A. A KB K is consistent if it has a model; otherwise it is inconsistent. We say that an ABox A is T - consistent if the KB K = T , A is consistent.</formula><p>Queries. A first-order (FO) query is a first-order logic formula whose atoms are built using the predicate symbols in N C ∪ N R and constants in N I . We will focus on the subclass of conjunctive queries (CQs) which take the form q( x) = ∃ y ψ( x, y), where ψ is a conjunction of atoms of the forms A(t) or R(t, t ) whose terms are either variables from x ∪ y or individuals. When a CQ consists of a single atom, we called it an instance query (IQ). A query without free variables is called Boolean, and we refer to Boolean CQs as BCQs. A Boolean query q is satisfied by an interpretation I, written I |= q, iff q is satisfied in I according to standard first-order logic semantics; q is entailed by a KB K, written K |= q, iff I |= q for every model I of K. Henceforth, when we speak of a (Boolean) query, without specifying the type of query, we mean a (Boolean) CQ.</p><p>An inconsistent KB entails every Boolean query under the standard semantics. Several inconsistency-tolerant semantics have been defined to obtain meaningful answers in this context (see <ref type="bibr" target="#b8">(Bienvenu and Bourgaux 2016)</ref> for a survey). Most of these semantics are based on the notion of repairs, which correspond to the different ways of restoring consistency by minimally removing some assertions. Definition 1 (Repair). An ABox repair of a KB K = T , A , or repair for short, is an inclusion-maximal T -consistent subset of A. The set of repairs of K is denoted by SRep(K).</p><p>Another central notion is that of conflicts, which are the minimal subsets of assertions that contradict the TBox. Definition 2 (Conflict). A conflict of a KB K = T , A , is a minimal T -inconsistent subset of A. The set of all conflicts of K is denoted by Conf (K) and can be represented as a conflict hypergraph whose vertices are assertions and whose hyperedges are the conflicts.</p><p>To simplify the presentation, we assume throughout the paper that the ABox does not contain any assertion that is inconsistent with the TBox, i.e., every conflict contains at least two assertions. Note that self-contradictory assertions do not occur in any repair, and such assertions can be readily identified and removed using existing reasoning algorithms.</p><p>In the database setting, Staworko, Chomicki, and Marcinkowski (2012) defined three notions of optimal repairs based on a priority relation over facts, which expresses preferences between conflicting facts. Such a relation could e.g. represent expert knowledge of how to resolve certain kinds of conflicts or be learned from manual conflict resolution <ref type="bibr" target="#b38">(Martinez et al. 2014;</ref><ref type="bibr" target="#b45">Tanon, Bourgaux, and Suchanek 2019)</ref>. We recast these notions in the KB setting. Definition 3 (Priority relation, completion). Given a KB K = T , A , a priority relation for K is an acyclic binary relation over the assertions of A such that if α β, then there exists C ∈ Conf (K) such that {α, β} ⊆ C. A priority relation is total iff for all α = β, if there exists C ∈ Conf (K) such that {α, β} ⊆ C, then α β or β α. A completion of is a total priority relation ⊇ . Definition 4 (Prioritized KB). A prioritized KB is a pair (K, ) consisting of a KB K and priority relation for K. The notation K will be used as shorthand for (K, ). Definition 5 (Optimal repairs). Consider a prioritized KB K with K = T , A , and let A ∈ SRep(K).</p><formula xml:id="formula_5">• A Pareto improvement of A (w.r.t. ) is a T -consistent A ⊆ A such that there exists β ∈ A \ A such that β α for every α ∈ A \ A . • A global improvement of A (w.r.t. ) is a T -consistent</formula><p>A ⊆ A such that A = A and for every α ∈ A \ A , there exists β ∈ A \ A such that β α. The repair A is a:</p><p>• Pareto-optimal repair of K if there is no Pareto improvement of A w.r.t. . • Globally-optimal repair of K if there is no global improvement of A w.r.t. .</p><p>• Completion-optimal repair of K if A is a globallyoptimal repair of K , for some completion of . We denote by GRep(K ), PRep(K ) and CRep(K ) the sets of globally-, Pareto-, and completion-optimal repairs. <ref type="bibr" target="#b44">Staworko, Chomicki, and Marcinkowski (2012)</ref> showed the following relation between optimal repairs:</p><formula xml:id="formula_6">CRep(K ) ⊆ GRep(K ) ⊆ PRep(K ) ⊆ SRep(K).</formula><p>They also show that A is a completion-optimal repair iff it can be obtained by the following greedy procedure: while some assertion has not been considered, pick an assertion that is maximal w.r. We next introduce the three natural inconsistency-tolerant semantics based upon repairs. The AR semantics is arguably the most natural and well-known semantics and requires that a query be entailed from every repair of the KB. The IAR semantics is a more cautious semantics that evaluates queries over the intersection of all repairs. Finally, the brave semantics is the most adventurous semantics, returning yes to queries that are entailed by some repair. Definition 7 (AR, IAR and brave semantics). For X ∈ {C, G, P, S}, a prioritized KB K entails a query q under</p><formula xml:id="formula_7">• X-AR semantics, written K |= X AR q, iff T , A |= q for every A ∈ XRep(K ); • X-IAR semantics, written K |= X IAR q, iff T , A ∩ |= q where A ∩ = A ∈XRep(K ) A ; • X-brave semantics, written K |= X brave q, iff T , A |= q for some A ∈ XRep(K ).</formula><p>We remark that these semantics are related as follows:</p><formula xml:id="formula_8">K |= X IAR q ⇒ K |= X AR q ⇒ K |= X brave q. Example 8 (Ex. 6 cont'd).</formula><p>Considering the different semantics based upon completion-optimal repairs, we observe that If we consider now AR semantics for the different kinds of optimal repairs, we find that</p><formula xml:id="formula_9">• K |= C IAR Carnivorous(a), • K |= C AR Snake(a) but K |= C IAR Snake(a), • K |= C brave Boa(a) but K |= C AR Boa(a).</formula><formula xml:id="formula_10">• K |= C AR Snake(a) but K |= G AR Snake(a), • K |= G AR Carnivorous(a) but K |= P AR Carnivorous(a), • K |= P AR Eat(a, b) but K |= S AR Eat(a, b).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Complexity Analysis</head><p>In this section, we analyze the data complexity of the central reasoning tasks related to optimal repairs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Overview</head><p>We define the problems and complexity classes we consider as well as some relevant properties of DL languages.</p><p>Problems. Given a prioritized KB K and a type of repairs X ∈ {C, G, P, S}, repair checking (ISREP) is deciding whether a set of assertions belongs to XRep(K ); AR (resp. IAR, brave) entailment (AR, IAR, BRAVE) is deciding whether K entails a given BCQ under X-AR (resp. X-IAR, X-brave) semantics; uniqueness (UNIQUE) is deciding whether |XRep(K )| = 1; and enumeration (ENUM) is enumerating all elements of XRep(K ).</p><p>Complexity classes. All of the complexity results stated in this paper are for the data complexity measure, i.e., the complexity is with respect to the size of A, with T and q treated as fixed (hence of constant size).</p><p>For decision problems, we will refer to the following complexity classes: AC 0 is the class of problems that can be solved by a uniform family of cicuits of constant depth and polynomial-size, with unbounded-fanin AND and OR gates; P is the class of problems solvable in polynomial time; NP is the class of problems solvable in non-deterministic polynomial time; Σ p 2 is the class of problems solvable in nondeterministic polynomial time with access to an NP oracle; coNP (resp. Π p 2 ) is the class of problems whose complement is in NP (resp. Σ p 2 ). These classes are related as follow:</p><formula xml:id="formula_11">AC 0 ⊂ P ⊆ NP ⊆ Σ p 2 and AC 0 ⊂ P ⊆ coNP ⊆ Π p 2 .</formula><p>It is widely believed that all of the inclusions are proper.</p><p>For enumeration problems, we will use the following classes: TOTALP is the class of enumeration problems that can be solved in polynomial time in n + m where n is the input size and m the output size; DELAYP is the class of enumeration problems that can be solved by an algorithm such that the delay between the k th and the k + 1 th solution is bounded by a polynomial in the input size; INCP is the class of enumeration problems that can be solved by an algorithm such that the delay between the k th and the k + 1 th solution is bounded by a polynomial in the size of the input and k. These classes are related as follow: DELAYP ⊆ INCP ⊆ TOTALP. If the decision problem associated to an enumeration problem is NP-hard, then the enumeration problem is not in TOTALP.</p><formula xml:id="formula_12">SRep(K) PRep(K ) GRep(K ) CRep(K ) ISREP in P in P coNP-c in P AR coNP-c coNP-c Π p 2 -c coNP-c IAR in AC 0 coNP-c Π p 2 -c coNP-c BRAVE in AC 0 NP-c Σ p 2 -c NP-c UNIQUE in P coNP-c Π p 2 -c ‡ in P ENUM DELAYP * not TOTALP † not TOTALP † DELAYP *</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Results</head><p>. Table <ref type="table" target="#tab_0">1</ref> presents an overview of the complexity results for DL-Lite. However, since most of the results hold for some DLs outside the DL-Lite family, we will state them for DLs that satisfy some of the following properties:</p><p>• BOUNDCONF: the size of conflicts is bounded;</p><p>• BINCONF: conflicts have size at most two;</p><p>• POLYBCQ: polynomial time BCQ entailment;</p><p>• POLYCONS: polynomial time consistency checking.</p><p>The most commonly considered DL-Lite dialects, such as DL-Lite core and DL-Lite R (the basis for OWL 2 QL), satisfy all of these properties, while DL-Lite H horn satisfies all except BINCONF (the size of conflicts is bounded by the number of concept and role names occurring in the TBox).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Query Entailment</head><p>We start by establishing the complexity of repair checking and BCQ entailment under the various semantics.</p><p>The upper bounds are stated in the following theorem and can be proven by adapting existing results from databases and inconsistency-tolerant OMQA (recall that proofs of all results are provided in <ref type="bibr" target="#b9">(Bienvenu and Bourgaux 2020)</ref>). Observe that this result applies to all DLs satisfying POLY-CONS and POLYBCQ, which includes prominent Horn DLs like EL and Horn-SHIQ. Theorem 9. For DLs satisfying POLYCONS, repair checking is in coNP for globally-optimal repairs, in P for Paretoor completion-optimal repairs.</p><p>For DLs satisfying POLYCONS and POLYBCQ, G-AR and G-IAR entailment are in Π p 2 , G-brave entailment in Σ p 2 , P-AR, P-IAR, C-AR and C-IAR entailment are in coNP, and P-brave and C-brave entailment in NP.</p><p>For Pareto-optimal and completion-optimal repairs, coNP-hardness (resp. NP-hardness) of AR and IAR (resp. brave) IQ entailment in DL-Lite core follow from the special case where the priority relation is given by priority levels, for which it is known the three families of optimal repairs we consider coincide <ref type="bibr" target="#b16">(Bourgaux 2016)</ref>. The following theorem establishes the remaining lower bounds. Theorem 10. In DL-Lite core , repair checking is coNP-hard for globally-optimal repairs, G-AR and G-IAR entailment are Π p 2 -hard, and G-brave entailment Σ p 2 -hard, even for IQs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Uniqueness and Enumeration</head><p>We now turn our attention to the problems of deciding uniqueness and enumerating repairs. Note that in the case of classical repairs, deciding whether |SRep(K)| = 1 amounts to checking whether K is consistent (recall our assumption that all self-contradictory assertions have been removed).</p><p>As observed by <ref type="bibr" target="#b35">Livshits and Kimelfeld (2017)</ref> in the database setting, classical repairs correspond to the maximal independent sets (MISs) of the conflict hypergraph. It is known that MIS enumeration for graphs is in DELAYP <ref type="bibr" target="#b29">(Johnson, Papadimitriou, and Yannakakis 1988)</ref>, while for hypergraphs with bounded-size hyperedges, the problem is in INCP <ref type="bibr" target="#b24">(Eiter and Gottlob 1995;</ref><ref type="bibr" target="#b15">Boros et al. 2000)</ref>. Since the conflict hypergraph can be tractably computed for DLs with bounded-size conflicts, enumeration of SRep(K) is in INCP for DLs with bounded conflicts, and in DELAYP for DLs with binary conflicts. <ref type="bibr" target="#b32">Kimelfeld, Livshits, and Peterfreund (2017)</ref> and Livshits and Kimelfeld (2017) provide intractability results for UNIQUE and ENUM in the case of globally-and Paretooptimal repairs of databases with functional dependencies. Their proofs do not transfer to DL-Lite KBs, but via different proofs, we can establish analogous results in our context. Theorem 11. Uniqueness is coNP-complete for Paretooptimal repairs, Π p 2 -complete for globally-optimal repairs. Upper bounds hold for DLs satisfying POLYCONS. Lower bounds hold for DL-Lite core . Corollary 12. Enumeration of Pareto-optimal or globallyoptimal repairs is not in TOTALP for DL-Lite core . <ref type="bibr" target="#b32">Kimelfeld, Livshits, and Peterfreund (2017)</ref> provide an algorithm which, given an arbitrary conflict hypergraph and a priority relation, decides uniqueness for completionoptimal repairs in polynomial time. Hence deciding whether |CRep(K )| = 1 is in P for DLs with bounded conflicts, since in this case the conflict hypergraph can be computed in polynomial time. <ref type="bibr" target="#b35">Livshits and Kimelfeld (2017)</ref> describe an algorithm that enumerates completion-optimal repairs with polynomial delay for conflict graphs. It follows that for DLs with binary conflicts, enumeration of completion-optimal repairs is in DELAYP. The case of completion-optimal repairs with non-binary conflicts remains open.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Case of Transitive Priority Relations</head><p>A natural case to consider is when the priority relation is transitive. This occurs in particular when the priority relation captures the relative reliability of the facts. <ref type="bibr" target="#b32">Kimelfeld, Livshits, and Peterfreund (2017)</ref> proved that when the priority relation is transitive, deciding uniqueness for globally-optimal repairs can be done in polynomial time when the conflict hypergraph is given. This result is applicable to all DLs for which the conflict hypergraph is computable in polynomial time. A natural question is whether any of our other problems become easier if we assume is transitive. We found that this is not the case, although the transitivity requirement makes the lower bounds proofs more involved. In particular, we can no longer use the coNPhardness proof for uniqueness to derive that the enumeration of globally-optimal repairs is not in TOTALP, but instead show this via the coNP-hardness of deciding whether a given set of ABoxes is exactly GRep(K ). Theorem 14. When is transitive, uniqueness is in P for globally-optimal repairs and DLs satisfying BOUNDCONF. All other lower bounds in Table <ref type="table" target="#tab_0">1</ref> still hold for DL-Lite core .</p><formula xml:id="formula_13">Definition 13. A priority relation is transitive if α 1 • • • α n and {α 1 , α n } ⊆ C ∈ Conf (K) implies α 1 α n .</formula><p>Score-structured priority relations. An interesting special case of transitive priority relation arises when every assertion α is assigned a natural number called its score (or priority level) s(α), which induces a priority relation as follows: for every pair of assertions α and β that belongs to a conflict, α β if and only if s(α) &gt; s(β). Livshits and Kimelfeld (2017) call such a priority relation score-structured and show that deciding whether a priority is score-structured is in P and that if is score-structured, CRep(K ) = GRep(K ) = PRep(K ). This relation was also given in <ref type="bibr" target="#b12">(Bienvenu, Bourgaux, and Goasdoué 2014;</ref><ref type="bibr" target="#b16">Bourgaux 2016)</ref> where it is shown that they further coincide with another notion of preferred repairs directly defined from ABoxes partitioned into priority levels.</p><p>For score-structured priorities, the complexity of all decision problems is the same as in the case of completionoptimal repairs, with the lower bounds shown in <ref type="bibr" target="#b16">(Bourgaux 2016)</ref>. By contrast, for enumeration, it follows from the algorithm for enumerating score-structured priority repairs of Livshits and Kimelfeld that enumeration is in INCP for DLs with bounded conflicts and consistency checking in P.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Preference-Based Argumentation</head><p>In preparation for the following section, we recall the basics of argumentation frameworks and previously studied extensions with preferences and collective attacks. We also prove some new results (Theorems 22, 23, 28, and 32).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Argumentation Frameworks</head><p>We consider finite argumentation frameworks. Argumentation frameworks over an infinite set of arguments have also been studied in the literature but finiteness is an ordinary assumption and is made for all results we recall or extend here.</p><p>Definition 15. An argumentation framework (AF) is a pair (Args, ) where Args is a finite set of arguments and ⊆ Args × Args is the attack relation. When (α, β) ∈ , we say that α attacks β, alternatively denoted by α β.</p><p>We recall some commonly used notation and terminology, letting (Args, ) be the considered AF and A ⊆ Args. We use A + = {β | α β for some α ∈ A} to denote the set of arguments attacked by arguments from A. We say that A defends γ ∈ Args (or, γ is defended by</p><formula xml:id="formula_14">A) iff {β | β γ} ⊆ A + . A set A ⊆ Args is conflict-free if A ∩ A + = ∅. The characteristic function Γ F : 2 Args → 2 Args of F = (Args, ) is defined as follows: Γ F (A) = {α | α is defended by A}. A set A ⊆ Args is admissible if it is conflict-free and A ⊆ Γ F (A).</formula><p>Argumentation semantics are usually based upon sions, intended to capture coherent sets of arguments. We recall some prominent notions of extension: Definition 16. Let F = (Args, ). Then E ⊆ Args is a:</p><p>• complete extension iff E is conflict-free and E = Γ F (E); • grounded extension iff E is the ⊆-minimal complete extension, or equivalently, the least fixpoint of Γ F ; • preferred extension iff E is a ⊆-maximal admissible set;</p><formula xml:id="formula_15">• stable extension iff E + = Args \ E.</formula><p>While every stable extension is a preferred extension, the converse does not hold in general <ref type="bibr" target="#b23">(Dung 1995)</ref>. The term coherent designates AFs for which these two notions coincide (i.e. every preferred extension is stable). Coherence is viewed as a desirable property, and several sufficient conditions for coherence have been identified. In particular: Definition 17. An AF (Args, ) is symmetric iff is symmetric and irreflexive.</p><p>Theorem 18. (Coste-Marquis, Devred, and Marquis 2005) Every symmetric AF is coherent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Enriching AFs with Preferences</head><p>There has been significant interest in extending AFs to allow for preferences between arguments (Amgoud and Cayrol 2002; Kaci, van der Torre, and Villata 2018).</p><p>Definition 19. A preference-based argumentation framework (PAF) is a triple (Args, , ), where Args and are as before, and is an acyclic binary relation over Args (called the preference relation). Symmetric PAFs are obtained by requiring (Args, ) to be symmetric.</p><p>It is typical to assume that the preference relation is transitive. This is a reasonable assumption, but for the sake of generality, the preceding definition does not impose this.</p><p>The standard way of defining the semantics of PAFs is via reduction to (plain) AFs: Definition 20. Given a PAF (Args, , ), the corresponding AF is (Args,</p><p>), where α β iff α β and β α. A subset E ⊆ Args is a stable (resp. preferred, grounded, complete) extension of a PAF (Args, , ) iff it is a stable (resp. preferred, grounded, complete) extension of the corresponding AF.</p><p>While alternative reductions have been proposed in (Amgoud and Vesic 2014) and <ref type="bibr" target="#b30">(Kaci, van der Torre, and Villata 2018)</ref>, all of these reductions coincide for symmetric PAFs, which is the case that will interest us here. Theorem 21. (Amgoud and Vesic 2014) Every symmetric PAF with a transitive preference relation is coherent.</p><p>We generalize the preceding result by showing that transitivity is not required: Theorem 22. Every symmetric PAF is coherent.</p><p>Theorem 23 gives a characterization of AFs that correspond to symmetric PAFs. It generalizes the strict acyclicity condition characterizing the so-called conflict+preference AFs <ref type="bibr" target="#b31">(Kaci, van der Torre, and Weydert 2006)</ref> that requires for any cycle α 1 α 2 . . .</p><formula xml:id="formula_16">α n α 1 that α 1 α n . . . α 2 α 1 .</formula><p>Theorem 23. For every AF F = (Args, ), the following statements are equivalent.</p><p>1. F is the corresponding AF of some symmetric PAF. 2. For any cycle α 1 α 2 . . . α n α 1 , there exists (j, i) ∈ {(1, 2), . . . , (n -1, n), (n, 1)} with α i α j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Set-Based Argumentation Frameworks</head><p>Another well-studied extension of AFs is to allow collective attacks, in which a set of arguments together form an attack <ref type="bibr" target="#b40">(Nielsen and Parsons 2006;</ref><ref type="bibr" target="#b27">Flouris and Bikakis 2019)</ref>. Definition 24. A set-based argumentation framework (SETAF) is a pair (Args, ) where Args is a finite set of arguments, and ⊆ (2 Args \ {∅}) × Args is the attack relation. We'll write S α to mean (S, α) ∈ .</p><p>When working with SETAFs, we define A + as {β | S β for some S ⊆ A} and say A defends β iff A + ∩ S = ∅ whenever S β. The definitions of characteristic function, conflict-free, admissibility, different types of extensions, and coherence for SETAFs are the same as for AFs but using these modified notions of defeated and defended arguments.</p><p>Symmetric SETAFs were recently defined as follows: Definition 25. <ref type="bibr" target="#b21">(Diller et al. 2020</ref>) A SETAF (Args, ) is symmetric if the following two conditions hold: (Symm-1) if S β and α ∈ S, then S ∪ {β} α for some S , and (Irr) there is no S α with α ∈ S.</p><p>Unfortunately, <ref type="bibr">Diller et al.</ref> show their definition does not preserve the nice properties of symmetric AFs. In particular: Theorem 26. Some symmetric SETAFs are not coherent.</p><p>We propose an alternative, and we believe quite natural, notion of symmetric SETAF, which we term 'strongly symmetric' to distinguish it from the preceding notion: Definition 27. A SETAF (Args, ) is strongly symmetric if it satisfies (Irr) and (Symm-2): for every attack S β and every α ∈ S, we have S \ {α} ∪ {β} α. With our definition, symmetry implies coherence: Theorem 28. Strongly symmetric SETAFs are coherent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Adding Preferences to SETAFs</head><p>It is natural to combine the preceding two extensions, but to the best of our knowledge, this combination has not yet been considered. We propose the following definition: Definition 29. A preference-based set-based argumentation framework (PSETAF) is a triple (Args, , ), where (Args, ) is a SETAF, and is an acyclic binary relation over Args, called the preference relation.</p><p>To define the semantics of PSETAFs, we give a reduction to SETAFs, which generalizes the one for PAFs: Definition 30. Given a PSETAF (Args, , ), its corresponding SETAF is (Args,</p><p>), where the relation ⊆ (2 Args \ {∅}) × Args is defined as follows: S α iff S α and α β for every β ∈ S. A subset E ⊆ Args is a stable (resp. preferred, grounded, complete) extension of a PSETAF (Args, , ) iff it is a stable (resp. preferred, grounded, complete) extension of the corresponding SETAF.</p><p>We will focus on strongly symmetric PSETAFs: Definition 31. A PSETAF (Args, , ) is strongly symmetric if the SETAF (Args, ) is strongly symmetric.</p><p>The following result lifts Theorem 21 to PSETAFs. The proof is quite intricate, and we leave open whether the same result holds without the transitivity assumption: Theorem 32. Every strongly symmetric PSETAF with a transitive preference relation is coherent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Linking Prioritized KBs and PSETAFs</head><p>This section places optimal repairs into a broader context by exhibiting a tight relationship between optimal repairs and extensions of argumentation frameworks. The argumentation connection is then exploited to define a new kind of prioritized repair with favourable computational properties.</p><p>Each prioritized KB naturally gives rise to a PSETAF in which the ABox assertions play the role of arguments, and the attack relation captures the conflicts. Definition 33. Given a prioritized KB K with K = T , A , the associated PSETAF is</p><formula xml:id="formula_17">F K, = (A, K , ), where K = {(C \ {α}, α) | C ∈ Conf (K), α ∈ C}. Remark 34.</formula><p>Recall that we assume the ABoxes do not contain self-conflicting assertions, hence C \ {α} = ∅. If we choose not to make this assumption, we should omit such assertions when constructing the PSETAF, i.e., using A \ {α | T , {α} |= ⊥} for the set of arguments and only considering C ∈ Conf (K) with |C| ≥ 2 to construct K .</p><p>In this section, results are formulated for arbitrary KBs, except where otherwise noted.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Optimal Repairs vs. PSETAF Extensions</head><p>Now that we have translated prioritized KBs into argumentation frameworks, it is possible to compare preferred repairs and extensions. The following theorem shows that Paretooptimal repairs correspond precisely to stable extensions.</p><formula xml:id="formula_18">Theorem 35. A ⊆ A is a Pareto-optimal repair of K = ( T , A , ) iff A is a stable extension of F K, .</formula><p>Observe that our translation always produces strongly symmetric PSETAFs, which makes it possible to transfer Theorem 32 when the priority relation is transitive.</p><p>Theorem 36. If is a transitive priority relation, then the PSETAF F K, is coherent.</p><p>Theorems 35 and 36 together show that for transitive , Pareto-repairs coincide also with preferred extensions.</p><p>For KBs which contain only binary conflicts (e.g. core DL-Lite dialects), the resulting PSETAF is actually a PAF, so we can drop the transitivity requirement:</p><formula xml:id="formula_19">Theorem 37. For every prioritized KB K such that C ∈ Conf (K) implies |C| = 2, F K, is coherent. Thus, A ∈ PRep(K ) iff A is a preferred extension of F K, .</formula><p>Note that it follows from Theorem 35 that globallyoptimal and completion-optimal repairs correspond to proper subsets of the stable extensions of F K, , but they do not at present have any analog in the argumentation setting. For a (SET)AF F that corresponds to a (strongly) symmetric P(SET)AF P , it is possible to define new types of extensions that will correspond to globally-and completionoptimal repairs of a KB having P for associated P(SET)AF and to import results from the prioritized KB setting. In particular, when F is an AF that respects the conditions of Theorem 23, we can adapt the algorithms for completionoptimal repairs to tractably enumerate a non-empty subset of the stable/preferred extensions of F , while enumerating its stable/preferred extensions is not in TOTALP in general.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Grounded Semantics for Prioritized KBs</head><p>We next turn to the relationship between grounded extensions and optimal repair semantics. We start by clarifying the situation for the simplest case, in which there are no preferences (cf. <ref type="bibr" target="#b19">(Croitoru and Vesic 2013)</ref> for a similar result in a different but related setting).</p><p>Theorem 38. Let K = T , A be a KB, and let F K be the SETAF corresponding to F K, ∅ (with ∅ the empty relation). Then the grounded extension of F K coincides with the intersection of the repairs of K.</p><p>For prioritized KBs, we can use Theorem 35 and the fact that every stable extension is a complete extension to relate grounded extensions with Pareto-optimal repairs: Theorem 39. If G is the grounded extension of F K, , then G ⊆ B for every B ∈ PRep(K ).</p><p>Thus, the grounded extension contains only assertions common to all Pareto-optimal repairs. It may not contain all such assertions, as the following example illustrates:</p><p>Example 40. Consider a prioritized KB K in which Conf (K) = {{α, β}, {α, γ}, {β, γ}, {γ, δ}} and where contains α γ, β γ, and γ δ. Then δ appears in the two Pareto-optimal repairs of K , which are {α, δ} and {β, δ}, while the grounded extension of F K, is ∅.</p><p>We propose to use the grounded extension to define a new inconsistency-tolerant semantics for prioritized KBs: Definition 41. A query q is entailed from K under grounded semantics, denoted K |= GR q, iff T , G |= q, where G is the grounded extension of F K, .</p><p>As follows from Theorem 39, our new semantics provides an under-approximation of the P-IAR semantics:</p><p>Theorem 42. For every prioritized KB K and query q: K |= GR q implies K |= P IAR q. Importantly, since the grounded extension of a (SET)AF can be computed in polynomial time, this semantics allows for tractable query answering in some relevant settings.</p><p>Theorem 43. Let L be a DL satisfying POLYBCQ and POLYCONS. Then the problem of BCQ entailment over L-KBs under grounded semantics is in P w.r.t. data complexity.</p><p>Corollary 44. For DL-Lite H horn KBs, BCQ entailment under grounded semantics is in P w.r.t. data complexity.</p><p>The grounded semantics can be compared to another recently proposed semantics for prioritized KBs, the Elect semantics, defined for KBs with binary conflicts by <ref type="bibr" target="#b6">Belabbes, Benferhat, and Chomicki (2019)</ref> then generalized for nonbinary conflicts <ref type="bibr">(Belabbes and Benferhat 2019)</ref>. Elect evaluates queries over a set of elected assertions and is tractable for DLs for which computing the conflicts and BCQ entailment can be done in polynomial time w.r.t. data complexity.</p><p>Definition 45. <ref type="bibr">(Belabbes and Benferhat 2019)</ref> An assertion α ∈ A is elected iff for every C ∈ Conf (K), if α ∈ C, then there exists β ∈ C such that α β. The set of elected assertions is denoted by Elect(K ).</p><p>The grounded semantics is more productive than Elect, i.e., is a more precise under-approximation of P-IAR.</p><p>Theorem 46. Elect(K ) ⊆ G where G is the grounded extension of F K, .</p><p>Example 47. Consider a prioritized KB K in which Conf (K) = {{α, β}, {β, γ}} and where contains α β and β γ. Then Elect(K ) = {α} while G = {α, γ}. Indeed, α ∈ G and γ is defended by {α} in the AF corresponding to F K, , so γ ∈ G.</p><p>Our next result establishes that reasoning under grounded semantics is P-complete in the settings of Theorem 43.</p><p>Theorem 48. IQ entailment under grounded semantics is P-hard w.r.t. data complexity for DL-Lite core . <ref type="bibr" target="#b23">Dung (1995)</ref> observed that the grounded extension can be computed via the well-founded semantics of a simple logic program. The following lemma generalizes this result to k-SETAFs, i.e., SETAFs for which S β implies |S| ≤ k.</p><p>Theorem 49. Let F = (Args, ) be a k-SETAF. Then α is in the grounded extension of F iff acc(α) belongs to the well-founded model of the following normal logic program:</p><p>{def(x) ← att i (y 1 , .., y i , x),acc(y 1 ),...,acc(y</p><formula xml:id="formula_20">i ) | 1 ≤ i ≤ k} ∪ {acc(x) ← arg(x), ¬def(x)} ∪ {arg(α) | α ∈ Args} ∪ {att i (α 1 , . . . , α i , β) ← | {α 1 , . . . , α i } β}</formula><p>Intuitively, the preceding logic program computes the sets of defeated (def) and accepted (acc) arguments starting from the original sets of arguments (arg) and attacks (att i encodes i-ary attacks). By adding rules to compute conflicts and populate the attack relations att i , we can show that the grounded extension of F K, can be computed via logic programming. While stated for DL-Lite H horn , the next theorem holds for any ontology (or constraint) language for which inconsistency can be characterized by a finite set of BCQs. Theorem 50. For every DL-Lite H horn TBox T , there exists a normal logic program Π T such that for every ABox A, priority relation for K = T , A , and assertion α, the following are equivalent:</p><p>• α belongs to the grounded extension of the PSETAF F K,</p><p>• acc(id(α)) belongs to the well-founded model of</p><formula xml:id="formula_21">Π T ∪ {γ ← | γ ∈ A id } ∪ {pref(id(α), id(β)) ← | α β},</formula><p>where A id is obtained from A by adding an extra argument to every assertion β containing a unique id, denoted id(β).</p><p>As the well-founded semantics is implemented in logic programming systems like XSB <ref type="bibr" target="#b43">(Rao et al. 1997)</ref>, the preceding theorem presents a method for implementing grounded semantics. Alternatively, the grounded extension can be naturally under-approximated by fixing d &gt; 0 and considering Γ d F (∅) rather than the least fixpoint of Γ F . The logic program from Theorem 50 can be modified to yield a non-recursive stratified program that computes Γ d F K, (∅), which in turn can be expressed as a first-order (∼ SQL) query and evaluated using a relational database system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Related Work</head><p>Our complexity results are similar to those obtained for prioritized databases with functional dependencies <ref type="bibr" target="#b44">(Staworko, Chomicki, and Marcinkowski 2012;</ref><ref type="bibr" target="#b32">Kimelfeld, Livshits, and Peterfreund 2017;</ref><ref type="bibr" target="#b35">Livshits and Kimelfeld 2017)</ref>. Compared to this work, we additionally consider IAR and brave semantics, study the impact of transitivity on all reasoning tasks, and establish connections with argumentation.</p><p>Inconsistency-tolerant semantics based on other kinds of preferred repairs have been investigated both in the database and DL or Datalog ± contexts, often with a focus on repairs that have maximal cardinality or weight <ref type="bibr" target="#b36">(Lopatenko and Bertossi 2007;</ref><ref type="bibr" target="#b22">Du, Qi, and Shen 2013;</ref><ref type="bibr" target="#b4">Baget et al. 2016;</ref><ref type="bibr" target="#b37">Lukasiewicz, Malizia, and Vaicenavicius 2019)</ref>. However, such global optimality criteria lead to a higher computational complexity (typically ∆ P 2 [O(log n)]-hard). By contrast, <ref type="bibr" target="#b12">Bienvenu, Bourgaux, and Goasdoué (2014)</ref> show that for preferred repairs based on priority levels and setinclusion (corresponding to optimal repairs in the scorestructured case), BCQ entailment remains in the first level of the polynomial hierarchy for DL-Lite. Our results show that even if the priority relation over facts is not score-structured, and not even transitive, these computational properties are retained for Pareto-and completion-optimal repairs. When is score-structured, we can compare the grounded extension and the intersection of optimal repairs to the proposals of <ref type="bibr" target="#b7">Benferhat, Bouraoui, and Tabia (2015)</ref> for selecting a single preferred T -consistent subset of the ABox. In particular, the non-defeated repair is the union of the intersections of the repairs of S 1 , S 1 ∪ S 2 , . . . , S 1 ∪ • • • ∪ S n , where S 1 , . . . , S n is a partition of A into priority levels. Since Elect coincides with non-defeated semantics for scorestructured priorities <ref type="bibr">(Belabbes and Benferhat 2019)</ref>, the non-defeated repair is included in the grounded extension by Theorem 46; as the priority relation in Example 47 is scorestructured, the inclusion may be strict. Another proposal is the prioritized inclusion-based non-defeated repair, which coincides with the intersection of the optimal repairs. The grounded extension thus lies between the non-defeated and prioritized inclusion-based non-defeated repairs. Other proposals are either included in non-defeated, or are not sound approximations of the intersection of the optimal repairs. For partially preordered ABoxes, <ref type="bibr">Belabbes and Benferhat (2019)</ref> propose to go beyond Elect by intersecting the optimal repairs w.r.t. the score-structured priorities obtained by extending the original partial preorder into a total preorder. Interestingly, the obtained set of assertions corresponds exactly to the intersection of the completion-optimal repairs of the prioritized KB underpinned by the partially preordered KB (cf. appendix of <ref type="bibr" target="#b9">(Bienvenu and Bourgaux 2020)</ref>).</p><p>Argumentation frameworks derived from inconsistent KBs have been considered before. Arguments are generally defined as pairs of a support (subset of the KB) and a conclusion (consequence of the support), with various attack relations (see e.g., <ref type="bibr" target="#b0">(Amgoud and Cayrol 2002;</ref><ref type="bibr" target="#b28">Gorogiannis and Hunter 2011))</ref>. A series of papers starting with (Croitoru and Vesic 2013) links argumentation and inconsistency-tolerant querying of KBs, where the support of the argument is a subset of the ABox, the conclusion is a conjunction of facts entailed from the support and T , and α attacks β iff the conclusion of α is T -inconsistent with the support of β (in some papers, the argument consists of a whole derivation sequence, not just the support and conclusion). Stable and preferred extensions of such AFs correspond to repairs in the following sense: every such extension contains all those arguments whose supports are included in some particular repair. The work by <ref type="bibr" target="#b20">Croitoru, Thomopoulos, and Vesic (2015)</ref> shows that it is possible to use a preference relation over facts to define notions of optimal extensions for AFs induced by inconsistent KBs in this fashion, and observe that such extensions correspond to optimal repairs. While touching on similar topics, an essential difference between this line of work and our own lies in the definition of the AF. Indeed, in the AFs of <ref type="bibr">Croitoru et al.</ref>, even if we group together arguments with the same supports, we would still have an exponential number of arguments. By contrast, our translation can be carried out in polynomial time under reasonable assumptions, enabling us to import tractability results from ar-gumentation to OMQA. Moreover, since we use assertions as arguments, each priority relation yields a preference relation over arguments, enabling a transparent reduction to preference-based (SET)AFs. Croitoru, Thomopoulos, and Vesic do not discuss any connections to preference-based, nor set-based AFs, and our results on the equivalence between Pareto-optimal repairs and stable and preferred extensions of P(SET)AFs do not follow from their results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">Conclusion and Future Work</head><p>We have explored the problem of how to repair and query inconsistent KBs while taking into account a priority relation over facts. By leveraging connections to database repairs and abstract argumentation, we obtained a number of novel results for our setting, while at the same time contributing new results and research questions to these two areas.</p><p>After importing the notions of Pareto-, globally-, and completion-optimal repairs into the OMQA setting, our first contribution was a data complexity study that showed, unsurprisingly, that reasoning with optimal repairs is typically intractable and more challenging than for classical repairs. Nevertheless, there are several cases which are 'only' NP/ coNP, which suggests that it may be interesting to devise practical SAT-based procedures, as has been successfully done for some other forms of repair <ref type="bibr" target="#b12">(Bienvenu, Bourgaux, and Goasdoué 2014)</ref>. It would also be relevant to implement and experiment our proposed grounded semantics as well as the first-order approximations we suggested. Our complexity study could be expanded to include further ontology languages as well as the combined complexity measure.</p><p>In order to provide an elegant translation of prioritized KBs to argumentation frameworks, we were naturally led to consider preference-based (SET)AFs. We believe that the new results we established in Section 5, in particular, Theorem 32, should be of interest to the argumentation community. Moreover, the connections we established between extensions of PSETAFs and repairs of prioritized KBs motivate a more detailed study of PSETAFs (a concrete open question is whether Theorem 32 holds in the absence of transitivity). Furthermore, this correspondence could be leveraged to explore new notions of extension for (strongly) symmetric P(SET)AFs inspired by completion-or globally-optimal repairs, or to design benchmarks for (P)(SET)AFs via a translation from inconsistent KBs.</p><p>An important question that has not yet been satisfactorily answered in the database literature is which of the three forms of optimal repair is most natural, independently of their computational costs. While we do not claim to provide a definitive answer to this question, we believe that our result showing that Pareto-optimal repairs coincide with stable extensions (and often also preferred extensions) speaks to the interest of adopting Pareto-optimal repairs. We should emphasize that while phrased for KBs, the connection between Pareto-optimal repairs and stable / preferred extensions holds equally well for databases with denial constraints (such as functional dependencies). Moreover, the tractable grounded semantics we proposed can be applied not just to KBs but also to prioritized databases.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>and each a ∈ N I to a I ∈ ∆ I . The function • I is straightforwardly extended to general concepts and roles, e.g. (¬B 1 ) I</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>t. among those not yet considered, and add it to the current set if it does not lead to a contradiction. Example 6. Consider the prioritized KB K given on Figure 1. The sets of optimal repairs of K are as follows. CRep(K ) ={{Rattler(a), Carnivorous(a), EatMeat(a, b)}, {Boa(a), Carnivorous(a), EatMeat(a, b)}} GRep(K ) =CRep(K ) ∪ {{Mammal(a), Oviparous(a), Carnivorous(a), EatMeat(a, b)}} PRep(K ) =GRep(K ) ∪ { {Rattler(a), Herbivorous(a), EatPlant(a, b)}, {Boa(a), Herbivorous(a), EatPlant(a, b)}, {Mammal(a), Oviparous(a), Herbivorous(a), EatPlant(a, b)}} SRep(K) additionally contains repairs with Stone(b) instead of the EatPlant(a, b) or EatMeat(a, b) assertions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>TFigure 1 :</head><label>1</label><figDesc>Figure 1: Prioritized KB example. T formalizes knowledge about animal groups and A gives information about individuals a and b. An arrow from α to β indicates that α β while a dotted line indicates a conflict without priority between assertions.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Data complexity overview. Lower bounds hold for DL-Litecore. Upper bounds hold for DL-Lite H horn except those noted with * which hold only for DL-Litecore. Results for the SRep(K) case are stated (or are straightforward consequences of results) in (Bienvenu and Bourgaux 2016; Bienvenu and Rosati 2013; Livshits and Kimelfeld 2017). ‡ in P if is transitive † INCP if is score-structured</figDesc><table /><note><p>* INCP for DL-Lite H horn KBs with a scorestructured priority relation (see Section 4.4 for the definition)</p></note></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by <rs type="funder">Camille Bourgaux's CNRS</rs> <rs type="grantName">PEPS grant</rs> and the <rs type="funder">ANR AI Chair INTENDED</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_hzTATnz">
+					<orgName type="grant-name">PEPS grant</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Inferring from inconsistency in preference-based argumentation frameworks</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Amgoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cayrol</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Autom. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="125" to="169" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Rich preferencebased argumentation frameworks</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Amgoud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vesic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="585" to="606" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The DL-Lite family and relations</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Artale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="1" to="69" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Baader</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Horrocks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Sattler</surname></persName>
+		</author>
+		<title level="m">An Introduction to Description Logic</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Inconsistency-tolerant query answering: Rationality properties and computational complexity analysis</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Benferhat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Bouraoui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Croitoru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Papini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rocher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tabia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">JELIA</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Inconsistency handling for partially preordered ontologies: Going beyond Elect</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belabbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Benferhat</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>KSEM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Elect: An inconsistency handling approach for partially preordered lightweight ontologies</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belabbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Benferhat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LPNMR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">How to select one preferred assertional-based repair from inconsistent and prioritized DL-Lite knowledge bases?</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Benferhat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Bouraoui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tabia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Inconsistencytolerant querying of description logic knowledge bases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Reasoning Web</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Querying and repairing inconsistent prioritized knowledge bases: Complexity analysis and links with abstract argumentation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2003.05746</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>cs.LO</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Ontology-mediated query answering with data-tractable description logics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ortiz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Reasoning Web</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Tractable approximations of consistent query answering for robust ontologybased data access</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Querying inconsistent description logic knowledge bases under preferred repair semantics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Computing and explaining query answers over inconsistent DL-Lite knowledge bases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="page" from="563" to="644" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Inconsistency handling in ontologymediated query answering: A progress report</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<editor>DL.</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">An efficient incremental algorithm for generating all maximal independent sets in hypergraphs of bounded dimension</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Boros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Elbassioni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Gurvich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Khachiyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Parallel Processing Letters</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="253" to="266" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Inconsistency Handling in Ontology-Mediated Query Answering</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<pubPlace>France</pubPlace>
+		</imprint>
+		<respStmt>
+			<orgName>University of Paris-Saclay</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. Dissertation</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Tractable reasoning and efficient query answering in description logics: The DL-Lite family</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Autom. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="385" to="429" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Symmetric argumentation frameworks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Coste-Marquis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Devred</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECSQARU</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">What can argumentation do for inconsistent ontology query answering?</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Croitoru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vesic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SUM</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Introducing preference-based argumentation to inconsistent ontological knowledge bases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Croitoru</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thomopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vesic</surname></persName>
+		</author>
+		<editor>PRIMA.</editor>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Investigating subclasses of abstract dialectical frameworks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Diller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Keshavarzi Zafarghandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Linsbichler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Woltran</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Argument &amp; Computation</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="191" to="219" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Weight-based consistent query answering over inconsistent SHIQ knowledge bases</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowl. Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="335" to="371" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">On the acceptability of arguments and its fundamental role in nonmonotonic reasoning, logic programming and n-person games</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Dung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">77</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="321" to="358" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Identifying the minimal transversals of a hypergraph and related problems</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM J. Comput</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1278" to="1304" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Declarative cleaning of inconsistencies in information extraction</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Reiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vansummeren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Dichotomies in the complexity of preferred repairs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A comprehensive study of argumentation frameworks with sets of attacking arguments</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Flouris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bikakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">109</biblScope>
+			<biblScope unit="page" from="55" to="86" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Instantiating abstract argumentation with classical logic arguments: Postulates and properties</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gorogiannis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">175</biblScope>
+			<biblScope unit="issue">9-10</biblScope>
+			<biblScope unit="page" from="1479" to="1497" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">On generating all maximal independent sets</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Papadimitriou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yannakakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Process. Lett</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="119" to="123" />
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Preference in abstract argumentation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">W N</forename><surname>Van Der Torre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COMMA</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Acyclic argumentation: Attack = conflict + preference</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">W N</forename><surname>Van Der Torre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Weydert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECAI</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Detecting ambiguity in prioritized database repairing</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peterfreund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Inconsistency-tolerant semantics for description logics</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ruzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Savo</surname></persName>
+		</author>
+		<editor>RR.</editor>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Inconsistency-tolerant query answering in ontology-based data access</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ruzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Savo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal Web Sem</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="page" from="3" to="29" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Counting and enumerating (preferred) database repairs</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>PODS</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Complexity of consistent query answering in databases under cardinalitybased and incremental repair semantics</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lopatenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Complexity of inconsistency-tolerant query answering in Datalog+/-under cardinality-based repairs</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lukasiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Malizia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaicenavicius</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Policy-based inconsistency management in relational databases</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">V</forename><surname>Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Parisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pugliese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">I</forename><surname>Simari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">S</forename><surname>Subrahmanian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reason</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="501" to="528" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">OWL 2 Web Ontology Language profiles</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Motik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cuenca Grau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Horrocks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fokoue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lutz</surname></persName>
+		</author>
+		<ptr target="http://www.w3.org/TR/owl2-profiles/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C Recommendation</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">A generalization of Dung&apos;s abstract framework for argumentation: Arguing with sets of attacking arguments</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Nielsen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Parsons</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ArgMAS</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">W</forename><surname>Owl Working Group</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/owl2-overview/" />
+		<title level="m">OWL 2 Web Ontology Language: Document overview. W3C Recommendation</title>
+		<imprint>
+			<date type="published" when="2009-07-03">2009. July 3rd, 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Linking data to ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Data Semantics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="133" to="173" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">XSB: A system for effciently computing WFS</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Sagonas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Swift</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Warren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Freire</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LPNMR</title>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Prioritized repairing and consistent query answering in relational databases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marcinkowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Ann. Math. Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="209" to="246" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Learning how to correct a knowledge base from the edit history</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">P</forename><surname>Tanon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Suchanek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">A framework and positive results for IAR-answering</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Trivela</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoilos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vassalos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Efficient query answering over expressive inconsistent description logics</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Tsalapati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoilos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">B</forename><surname>Stamou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Koletsos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Ontologybased data access: A survey</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">SubRank: Subgraph Embeddings via a Subgraph Proximity Measure</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Oana</forename><surname>Balalau</surname></persName>
+							<email>oana.balalau@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria and École Polytechnique</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sagar</forename><surname>Goyal</surname></persName>
+							<email>sagoya@microsoft.com</email>
+							<affiliation key="aff1">
+								<orgName type="department">Microsoft</orgName>
+								<address>
+									<country key="CA">Canada</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">SubRank: Subgraph Embeddings via a Subgraph Proximity Measure</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A6C5E9D794E2CE71578FD6207942AB60</idno>
+					<idno type="DOI">10.1007/978-3-030-47426-3_38</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>subgraph embeddings • personalized pagerank</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Representation learning for graph data has gained a lot of attention in recent years. However, state-of-the-art research is focused mostly on node embeddings, with little effort dedicated to the closely related task of computing subgraph embeddings. Subgraph embeddings have many applications, such as community detection, cascade prediction, and question answering. In this work, we propose a subgraph to subgraph proximity measure as a building block for a subgraph embedding framework. Experiments on real-world datasets show that our approach, SubRank, outperforms state-of-the-art methods on several important data mining tasks.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In recent years we have witnessed the success of graph representation learning in many tasks such as community detection <ref type="bibr" target="#b17">[19,</ref><ref type="bibr" target="#b6">8]</ref>, link prediction <ref type="bibr" target="#b8">[10,</ref><ref type="bibr" target="#b18">20]</ref>, graph classification <ref type="bibr" target="#b2">[3]</ref>, and cascade growth prediction <ref type="bibr" target="#b11">[13]</ref>. A large body of work has focused on node embeddings, techniques that represent nodes as dense vectors that preserve the properties of nodes in the original graph <ref type="bibr" target="#b7">[9,</ref><ref type="bibr" target="#b3">5]</ref>. Representation learning of larger structures has generally been associated with embedding collections of graphs <ref type="bibr" target="#b2">[3]</ref>. Paths, subgraphs and communities embeddings have received far less attention despite their importance in graphs. In homogeneous graphs, subgraph embeddings have been used in community prediction <ref type="bibr" target="#b6">[8,</ref><ref type="bibr" target="#b0">1]</ref>, and cascade growth prediction <ref type="bibr" target="#b11">[13,</ref><ref type="bibr" target="#b4">6]</ref>. In heterogeneous graphs, subgraphs embedding have tackled tasks such as semantic user search <ref type="bibr" target="#b12">[14]</ref> and question answering <ref type="bibr">[4]</ref>.</p><p>Nevertheless, the techniques proposed in the literature for computing subgraph embeddings have at least one of the following two drawbacks: i ) they are supervised techniques and such they are dependent on annotated data and do not generalize to other tasks; ii ) they can tackle only a specific type of subgraph.</p><p>Part of this work was done while the authors were at Max Planck Institute for Informatics, Germany.</p><p>Approach. In this work, we tackle the problem of computing subgraph embeddings in an unsupervised setting, where embeddings are trained for one task and will be tested on different tasks. We propose a subgraph embedding method based on a novel subgraph proximity measure. Our measure is inspired by the random walk proximity measure Personalized PageRank <ref type="bibr" target="#b9">[11]</ref>. We show that our subgraph embeddings are comprehensive and achieve competitive performance on three important data mining tasks: community detection, link prediction, and cascade growth prediction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Contributions. Our salient contributions in this work are:</head><p>• We define a novel subgraph to subgraph proximity measure;</p><p>• We introduce a framework that learns comprehensive subgraphs embeddings;</p><p>• In a thorough experimental evaluation, we highlight the potential of our method on a variety of data mining tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Node embeddings. Methods for computing node embeddings aim to represent nodes as low-dimensional vectors that summarize properties of nodes, such as their neighborhood. The numerous embedding techniques differ in the computational model and in what properties of nodes are conserved. For example, in matrix factorization approaches, the goal is to perform dimension reduction on a matrix that encodes the pairwise proximity of nodes, where proximity is defined as adjacency <ref type="bibr" target="#b1">[2]</ref>, k-step transitions <ref type="bibr" target="#b5">[7]</ref>, or Katz centrality <ref type="bibr" target="#b14">[16]</ref>. Random walk approaches have been inspired by the important progress achieved in the NLP community in computing word embeddings <ref type="bibr" target="#b13">[15]</ref>. These techniques optimize node embeddings such that nodes co-occurring in short random walks in the graph have similar embeddings <ref type="bibr" target="#b16">[18,</ref><ref type="bibr" target="#b8">10]</ref>. Another successful technique is to take as input a node and an embedding similarity distribution and minimizes the KL-divergence between the two distributions <ref type="bibr" target="#b17">[19,</ref><ref type="bibr" target="#b18">20]</ref>.</p><p>Subgraph embeddings. A natural follow-up question is how to compute embeddings for larger structures in the graph, such as paths, arbitrary subgraphs, motifs or communities. In <ref type="bibr" target="#b0">[1]</ref>, the authors propose a method inspired by Para-graphVector <ref type="bibr" target="#b10">[12]</ref>, where each subgraph is represented as a collection of random walks. Subgraph and node embeddings are learned such that given a subgraph and a random walk, we can predict the next node in the walk using the subgraph embedding and the node embeddings. The approach is tested on link prediction and on community detection, using ego-networks to represent nodes. In <ref type="bibr" target="#b11">[13]</ref>, the authors present an end-to-end neural framework that given in input the cascade graph, predicts the future growth of the cascade for a given time period. A cascade graph is sampled for a set of random walks, which are given as input to a gated neural network to predict the future size of the cascade. <ref type="bibr" target="#b4">[6]</ref> is similarly an end-to-end neural framework for cascade prediction, but based on the Hawkes process. The method transforms the cascade into diffusion paths, where each path describes the process of information propagation within the observation time-frame. Another very important type of subgraph is a community and in <ref type="bibr" target="#b6">[8]</ref> community embeddings are represented as multivariate Gaussian distributions.</p><p>Graph embeddings. Given a collection of graphs, a graph embedding technique will learn representations for each graph. In <ref type="bibr" target="#b2">[3]</ref>, the authors propose an inductive framework for computing graph embeddings, based on training an attention network to predict a graph proximity measure, such as graph edit distance. Graph embeddings are closely related to graph kernels, functions that measure the similarity between pairs of graphs <ref type="bibr" target="#b19">[21]</ref>. Graph kernels are used together with kernel methods such as SVM to perform graph classification <ref type="bibr" target="#b20">[22]</ref>.</p><p>3 Feature Learning Framework</p><p>Preliminaries. PageRank <ref type="bibr" target="#b15">[17]</ref> is the stationary distribution of a random walk in which, at a given step, with a probability α, a surfer teleports to a random node and with probability 1 -α, moves along a randomly chosen outgoing edge of the current node. In Personalized PageRank (PPR) <ref type="bibr" target="#b9">[11]</ref>, instead of teleporting to a random node with probability α, the surfer teleports to a randomly chosen node from a set of predefined seed nodes. Let P r(u) be the PageRank of node u and P P R(u, v) be the PageRank score of node v personalized for seed node u.</p><p>Problem statement. Given a directed graph G = (V, E), a set of subgraphs S 1 , S 2 , • • • , S k of G and an integer d, compute the d-dimensional embeddings of the subgraphs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Subgraph Proximity Measure</head><p>We define a subgraph proximity measure inspired by Personalized PageRank. Let S i and S j be two subgraphs in a directed graph G. Their proximity in the graph is:</p><formula xml:id="formula_0">px(S i , S j ) = vi∈Si P R Si (v i ) vj ∈Sj P R Sj (v j ) • P P R(v i , v j ),<label>(1)</label></formula><p>where P R Si (v i ) represents the PageRank of node v i in the subgraph S i , and</p><formula xml:id="formula_1">P P R(v i , v j ) the PageRank of node v j personalized for node v i in the graph G.</formula><p>When considering how to define proximity between subgraphs, our intuition is as follows: important nodes in subgraph S i should be close to important nodes in subgraph S j . This condition is fulfilled as PageRank will give high scores to important nodes in the subgraphs and Personalized PageRank will give high scores to nodes that are "close" or "similar". We note that our measure is a similarity measure, hence subgraphs that are similar will receive a high proximity score. We choose the term proximity to emphasis that our measure relates to nearness in the graph, as it is computed using random walks.</p><p>We can interpret Eq. 1 using random walks, as follows: Alice is a random surfer in the subgraph S i , Bob is a random surfer in the subgraph S j , and Carol is a random surfer in graph G. Alice decides to send a message to Bob via Carol. Carol starts from the current node Alice is visiting (P R Si (v i )) and she will reach a node v j ∈ S j with probability P P R(v i , v j ). Bob will be there to receive the message with probability P R Sj (v j ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Normalized proximity. Given a collection of subgraphs</head><formula xml:id="formula_2">S = {S 1 , S 2 , • • • S k },</formula><p>we normalize the proximity px(S i , S j ), ∀j ∈ 1, k such that it can be interpreted as a probability distribution. The normalized proximity for a subgraph S i is:</p><formula xml:id="formula_3">px(S i , S j ) = px(S i , S j ) S k ∈S px(S i , S k ) (2)</formula><p>Rank of a subgraph. Similarly to PageRank, our proximity can inform us of the importance of a subgraph. The normalized proximity given a collection of subgraphs S 1 , S 2 , • • • S k can be expressed as a stochastic matrix, where each row i encodes the normalized proximity given subgraph S i . The importance of subgraph S i can be computed by summing up the elements of column i.</p><p>Sampling according to the proximity measure. Given a subgraph S i in input, we present a procedure for efficiently sampling px(S i , •) introduced in Eq. 1. We suppose that all the Pagerank vectors of the subgraphs {S 1 , S 2 , • • • S k } have been precomputed. We first select a node n i in S i according to distribution P R Si . Secondly, we start a random walk from n i in the graph G and we select n j , the last node in the walk before the teleportation. Lastly, node n j may belong to several subgraphs S j 1 , S j 2 • • •. We return a subgraph S j according to the normalized distribution P R S j 1 (n j ), P R S j 2 (n j ), • • •. The procedure doesn't require computing the Personalized Pagerank vectors, which saves us O(n 2 ) space. We shall use this procedure for computing embeddings, thus avoiding computing and storing the full proximity measure px.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Subgraph Embeddings via SubRank</head><p>Given a graph G = (V, E) and set of subgraphs of G, S = {S 1 , S 2 , • • • , S k }, we learn their representations as dense vectors, i.e. as embeddings. We extend the framework in <ref type="bibr" target="#b18">[20]</ref> proposed for computing node embeddings to an approach for subgraph embeddings. In <ref type="bibr" target="#b18">[20]</ref>, the authors propose to learn node embeddings such that the embeddings preserve an input similarity distribution between nodes. The similarities of a node v to any other node in the graph are represented by the similarity distribution sim G , where w∈V sim G (v, w) = 1. The corresponding embedding similarity distribution is sim E . The optimization function of the learning algorithm minimizes the Kullback-Leibler (KL) divergence between the two proximity distributions:</p><formula xml:id="formula_4">v∈V KL(sim G (v, •), sim E (v, •))</formula><p>The authors propose several options for instantiating sim G , such as Personalized PageRank and adjacency similarity. The similarity between embeddings, sim E , is the normalized dot product of the vectors.</p><p>In order to adapt this approach to our case, we define the subgraph-tosubgraph proximity sim G to be the normalized proximity presented in Eq. 2. The embedding similarity sim E is computed in the same manner and the optimization function now minimizes the divergence between distributions defined on our input subgraphs, i.e. sim G , sim E : S × S → [0, 1]. In our experimental evaluation we use this method, which we refer to as SubRank. We note that sim G will not be fully computed, but approximated using the sampling procedure presented in Section 3.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Applications</head><p>Proximity of ego-networks. Two very important tasks in graph mining are community detection and link prediction. Suppose Alice is a computer scientist and she joins Twitter. She starts following the updates of Andrew Ng, but also the updates of her friends, Diana and John. Bob is also a computer scientist on Twitter and he follows Andrew Ng, Jure Leskovec and his friend Julia. As shown in Figure <ref type="figure">1</ref>, there is no path in the directed graph between Alice and Bob. A pathbased similarity measure between nodes Alice and Bob, such as Personalized PageRank, will return similarity 0, while it will return high values between Alice and Andrew Ng and between Bob and Andrew Ng. An optimization algorithm for computing node embeddings will have to address this trade-off, with a potential loss in the quality of the representations. Thus, we might miss that both Alice and Bob are computer scientists. To address this issue we capture the information stored in the neighbors of the nodes by considering ego-networks. Therefore in our work, we represent a node v as its ego network of size k (the nodes reachable from v in k steps). In Section 4, we perform quantitative analysis to validate our intuition.</p><p>Fig. <ref type="figure">1</ref>: Illustrative example for ego-network proximity.</p><p>Proximity of cascade subgraphs. In a graph, an information cascade can be modeled as a directed tree, where the root represents the original content creator, and the remaining nodes represent the content reshares. When considering the task of predicting the future size of the cascade, the nodes already in the cascade are important, as it very likely their neighbors will be affected by the information propagation. However, nodes that have reshared more recently the information are more visible to their neighbors. When running PageRank on a directed tree, we observe that nodes on the same level have the same score, and the score of nodes increases as we increase the depth. Hence, two cascade trees will have a high proximity score px if nodes that have joined later the cascades (i.e. are on lower levels in the trees) are "close" or "similar" according to Personalized Pagerank. In Section 5, we perform quantitative analysis and we show that our approach gives better results than a method that gives equal importance to all nodes in the cascade.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Feature Learning for Ego-networks</head><p>Datasets. We perform experiments on five real-world graphs, described below. We report their characteristics in Table <ref type="table" target="#tab_1">1</ref>.</p><p>• Citeseer<ref type="foot" target="#foot_0">3</ref> is a citation network created from the CiteSeer digital library. Nodes are publications and edges denote citations. The node labels represent fields in computer science. • Cora 3 is also a citation network and the node labels represent subfields in machine learning. Competitors. We evaluate our method, SubRank, against several stateof-the-art methods for node and subgraph embedding computation. For each method, we used the code provided by the authors. We compare with:</p><p>• DeepWalk <ref type="bibr" target="#b16">[18]</ref> learns node embeddings by sampling random walks, and then applying the SkipGram model. The parameters are set to the recommended values, i.e. walk length t = 80, γ = 80, and window size w = 10. • node2vec <ref type="bibr" target="#b8">[10]</ref> is a hyperparameter-supervised approach that extends Deep-Walk. We fine-tuned the hyperparameters p and q on each dataset and task.</p><p>In addition, r = 10, l = 80, k = 10, and the optimization is run for an epoch.</p><p>• LINE <ref type="bibr" target="#b17">[19]</ref> proposes two proximity measures for computing two d-dimensional vectors for each node. In our experiments, we use the second-order proximity, as it can be used for both directed and undirected graphs. We run experiments with T = 1000 samples and s = 5 negative samples, as described in the paper.</p><p>• VERSE <ref type="bibr" target="#b18">[20]</ref> learns node embeddings that preserve the proximity of nodes in the graph. We use Personalized PageRank as a proximity measure, the default option proposed in the paper. We run the learning algorithm for 10 5 iterations. • VerseAvg is a adaption of VERSE, in which the embedding of a node is the average of the VERSE embeddings of the nodes in its ego network. • sub2vec <ref type="bibr" target="#b0">[1]</ref> computes subgraph embeddings and for the experimental evaluation, we compute the embeddings of the ego networks. Using the guidelines of the authors, for Cora, Citeseer and Polblogs we select ego networks of size 2 and for the denser networks Cithep and DBLP, ego networks of size 1.</p><p>For the first four methods, node embeddings are used to represent nodes. For sub2vec, SubRank and VerseAvg, the ego network embedding is the node representation. The embeddings are used as node features for community detection and link prediction. We compute 128 dimensional embeddings.</p><p>Parameter setting for SubRank. We represent each node by its ego network of size 1. We run the learning algorithm for 10 5 iterations. Our code is public. <ref type="foot" target="#foot_3">6</ref>Running time SubRank. In the interest of space, we report only the time required by SubRank for computing ego network embeddings. We run the experiments on a Intel Xeon CPU E5-2667 v4 @ 3.20GHz, using 40 threads. The running times are as follows: 1m40s Citeseer, 1m26s Cora, 49s Polblogs, 19m39s for Cithep and 39m45s for DBLP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Node Clustering</head><p>We assess the quality of the embeddings in terms of their ability to capture communities in a graph. For this, we use the k-means algorithm to cluster the nodes embedded in the d-dimensional space. In Table <ref type="table" target="#tab_2">2</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Node Classification</head><p>Node classification is the task of predicting the correct node labels in a graph.</p><p>For each dataset, we try several configurations by varying the percentage of nodes used in training. We evaluate the methods using the micro and macro F 1 score, and we report the micro F 1, as both measures present similar trends. The results are presented in Table <ref type="table">3</ref>. On Citeseer and Cora SubRank significantly outperforms the other methods. On Polblogs, SubRank performs similarly to the other baselines, even though the embeddings achieved a low NMI score. On DBLP, SubRank is the second best method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Link prediction</head><p>To create training data for link prediction, we randomly remove 10% of edges, ensuring that each node retains at least one neighbor. This set represents the ground truth in the test set, while we take the remaining graph as the training set. In addition, we randomly sample an equal number of node pairs that have no edge connecting them as negative samples in our test set. We then learn embeddings on the graph without the 10% edges. Next, for each edge (u, v) in the training or the test set, we obtain the edge features by computing the Hadamard product of the embeddings for u and v. The Hadamard product has shown a better performance than other operators for this task <ref type="bibr" target="#b8">[10,</ref><ref type="bibr" target="#b18">20]</ref>. We report the accuracy of the link prediction task in Table <ref type="table">4</ref>. Our method achieves the best performance on 4 out of 5 datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Feature Learning for Information Cascades</head><p>Given in input: i ) a social network G = (V, E), captured at a time t 0 , ii ) a set of information cascades C that appear in G after the timestamp t 0 , and that are captured after t 1 duration from their creation, iii ) a time window t 2 , our goal is to predict the growth of a cascade, i.e. the number of new nodes a cascade acquires, at t 1 + t 2 time from its creation. Note that given a cascade</p><p>• In addition, we consider the node embedding method VERSE <ref type="bibr" target="#b18">[20]</ref>, as one of the top-performing baseline in the previous section. The node embeddings are learned on the original graph and a cascade is represented as the average of the embeddings of the nodes it contains. We then train a multi-layer perceptron (MLP) regressor to predict the growth of the cascade.</p><p>Parameter setting for SubRank. We recall that our subgraph proximity measure requires the computation of PPR of nodes in the graph and the PR of nodes in the subgraphs. For this task, we consider the PPR of nodes in the global graph and the PR of nodes in the cascades. We obtain the cascade embeddings which are then used to train an MLP regressor. For both VERSE and SubRank we perform a grid search for the optimal parameters of the regressor.</p><p>We report the mean squared error (MSE) on the logarithm of the cascade growth value, as done in previous work on cascade prediction <ref type="bibr" target="#b11">[13,</ref><ref type="bibr" target="#b4">6]</ref> in Table <ref type="table">5</ref>. We observe that SubRank out-performs VERSE thus corroborating our intuition that nodes appearing later in a cascade should be given more importance. The best MSE overall is obtained by the end-to-end framework DeepHawkes which is expected as the method is tailored for the task. We note, however, that SubRank achieves the best results on AMiner.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this work, we introduce a new measure of proximity for subgraphs and a framework for computing subgraph embeddings. In a departure from previous work, we focus on general-purpose embeddings, and we shed light on why our method is suited for several data mining tasks. Our experimental evaluation shows that the subgraph embeddings achieve competitive performance on three downstream applications: community detection, link prediction, and cascade prediction.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>•</head><label></label><figDesc>Polblogs 4 is a directed network of hyperlinks between political blogs discussing US politics. The labels correspond to republican and democrat blogs.• Cithep 5 is a directed network of citations in high energy physics phenomenology. The network does not have ground-truth communities. • DBLP 5 is a co-authorship network where two authors are connected if they published at least one paper together. The communities are conferences in which the authors have published.</figDesc><table><row><cell>Dataset</cell><cell>Type</cell><cell>|V | |E| |L|</cell></row><row><cell>Citeseer</cell><cell>Citation</cell><cell>3.3K 4.7K 6</cell></row><row><cell>Cora</cell><cell>Citation</cell><cell>2.7K 5.4K 7</cell></row><row><cell cols="3">Polblogs Hyperlink 1.4K 19K 2</cell></row><row><cell>Cithep</cell><cell>Citation</cell><cell>34K 421k 1</cell></row><row><cell cols="3">DBLP Co-authorship 66K 542K 20</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Dataset description: type, vertices V , edges E, node labels L.</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>we report the Normalized Mutual Information (NMI) with respect to the original label distribution. On Polblogs, SubRank has a low NMI, while on Citeseer and Cora it outperforms the other methods. On DBLP it has a comparative performance with VERSE. Normalized Mutual Information (NMI) for node clustering.</figDesc><table><row><cell></cell><cell>Dataset</cell></row><row><cell cols="2">Method Citeseer Cora Polblogs DBLP</cell></row><row><cell cols="2">DeepWalk 0.015 0.018 0.013 0.314</cell></row><row><cell cols="2">node2vec 0.023 0.100 0.013 0.336</cell></row><row><cell>LINE</cell><cell>0.084 0.208 0.448 0.284</cell></row><row><cell>VERSE</cell><cell>0.103 0.257 0.024 0.363</cell></row><row><cell cols="2">VerseAvg 0.125 0.310 0.318 0.360</cell></row><row><cell>sub2vec</cell><cell>0.007 0.004 0.001 0.001</cell></row><row><cell cols="2">SubRank 0.179 0.347 0.021 0.357</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://linqs.soe.ucsc.edu/data</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>http://networkrepository.com/polblogs.php</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>https://snap.stanford.edu/data</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_3"><p>https://github.com/nyxpho/subrank</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_4"><p>https://github.com/chengli-um/DeepCas</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Datasets. We select for evaluation two datasets from the literature:</p><p>• AMiner <ref type="bibr" target="#b11">[13]</ref>   Competitors. We compare SubRank with the following state-of-the-art methods for the task of predicting the future size of cascades:</p><p>• DeepCas <ref type="bibr" target="#b11">[13]</ref> is an end-to-end neural network framework that given in input the cascade graph, predicts the future growth of the cascade for a given period. The parameters are set to the values specified in the paper: k = 200, T = 10, mini-batch size is 5 and α = 0.01. • DeepHawkes <ref type="bibr" target="#b4">[6]</ref> is similarly an end-to-end deep learning framework for cascade prediction based on the Hawkes process. We set the parameters to the default given by the authors: the learning rate for user embeddings is 5 × 10 -4 and the learning rate for other variables is 5 × 10 -3 .</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Sub2vec: Feature learning for subgraphs</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Adhikari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ramakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Prakash</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Pacific-Asia Conference on Knowledge Discovery and Data Mining</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="170" to="182" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Distributed large-scale natural graph factorization</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shervashidze</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Narayanamurthy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Josifovski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Smola</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd international conference on World Wide Web</title>
+		<meeting>the 22nd international conference on World Wide Web</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="37" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Unsupervised inductive graph-level representation learning via graph-graph proximity 4</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Marinovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chopra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weston</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1406.3676</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Question answering with subgraph embeddings</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">A comprehensive survey of graph embedding: Problems, techniques, and applications</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C C</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1616" to="1637" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Deephawkes: Bridging the gap between prediction and understanding of information cascades</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Cheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM on Conference on Information and Knowledge Management</title>
+		<meeting>the 2017 ACM on Conference on Information and Knowledge Management</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1149" to="1158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Grarep: Learning graph representations with global structural information</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th ACM international on conference on information and knowledge management</title>
+		<meeting>the 24th ACM international on conference on information and knowledge management</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="891" to="900" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Learning community embedding with community detection and node embedding on graphs</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cavallari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cambria</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM on Conference on Information and Knowledge Management</title>
+		<meeting>the 2017 ACM on Conference on Information and Knowledge Management</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="377" to="386" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Graph embedding techniques, applications, and performance: A survey</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ferrara</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowledge-Based Systems</title>
+		<imprint>
+			<biblScope unit="volume">151</biblScope>
+			<biblScope unit="page" from="78" to="94" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">node2vec: Scalable feature learning for networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leskovec</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining</title>
+		<meeting>the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="855" to="864" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Topic-sensitive Pagerank: A context-sensitive ranking algorithm for Web search</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Haveliwala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TKDE</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Distributed representations of sentences and documents</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International conference on machine learning</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1188" to="1196" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Deepcas: An end-to-end predictor of information cascades</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Mei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th international conference on World Wide Web</title>
+		<meeting>the 26th international conference on World Wide Web</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="577" to="586" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Subgraph-augmented path embedding for semantic user search on heterogeneous social network</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">W</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C C</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ying</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 World Wide Web Conference</title>
+		<meeting>the 2018 World Wide Web Conference</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1613" to="1622" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Distributed representations of words and phrases and their compositionality</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="page" from="3111" to="3119" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Asymmetric transitivity preserving graph embedding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining</title>
+		<meeting>the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1105" to="1114" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">The PageRank citation ranking: Bringing order to the Web</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Page</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Winograd</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+		<respStmt>
+			<orgName>Stanford InfoLab</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Tech. rep</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Deepwalk: Online learning of social representations</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Perozzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Al-Rfou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Skiena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 20th ACM SIGKDD international conference on Knowledge discovery and data mining</title>
+		<meeting>the 20th ACM SIGKDD international conference on Knowledge discovery and data mining</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="701" to="710" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Line: Large-scale information network embedding</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Qu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Mei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th international conference on world wide web</title>
+		<meeting>the 24th international conference on world wide web</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1067" to="1077" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Verse: Versatile graph embeddings from similarity measures</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tsitsulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mottin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Karras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Müller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 World Wide Web Conference</title>
+		<meeting>the 2018 World Wide Web Conference</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="539" to="548" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Graph kernels</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">V N</forename><surname>Vishwanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">N</forename><surname>Schraudolph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kondor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Borgwardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="1201" to="1242" />
+			<date type="published" when="2010-04">Apr. 2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Retgk: Graph kernels based on return probabilities of random walks</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nehorai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3964" to="3974" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

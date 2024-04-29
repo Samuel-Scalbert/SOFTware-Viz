@@ -1,0 +1,1175 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Stochastic smoothing of the top-K calibrated hinge loss for deep imbalanced classification</title>
+				<funder ref="#_DvdkaVa">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Camille</forename><surname>Garcin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Maximilien</forename><surname>Servajean</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Alexis</forename><surname>Joly</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Joseph</forename><surname>Salmon</surname></persName>
+						</author>
+						<title level="a" type="main">Stochastic smoothing of the top-K calibrated hinge loss for deep imbalanced classification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">2EAC609B129C588CA182FF4630882112</idno>
+					<note type="submission">Submitted on 25 Oct 2022</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div><head n="1.">Introduction</head><p>Fine-grained visual categorization (FGVC) has recently attracted a lot of attention <ref type="bibr" target="#b34">(Wang et al., 2022)</ref>, in particular in the biodiversity domain <ref type="bibr" target="#b14">(Horn et al., 2018;</ref><ref type="bibr" target="#b10">Garcin et al., 2021;</ref><ref type="bibr" target="#b32">Van Horn et al., 2015)</ref>. In FGVC, one aims to classify an image into subordinate categories (such as plant or bird species) that contain many visually similar instances. The intrinsic ambiguity among the labels makes it difficult to obtain high levels of top-1 accuracy as is typically the case with standard datasets such as CIFAR10 <ref type="bibr" target="#b17">(Krizhevsky, 2009)</ref> or <ref type="bibr">MNIST (LeCun et al., 1998)</ref>. For systems like Merlin ( <ref type="bibr" target="#b32">Van Horn et al., 2015)</ref> or Pl@ntNet <ref type="bibr" target="#b0">(Affouard et al., 2017)</ref>, due to the difficulty of the task, it is generally relevant to provide the user with a set of classes in the hope that the true class belongs to that set. In practical applications, the display limit of the device only allows to give a few labels back to the user. A straightforward strategy consists in returning a set of K classes for each input, where K is a small integer with respect to the total number of classes. Such classifiers are called top-K classifiers, and their performance is evaluated with the well known top-K accuracy <ref type="bibr" target="#b18">(Lapin et al., 2015;</ref><ref type="bibr" target="#b28">Russakovsky et al., 2015)</ref>. While such a metric is very popular for evaluating applications, common learning strategies typically consist in learning a deep neural network with the cross-entropy loss, neglecting the top-K constraint in the learning step.</p><p>Yet, recent works have focused on optimizing the top-K accuracy directly. <ref type="bibr" target="#b18">Lapin et al. (2015)</ref> have introduced the top-K hinge loss and a convex upper-bound, following techniques introduced by <ref type="bibr" target="#b31">Usunier et al. (2009)</ref> for ranking. A limit of this approach was raised by <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>, as they have shown that the top-K hinge loss by <ref type="bibr" target="#b18">Lapin et al. (2015)</ref> can not be directly used for training a deep neural network. The main arguments put forward by the authors to explain this practical limitation are: (i) the non-smoothness of the top-K hinge loss and (ii), the sparsity of its gradient. Consequently, they propose a smoothed alternative adjustable with a temperature parameter. However, their smoothing procedure is computationally costly when K increases (as demonstrated in our experiments), despite the efficient algorithm they provide to cope with the combinatorial nature of the loss. Moreover, this approach has the drawback to be specific to the top-K hinge loss introduced by <ref type="bibr" target="#b18">Lapin et al. (2015)</ref>.</p><p>In contrast, we propose a new top-K loss that relies on the smoothing of the top-K operator (the operator returning the K-th largest value of a vector). The smoothing framework we consider, the perturbed optimizers <ref type="bibr" target="#b3">(Berthet et al., 2020)</ref>, can be used to smooth variants of the top-K hinge loss but could independently be considered for other learning tasks such as K-nearest neighbors or top-K recommendation <ref type="bibr" target="#b12">(He et al., 2019;</ref><ref type="bibr" target="#b8">Covington et al., 2016)</ref>. Additionally, we introduce a simple variant of our loss to deal with imbalanced datasets. Indeed, for many real-world applications, a longtailed phenomenon appears <ref type="bibr" target="#b27">(Reed, 2001)</ref>: a few labels enjoy a lot of items (e.g., images), while the vast majority of the labels receive only a few items, see for instance a dataset like <software ContextAttributes="used">Pl@ntnet</software>-300k <ref type="bibr" target="#b10">(Garcin et al., 2021)</ref> for a more quantitative overview. We find that the loss by <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> fails to provide satisfactory results on the tail classes in our experiments. On the contrary, our proposed loss based on uneven margins outperforms the loss from <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> and the LDAM loss <ref type="bibr" target="#b5">(Cao et al., 2019)</ref>, a loss designed for imbalance cases known for its very good performance in fine-grained visual classification challenges <ref type="bibr" target="#b35">(Wang et al., 2021)</ref>. To the best of our knowledge, our proposed loss is the first loss function tackling both the top-K classification and class imbalance problems jointly.</p></div>
+<div><head n="2.">Related work</head><p>Several top-K losses have been introduced and experimented with in <ref type="bibr" target="#b18">(Lapin et al., 2015;</ref><ref type="bibr">2016;</ref><ref type="bibr">2017)</ref>. However, the authors assume that the inputs are features extracted from a deep neural network and optimize their losses with SDCA <ref type="bibr" target="#b30">(Shalev-Shwartz &amp; Zhang, 2013)</ref>. <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> have shown that the top-K hinge loss from <ref type="bibr" target="#b18">Lapin et al. (2015)</ref> could not be directly used in a deep learning optimization pipeline. Instead, we are interested in end-to-end deep neural network learning. The state-of-the art top-K loss for deep learning is that of <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>, which is a smoothing of a top-K hinge loss by <ref type="bibr" target="#b18">Lapin et al. (2015)</ref>. The principle of the top-K loss of <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> is based on the rewriting the top-K hinge loss of <ref type="bibr" target="#b18">Lapin et al. (2015)</ref> as a difference of two maxes on a combinatorial number of terms, smooth the max with the logsumexp, and use a divide-and-conquer approach to make their loss tractable. Instead, our approach relies on smoothing the top-K operator and using this smoothed top-K operator on a top-K calibrated loss recently proposed by <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref>. Our approach could be used out-of-the box with other top-K hinge losses. In contrast, the smoothing method of <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> is tailored for the top-K hinge loss of <ref type="bibr" target="#b18">Lapin et al. (2015)</ref>, which is shown to be not top-K calibrated in <ref type="bibr" target="#b38">(Yang &amp; Koyejo, 2020)</ref>.</p><p>For a general theory of smoothing in optimization, we refer the reader to <ref type="bibr" target="#b1">Beck &amp; Teboulle (2012)</ref>; <ref type="bibr" target="#b25">Nesterov (2005)</ref> while for details on perturbed optimizers, we refer the reader to <ref type="bibr" target="#b3">Berthet et al. (2020)</ref> and references therein. In the literature, other alternatives have been proposed to perform top-K smoothing. <ref type="bibr" target="#b37">Xie et al. (2020)</ref> formulate the smooth top-K operator as the solution of a regularized optimal trans-port problem between well-chosen discrete measures. The authors rely on a costly optimization procedure to compute the optimal plan. <ref type="bibr" target="#b36">Xie &amp; Ermon (2019)</ref> propose a smoothing of the top-K operator through K successive softmax. Besides the additional cost with large K, the computation of K successive softmax brings numerical instabilities.</p><p>Concerning imbalanced datasets, several recent contributions have focused on architecture design <ref type="bibr" target="#b39">(Zhou et al., 2020;</ref><ref type="bibr" target="#b35">Wang et al., 2021)</ref>. Instead, we focus here on the design of the loss function and leverage existing popular neural networks architectures. A popular loss for imbalanced classification is the focal loss <ref type="bibr" target="#b23">(Lin et al., 2017)</ref> which is a modification of the cross entropy where well classified-examples induce a smaller loss, putting emphasis on difficult examples. Instead, we use uneven margins in our formulation, requiring examples of the rarest classes to be well classified by a larger margin than examples of the most common classes. Uneven margin losses have been studied in the binary case in <ref type="bibr" target="#b29">(Scott, 2012;</ref><ref type="bibr" target="#b22">Li &amp; Shawe-Taylor, 2003;</ref><ref type="bibr" target="#b16">Iranmehr et al., 2019)</ref>. For the multi-class setting, the LDAM loss <ref type="bibr" target="#b5">(Cao et al., 2019</ref>) is a widely used uneven margin loss which can be seen as a cross entropy incorporating uneven margins in the logits. Instead, our imbalanced top-K loss relies on the smoothing of the top-K operator.</p></div>
+<div><head n="3.">Proposed method</head></div>
+<div><head n="3.1.">Preliminaries</head><p>Following classical notation, we deal with multi-class classification that considers the problem of learning a classifier from X to [L] ≜ {1, . . . , L} based on n pairs of (input, label) i.i.d. sampled from a joint distribution P:</p><formula xml:id="formula_0">(x 1 , y 1 ), . . . , (x n , y n ) ∈ X × [L],</formula><p>where X is the input data space (X is the space of RGB images of a given size in our vision applications) and the y's are the associated labels among L possible ones.</p><p>For a training pair of observed features and label (x, y), s ∈ R L refers to the associated score vector (often referred to as logits). From now on, we use bold font to represent vectors. For k ∈ [L], s k refers to the score attributed to the k-th class while s y refers to the score of the true label and s (k) refers to the k-th largest score<ref type="foot" target="#foot_5">1</ref> , so that s</p><formula xml:id="formula_1">(1) ≥ • • • ≥ s (k) ≥ • • • ≥ s (L) . For K ∈ [L],</formula><p>we define top K and topΣ K , functions from R L to R as:</p><formula xml:id="formula_2">top K : s → s (K)</formula><p>(1)</p><formula xml:id="formula_3">topΣ K : s → k∈[K] s (k) .<label>(2)</label></formula><p>We write 1 L = (1, . . . , 1) ⊤ ∈ R L . For s ∈ R L , the gradient ∇top K (s) is a vector with a single one at the (a) Top-K:  <ref type="table" target="#tab_1">1</ref>, for L = 3 classes, K = 2 and a true label y = 3 (corresponding to the upper corner of the triangles). For visualization the loss are rescaled between 0 and 1, and the level sets are restricted to vector s ∈ 2 • ∆3. The losses have been harmonized to display a margin equal to 1. For our proposed loss, we have averaged the level sets over 100 replications to avoid meshing artifacts.</p><formula xml:id="formula_4">ℓ = ℓ K . s = (2, 0, 0) s = (0, 2, 0) s = (0,</formula><p>K-th largest coordinate of s and 0 elsewhere (denoted as arg top K (s)). Similarly, ∇topΣ K (s) is a vector with K ones at the K largest coordinates of s and 0 elsewhere (denoted as arg topΣ K (s)).</p><p>The top-K loss (a 0/1 loss) can now be written</p><formula xml:id="formula_5">ℓ K (s, y) = 1 {top K (s)&gt;sy} .<label>(3)</label></formula><p>This loss reports an error when the score of the true label y is not among the K-th largest scores. One would typically seek to minimize this loss. Yet, being a piece-wise constant function w.r.t. to its first argument 2 , numerical difficulties make solving this problem particularly hard in practice.</p><p>In what follows we recall some popular surrogate top-K losses from the literature before providing new alternatives. We summarize such variants in Table <ref type="table" target="#tab_1">1</ref> and illustrate their differences in Figure <ref type="figure">1</ref> for L = 3, K = 2 (see also Figure <ref type="figure">6</ref> in Appendix, for L = 3, K = 1).</p><p>A first alternative introduced by Lapin et al. ( <ref type="formula">2015</ref>) is a relaxation generalizing the multi-class hinge loss introduced by <ref type="bibr" target="#b9">Crammer &amp; Singer (2001)</ref> to the top-K case:</p><formula xml:id="formula_6">ℓ K Hinge (s, y) = 1 + top K (s \y ) -s y + ,<label>(4)</label></formula><p>where s \y is the vector in R d-1 obtained by removing the y-th coordinate of s, and (•) + ≜ max(0, •). The authors propose a convex loss function ℓ K CVXHinge (see Table <ref type="table" target="#tab_1">1</ref>) which upper bounds the loss function ℓ K Hinge . <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> have proposed a smoothed counterpart of ℓ K Hinge , relying on a recursive algorithm tailored for their combinatorics smoothed formulation. Yet, a theoretical 2 See for instance Figure <ref type="figure">1a</ref> for a visualization.</p></div>
+<div><head>limitation of ℓ K</head><p>Hinge and ℓ K CVXHinge was raised by <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref> showing that they are not top-K calibrated. Top-K calibration is a property defined by <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref>. We recall some technical details in Appendix A and the precise definition of top-K calibration is given in Definition A.2.</p><p>We let</p><formula xml:id="formula_7">∆ L ≜ {π ∈ R L : k∈[L] π k = 1, π k ≥ 0}</formula><p>denote the probability simplex of size L. For a score s ∈ R L and π ∈ ∆ L representing the conditional distribution of y given x, we write the conditional risk at x ∈ X as R ℓ|x (s, π) = E y|x∼π (ℓ(s, y)) and the (integrated) risk as R ℓ (f ) ≜ E (x,y)∼P [ℓ(f (x), y)] for a scoring function f : X → R L . The associated Bayes risks are defined respectively by</p><formula xml:id="formula_8">R * ℓ|x (π) ≜ inf s∈R L R ℓ|x (s, π) and R * ℓ ≜ inf f :X →R L R ℓ (f ).</formula><p>The following result by <ref type="bibr" target="#b38">(Yang &amp; Koyejo, 2020)</ref> shows that a top-K calibrated loss is top-K consistent, meaning that a minimizer of such a loss would also lead to Bayes optimal classifiers: Theorem 3.1. <ref type="bibr">(Yang &amp; Koyejo, 2020, Theorem 2.2</ref>). Suppose ℓ is a nonnegative top-K calibrated loss function. Then, ℓ is top-K consistent, i.e., for any sequence of measurable functions f (n) : X → R L , we have:</p><formula xml:id="formula_9">R ℓ f (n) → R * ℓ =⇒ R ℓ K f (n) → R * ℓ K .</formula><p>In their paper, <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref> propose a slight modification of the multi-class hinge loss ℓ K Hinge and show that it is top-K calibrated:</p><formula xml:id="formula_10">ℓ K Cal. Hinge (s, y) = (1 + top K+1 (s) -s y ) + .<label>(5)</label></formula><p>The loss ℓ K Cal. Hinge thus has an appealing theoretical guaran-  <ref type="formula" target="#formula_6">4</ref>), <ref type="bibr" target="#b18">(Lapin et al., 2015)</ref> ℓ K CVXHinge (s, y) <ref type="formula">17</ref>), <ref type="bibr" target="#b38">(Yang &amp; Koyejo, 2020</ref>) tee that ℓ K Hinge does not have. Therefore we will use ℓ K</p><formula xml:id="formula_11">ℓ γ focal (s, y) (1 -log [ℓCE(s, y)] γ ℓCE(s, y) γ (Cao et al., 2019) ℓ K Hinge (s, y) 1 + top K (s \y ) -sy + K Equation (</formula><formula xml:id="formula_12">1 K k∈[K] top k (1 L -δy + s) -sy + K (Lapin et al., 2015) ℓ K Cal. Hinge (s, y) (1 + top K+1 (s) -sy)+ K Equation (</formula><formula xml:id="formula_13">ℓ K,τ Smoothed Hinge (s, y) τ ln A⊂[L],</formula><p>Cal. Hinge as the starting point of our smoothing proposal.</p></div>
+<div><head n="3.2.">New loss for balanced top-K classification</head><p>Berrada et al. ( <ref type="formula">2018</ref>) have shown experimentally that a deep learning model trained with ℓ K Hinge does not learn. The authors claim that the reason for this is the non smoothness of the loss and the sparsity of its gradient.</p><p>We also show in Table <ref type="table" target="#tab_3">2</ref> that a deep learning model trained with ℓ K Cal. Hinge yields poor results. The problematic part stems from the top-K function which is non-smooth and whose gradient has only one non-zero element (that is equal to one). In this paper we propose to smooth the top-K function with the perturbed optimizers method developed by <ref type="bibr" target="#b3">Berthet et al. (2020)</ref>. We follow this strategy due to its flexibility and to the ease of evaluating associated first order information (a crucial point for deep neural network frameworks). Definition 3.2. For a smoothing parameter ϵ &gt; 0, we define for any s ∈ R L the ϵ-smoothed version of topΣ K as:</p><formula xml:id="formula_14">topΣ K,ϵ (s) ≜ E Z [topΣ K (s + ϵZ)] ,<label>(6)</label></formula><p>where Z is a standard normal random vector, i.e., Z ∼ N (0, Id L ).</p><p>Proposition 3.3. For a smoothing parameter ϵ &gt; 0,</p><p>• The function topΣ K,ϵ : R L → R is strictly convex, twice differentiable and √ K-Lipschitz continuous.</p><p>• The gradient of topΣ K,ϵ reads:</p><formula xml:id="formula_15">∇ s topΣ K,ϵ (s) = E[arg topΣ K (s + ϵZ)] . (7) • ∇ s topΣ K,ϵ is √ KL ϵ -Lipschitz. • When ϵ → 0, topΣ K,ϵ (s) → topΣ K (s).</formula><p>All proofs are given in the appendix.</p><p>The smoothing strategy introduced leads to a natural smoothed approximation of the top-K operator, leveraging the link top K (s) = topΣ K (s)-topΣ K-1 (s) for any score s ∈ R L (where we use the convention topΣ 0 = 0 L ∈ R L ): Definition 3.4. For any s ∈ R L and k ∈ [L], we define</p><formula xml:id="formula_16">top K,ϵ (s) ≜ topΣ K,ϵ (s) -topΣ K-1,ϵ (s) .</formula><p>This definition leads to a smooth approximation of the top K function, in the following sense: Proposition 3.5. For a smoothing parameter ϵ &gt; 0,</p><formula xml:id="formula_17">• top K,ϵ is 4 √ KL ϵ -smooth. • For any s ∈ R L , |top K,ϵ (s) -top K (s)| ≤ ϵ • C K,L , where C K,L = K √ 2 log L.</formula><p>Observe that the last point implies that for any</p><formula xml:id="formula_18">s ∈ R L , top K,ϵ (s) → top K (s) when ϵ → 0.</formula><p>We can now define an approximation of the calibrated top-K hinge loss ℓ K Cal. Hinge using top K,ϵ in place of top K (see Figures <ref type="figure">1h</ref> and<ref type="figure">1i</ref> for level sets with K = 2) 3 . Definition 3.6. We define ℓ K,ϵ Noised bal. the noised balanced top-K hinge loss as:</p><formula xml:id="formula_19">ℓ K,ϵ Noised bal. (s, y) = (1 + top K+1,ϵ (s) -s y ) + . (8)</formula><p>We call the former balanced as the margin (equal to 1) is the same for all L classes. The parameter ϵ controls the variance of the noise added to the score vectors. When ϵ = 0, we recover the top-K calibrated loss of Yang &amp; Koyejo (2020), ℓ K Cal. Hinge . Proposition 3.7. For a smoothing parameter ϵ &gt; 0 and a label y</p><formula xml:id="formula_20">∈ [L], • ℓ K,ϵ Noised bal. (•, y) is continuous, differen- tiable almost everywhere, with continuous derivative. • The gradient of ℓ(•, y) ≜ ℓ K,ϵ</formula><p>Noised bal. (•, y) is given by:</p><formula xml:id="formula_21">∇ℓ(s, y) = 1 {1+top K+1,ϵ (s)≥sy } •(∇top K+1,ϵ (s) -δy),<label>(9)</label></formula><p>where δ y ∈ R L is the vector with 1 at coordinate y and 0 elsewhere.</p><p>Practical implementation: As is, the proposed loss can not be used directly to train modern neural network architectures due to the expectation and remains a theoretical tool. Following <ref type="bibr" target="#b3">(Berthet et al., 2020)</ref>, we simply rely on a Monte Carlo method to estimate the expectation for both the loss and its gradient: we draw B noise vectors Z 1 , . . . , Z B , with</p><formula xml:id="formula_22">Z b i.i.d. ∼ N (0, Id L ) for b ∈ [B]. The loss ℓ K,ϵ</formula><p>Noised bal. is then estimated by:</p><formula xml:id="formula_23">ℓ K,ϵ,B Noised bal. (s, y) = (1 + top K+1,ϵ,B (s) -s y ) + ,<label>(10)</label></formula><p>where top K+1,ϵ,B (s) ≜ topΣ K+1,ϵ,B (s) -topΣ K,ϵ,B (s) is a Monte Carlo estimate with B samples:</p><formula xml:id="formula_24">topΣ K,ϵ,B (s) = 1 B B b=1 topΣ K (s + ϵZ b ) .<label>(11)</label></formula><p>We approximate ∇ s ℓ K,ϵ Noised bal. (s, y) by G, with:</p><formula xml:id="formula_25">G = 1 {1+ top K+1,ϵ,B (s)≥sy} •( ∇top K+1,ϵ,B (s)-δ y ),<label>(12)</label></formula><p>where the Monte Carlo estimate</p><formula xml:id="formula_26">∇top K+1,ϵ,B (s) ≜ arg top K+1,ϵ,B<label>(s)</label></formula><p>is given by:</p><formula xml:id="formula_27">arg top K+1,ϵ,B (s) = 1 B B b=1 arg top K+1 (s + ϵZ b ) .</formula><p>We train our loss with SGD. Hence, B repetitions are drawn each time the loss is evaluated. The iterative nature of this process helps amplify the smoothing power of the approach, explaining why even small values of B can lead to good performance (see Section 4). (the top-2 value of s corresponds to the first coordinate). Assume the three noise vectors sampled are:</p></div>
+<div><head>Illustration</head><formula xml:id="formula_28">Z 1 = 0.2 -0.1 0.1 0.3 , Z 2 = 0.1 0.1 -0.1 0.1 , Z 3 = -0.1 -0.1 0.1 -0.1 .</formula><p>The perturbed vectors are now:</p><formula xml:id="formula_29">s + ϵZ 1 = 2.6 2.5 2.4 0.8 , s + ϵZ 2 = 2.5 2.7 2.2 0.6 , s + ϵZ 3 = 2.3 2.5 2.4 0.4 .</formula><p>The induced perturbation may provoke a change in both top K and arg top K . For the perturbed vector s + ϵZ 2 , the added noise changes the top-2 value but it is still achieved at coordinate 1: top K (s + ϵZ 2 ) = 2.5 and arg top K (s +</p><formula xml:id="formula_30">ϵZ 2 ) = 1 0 0 0</formula><p>. However, for s + ϵZ 1 and s + ϵZ 3 , the added noise changes the coordinate at which the top-2 is achieved:</p><formula xml:id="formula_31">arg top K (s + ϵZ 1 ) = 0 1 0 0 and arg top K (s + ϵZ 3 ) = 0 0 1 0 , with top K (s + ϵZ 1 ) = 2.5 and top K (s + ϵZ 3 ) = 2.4, giving: top K,ϵ,B (s) = (2.5 + 2.5 + 2.4)/3 = 2.47 , ∇top K,ϵ,B (s) = 1 3 0 1 0 0 + 1 0 0 0 + 0 0 1 0 =   1 3 1 3 1 3 0   .</formula><p>We see the added noise results in giving weight to the gradient coordinates k whose associated score s k is close to top K (s) (in this example the first and third coordinates). Note that if we set ϵ to a smaller value, e.g., ϵ = 0.1, the added perturbation is not large enough to change the arg top K in the perturbed vectors, leading to the same gradient as the non-smoothed top-K operator: ∇top K,0.1 (s) = 1 0 0 0</p><p>. Hence, ϵ acts as a parameter which allows exploring coordinates k whose score values s k are close to the top-K score (provided that ϵ and/or B are large enough).</p></div>
+<div><head n="3.3.">New loss for imbalanced top-K classification</head><p>In real world applications, a long-tailed distribution between the classes is often present, i.e., few classes receive most of the annotated labels. This occurs for instance in datasets such as Pl@ntNet-300K <ref type="bibr" target="#b10">(Garcin et al., 2021)</ref> and Inaturalist <ref type="bibr" target="#b14">(Horn et al., 2018)</ref>, where a few classes represent the vast majority of images. For these cases, the performance of deep neural networks trained with the cross entropy loss is much lower for classes with a small numbers of images, see <ref type="bibr" target="#b10">(Garcin et al., 2021)</ref>.</p><p>We present an extension of the loss presented in Section 3.2 to the imbalanced case. This imbalanced loss is based on uneven margins <ref type="bibr" target="#b29">(Scott, 2012;</ref><ref type="bibr" target="#b22">Li &amp; Shawe-Taylor, 2003</ref>;  <ref type="bibr" target="#b16">Iranmehr et al., 2019;</ref><ref type="bibr" target="#b5">Cao et al., 2019)</ref>. The underlying idea is to require larger margins for classes with few examples, which leads to a higher incurred loss for mistakes made on examples of the least common classes.</p><p>Imposing a margin m y parameter per class in Equation ( <ref type="formula" target="#formula_23">10</ref>) leads to the following formulation: </p></div>
+<div><head n="3.4.">Comparisons of various top-K losses</head><p>In Table <ref type="table" target="#tab_1">1</ref>, we synthesize the various top-K loss functions evoked above. To better understand their differences, Figure <ref type="figure">1</ref> provides a plot of the losses for s in the 2-simplex, for K = 2 and L = 3. The correct label is set to be y = 3 and corresponds to the vertex on top and in red. Figure <ref type="figure">1a</ref> shows the classical top-K that we would ideally want to optimize. It has 0 error when s 3 is larger than the smallest coordinate of s (i.e., is in the top-2) and 1 otherwise. Figure <ref type="figure">1b</ref> shows the cross-entropy, by far the most popular (convex) loss used in deep learning. As mentioned by <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref>, the cross-entropy happens to be top-K calibrated for all K. Figure <ref type="figure">1c</ref> shows the top-K hinge loss proposed by <ref type="bibr" target="#b18">Lapin et al. (2015)</ref> and Figure <ref type="figure">1e</ref> is a convex upper relaxation. Unfortunately, <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref> have shown that such losses are not top-K calibrated and propose an alternative, illustrated in Figure <ref type="figure">1d</ref>. We show that the loss of Yang &amp; Koyejo (2020) performs poorly when used for optimizing a deep neural network. Figure <ref type="figure">1f</ref> and Figure <ref type="figure">1g</ref> show the smoothing proposed by <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> of the loss in Figure <ref type="figure">1c</ref>, while Figure <ref type="figure">1h</ref> and Figure <ref type="figure">1i</ref> show our proposed noised smoothing of the loss in Figure <ref type="figure">1d</ref>. The difference with <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> is that we start with a top-K calibrated hinge loss, and our smoothing consists in smoothing only the top-K operator, which mostly affects classes whose scores are close to the top-K score, while the method from <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> results in a gradient where all coordinates are non-zero.</p><p>Finally, Figure <ref type="figure">1j</ref> shows our noised imbalanced top-K loss. Additional visualizations of our noised top-K loss illustrating the effect of B and ϵ can be found in the appendix, see Figures <ref type="figure">4</ref> and<ref type="figure">5</ref>.  <ref type="table" target="#tab_3">2</ref>, this shows that having a non-sparse gradient is not a necessary condition for successful learning, contrary to what is suggested in <ref type="bibr" target="#b2">(Berrada et al., 2018)</ref> </p></div>
+<div><head n="4.">Experiments</head><p>The <software ContextAttributes="shared">Pytorch</software> <ref type="bibr" target="#b26">(Paszke et al., 2019)</ref> <software ContextAttributes="shared">code</software> for our top-K loss and experiments can be found at: https://github. com/garcinc/noised-topk.</p></div>
+<div><head n="4.1.">Influence of ϵ and gradient sparsity</head><p>Table <ref type="table" target="#tab_3">2</ref> shows the influence of ϵ on CIFAR-100<ref type="foot" target="#foot_6">4</ref> top-5 accuracy. When ϵ = 0, ℓ K,ϵ,B Noised bal. coincides with ℓ K Cal. Hinge . We see that a model trained with this loss fails to learn properly. This resonates with the observation made by <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> that a model trained with ℓ K Hinge , which is close to ℓ K Cal. Hinge , also fails to learn. Table <ref type="table" target="#tab_3">2</ref> also shows that when ϵ is too small (ϵ = 10 -4 or ϵ = 10 -3 ), the optimization remains difficult and the learned models have very low performance. For sufficiently high values of ϵ, in the order of 10 -2 or greater, the smoothing is effective and the learned models achieve a very high top-5 accuracy. Table <ref type="table" target="#tab_3">2</ref> also shows that although the optimal value of ϵ appears to be around 10 -1 , the optmization is robust to high values of ϵ.</p></div>
+<div><head>Berrada et al. (2018) argue that a reason a model trained with ℓ K</head><p>Hinge fails to learn is because of the sparsity of the gradient of ℓ K Hinge . Indeed, for any s ∈ R L , y ∈ [L], ∇ s ℓ K Hinge (s, y) has at most two non-zero coordinates. This is one of the main reasons put forward by the authors to motivate the smoothing of ℓ K Hinge into ℓ K,τ Smoothed Hinge , whose gradient coordinates are all non-zero.</p><p>We investigate the behaviour of the gradient of our loss by computing ∇ s ℓ K,ϵ,B Noised bal. (s, y) for each training example during the first epoch. We then compute the average number of non-zero coordinates in the gradient. We repeat this process for several values of ϵ and report the results in Figure <ref type="figure" target="#fig_2">2</ref>. There are two points to highlight:</p><p>• The number of non-zero gradients coordinates increases with ϵ. This is consistent with our illustration example in Section 3.2: high values of ϵ allow putting weights on gradient coordinates whose score is close to the top K score.</p><p>• Even when ϵ is large, the number of non-zero gradient coordinates is small: on average, 4 out of 100. In comparison, for ℓ K CE and ℓ K,τ Smoothed Hinge , all gradient coordinates are non-zero. Yet, even with such sparse gradient vectors, we manage to reach better top-5 accuracies than ℓ K CE and ℓ K,τ  Smoothed Hinge (see Table <ref type="table" target="#tab_5">4</ref>). Therefore, one of the main takeaway is that a non-sparse gradient does not appear to be a necessary condition for successful learning contrary to what is suggested in <ref type="bibr" target="#b2">(Berrada et al., 2018)</ref>. A sufficiently high probability (controlled by ϵ) that each coordinate is updated at training is enough to achieve good performance.</p></div>
+<div><head n="4.2.">Influence of B</head><p>Table <ref type="table" target="#tab_4">3</ref> shows the influence of the number of sampled standard normal random vectors B on CIFAR-100 top-5 accuracy for a model trained with our balanced loss with K = 5. B appears to have little impact on top-5 accuracy, indicating that there is no need to precisely estimate the expectation in Equation ( <ref type="formula" target="#formula_24">11</ref>). As increasing B comes with computation overhead (see next section) and does not yield an increase of top-K accuracy, we advise setting it to a small value (e.g., 3 ≤ B ≤ 10).</p></div>
+<div><head n="4.3.">Computation time</head><p>In Figure <ref type="figure" target="#fig_4">3</ref> (for several values of B) as a function of K. For standard training values, i.e., K = 5, B = 3, the average epoch time is 65s for ℓ CE , 68s for ℓ K,ϵ,B Noised bal. (+4.6% w.r.t. ℓ CE ) and 81s for ℓ K,τ  Smoothed Hinge (+24.6% w.r.t. ℓ CE ). Figure <ref type="figure" target="#fig_4">3</ref> further shows that while the average epoch duration of ℓ K,τ Smoothed Hinge seems to scale linearly in K, our loss does not incur an increased epoch duration when K increases. Thus, for K = 10, the average epoch time for ℓ K,τ  Smoothed Hinge is 90s versus 60s for ℓ K,ϵ,B Noised bal. with B = 3. While for most classical datasets <ref type="bibr" target="#b28">(Russakovsky et al., 2015;</ref><ref type="bibr" target="#b17">Krizhevsky, 2009)</ref> small values of K are enough to achieve high top-K accuracy, for other applications high values of K may be used <ref type="bibr" target="#b8">(Covington et al., 2016;</ref><ref type="bibr" target="#b7">Cole et al., 2020)</ref>, making our balanced loss computationally attractive.</p></div>
+<div><head n="4.4.">Comparisons for balanced classification</head><p>The CIFAR-100 <ref type="bibr" target="#b17">(Krizhevsky, 2009)</ref> dataset contains 60,000 images (50,000 images in the training set and 10,000 images in the test set) categorized in 100 classes. The classes are grouped into 20 superclasses (e.g., fish, flowers, people), each regrouping 5 classes. Here we compare the top-K accuracy of a deep learning model trained on CIFAR-100 with either our balanced loss ℓ K,ϵ,B Noised bal. , the cross entropy ℓ CE , or the loss from <ref type="bibr" target="#b2">Berrada et al. (2018)</ref></p><formula xml:id="formula_32">, ℓ K,τ</formula><p>Smoothed Hinge , which is the current state-of-the art top-K loss for deep learning. We repeat the experiment from Section 5.1 of <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> to study how ℓ K,ϵ,B Noised bal. reacts when noise is introduced in the labels. More precisely, for each training image, its label is sampled randomly within the same super-class with probability p. Thus, p = 0 corresponds to the original dataset and p = 0.5 corresponds to a dataset where all the training examples have a label corresponding to the right superclass, but half of them (on average) have a different label than the original one. With such a dataset, a perfect top-5 classifier is expected to have a 100% top-5 accuracy. As in <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> we extract 5000 images from the training set to build a validation set. We use the same hyperparameters as <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>: we train a DenseNet 40-40 <ref type="bibr" target="#b15">(Huang et al., 2017)</ref> for 300 epochs with SGD and a Nesterov momentum of 0.9. For the learning rate, our policy consists in starting with value of 0.1 and dividing it by ten at epoch 150 and 225. The batch size and weight decay are set to 64 and 1.10 -4 respectively. Following <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>, the smoothing parameter τ of ℓ K,τ Smoothed Hinge is set to 1.0. For ℓ K,ϵ,B Noised bal. , we set the noise parameter ϵ to 0.2 and the number of noise samples B at 10. We keep the models with the best top-5 accuracies on the validation set and report the top-5 accuracy on the test set in Table <ref type="table" target="#tab_5">4</ref>. The results are averaged over four runs with four different random seeds (we give the 95% confidence inverval). They show that the models trained with ℓ 5,0.2,10</p><p>Noised bal. give the best top-5 accuracies except when p = 0.1 where it is slightly below ℓ 5,1.0 Smoothed Hinge . We also observe that the performance gain over the cross entropy is significant in the presence of label noise (i.e., for p &gt; 0).</p><p>We provide additional experiments on ImageNet <ref type="bibr" target="#b28">(Russakovsky et al., 2015)</ref> in Appendix D.</p></div>
+<div><head n="4.5.">Comparison for imbalanced classification</head></div>
+<div><head n="4.5.1.">PL@NTNET-300K</head><p>We consider Pl@ntNet-300K 5 , a dataset of plant images recently introduced in <ref type="bibr" target="#b10">(Garcin et al., 2021)</ref>. It of 306,146 plant images distributed in 1,081 species (the classes). The particularities of the dataset are its long-tailed distribution (80% of the species with the least number of images account for only 11% of the total number of images) and the class ambiguity: many species are visually similar. For such an imbalanced dataset, accuracy and top-K accuracy mainly reflect the performance of the model on the few classes representing the vast majority of images. Often times, we also want the model to yield satisfactory results on the classes with few images. Therefore, for this dataset we report macro-average top-K accuracy, which is obtained by computing top-K accuracy for each class separately and then taking the average over classes. Thus, the class with only a few images contributes the same as the class with thousands of images to the overall result.</p><p>In this section we compare the macro-average top-K accuracy of a deep neural network trained with either ℓ CE , ℓ K,τ  Smoothed Hinge , ℓ K,ϵ,B Noised bal. , ℓ K,ϵ,B,my Noised imbal. and ℓ my LDAM , the loss from <ref type="bibr" target="#b5">Cao et al. (2019)</ref> based on uneven margins providing state-of-the-art performance in Fine-Grained Visual 5 For the experiments with Pl@ntNet-300K, we consider a ResNet-50 model <ref type="bibr" target="#b11">(He et al., 2016)</ref>.</p></div>
+<div><head>Categorization tasks.</head><p>Setup: We train a ResNet-50 <ref type="bibr" target="#b11">(He et al., 2016)</ref> pre-trained on ImageNet <ref type="bibr" target="#b28">(Russakovsky et al., 2015)</ref> for 30 epochs with SGD with a momentum of 0.9 with the Nesterov acceleration. We use a learning rate of 2.10 -3 divided by ten at epoch 20 and epoch 25. The batch size and weight decay are set to 32 and 1.10 -4 respectively. The smoothing parameter τ for ℓ K,τ  Smoothed Hinge is set to 0.1. To tune the margins of ℓ my LDAM and ℓ K,ϵ,B,my Noised imbal. more easily, we follow <ref type="bibr" target="#b33">(Wang et al., 2018;</ref><ref type="bibr" target="#b5">Cao et al., 2019)</ref>: we normalize the last hidden activation and the weight vectors of the last fully-connected layer to both have unit ℓ 2 -norm, and we multiply the scores by a scaling constant, tuned for both losses on the validation set, leading to 40 for ℓ . We find that for both losses, the optimal largest margin is 0.2. For ℓ K,ϵ,B,my Noised imbal. , we set ϵ = 10 -2 and B = 5. We further discuss hyperparameter tuning in Appendix E.</p><p>We train the network with the top-K losses ℓ K,τ Smoothed Hinge , ℓ K,ϵ,B Noised bal. and ℓ K,ϵ,B,my Noised imbal. for K ∈ {1, 3, 5}. For all losses, we perform early stopping based on the best macro-average top-K accuracy on the validation set (for K ∈ {1, 3, 5}). We report the results on the test set in Table <ref type="table" target="#tab_6">5</ref> (three seeds, 95% confidence interval). We find that the loss from <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> fails to generalize to the tail classes in such an imbalanced setting. In contrast, ℓ K,ϵ,B Noised bal. gives results similar to the cross-entropy while ℓ K,ϵ,B,my</p><p>Noised imbal. provides the best results (regardless of the value of K). Noticeably, it outperforms ℓ my LDAM <ref type="bibr" target="#b5">(Cao et al., 2019</ref>) for all cases.</p></div>
+<div><head n="4.5.2.">IMAGENET-LT</head><p>We test ℓ K,ϵ,B,my Noised imbal. on ImageNet-LT <ref type="bibr" target="#b24">(Liu et al., 2019)</ref>, a dataset of 115,836 training images obtained by subsampling images from ImageNet with a pareto distribution. The resulting class imbalance is much less pronounced than for Pl@ntNet-300K.</p><p>We train a ResNet34 with several losses for K ∈ {1, 3, 5} for 100 epochs with a learning rate of 1.10 -2 divided by 10 at epoch 60 and 80. We use a batch size of 128 and set the weight decay to 2.10 -3 . All hyperparameters are tuned on the 20,000 images validation set from <ref type="bibr" target="#b24">Liu et al. (2019)</ref>. The results on the test set (four seeds, 95% confidence interval) are reported in Table <ref type="table" target="#tab_7">6</ref>. They show that ℓ K,ϵ,B,my Noised Imbal. performs very well on few shot classes compared to the other losses. Since ImageNet-LT is much less imbalanced than Pl@ntNet-300K, there are fewer such classes, hence the overall gain is less salient than for Pl@ntNet-300K.  </p></div>
+<div><head n="5.">Conclusion and perspectives</head><p>We propose a novel top-K loss as a smoothed version of the top-K calibrated hinge loss of <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref>.</p><p>Our loss function is well suited for training deep neural networks, contrarily to the original top-K calibrated hinge loss (e.g., the poor performance of the case ϵ = 0 in Table <ref type="table" target="#tab_3">2</ref>, that reduces to their loss). The smoothing procedure we propose applies the perturbed optimizers framework to smooth the top-K operator. We show that our loss performs well compared to the current state-of-the-art top-K losses for deep learning while being significantly faster to train when K increases. At training, the gradient of our loss w.r.t. the score is sparse, showing that non-sparse gradients are not necessary for successful learning. Finally, a slight adaptation of our loss for imbalanced datasets (leveraging uneven margins) outperforms other baseline losses. Studying deep learning optimization methods for other set-valued classification tasks, such as average size control or point-wise error control <ref type="bibr" target="#b6">(Chzhen et al., 2021)</ref> are left for future work.</p></div>
+<div><head>A. Reminder on Top-K calibration</head><p>Here we provide some elements introduced by Yang &amp; Koyejo (2020) on top-K calibration.</p><p>Definition A.1. <ref type="bibr">(Yang &amp; Koyejo, 2020, Definition 2.3</ref>). For a fixed K ∈ [L], and given y ∈ R L and ỹ ∈ R L , we say that y is top-K preserving w.r.t. ỹ, denoted P K (y, ỹ), if for all k ∈ [L],</p><p>ỹk &gt; top K+1 (ỹ) =⇒ y k &gt; top K+1 (y) (14) ỹk &lt; top K (ỹ) =⇒ y k &lt; top K (y) .</p><p>(15)</p><p>The negation of this statement is ¬P k (y, ỹ).</p><p>We let ∆ L ≜ {π ∈ R L : k∈[L] π k = 1, π k ≥ 0} denote the probability simplex of size L. For a score s ∈ R L and π ∈ ∆ L representing the conditional distribution of y given x, we write the conditional risk at x ∈ X as R ℓ|x (s, π) = E y|x∼π (ℓ(s, y)) and the (integrated) risk as R ℓ (f ) ≜ E (x,y)∼P [ℓ(f (x), y)] for a scoring function f : X → R L . The associated Bayes risks are defined respectively by R * ℓ|x (π) ≜ inf s∈R L R ℓ|x (s, π) (respectively by R * ℓ ≜ inf f :X →R L R ℓ (f )) . Definition A.2. <ref type="bibr">(Yang &amp; Koyejo, 2020, Definition 2.4)</ref>. A loss function ℓ : R L × Y → R is top-K calibrated if for all π ∈ ∆ L and all x ∈ X :</p><formula xml:id="formula_33">inf s∈R L :¬P k (s,π) R ℓ|x (s, π) &gt; R * ℓ|x (π) .<label>(16)</label></formula><p>In other words, a loss is calibrated if the infimum can only be attained among top-K preserving vectors w.r.t. the conditional probability distribution.</p><p>Theorem A.3. Suppose ℓ is a nonnegative top-K calibrated loss function. Then ℓ is top-K consistent, i.e., for any sequence of measurable functions f (n) : X → R L , we have:</p><formula xml:id="formula_34">R ℓ f (n) → R * ℓ =⇒ R ℓ K f (n) → R * ℓ K .</formula><p>In their paper, <ref type="bibr" target="#b38">Yang &amp; Koyejo (2020)</ref> propose a slight modification of the multi-class hinge loss ℓ K Hinge and show that it is top-K calibrated: Proof. We define</p><formula xml:id="formula_35">C K ≜ z ∈ R L , k∈[L] z k = K, 0 ≤ z k ≤ 1, ∀k ∈ [L]</formula><p>. For s ∈ R L , one can check that arg topΣ K (s) = arg max z∈C K ⟨z, s⟩. Recall that Z is a standard normal random vector, i.e., Z ∼ N (0, Id L ).</p><p>• C K is a convex polytope and the multivariate normal has positive differentiable density. So, we can apply <ref type="bibr" target="#b3">(Berthet et al., 2020</ref> </p><formula xml:id="formula_36">z k = K, ∀k ∈ [L], z k ∈ [0, 1].<label>(19)</label></formula><p>Note that this corresponds to the well known quadratic knapsack problem. A numerical solution can be obtained, see for instance <ref type="bibr" target="#b13">(Helgason et al., 1980)</ref>. To obtain our bound, note that for z ∈ C K one can check that</p><formula xml:id="formula_37">∥z∥ 2 = k∈[L] z 2 k ≤ k∈[L]</formula><p>z k (since ∀k ∈ [L], z k ∈ [0, 1]).</p></div><figure xml:id="fig_0"><head>..</head><label /><figDesc>Consider the case L = 4, K = 2, B = 3, ϵ = 1.0 with a score vector s = We have top K (s) = 2.4 and arg top K (s) =</figDesc></figure>
+<figure xml:id="fig_1"><head /><label /><figDesc>(s, y) = (m y + top K+1,ϵ,B (s)s y ) + . (13) Here, we follow Cao et al. (2019) and set m y = C/n 1/4 y , with n y the number of samples in the training set with class y, and C a hyperparameter to be tuned on a validation set.</figDesc></figure>
+<figure xml:id="fig_2"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Average number of non-zero gradient coordinates as a function of ϵ (loss ℓ K,ϵ,3 Noised bal. , CIFAR-100 dataset, DenseNet 40-40 model, 1st epoch). The gradient dimension is 100. We see that the gradient remains sparse even for large values of ϵ. Together with Table2, this shows that having a non-sparse gradient is not a necessary condition for successful learning, contrary to what is suggested in<ref type="bibr" target="#b2">(Berrada et al., 2018)</ref> </figDesc></figure>
+<figure xml:id="fig_3"><head /><label /><figDesc>, we plot the average epoch duration of a model trained with the cross entropy ℓ CE , the loss from Berrada et al. (2018) ℓ K,τ Smoothed Hinge , and our balanced loss ℓ K,ϵ,B Noised bal.</figDesc></figure>
+<figure xml:id="fig_4"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Average epoch time as a function of K for different losses (CIFAR-100 dataset, DenseNet 40-40 model). The proposed loss ℓ K,ϵ,B Noised bal. is not sensitive to the parameter K contrarily to ℓ K,τ Smoothed Hinge introduced by Berrada et al. (2018).</figDesc></figure>
+<figure xml:id="fig_5"><head /><label /><figDesc>tune the constant C by tuning the largest margin max y∈[L] m y for both ℓ my LDAM and ℓ K,ϵ,B,my Noised imbal.</figDesc></figure>
+<figure xml:id="fig_6"><head /><label /><figDesc>ℓ K Cal. Hinge (s, y) = (1 + top K+1 (s)s y ) + . (17) B. Proofs and technical lemmas B.1. Proof of Proposition 3.3</figDesc></figure>
+<figure type="table" xml:id="tab_1"><head>Table 1 .</head><label>1</label><figDesc>Summary of standard top-K losses: vanilla top-K ℓ K ; Cross Entropy ℓCE; hinge top-K ℓ K Hinge ; Convexified hinge top-K ℓ K CVXHinge ; Calibrated hinge top-K ℓ K Cal. Hinge ; Log-sum Smoothed hinge top-K ℓ K,τ Smoothed Hinge ; Noised balanced hinge top-K ℓ K,ϵ,B Noised bal. (proposed); Noised imbalanced hinge top-K ℓ K,ϵ,B,my Noised Imbal. (proposed).</figDesc><table><row><cell>Loss : ℓ(s, y)</cell><cell>Expression</cell><cell>Param.</cell><cell>Reference</cell></row><row><cell>ℓ K (s, y)</cell><cell>1 {top K (s)&gt;sy }</cell><cell>K</cell><cell>Equation (3)</cell></row><row><cell>ℓCE(s, y)</cell><cell>-ln e</cell><cell /><cell /></row></table><note><p><p><p>sy / k∈[L] e s k ℓ my LDAM (s, y)</p>-ln e sy -my / e sy -my + k∈[L],k̸ =y e s k my</p><ref type="bibr" target="#b23">(Lin et al., 2017)</ref> </p></note></figure>
+<figure type="table" xml:id="tab_3"><head>Table 2 .</head><label>2</label><figDesc>Influence of ϵ on CIFAR-100 best validation top-5 accuracy obtained by training a DenseNet 40-40 with loss ℓ K=5,ϵ,B=10</figDesc><table><row><cell>Noised bal.</cell><cell>.</cell></row></table></figure>
+<figure type="table" xml:id="tab_4"><head>Table 3 .</head><label>3</label><figDesc>Influence of B hyper-parameter on the best validation top-5 accuracy (loss ℓ 5,0.2,B Noised bal. , CIFAR-100 dataset, DenseNet 40-40 model. The training procedure is the same as in Section 4.4.)</figDesc><table><row><cell>B</cell><cell>1</cell><cell>2</cell><cell>3</cell><cell>5</cell><cell>10</cell><cell>50</cell><cell>100</cell></row><row><cell cols="8">Top-5 acc 94.28 94.2 94.46 94.52 94.24 94.64 94.52</cell></row></table></figure>
+<figure type="table" xml:id="tab_5"><head>Table 4 .</head><label>4</label><figDesc>Top-5 accuracy for different losses as a function of the label noise probability p within the superclasses of CIFAR-100 (DenseNet 40-40 model).</figDesc><table><row><cell>Label noise p</cell><cell>ℓ K CE</cell><cell>ℓ 5,1.0 Smoothed Hinge</cell><cell>ℓ 5,0.2,10 Noised bal.</cell></row><row><cell>0.0</cell><cell>94.2±0.1</cell><cell>93.3±0.0</cell><cell>94.4±0.1</cell></row><row><cell>0.1</cell><cell>90.3±0.2</cell><cell>92.2±0.3</cell><cell>91.9±0.1</cell></row><row><cell>0.2</cell><cell>87.6±0.1</cell><cell>90.4±0.2</cell><cell>90.7±0.5</cell></row><row><cell>0.3</cell><cell>85.7±0.4</cell><cell>88.8±0.1</cell><cell>89.7±0.1</cell></row><row><cell>0.4</cell><cell>83.6±0.2</cell><cell>87.4±0.1</cell><cell>87.8±0.6</cell></row></table></figure>
+<figure type="table" xml:id="tab_6"><head>Table 5 .</head><label>5</label><figDesc>Macro-average top-K accuracy (on test set) for different losses measured on Pl@ntNet-300K, a heavy-tailed dataset with high ambiguity (ResNet-50 model). The three numbers in parentheses represent respectively the mean top-K accuracies of 1) few shot classes (&lt; 20 training images) 2) medium shot classes (20 ≤ . ≤ 100 training images) 3) many shot classes (&gt; 100 training images).</figDesc><table><row><cell>K</cell><cell>ℓCE</cell><cell>ℓ K,0.1 Smoothed Hinge</cell><cell>ℓ K,1.0,5 Noised bal.</cell><cell>focal (γ = 2.0)</cell><cell>ℓ max my=0.2 LDAM</cell><cell>K,0.01,5,max my=0.2 ℓ Noised imbal.</cell></row><row><cell>1</cell><cell cols="6">36.3±0.3 (12.6/42.9/71.7) 35.7±0.2 (13.1/41.5/71.1) 35.8±0.3 (12.4/42.1/72.1) 37.6±0.3 (15.5/43.4/71.4) 40.6±0.1 (20.9/45.8/71.2) 42.4±0.3 (23.9/46.3/72.1)</cell></row><row><cell cols="7">3 58.8±0.4 (32.4/75.3/92.0) 50.3±0.2 (16.7/69.8/92.7) 58.7±0.4 (32.2/73.8/88.8) 60.4±0.3 (35.9/74.8/92.0) 63.3±0.3 (43.0/74.1/90.0) 64.9±0.4 (44.8/74.5/92.1)</cell></row><row><cell cols="7">5 68.7±0.2 (45.1/86.3/95.4) 50.9±0.3 (12.1/78.1/95.7) 66.4±0.5 (42.0/82.5/95.5) 69.7±0.2 (47.5/84.8/95.8) 71.9±0.3 (54.0/83.0/94.0) 73.2±0.5 (55.3/84.2/95.3)</cell></row></table></figure>
+<figure type="table" xml:id="tab_7"><head>Table 6 .</head><label>6</label><figDesc>Top-K accuracy (on test set) for different losses measured on ImageNet-LT (ResNet-34 model). The three numbers in parentheses represent respectively the mean top-K accuracies of 1) few shot classes (&lt; 20 training images) 2) medium shot classes (20 ≤ . ≤ 100 training images) 3) many shot classes (&gt; 100 training images).</figDesc><table><row><cell>K</cell><cell>ℓ CE</cell><cell>ℓ K,0.1 Smoothed Hinge</cell><cell>focal (γ = 1.0)</cell><cell>ℓ</cell><cell>max my=0.4 LDAM</cell><cell>K,0.1,5,max my=0.4 ℓ Noised imbal.</cell></row><row><cell>1</cell><cell cols="2">37.0±0.1 (1.5/28.2/60.6) 37.3±0.1 (1.3/28.6/60.7)</cell><cell>37.7±0.0 (2.4/29.8/59.9)</cell><cell cols="2">39.3±0.2 (10.5/33.1/57.1)</cell><cell>38.7±0.0 (7.6/32.3/57.6)</cell></row><row><cell>3</cell><cell cols="2">55.5±0.1 (8.2/53.0/75.3) 42.0±0.1 (0.0/29.1/72.9)</cell><cell>56.2±0.0 (10.2/54.0/75.1)</cell><cell cols="2">56.0±0.2 (24.1/52.0/72.3)</cell><cell>56.5±0.1 (27.0/52.6/71.7)</cell></row><row><cell cols="4">5 63.2±0.1 (15.8/63.1/80.1) 39.0±0.1 (0.0/20.7/75.5) 63.8±0.1 (17.8/63.6/80.3)</cell><cell cols="2">63.1±0.2 (32.9/60.1/77.7)</cell><cell>63.5±0.1 (37.0/60.2/77.0)</cell></row></table></figure>
+<figure type="table" xml:id="tab_8"><head /><label /><figDesc>, Proposition 2.2). For that, it remains to determine the constant R C K and M µ . First, R C K ≜ max z∈C K ∥z∥. For simplicity, let us compute max z∈C K ∥z∥ 2 , i.e.,</figDesc><table><row><cell>max ∥z∥</cell><cell>2</cell><cell>(18)</cell></row><row><cell>s.t.</cell><cell /><cell /></row></table><note><p><p>k∈</p>[L]    </p></note></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>IMAG, Univ Montpellier, CNRS, Montpellier, France</p></note>
+			<note place="foot" n="2" xml:id="foot_1"><p>Inria, LIRMM, Univ Montpellier, CNRS, Montpellier, France</p></note>
+			<note place="foot" n="3" xml:id="foot_2"><p>LIRMM, Univ Montpellier, CNRS, Montpellier, France</p></note>
+			<note place="foot" n="4" xml:id="foot_3"><p>AMIS, Paul Valery University, Montpellier, France</p></note>
+			<note place="foot" n="5" xml:id="foot_4"><p>Institut Universitaire de France (IUF). Correspondence to: Camille Garcin &lt;camille.garcin@umontpellier.fr&gt;.Proceedings of the 39 th International Conference on Machine Learning, Baltimore, Maryland, USA, PMLR 162, 2022. Copyright 2022 by the author(s).</p></note>
+			<note place="foot" n="1" xml:id="foot_5"><p>Ties are broken arbitrarily.</p></note>
+			<note place="foot" n="4" xml:id="foot_6"><p>For experiments with CIFAR-100, we consider a DenseNet 40-</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>The work by CG and JS was supported in part by the <rs type="funder">French National Research Agency (ANR)</rs> through the grant <rs type="grantNumber">ANR-20-CHIA-0001-01</rs> (<rs type="projectName">Chaire IA CaMeLOt</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_DvdkaVa">
+					<idno type="grant-number">ANR-20-CHIA-0001-01</idno>
+					<orgName type="project" subtype="full">Chaire IA CaMeLOt</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div><p>Hence, we have ∀z ∈ C K , ∥z∥ 2 ≤ K. Now, one can check that this equality is achieved when choosing z = (1, . . . , 1, 0, . . . , 0) ⊤ ∈ R L with K non-zeros values, yielding max z∈C K ∥z∥ = √ K. Following <ref type="bibr">(Berthet et al., 2020, Proposition 2.2)</ref> </p><p>Hence, M µ can be computed as:</p><p>where the last equality comes from Z ∼ N (0, Id L ). Following <ref type="bibr">(Berthet et al., 2020, Proposition 2.2)</ref> this guarantees that ∇topΣ K,ϵ is</p><p>• The last bullet of our proposition comes derives now directly from of <ref type="bibr">(Berthet et al., 2020, Proposition 2.3</ref>).</p></div>
+<div><head>B.2. Proof of Proposition 3.5</head><p>Proof.</p><p>• From the triangle inequality and Proposition 3.3 we get for any s, s ′ ∈ R L :</p><p>• Using the notation from <ref type="bibr">(Berthet et al., 2020, Appendix A)</ref>, with F (s) = topΣ K (s) and F ϵ (s) = topΣ K,ϵ (s), we get the following bounds:</p><p>Stochastic smoothing of the top-K calibrated hinge loss for deep imbalanced classification Additionally, using the maximal inequality for i.i.d. Gaussian variables, see for instance <ref type="bibr">(Boucheron et al., 2013, Section 2.5</ref>), leads to: <ref type="formula">21</ref>) to ( <ref type="formula">20</ref>), and reminding that top</p><p>thus leading to:</p><p>with</p><p>Proof.</p><p>• First, note that s → ℓ K,ϵ Noised bal. (s, y) is continuous as a composition and sum of continuous functions. It is differentiable wherever ψ : s → 1 + top K+1,ϵ (s)s y is non-zero. From Definition 3.4 and Proposition 3.3 we get ∇ s ψ(s) = E[arg topΣ K+1 (s + ϵZ)]δ y . The formula of the gradient follows from the chain rule.</p></div>
+<div><head>C. Illustrations of the various losses encountered</head><p>In Figures <ref type="figure">1</ref> and<ref type="figure">6</ref>, we provide a visualization of the loss landscapes for respectively K = 1 and K = 2 with L = 3 labels. With L = 3 labels, we display the visualization as level-sets restricted to a rescaled simplex: 2 . . . ∆ 3 . Moreover, we have min/max rescaled all the losses so that they fully range the interval [0, 1]. Note that as we are mainly interested in minimizing the losses, this post-processing would not modify the learned classifiers.</p><p>We provide also two additional figures illustrating the impact on our loss of the two main parameters: ϵ and B.</p></div>
+<div><head>D. Additional experiments</head><p>CIFAR-100: Table <ref type="table">7</ref> reports the top-1 accuracy obtained by the models corresponding to the results of Table <ref type="table">4</ref>. Hence, we show here a misspecified case: we optimized our balanced loss for K = 5, seeking to optimize top-5 accuracy, which is (j) Noised imbalanced: ℓ K,1,30,5 Noised imbal. . Figure <ref type="figure">6</ref>. Level sets of the function s → ℓ(s, y) for different losses described in Table <ref type="table">1</ref>, for L = 3 classes, K = 1 and a true label y = 2 (corresponding to the upper corner of the triangles). For visualization the loss are rescaled between 0 and 1, and the level sets are restricted to vector s ∈ 2 • ∆3. The losses have been harmonized to display a margin equal to 1. For our proposed loss, we have averaged the level sets over 100 replications to avoid meshing artifacts.  <ref type="table">4</ref>, but report top-1 information. Table <ref type="table">7</ref> shows that when there is no label noise, as expected cross entropy gives better top-1 accuracy than our top-5 loss. When the label noise is high, however, our loss leads to better top-1 accuracy.</p><p>Pl@ntNet-300K: Table <ref type="table">8</ref> reports the top-K accuracy obtained by the models corresponding to the results of Table <ref type="table">5</ref>. The top-K accuracies are much higher than the macro-average top-K accuracies reported in Table <ref type="table">5</ref> because of the long-tailed distribution of Pl@ntNet-300K. The models perform well on classes with a lot of examples which leads to high top-K accuracy. However, they struggle on classes with a small number of examples (which is the majority of classes, see <ref type="bibr" target="#b10">(Garcin et al., 2021)</ref>). Thus, for Pl@ntNet-300K top-K accuracy is not very relevant as it mainly reflects the performance of the few classes with a lot of images, ignoring the performance on challenging classes (the one with few labels) <ref type="bibr" target="#b0">(Affouard et al., 2017)</ref>. We report it for completeness and make a few comments: First, our balanced noise loss gives better top-K accuracies than the cross entropy or the loss from <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> for all K. Then, ℓ K,ϵ,B,my Noised imbal. and ℓ K,ϵ,B Noised bal. produce the best top-1 accuracy, respectively 81.0 and 80.8. However, we insist that in such an imbalanced setting the macro-average top-K accuracy reported in Table <ref type="table">5</ref> is much more informative than regular top-K accuracy. We see significant differences between the losses in Table <ref type="table">5</ref> which are hidden in Table <ref type="table">8</ref> because of the extreme class imbalance.</p><p>ImageNet: We test ℓ K,ϵ,B Noised bal. on ImageNet. We follow the same procedure as <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>: we train a ResNet-18 with SGD for 120 epochs with a batch size of 120 epochs. The learning rate is decayed by ten at epoch 30, 60 and 90. For ℓ K,τ  Smoothed Hinge , the smoothing parameter τ is set to 0.1, the weight decay parameter to 0.000025 and the initial learning rate to 1.0, as in <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>. For ℓ CE , the weight decay parameter is set to 0.0001 and the initial learning rate to 0.1, following <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>. For ℓ K,ϵ,B Noised bal. , we use the same validation set as in <ref type="bibr" target="#b2">Berrada et al. (2018)</ref> to set ϵ to 0.5, the weight decay parameter to 0.00015 and the initial learning rate to 0.1. B is set to 10. We optimize all losses for K = 1 and K = 5. We perform early stopping based on best top-K accuracy on the validation set and report the results on the test set (the official validation set of ImageNet) in Table <ref type="table">9</ref> (3 seeds, 95% confidence interval). In the presence of low label noise, with an important number of training examples per class and for a nearly balanced dataset, all three losses give similar results. This is in contrast with Table <ref type="table">4</ref> and<ref type="table">Table 5</ref>, where significant differences appear between the different losses in the context of label noise or class imbalance.</p></div>
+<div><head>E. Hyperparameter tuning</head><p>Balanced case: For both experiments on CIFAR-100 and ImageNet, we follow the same learning strategy and use the same hyperparameters for ℓ K,τ  Smoothed Hinge than <ref type="bibr" target="#b2">Berrada et al. (2018)</ref>. For ℓ K,ϵ,B Noised bal. , we refer the reader for the choice of ϵ and B respectively to Section 4.1 and Section 4.2: ϵ should be set to a sufficiently large value so that learning occurs and B should be set to a small value for computational efficiency. , the hyperparameter max m y is searched in the grid {0.2, 0.3, 0.4, 0.5} and we find in our experiments that the best working values of max m y happen to be the same for both losses. For the scaling constant for the scores, we find that 30 and 50 are good default values for respectively ℓ , ϵ is searched in the grid {0.01, 0.05, 0.1}.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Pl@ntnet app in the era of deep learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Affouard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Goëau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-C</forename><surname>Lombardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joly</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR -Workshop Track</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Smoothing and first order methods: A unified framework</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Teboulle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM J. Optim</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="557" to="580" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Smooth loss functions for deep top-k classification</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Berrada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Learning with differentiable perturbed optimizers</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Berthet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Teboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cuturi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-P</forename><surname>Vert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Concentration Inequalities: A Nonasymptotic Theory of Independence</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Boucheron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Lugosi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Massart</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>Oxford University Press</publisher>
+		</imprint>
+	</monogr>
+	<note>second edition</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Learning imbalanced datasets with label-distributionaware margin loss</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gaidon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Arechiga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="1565" to="1576" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chzhen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Denis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hebiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lorieul</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2102.12318</idno>
+		<title level="m">Setvalued classification -overview via a unified framework</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Deneu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lorieul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Servajean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Botella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jojic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joly</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.04192</idno>
+		<title level="m">The geolifeclef 2020 dataset</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Deep neural networks for youtube recommendations</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Covington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Adams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sargin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RecSys</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="191" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">On the algorithmic implementation of multiclass kernel-based vector machines</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Crammer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Singer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="265" to="292" />
+			<date type="published" when="2001-12">Dec. 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Pl@ntNet-300K: a plant image dataset with high label ambiguity and a long-tailed distribution</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Garcin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Affouard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lombardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chouet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Servajean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lorieul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Salmon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS Datasets and Benchmarks</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">K-nearest neighbors hashing</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2839" to="2848" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A polynomially bounded algorithm for a singly constrained quadratic program</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">V</forename><surname>Helgason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Kennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Lall</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Math. Program</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="338" to="343" />
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">The inaturalist species classification and detection dataset</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">V</forename><surname>Horn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><forename type="middle">M</forename><surname>Aodha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shepard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Adam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8769" to="8778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Densely connected convolutional networks</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Van Der Maaten</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2261" to="2269" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Cost-sensitive support vector machines</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iranmehr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Masnadi-Shirazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vasconcelos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neurocomputing</title>
+		<imprint>
+			<biblScope unit="volume">343</biblScope>
+			<biblScope unit="page" from="50" to="64" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Learning multiple layers of features from tiny images</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Krizhevsky</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Toronto</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Master's thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Top-k multiclass SVM</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="325" to="333" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Loss functions for topk error: Analysis and insights</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1468" to="1477" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Analysis and optimization of loss functions for multiclass, top-k, and multilabel classification</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lapin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Pattern Anal. Mach. Intell</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1533" to="1554" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Gradientbased learning applied to document recognition</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bottou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Haffner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the IEEE</title>
+		<imprint>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="2278" to="2324" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">The SVM with uneven margins and Chinese document categorization</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shawe-Taylor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PACLIC</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="216" to="227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Focal loss for dense object detection</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollár</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2999" to="3007" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Large-scale long-tailed recognition in an open world</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2537" to="2546" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Smooth minimization of non-smooth functions</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Nesterov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Math. Program</title>
+		<imprint>
+			<biblScope unit="volume">103</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="127" to="152" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Pytorch: An imperative style, high-performance deep learning library</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paszke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gross</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Massa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bradbury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Killeen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gimelshein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Antiga</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="8026" to="8037" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">The Pareto, Zipf and other power laws</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">J</forename><surname>Reed</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Economics letters</title>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="15" to="19" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Imagenet large scale visual recognition challenge</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Russakovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Satheesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Khosla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Comput. Vision</title>
+		<imprint>
+			<biblScope unit="volume">115</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="211" to="252" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Calibrated asymmetric surrogate losses</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Scott</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Electron. J. Stat</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="958" to="992" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Stochastic dual coordinate ascent methods for regularized loss minimization</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shalev-Shwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="567" to="599" />
+			<date type="published" when="2013-02">Feb. 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Ranking with ordered weighted pairwise classification</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Buffoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gallinari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="volume">382</biblScope>
+			<biblScope unit="page" from="1057" to="1064" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Building a bird recognition app and large scale dataset with citizen scientists: The fine print in fine-grained dataset collection</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Van Horn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Branson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Farrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Haber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Barry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ipeirotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="595" to="604" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Additive margin softmax for face verification</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Signal Process. Lett</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="926" to="930" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Guest editorial: Introduction to the special section on fine-grained visual categorization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sebe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Pattern Anal. Mach. Intell</title>
+		<imprint>
+			<biblScope unit="volume">44</biblScope>
+			<biblScope unit="issue">02</biblScope>
+			<biblScope unit="page" from="560" to="562" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Longtailed recognition by routing diverse distribution-aware experts</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Lian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Miao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Reparameterizable subset sampling via continuous relaxations</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ermon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3919" to="3925" />
+		</imprint>
+	</monogr>
+	<note>ijcai.org</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Differentiable top-k with optimal transport</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pfister</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">On the consistency of top-k surrogate losses</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Koyejo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">119</biblScope>
+			<biblScope unit="page" from="10727" to="10735" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">BBN: bilateralbranch network with cumulative learning for long-tailed visual recognition</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="9716" to="9725" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

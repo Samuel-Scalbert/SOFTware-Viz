@@ -1,0 +1,1039 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Reasoning about Disclosure in Data Integration in the Presence of Source Constraints</title>
+				<funder ref="#_nhp2Jjq">
+					<orgName type="full">CNRS Momentum</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Benedikt</surname></persName>
+							<email>michael.benedikt@cs.ox.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Oxford</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Bourhis</surname></persName>
+							<email>pierre.bourhis@univ-lille.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">CNRS CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Université Lille</orgName>
+								<orgName type="institution" key="instit2">Inria Lille</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Louis</forename><surname>Jachiet</surname></persName>
+							<email>louis.jachiet@univ-lille.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">CNRS CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Université Lille</orgName>
+								<orgName type="institution" key="instit2">Inria Lille</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michaël</forename><surname>Thomazo</surname></persName>
+							<email>michael.thomazo@inria.fr</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">ENS</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">PSL University</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Reasoning about Disclosure in Data Integration in the Presence of Source Constraints</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">825FF1369CA09F3CE4F074EE81BB1D7B</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Data integration systems allow users to access data sitting in multiple sources by means of queries over a global schema, related to the sources via mappings. Datasources often contain sensitive information, and thus an analysis is needed to verify that a schema satisfies a privacy policy, given as a set of queries whose answers should not be accessible to users. Such an analysis should take into account not only knowledge that an attacker may have about the mappings, but also what they may know about the semantics of the sources. In this paper, we show that source constraints can have a dramatic impact on disclosure analysis. We study the problem of determining whether a given data integration system discloses a source query to an attacker in the presence of constraints, providing both lower and upper bounds on source-aware disclosure analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ) entails p Annot w.r.t. constraints:</p><p>Note that Theorem 2 does not give a polynomial time reduction: both CritRewrite(Σ Source ) and CritRewrite(M) can</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ,</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In data integration, users are shielded from the heterogeneity of multiple datasources by querying via a global schema, which provides a unified vocabulary. The relationship between sources and the user-facing schema are specified declaratively via mapping rules. In data integration systems based on knowledge representation techniques, users pose queries against the global schema, and these queries are answered using data in the sources and background knowledge. The computation of the answers involves reasoning based on the query, the mappings, and any additional semantic information that is known on the global schema.</p><p>Data integration brings with it the danger of disclosing information that data owners wish to keep confidential. In declarative data integration, detection of privacy violations is complex: although explicit access to source information may be masked by the global schema, an attacker can infer source facts via reasoning with schema and mapping information.</p><p>Example 1. We consider an information integration setting for a hospital, which internally stores the following data: Prior work <ref type="bibr" target="#b12">[Benedikt et al., 2018]</ref> has studied disclosure in knowledge-based data integration, with an emphasis on the role of semantic information on the global schema -in the form of ontological rules that relate the global schema vocabulary. The presence of an ontology can assist in privacy, since distinctions in the source data may become indistinguishable in the ontology. More dangerous from the point of view of protecting information is semantic information about sources. For example, the sources in a data integration setting will generally overlap: that is, they will satisfy referential integrity constraints, saying that data items in one source link to items in another source. Such constraints should be assumed as public knowledge, and with that knowledge the attacker may be able to infer information that was intended to be secret. Example 2. Continuing Example 1, suppose that we know that each patient has a doctor specialized in their condition, which can be formalized as:</p><formula xml:id="formula_0">PatDoc(p, d) → ∃s PatSpec(p, s) ∧ DocSpec(d, s)</formula><p>And that we also know that when a patient is in a building, they must have a doctor there:</p><formula xml:id="formula_1">PatBdlg(p, b) → ∃d PatDoc(p, d) ∧ DocBldg(d, b)</formula><p>Due to the presence of these constraints, there can be a disclosure of the relationship of patient to speciality <ref type="bibr">PatSpec(p, s)</ref>. Indeed, an attacker can see the VisitingHours for p, and from this, along with OpenHours, they can sometimes infer the building b where p is treated (e.g. if b has a unique set of open hours). From this they may be able to infer, using DocList, the specialty that p has been treated for -for example, if all the doctors in b share a specialty.</p><p>In this work, we perform a detailed examination of the role of source constraints in disclosing information in the context of data integration. We focus on mappings from the sources given by universal Horn rules, where the global schema comes with no constraints. Since our disclosure problem requires reasoning over all sources satisfying the constraints, we need a constraint formalism that admits effective reasoning. We will look at a variety of well-studied rule-based formalisms, with the simplest being referential constraints, and the most complex being the frontier-guarded rules <ref type="bibr" target="#b6">[Baget et al., 2011]</ref>. While decidability of our disclosure problems will follow from prior work <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref>, we will need new tools to analyze the complexity of the problem. In Section 3, we give reductions of disclosure problems to the query entailment problem that is heavily-studied in knowledge representation. While a naïve application of the reduction allows us only to conclude very pessimistic bounds, a more fine-grained analysis, combined with some recent results on CQ entailment, will allow us to get much better bounds, in some cases ensuring tractability. In Section 4, we complement these results with lower bounds. Both the upper and lower bounds revolve around a complexity analysis for reasoning with guarded existential rules and a restricted class of equality rules, where the rule head compares a variable and a distinguished constant. We believe this exploration of limited equality rules can be productive for other reasoning problems.</p><p>Overall we get a complete picture of the complexity of disclosure in the presence of source constraints for many natural classes: see Tables 1 in Section 6 for a summary of our bounds. Full proofs are available at the address https: //hal.inria.fr/hal-02145369.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>We adopt standard notions from function-free first-order logic over a vocabulary of relational names. An instance is a finite set of facts. By a query we always mean a conjunctive query (CQ), which is a first-order formula of the form ∃ x A i , where each A i is an atom. The arity of a CQ is the number of its free variables, and CQs of arity 0 are Boolean. Data integration. Assume that the relational names in the vocabulary are split into two disjoint subsets: source and global schema. The arity of such a schema is the maximal arity of its relational names. We consider a set M of mapping rules between source relations and a global schema relation T given. We focus on rules φ( x, y) → T ( x) where φ is a conjunctive query, there are no repeated variables in T ( x), and where each global schema relation T is associated with exactly one rule. Such rules are sometimes called "GAV mappings" in the database literature <ref type="bibr">[Lenzerini, 2002]</ref>, and the unique φ associated to a global relation T is referred to as the definition of T . The rules are guarded (M ∈ GuardedMap) if for every rule, there exists an atom in the antecedent φ that contains all the variables of φ. The rules are atomic (M ∈ AtomMap) if each φ consists of a single atom, and they are projection maps (M ∈ ProjMap) if each φ is a single atom with no repeated variables. Given an instance D for the source relations, the image of D under mapping M, denoted M(D), is the instance for the global schema consisting of all facts {T ( c) | D |= ∃ y φ( c)}, where φ is the definition of T .</p><p>Source constraints. We consider restrictions on the sources in the form of rules. A tuple-generating dependency (TGD) is a universally quantified sentence of the form ϕ(x, z) → ∃yψ(x, y), where the body ϕ(x, z) and the head ψ(x, y) are conjunctions of atoms such that each term is either a constant or a variable in x ∪ z and x ∪ y, respectively. Variables x, common to the head and body, are called the frontier variables. A frontier-guarded TGD (FGTGD) is a TGD in which there is an atom of the body that contains every frontier variable. We focus on FGTGDs because they have been heavily studied in the database and knowledge representation community, and it is known that many computational problems involving FGTGDs are decidable <ref type="bibr" target="#b6">[Baget et al., 2011]</ref>. In particular this is true of the query entailment problem, which asks, given a finite collection of facts F, a finite set Σ of sentences, and a CQ Q, whether F ∧ Σ entails Q. We use QEntail(F, Σ, Q) to denote an instance of this problem and also say that "F entails Q w.r.t. constraints Σ". A special case of FGTGDs are Guarded TGDs (GTGDs), in which there is an atom containing all body variables. These specialize further to linear TGDs (LTGDs), whose body consists of a single atom; and even further to inclusion dependencies (IncDeps), a linear TGD with a single atom in the head, in which no variable occurs multiple times in the body, and no variable occurs multiple times in the head. Even IncDeps occur quite commonly: for example, the source constraints of Example 2 can be rewritten as IncDeps. The most specialized class we study are the unary IncDeps:(UIDs), which are IncDeps with at most one frontier variable.</p><p>Queries and disclosure. The sensitive information in a data integration setting is given by a CQ p over the source schema, which we refer to as the policy. Intuitively, disclosure of sensitive information occurs in a source instance D whenever the attacker can infer from the image M(D) that p holds of a tuple in D. Formally, we say an instance V for the global schema is realizable, with respect to mappings M and source constraints Σ Source if there is some source instance D that satisfies Σ Source such that M(D) = V. For a realizable V, the set of such D are the possible source instances for V. A query result p( t) is disclosed at V if p( t) holds on all possible source instances for V. A query p admits a disclosure (for mappings M and source constraints Σ Source ) if there is some realizable instance V and binding t for the free variables of p for which p( t) is disclosed. In this terminology, the conclusion of Example 2 was that policy PatSpec(p, s) admits a disclosure with respect to the constraints and mappings. For a class of constraints C, a class of mappings Map, a class of policies Policy, we write Disclose C (C, Map) to denote the problem of determining whether a policy (a CQ, unless other-wise stated) admits a disclosure for a set of mappings in Map and a set of source constraints in C. Given Σ Source , M and a CQ p, the corresponding instance of this problem is denoted by Disclose(C, M, p). In this paper we will focus on disclosure for queries and constraints without constants, although our techniques extend to the setting with constants, as long as distinct constants are not assumed to be unequal.</p><p>3 Reducing Disclosure to Query Entailment Our first goal is to provide a reduction from Disclose C (TGD, Map) to a finite collection of standard query entailment problems. For simplicity we will restrict to Boolean queries p in stating the results, but it is straightforward to extend the reductions and results to the non-Boolean case. We first recall a prior reduction of Disclose C (TGD, Map) to a more complex problem, the hybrid open and closed world query answering problem <ref type="bibr" target="#b41">[Lutz et al., 2013;</ref><ref type="bibr" target="#b43">Lutz et al., 2015;</ref><ref type="bibr" target="#b31">Franconi et al., 2011]</ref>, denoted HOCWQ. HOCWQ takes as input a set of facts F, a collection of constraints Σ, a Boolean query Q, and additionally a subset C of the vocabulary. A possible world for such HOCWQ(F, Σ, Q, C) is any instance D containing F, satisfying Σ, and such that for each relation C ∈ C, the C-facts in D are the same as the C-facts in F. HOCWQ(F, Σ, Q, C) holds if Q holds in every possible world. Note that the query entailment problem is a special case of HOCWQ, where C is empty.</p><p>Given a set of mapping rules M of the form φ( y, x) → T ( x), we let G(M) be the set of global schema predicates, and let Σ M (M) be the mapping rules, considered as bidirectional constraints between global schema predicates and sources.</p><p>We now recall one of the main results of <ref type="bibr">[Benedikt et al.,</ref> </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>2016]:</head><p>Theorem 1. There is an instance D computable in linear time from Σ Source , M, p, such that Disclose(Σ Source , M, p) holds if and only if</p><formula xml:id="formula_2">HOCWQ(D , Σ Source ∪ Σ M (M), p, G(M)) holds.</formula><p>In fact, the arguments in <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref> show that D can be taken to be a very simple instance, the critical instance over the global schema G(M) denoted D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M) Crit</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>where D S</head><p>Crit , for S a set of predicates, denotes the instance that mentions only a single element c Crit , and contains, for each relation R in S of arity n, the fact R(c Crit , . . . c Crit ).</p><formula xml:id="formula_3">Corollary 1. Disclose C (FGTGD, CQMap) is in 2EXPTIME. Proof. The non-classical aspect of HOCWQ comes into play with rules of Σ M (M) of form φ( x, y) → T ( x). But in the context of D G(M)</formula><p>Crit , these can be rewritten as single-constant equality rules (SCEQrules) φ( x, y) → i x i = c Crit . Such rules remain in the Guarded Negation Fragment of first-order logic, which also subsumes FGTGDs, while having a query entailment problem in 2EXPTIME <ref type="bibr" target="#b8">[Bárány et al., 2015]</ref>.</p><p>We now want to conduct a finer-grained analysis, looking for cases that give lower complexity. To do this we will transform further into a classical query entailment problem. This will require a transformation of our query p, a transformation of our source constraints and mappings into a new set of constraints, and a transformation of the instance D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit . The idea of the transformation is that we remove the SCEQrules that are implicit in the HOCWQ problem, replacing them with constraints and queries that reflect all the possible impacts the rules might have on identifying two variables.</p><p>We first describe the transformation of the query and the constraints. They will involve introducing a new unary predicate IsCrit(x); informally this states that x is equal to c Crit . Consider a CQ Q = ∃ y A i . An annotation of Q is a subset of Q's variables. Given an annotation Annot of Q, we let Q Annot be the query obtained from Q by performing the following operation for each v in Annot: for all occurrences j of v except the first one, replacing v with a fresh variable v j ; and adding conjuncts IsCrit(v j ) as well as IsCrit(v) to Q Annot . A critical-instance rewriting of a CQ Q is a CQ obtained by applying the above process to Q for any annotation. We write</p><formula xml:id="formula_4">Q Annot ∈ CritRewrite(Q) to indicate that Q Annot is such a rewriting.</formula><p>To transform the mapping rules and constraints to a new set of constraints using IsCrit(x), we lift the notion of criticalinstance rewriting to TGDs in the obvious way: a criticalinstance rewriting of a TGD σ (either in Σ Source or Σ M (M)), is the set of TGDs formed by applying the above process to the body of σ. We write σ Annot ∈ CritRewrite(Σ) to indicate that σ Annot is a critical-instance rewriting for a σ ∈ Σ, and similarly for mappings. For example, the second mapping rule in Example 1 has several rewritings; one of them will change the rule body to</p><formula xml:id="formula_5">PatBdlg(p, b) ∧ IsOpen(b , d) ∧ IsCrit(b) ∧ IsCrit(b ).</formula><p>Our transformed constraints will additionally use the set of constraints IsCrit(M), including all rules:</p><formula xml:id="formula_6">T (x 1 . . . x n ) → IsCrit(x i )</formula><p>where T ranges over the global schema and 1 ≤ i ≤ n. Informally IsCrit(M) states that all elements in the mapping image must be c Crit . We also need to transform the instance, using a source instance with "witnesses for the target facts". Consider a fact T (c Crit . . . c Crit ) in D G(M) Crit formed by applying a mapping rule i A i ( x i , y i ) → T ( x) in M. The set of witness tuples for T ( x) is the set A i ( c), where c contains c Crit in each position containing a variable x j and containing a constant c yj in every position containing a variable y j . That is the witness tuples are witnesses for the fact T (c Crit . . . c Crit ), where each existential witness is chosen fresh. Let Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ) be the instance formed by taking the witness tuples for every fact</p><formula xml:id="formula_7">T (c Crit . . . c Crit ) ∈ D G(M) Crit .</formula><p>We are now ready to state the reduction of the disclosure problem to query entailment: Theorem 2. Disclose(Σ Source , M, p) holds exactly when there is a p Annot ∈ CritRewrite(p) such that Hide M (D contain exponentially many rewritings, and further there can be exponentially many rewritings in CritRewrite(p).</p><p>However, the algorithm does give us a better bound in the case of Guarded TGDs with bounded arity. Corollary 2. If we bound the arity of schema relations, then Disclose C (GTGD, GuardedMap) is in EXPTIME.</p><p>Proof. First, by introducing additional intermediate relations and source constraints, we can assume that M contains only projection mappings. Thus we can guarantee that CritRewrite(M) just contains the rules in M. By introducing intermediate relations and additional source constraints, we can also assume that each GTGD ∈ Σ Source has a body with at most two atoms. Since the arity of relations is fixed, the size of such 1or 2-atom bodies is fixed as well. From this we see that the number of constraints in any CritRewrite(σ) is polynomial. The reduction in Theorem 2 thus gives us exponentially many GTGD entailment problems of polynomial size. Since entailment over Guarded TGDs with bounded arity is in EXPTIME <ref type="bibr" target="#b21">[Calì et al., 2013]</ref>, we can conclude.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Refinements of the Reduction to Identify Lower Complexity Cases</head><p>In order to lower the complexity to EXPTIME without bounding the arity, we refine the construction of the function CritRewrite(σ) in the case where σ is a linear TGD, providing a function CritRewrite PTIME (σ) that constructs only polynomially many rewritten constraints.</p><p>Let σ = B( x) → ∃ y H( z) be a linear TGD with relation B of arity k, and suppose x contains d distinct free variables V = {v 1 . . . v d }. Let P be the set of pairs (e, f ) with e &lt; f ≤ k such that the same variable v i sits at positions e and f in x. We order P as (e 0 , f 0 ) . . . (e h , f h ); for each (e, f ) that is not the initial pair (e 0 , f 0 ), we let (e, f ) -be its predecessor in the linear order.</p><p>We let B e,f denote new predicates of arity k for each (e, f ) ∈ P . Let w be a set of k distinct variables, and w i=j be formed from w by replacing w j with w i . We begin the construction of CritRewrite PTIME (σ) with the constraints:</p><formula xml:id="formula_8">B( w e0=f0 ) → B e0,f0 ( w e0=f0 ) and B( w) ∧ IsCrit(w e0 ) ∧ IsCrit(w f0 ) → B e0,f0 ( w).</formula><p>For each (e, f ) with a predecessor (e, f ) -= (e , f ), we add to CritRewrite PTIME (σ) the following constraints:</p><formula xml:id="formula_9">B e ,f ( w e=f ) → B e,f ( w e=f ) and B e ,f ( w) ∧ IsCrit(w e ) ∧ IsCrit(w f ) → B e,f ( w).</formula><p>Letting e h , f h the final pair in P , we add to</p><formula xml:id="formula_10">CritRewrite PTIME (σ) the constraint B e h ,f h ( x ) → ∃ y H( z)</formula><p>where x is obtained from x by replacing all but the first occurrence of each variable v by a fresh variable.</p><p>If Σ Source consists of LTGDs, we let CritRewrite PTIME (Σ Source ) be the result of applying this process to every σ ∈ Σ Source . Similarly, if M consists of atomic mappings (implying that the associated rules are LTGDs), then we let CritRewrite PTIME (M) the result of applying the process above to the rule going from source relation to global schema relation associated to m ∈ M. Then we have: Theorem 3. When Σ Source consists of LTGDs, Disclose(Σ Source , M, p) holds exactly when there is a</p><formula xml:id="formula_11">p Annot ∈ CritRewrite(p) such that Hide M (D G(M) Crit ) entails p Annot w.r.t. to the constraints CritRewrite PTIME (Σ Source )∪CritRewrite PTIME (M)∪IsCrit(M)</formula><p>We can combine this result with recent work on finegrained complexity of GTGDs to improve the doubly exponential upper bound of Corollary 1 for linear TGD source constraints and atomic mappings: Theorem 4. Disclose C (LTGD, AtomMap) is in EXPTIME. If the arity of relations in the source schema is bounded, then the complexity drops to NP, while if further the policy is atomic, the problem is in PTIME.</p><p>Proof. It is sufficient to get an EXPTIME algorithm for the entailment problem produced by Theorem 3, since then we can apply it to each p Annot in EXPTIME. The constraints in CritRewrite PTIME (Σ Source ) ∪ CritRewrite PTIME (M) are Guarded TGDs that are not necessarily LTGDs. But the bodies of these guarded TGDs consist of a guard predicate and atoms over a fixed "side signature", namely the unary predicate IsCrit. It is known that the query entailment for IncDeps and guarded TGDs with a fixed side signature is in EXPTIME, with the complexity dropping to NP (resp. PTIME) when the arity is fixed (resp. fixed and the query is atomic) <ref type="bibr">[Amarilli and Benedikt, 2018a</ref>].</p><p>Can we do better than EXPTIME? We can note that when the constraints σ ∈ Σ Source are IncDeps, CritRewrite(σ) consists only of σ; similarly if a mapping m ∈ M is a projection, then CritRewrite(m) consists only of m. This gives us a good upper bound in one of the most basic cases: Corollary 3. Disclose C (IncDep, ProjMap) is in PSPACE. If further a bound is fixed on the arity of relations in the source schema, then the problem becomes NP, dropping to PTIME when the policy is atomic.</p><p>Proof. Our algorithm will guess a p Annot in CritRewrite(Q) and checks the entailment of Theorem 2. This gives an entailment problem for IncDeps, known to be in PSPACE in general, in NP for bounded arity, and in PTIME for bounded arity and atomic queries <ref type="bibr" target="#b35">[Johnson and Klug, 1984]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Obtaining Tractability</head><p>Thus far we have seen cases where the complexity drops to PSPACE in the general case and NP in the bounded arity case, and PTIME for atomic queries. We now present a case where we obtain tractability for arbitrary queries and arity. Recall that a UID is an IncDep where at most one variable is exported. They are actually quite common, capturing referential integrity when data is identified by a single attribute. We can show that restricting to UIDs while having only projection maps leads to tractability: Theorem 5. Disclose C (UID, ProjMap) is in PTIME.</p><p>Proof. The first step is to refine the reduction of Theorem 2 to get an entailment problem with only UIDs, over an instance consisting of a single unary fact IsCrit(c Crit ). The main issue is avoid the constraints in Σ M (M), corresponding to the mapping rules. The intuition for this is that on D the only impact of the backward and forward implications of Σ M (M) is to create new facts among the source relations. In these new facts only c Crit , is propagated. Rather than creating SCEQrules (implicitly what happens in the HOCWQ reduction) or generating classical constraints where the impact of the equalities are "baked in" (as in the critical-instance rewritings of Theorems 2 and 3), we truncate the source relations to the positions where non-visible elements occur, while generating UIDs on these truncated relations that simulate the impact of back-and-forth using Σ M (M).</p><p>The second step is to show that query entailment with UIDs over the instance consisting only of IsCrit(c Crit ) is in PTIME. This can be seen as an extension of the PTIME inference algorithm for UIDs <ref type="bibr" target="#b25">[Cosmadakis et al., 1990]</ref>. The idea behind this result is to analyze the classical "chase procedure" for query entailment with TGDs <ref type="bibr" target="#b29">[Fagin et al., 2005]</ref>. In the case of UIDs over a unary fact, the shape of the chase model is very restricted; roughly speaking, it is a tree where only a single fact connects two values. Based on this, we can simplify the query dramatically, making it into an acyclic query where any two variables co-occur in at most one predicate. Once query simplification is performed, we can reduce query entailment to polynomial many entailment problems involving individual atoms in the query. This in turn can be solved using the UID inference procedure of <ref type="bibr" target="#b25">[Cosmadakis et al., 1990]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Lower Bounds</head><p>We now focus on providing lower bounds for Disclose C (C, Map), showing in particular that the upper bounds provided in Section 3 can not be substantially improved. For many classes of constraints it is easy to see that the complexity of disclosure inherits the lower bounds for the classical entailment problem for the class. From this we get a number of matching lower bounds; e.g. 2EXPTIME for GTGD constraints, PSPACE for IncDep constraints. But note that in some cases the upper bounds we have provided for disclosure in Section 3 are higher than the complexity of entailment over the source constraints. For example, for IncDeps we have provided only a 2EXPTIME upper bound for guarded mappings (from Corollary 1), and only an exponential bound for atomic mappings (from Theorem 4). This suggests that the form of the mappings influences the complexity as well, as we now show.</p><p>Most of our proofs for hardness above the entailment bound for source constraints rely on the encoding of a Turing machine. Source constraints are used to generate the underlying structures (tree of configurations, tape of a Turing machine) while mappings are used to ensure consistency (a universal configuration is accepting if and only if all its successor configurations are accepting, the content of the tape is consistently represented,...). To illustrate our approach, we sketch the proof of the following result. Theorem 6. Disclose C (IncDep, GuardedMap) and Disclose C (GTGD, ProjMap) are 2EXPTIME-hard, and are EXPTIME-hard even in bounded arity.</p><p>Proof. Recall that Theorem 1 relates disclosure to a HOCWQ problem on D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit . Also recall from Section 3 the intuition that such a problem amounts to a classical entailment problem for a CQ over a very simple instance, using the source dependencies and SCEQrules: of the form φ( x) → x = c Crit , where φ will be the body of a mapping. We will sketch how to simulate an alternating EXPSPACE Turing machine M using a QEntail problem using IncDeps and guarded SCEQrules. This can in turn be simulated using our HOCWQ problem.</p><p>We first build a tree of configurations using IncDeps, such that each node has a type (existential or universal) and is the parent of two nodes (called α-successor and β-successor) of the opposite type. This tree structure is represented, together with additional information, by atoms such as:</p><p>Children ∀ (c, c α , c β , ac, ac α , ac β , y 0 , y 1 , r).</p><p>Intuitively, this states that c is a universal configuration, parent of c α and c β . ac (resp. ac α , resp. ac β ) is the acceptance bit for c (resp. c α , resp. c β ), which will be made equal to c Crit if and only if the configuration represented by c (resp. c α , resp. c β ) is accepting. y 0 , y 1 will be used to represent cell addresses, while r is the identifier of the root of the configuration tree. The initial instance is such an atom, where the first position and the last position are the same constant, y 0 is a vector of n 0's, y 1 is a vector of n 1's, and all other arguments are distinct constants.</p><p>We use SCEQrules to propagate acceptance information up in the tree. For instance, a universal configuration is accepting if both its successors are accepting. This is simulated by the following SCEQrule:</p><formula xml:id="formula_12">Children ∀ (c, c α , c β , ac c , c Crit , c Crit , y 0 , y 1 , r) → ac c = c Crit .</formula><p>To simulate M, we need access to an exponential number of cells for each configuration. We identify a cell by the configuration it belongs to and an address, which is a vector, generated by IncDeps, of length n whose arguments are either 0 or 1. The atom for representing a cell is thus Cell(c p , c, addr, v, v prev , v next ), where c p is the parent configuration of c, which is the configuration to which the represented cell belongs, addr is the address of the cell, v its content, v prev the content of the previous cell, and v next the content of the next cell. Note that this representation is redundant, and we need to use SCEQrules to ensure its consistency.</p><p>Note that v is a tuple of length the size of (Σ ∪ { }) × (Q ∪ {⊥}). Each position corresponds to an element of that set, and the content of a represented cell is the element which corresponds to the unique position in which c Crit appears.</p><p>We now explain how to build the representation of the initial tape, and simulate the transition function. Both steps are done by unifying some nulls with c Crit . W.l.o.g., we assume that the initial tape contains a l in the first cell, on which points the head of M in a state s, and that (l, s) corresponds to the first bit of v. We thus use a SCEQrule to set this bit to c Crit in the first cell of the first configuration. We then set (w.l.o.g.) the second bit of all the other cells of that configuration to c Crit (assuming this represents ( , ⊥)).</p><p>To simulate the transitions, we note that the content of a cell in a configuration depends only on the content of the same cell in the parent configuration, along with the content of parent's previous and next cells. We thus add a SCEQrule Unbounded arity Bounded arity that checks for the presence of c Crit specifying the content of three consecutive cells in a configuration, and unify a null with c Crit to specify the content of the corresponding cell of a child configuration.</p><formula xml:id="formula_13">Σ Source M ProjMap AtomMap GuardedMap CQMap ProjMap AtomMap GuardedMap CQMap IncDep PSPACE U =C3 L=QEntail EXPTIME L=T 7 2EXPTIME L=T 6 2EXPTIME NP L=QEntail NP EXPTIME L=T 6 2EXPTIME L=T 8 LTGD EXPTIME L=T 7 EXPTIME U =T 4 2EXPTIME 2EXPTIME NP NP U =T 4 EXPTIME 2EXPTIME GTGD 2EXPTIME L=T 6 2EXPTIME 2EXPTIME 2EXPTIME EXPTIME L=T 6 EXPTIME EXPTIME U =C2 2EXPTIME FGTGD 2EXPTIME 2EXPTIME 2EXPTIME 2EXPTIME U =C1 2EXPTIME L=QEntail 2EXPTIME 2EXPTIME 2EXPTIME U =C1</formula><p>The argument above uses IncDeps and GuardedMaps, but we can simplify the mappings to ProjMap using GTGDs.</p><p>A simple variation of the construction used for PSPACEhardness of entailment with IncDeps <ref type="bibr" target="#b23">[Casanova et al., 1984]</ref> shows that our upper bounds for IncDep source constraints and atomic maps are tight. The case of LTGD source constraints and projection maps can be done via reduction to that of IncDep source constraints and atomic maps: We can also show that our tractability result for UID constraints and projection maps does not extend when either the maps or the constraints are broadened. Informally, this is because with these extensions we can generate an instance on which CQ querying is NP-hard.</p><formula xml:id="formula_14">Theorem 7. Disclose C (IncDep,</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Disclosure analysis has been approached from many angles. We do not compare with the vast amount of work that analyzes probabilistic mechanisms for releasing information, providing probabilistic guarantees on disclosure <ref type="bibr">[Dwork, 2006]</ref>. Our work focuses on the impact of reasoning on mapping-based mechanisms used in knowledge-based information integration, which are deterministic; thus one would prefer, and can hope for, deterministic guarantees on disclosure. We deal here with the analysis of disclosure, while there is a complementary literature on how to enforce privacy <ref type="bibr" target="#b16">[Biskup and Weibert, 2008;</ref><ref type="bibr" target="#b19">Bonatti et al., 1995;</ref><ref type="bibr" target="#b17">Bonatti and Sauro, 2013;</ref><ref type="bibr" target="#b48">Studer and Werner, 2014]</ref>.</p><p>The problem of whether information is disclosed on a particular instance (variation of HOCWQ introduced in Section 3) has been studied in both the knowledge representation <ref type="bibr" target="#b41">[Lutz et al., 2013;</ref><ref type="bibr" target="#b43">Lutz et al., 2015;</ref><ref type="bibr" target="#b31">Franconi et al., 2011;</ref><ref type="bibr" target="#b1">Ahmetaj et al., 2016;</ref><ref type="bibr" target="#b4">Amendola et al., 2018]</ref> and database community <ref type="bibr" target="#b0">[Abiteboul and Duschka, 1998</ref>]. The corresponding schema-level problem was defined in <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref>, which allows arbitrary constraints relating the source and the global schema. However, results are provided only for constraints in guarded logics, which does not subsume the case of mappings given here. Our results clarify some issues in prior work: <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref> claimed that disclosure with IncDep source constraints and atomic maps is in PSPACE, while our Theorem 7 shows that the problem is EXPTIME-hard. Our notion of disclosure corresponds to the complement of <ref type="bibr" target="#b12">[Benedikt et al., 2018]</ref>'s "data-independent compliance". The formal framework of <ref type="bibr" target="#b12">[Benedikt et al., 2018]</ref> is orthogonal to ours. On the one hand, source constraints are absent; on the other hand a more powerful mapping language is considered, with existentials in the head of rules, while constraints on the global schema, given by ontological axioms, are now allowed. <ref type="bibr" target="#b12">[Benedikt et al., 2018]</ref> assume that the attacker has an interface for posing queries against the global schema, with the queries being answered under entailment semantics. In general, the semantic information on the global schema makes disclosure harder, since the outputs of different mapping rules may be indistinguishable by an attacker who only sees the results of reasoning. In contrast, source constraints make disclosure of secrets easier, since they provide additional information to the attacker.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Summary and Conclusion</head><p>We have isolated the complexity of information disclosure from a schema in the presence of commonly-studied sets of source constraints. A summary of many combinations of mappings M and source constraints Σ Source is given in Table 1: note that all problems are complete for the complexity classes listed. We have shown tractability in the case of UIDs and projection maps (omitted in the tables), while showing that lifting the restriction leads to intractability. But we leave open a finer-grained analysis of complexity for frontierone constraints with more general mappings. Our results depend on a fine-grained analysis of reasoning with TGDs and SCEQrules, a topic we think is of independent interest.</p><p>A Detailed Proofs from Section 3: Upper Bounds for Disclosure</p><p>A.1 Proof of Theorem 2: Correctness of the Basic Reduction from Disclosure to Classical Entailment</p><p>Recall the statement of Theorem 2, which applies the algorithms CritRewrite(Σ Source ) to TGDs and CritRewrite(M) to mappings.</p><p>Disclose(Σ Source , M, p) holds exactly when there is a p Annot ∈ CritRewrite(p) such that Hide M (D</p><formula xml:id="formula_15">G(M) Crit ) entails p Annot w.r.t. constraints: CritRewrite(Σ Source ) ∪ CritRewrite(M) ∪ IsCrit(M) holds. By Theorem 1 we know that Disclose(Σ Source , M, p) is equivalent to HOCWQ(D G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)).</formula><p>This will immediately allow us to prove one direction of the equivalence. Suppose each of our entailments fails. From this, we see using <ref type="bibr" target="#b47">[Sagiv and Yannakakis, 1980]</ref> that Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ) does not entail the disjunction of p Annot . Thus we have an instance D extending Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ) with facts that may include the IsCrit predicate, where D satisfies all the rewritten constraints and no rewritten query p Annot . Note that since D satisfies the constraints of CritRewrite(M) as well as IsCrit(M), we know that the element c Crit , if it occurs in Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ), will be labeled with IsCrit. Form an instance D by unifying all elements e in D satisfying IsCrit into a single element c Crit , making c Crit inherit any fact that such an e participates in. That is, we choose D so that if h is the mapping taking any element satisfying IsCrit to c Crit and fixing every other element, then h is a homomorphism from D onto D . We can easily verify that D satisfies the original source constraints Σ Source . For each homomorphism λ of the body of σ ∈ Σ Source into D , there is a homomorphism λ of some σ ∈ CritRewrite(σ ) into D. We know σ is satisfied in D, and taking the h-image of the tuples that witness this gives us the required witnesses for σ in D . Now let D 0 be the restriction of D to the source relations. We argue that the mapping image of D 0 under M is exactly D Crit . Finally, we claim that D satisfies ¬p. If it satisfies p, then D would satisfy p Annot for some annotation Annot, a contradiction. Putting this all together, we see that D contradicts</p><formula xml:id="formula_16">HOCWQ(D Crit , Σ Source ∪ Σ M (M), p, G(M)).</formula><p>Before turning to the other direction, we will explain some other results that will be necessary. The first is the chase procedure for checking entailment of a query Q from a set of constraints Σ and a set of facts D. This proceeds by building a sequence of instances D = D 0 . . . D i . . . where each D i+1 is formed from D i by "firing a rule" σ ∈ Σ D i . Firing σ in D i means finding a homomorphism λ from the body of σ into D i , and adding facts to extend λ to the head, using fresh values for all existentially quantified variables. Such a homomorphism λ is called a trigger for the rule firing. The chase of D under Σ, denoted Chase Σ (D), is any instance formed as the union of such a sequence having the additional property that every rule that could fire in some D i fires in some later D j . The significance of the chase for query entailment is the following result <ref type="bibr" target="#b29">[Fagin et al., 2005]</ref>: Theorem 9. For an instance D, set of TGDs Σ, and UCQ Q, we have QEntail(D, Σ, Q) if and only if some chase model for D under Σ satisfies Q.</p><p>We will also need a variation of the chase for the problem HOCWQ(D <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref>. The visible chase is a sequence of source instances D 0 . . . D n . . . that begins with</p><formula xml:id="formula_17">G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)), taken from</formula><formula xml:id="formula_18">D 0 = Hide M (D G(M)</formula><p>Crit ). D i+1 is formed from D i by "chasing and merging". The chase step applies the usual chase procedure described above to D i with constraints Σ Source , creating new facts that possibly contain fresh values. In a merge step, we take a mapping m ∈ M and a homomorphism λ of the body of m into D i , and for each free variable x of m, we replace λ(x) by c Crit in all facts in which it appears. We say that this is a merge step with m, λ on D i . Since the process is monotone, it must reach a fixpoint, which we refer to as the visible chase of D</p><formula xml:id="formula_19">G(M) Crit , denoted VisChase(Σ Source , M). Proposition 1. [Benedikt et al., 2016] HOCWQ(D G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)) holds exactly when VisChase(Σ Source , M) satisfies p.</formula><p>We now prove the other direction, assuming that HOCWQ(D</p><formula xml:id="formula_20">G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)</formula><p>) fails, but one of the entailments holds. By Theorem 9, this means that some chase of Hide M (D</p><formula xml:id="formula_21">G(M) Crit ) under the constraints CritRewrite(Σ Source ) ∪ CritRewrite(M) ∪ IsCrit(M) satis- fies p Annot for some annotation Annot. Let D 0 . . . D n . . . denote such a chase sequence for Hide M (D G(M) Crit ) under CritRewrite(Σ Source ) ∪ CritRewrite(M) ∪ IsCrit(M). We form another sequence D 0 . . . D n . . ., with D 0 = D 0 , main- taining the invariant that there is a homomorphism h i from D i to D i mapping every element satisfying IsCrit to D G(M) Crit .</formula><p>The inductive step is performed as follows:</p><p>• For every chase step with a rule σ of CritRewrite(Σ Source ) applied in D i , having trigger λ , we know that σ = CritRewrite(σ) for some σ ∈ Σ Source . We can apply the corresponding rule σ in D i , with a trigger λ that maps a variable x to the h i -image of λ (x). Thus λ composed with h i is λ.</p><p>• For every chase step in D i with a rule of σ ∈ CritRewrite(m) for m ∈ M and a trigger λ, we apply a merge step in D i with m and λ.</p><p>Since some D n satisfies p Annot , one of the D n must satisfy p Annot . Since D n contains the image of D n under the homomorphism h n , and h n maps p Annot to p, we see that D n must satisfy p. But D n is a subinstance of the visible chase for our HOCWQ problem. Thus the assumption that HOCWQ(D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit , Σ Source ∪Σ M (M), p, G(M)) fails and Proposition 1 imply that p cannot hold in D n , a contradiction.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Simplifying Mappings</head><p>In this section, we will see that we can simplify mapping to be projection maps at the cost of moving to a richer class of source constraints.</p><p>Given a problem Disclose(Σ Source , M, p) we consider Σ Source and M built in the following way: Σ Source is composed of Σ Source plus for each mapping φ( x, y) → T ( x) we create a predicate R φ ( x, y) and we add to</p><formula xml:id="formula_22">Σ Source the two constraints φ( x, y) → R φ ( x, y) and R φ ( x, y) → φ( x, y). M is composed of mappings R φ ( x, y) → T φ ( x).</formula><p>Proposition 2. We have Disclose(Σ Source , M, p) if and only if Disclose(Σ Source , M , p).</p><p>Proof. To prove the proposition, it is sufficient to prove that p holds on VisChase(Σ Source , M) if and only if p holds on VisChase(Σ Source , M ) (see Proposition 1). Let Π(D) be the instance obtained by removing all the facts R φ ( x, y) in D.</p><p>We recall that the visible chase works iteratively, at each step a database D i+1 is created from D i by chasing all facts then merging some values with c Crit . For the sake of simplicity we suppose that each step is composed of either one rule firing or one merging.</p><p>• We start by proving that Disclose(Σ Source , M, p) implies Disclose(Σ Source , M , p). Let D 0 , . . . be a sequence corresponding to VisChase(Σ Source , M). We build a sequence D 0 , . . . corresponding to VisChase(Σ Source , M ). We are trying to build D 0 , . . . such that there exists for all i there exists j such that D i = Π(D j ), and h(x) = c Crit implies x = c Crit . We prove by induction: -D 0 is composed of witnesses of M and D 0 of witnesses of M . We build D 1 , . . . , D j such that each D i is obtained by firing the i-th rule R φ ( x, y) → φ( x, y). -Let us suppose that D i = Π(D j ) and D i+1 is obtained by firing a rule σ; σ could have been fired on D j and thus we can build D j+1 such that</p><formula xml:id="formula_23">D i+1 = Π(D j+1 ).</formula><p>-When D i+1 is obtained by merging values then it means that we have φ( x, y) holding in D i and thus φ( x, y) holding in Π(D j ) therefore we could use the rule φ( x, y) → R φ ( x, y) followed by an unification on R φ . Therefore we can build D j+1 = D j ∪ {R φ ( x, y)} and D j+2 such that D i+1 = Π(D j+2 ).</p><p>• For the direction Disclose(Σ Source , M , p) implies Disclose(Σ Source , M, p) we start by noticing that, without loss of generality, we can suppose that the sequence D 0 , . . . of VisChase(Σ Source , M ) starts by firing each rule R φ ( x, y) → φ( x, y) (it is always possible to generate more facts) and then we create D 0 , . . . such that for all i big enough there exists j such that D j = h(Π(D i ))</p><p>-Once all rules R φ ( x, y) → φ( x, y) have been fired, we see that we obtain an instance isomorphic to D 0 . -When D j = h(Π(D i )) and D i+1 is obtained through a merge step, it means that we had D i |= R φ ( x, y) but we easily see by induction that this means that we had D j |= h(φ( x, y)) and thus that we can also perform the merge step on D j -When D i+1 is obtained through a rule, it is either a rule in Σ Source that we can reproduce in D j or it is a rule φ( x, y) → R φ ( x, y). In this latter case, we don't have anything to do as R φ ( x, y) will be discarded by Π.</p><p>Now, we also see that j will grow as i grows since except for rules φ( x, y) → R φ ( x, y), our j increases. Therefore at the limit we have that VisChase(Σ Source , M ) |= p implies VisChase(Σ Source , M) |= p.</p><p>Corollary 4. Disclose C (GTGD, GuardedMap) reduces to Disclose C (GTGD, ProjMap).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 More Details for the Proof of Corollary 2</head><p>We recall the statement of Corollary 2:</p><p>If we fix the maximal arity of relations in the schema, then Disclose C (GTGD, GuardedMap) is in EXPTIME.</p><p>We now fill in the details of the proof sketch in the body.</p><p>Reducing to ProjMap. Using Corollary 4, we can reduce the problem to Disclose C (GTGD, ProjMap). We now show that this latter problem is in EXPTIME.</p><p>Reducing to two atoms in the body of TGDs. Given a set of GTGDs Σ Source and a set of maps M ∈ IncDep we now reduce Disclose(Σ Source , M, p) to Disclose(Σ Source , M, p) where each GTGD in Σ Source holds at most two conjuncts in the rule body.</p><p>Σ Source is composed by applying the following process for each</p><formula xml:id="formula_24">GTGD φ( x) → ∃ y R( t) ∈ Σ Source . The constraint φ( x) → ∃ y R( t) is guarded, therefore we can select a guard- ing conjunct G φ ( x) such that φ( x) = G φ ( x) ∧ Q 1 ( x) ∧ • • • ∧ Q k ( x). When k ≤ 1 we simply add φ( x) → ∃ y R( t) to Σ Source . When k &gt; 1, we rewrite this constraint by introduc- ing k predicates R 1 , . . . , R k , while producing the following constraints G φ ( x) ∧ Q 1 ( x) → R 1 ( x) and for 1 ≤ i ≤ k -1: R i ( x) ∧ Q i+1 ( x) → R i+1 ( x). Finally we also add R k ( x) → ∃ y R( t).</formula><p>It is easy to see that this new problem is equivalent because each constraint in Σ Source is implied by its corresponding constraints in Σ Source and if we look at the result of the visible chase, the only fact derived from a R k ( x) are facts R( y) such that φ( x).</p><p>Rewriting in PTIME. Now that maps are ProjMaps and each GTGD has at most two atoms in their body, we can apply the rewriting presented in Theorem 2. Notice that each GTGD will be rewritten to a bounded number of GTGDs, and the rewriting of the maps will be trivial. Since query entailment with GTGDs is EXPTIME when the arity is bounded we can conclude the proof.</p><p>A.4 Proof of Theorem 3: More Efficient Reduction to Entailment for LTGD Source Constraints and Atomic Mappings</p><p>Recall the statement of Theorem 3, which concerns the application of the rewriting algorithms CritRewrite PTIME (Σ Source ) for LTGD source constraints Σ Source , and the algorithm CritRewrite PTIME (M) for atomic mappings M:</p><p>Disclose(Σ Source , M, p) holds exactly when there is a</p><formula xml:id="formula_25">Q Annot ∈ CritRewrite(Q) such that Hide M (D G(M) Crit ) entails Q Annot w.r.t. to the constraints CritRewrite PTIME (Σ Source )∪CritRewrite PTIME (M)∪IsCrit(M) Let Σ simple = CritRewrite PTIME (Σ Source ) ∪ CritRewrite PTIME (M) ∪ IsCrit(M)</formula><p>and Σ PTIME be the constraints posed in Theorem 3. By Theorem 2, it is enough to show that query entailment involving Σ PTIME is equivalent to entailment involving Σ simple .</p><p>In one direction, suppose that I is a counterexample to entailment involving Σ simple . We fire the rules generating atoms B e,f to get instance I . We claim that the constraints of Σ PTIME hold. Clearly, the rules generating atoms B e,f hold. Further, by construction, for any e, f if B e,f holds exactly when there is an annotation We now consider the rule B e h ,f h ( x) → ∃ z H( z). Considering a c such that B e h ,f h ( c) holds, we want to claim that there is an annotation Annot such that B Annot ( c) holds.</p><p>Recall that each e i , f i is associated with some variable v that occurs as both x ei and x fi in B( x). If B ei,fi ( c) holds, we know that either c ei = c fi or IsCrit(c ei ) ∧ IsCrit(c fi ) holds. If the latter happens, then we add the variable v to our annotation. We can then verify that B Annot ( c) holds.</p><p>Since we are assuming that the corresponding constraint of Σ simple holds in I, we can conclude that I , c |= ∃ z H( z). From this we see that I is a counterexample to the entailment involving Σ PTIME .</p><p>In the other direction, let I be a counterexample to the entailment for the constraints in Σ PTIME . We claim that the constraints of Σ simple hold of I . For constraints corresponding to source constraints with no repeated variables in the body, this is easy to verify, so we concentrate on constraints deriving from source constraints that do have repeated variables in the body.</p><p>Each of these constraints is of the form B Annot ( x) → ∃ z H( z) for some annotation Annot. Fix a c such that B Annot ( c) holds. We claim that B e,f ( c) holds for all (e, f ) ∈ P . We prove this by induction on the position of (e, f ) in the ordering of pairs in P . Each (e, f ) corresponds to some variable v that is repeated. If v is in Annot, then B Annot ( c) implies that IsCrit(c e ) ∧ IsCrit(c f ) hold. Using the corresponding rule and the induction hypothesis we conclude that B e,f ( c) holds. If v is not in Annot then B Annot ( c) implies that c e = c f . Using the other rule generating B e,f in Σ PTIME , as well as the induction hypothesis, we conclude that B e,f ( c) holds. This completes the inductive proof that B e,f ( c) holds. Now using the corresponding constraint of Σ PTIME we conclude that I , c |= ∃ z H( z). Since the constraints of Σ simple hold, I is also a counterexample to the entailment involving Σ simple .</p><p>A.5 More details in proof of Theorem 4: upper bounds for LTGD source constraints and atomic maps</p><p>Recall the statement of Theorem 4</p><p>The problem Disclose C (LTGD, AtomMap) is in EXPTIME. If the arity of relations in the source schema is bounded, then the complexity drops to NP. If further the query is atomic, the problem is in PTIME.</p><p>We now give more details on the proof. As mentioned in the body, is sufficient to get an EXPTIME algorithm for the entailment problem produced by Theorem 3, since then we can apply it to each p Annot in EXPTIME. The constraints in CritRewrite PTIME (Σ Source ) ∪ CritRewrite PTIME (M) are Guarded TGDs that are not necessarily LTGDs. But the bodies of these guarded TGDs consist of a guard predicate and atoms over a fixed "side signature", namely the unary predicate IsCrit. We can apply now the linearization technique, originating in <ref type="bibr" target="#b33">[Gottlob et al., 2014]</ref> and refined in <ref type="bibr">[Amarilli and Benedikt, 2018a]</ref>. Given a side signature S Side this is an algorithm that converts an entailment problem involving ta set of non-full IncDeps and Guarded TGDs using S Side , producing an equivalent entailment problem involving the same query, but only LTGDs. Further:</p><p>• The algorithm runs in EXPTIME in general, and in PTIME when the arity of the relations in the input is fixed</p><p>• The algorithm does not increase the arity of the signature, and thus the size of each output LTGD is polynomially-bounded in the input.</p><p>See also Appendix G of <ref type="bibr">[Amarilli and Benedikt, 2018b]</ref> for a longer exposition of the linearization technique. Thus for general arity, we can use this algorithm to get an entailment problem with the same query, a data set exponentially bounded in the input data I and a set of LTGDs, each polynomially-sized in the inputs. By applying a standard first-order query-rewriting algorithm to the query, we reduce this problem to evaluation of a union of conjunctive queries get a UCQ Q on I . The size of each conjunct in Q is polynomially-bounded in the inputs, and so each conjunct C can be evaluated in time |I | |C | , giving an EXPTIME algorithm in total.</p><p>For fixed arity, we apply the same algorithm to get an entailment problem using IncDeps of bounded arity, which is known <ref type="bibr" target="#b35">[Johnson and Klug, 1984]</ref> to be solvable in NP. Further, when the query is atomic, entailment with IncDeps is in PTIME.</p><p>A.6 Proof of Theorem 5: Disclosure for UID Source Constraints and ProjMap is PTIME</p><p>We prove that when the source constraints are UIDs and the mappings are projections, disclosure analysis is in PTIME. By Theorem 1, it suffices to show that the problem HOCWQ(D</p><formula xml:id="formula_26">G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)</formula><p>) is PTIME. We will thus first reduce this problem a problem QEntail(D, Σ, p) where Σ is composed of UID constraints and D is composed of a single unary fact IsCrit(c Crit ).</p><p>Reachable predicates. We define the entailment graph over a set of IncDep constraints Σ. In this graph, nodes correspond to predicates and there is an edge P → R for each constraint P ( x) → R( y). Given an initial set of facts D, one can compute the set Reachable(Σ, D) of entailed predicates. This set is defined as the set of predicates reachable in the entailment graph starting from the predicates appearing in D.</p><p>Visible position graph. In studying tuple-generating dependencies, one often associates a set of dependencies with a graph whose edges represent the flow of data from one relation to another via the dependencies. See, for example the position graph used in defining the class of weakly acyclic sets of TGDs <ref type="bibr" target="#b29">[Fagin et al., 2005]</ref>.</p><p>We develop another such graph, the visible position graph associated with a set of source constraints and mappings. The nodes are the pairs (P, i) where P is a predicate, 1 ≤ i ≤ ar(P ) and there is an edge (P, i) → (R, j) when we have an IncDep (either a source constraint or a mapping rule) P ( x) → ∃ y R( t) with x i = t j . We refer to a node in this graph as a position. A position of a relation in the source schema is said to be visible if there is a path from (P, i) to a node (R, j) such that R belongs to the global schema. Another other position is said to be invisible. We see that when a position (P, i) is visible then for any fact P ( c) that holds in a possible world for HOCWQ(D</p><formula xml:id="formula_27">G(M) Crit , Σ Source ∪ Σ M (M), p, G(M)) we must have c i = c Crit .</formula><p>Note that if we have P ( x) → ∃ y R( t), x i is exported to t j , and position j of R is visible, then position i of P is visible as well.</p><formula xml:id="formula_28">Reduction to entailment. Let Σ = Σ Source ∪ Σ M (M) and D 0 = D G(M)</formula><p>Crit .</p><p>We will reduce the problem HOCWQ(D 0 , Σ, p, G(M)) to the problem QEntail(D 0 , Σ, p), where Σ = Σ reach ∪ Σ 1 ∪ Σ c Crit is a set of UIDs, and p is a CQ. Our reduction proceeds as follows:</p><p>• We transform the schema for sources creating a predicate P for each source predicate P , where the arity of P is the arity of P minus the number of positions (P, i) that are visible.</p><formula xml:id="formula_29">• D 0 = {IsCrit(c Crit )}.</formula><p>• Σ reach is built as the set of constraints IsCrit(w) → ∃ x P ( x) where x are fresh distinct variables and P ∈ Reachable(Hide M (D</p><formula xml:id="formula_30">G(M)</formula><p>Crit ), Σ). • Σ 1 is formed from the set of constraints P ( x) → ∃ y R( t) ∈ Σ such that there is an exported variable ly-ing in an invisible position of P ( x). For each such constraint, Σ 1 contains the constraint P ( x * ) → ∃ y * R( t * ) where x * denotes the projection of x to the invisible positions of P , and similarly for y * and t * .</p><formula xml:id="formula_31">• Σ c Crit is formed from constraints P ( x) → ∃ y R( t) ∈ Σ such that P ∈ Reachable(Hide M (D G(M)</formula><p>Crit ), Σ) and there is an exported variable x lying in a visible position of P ( x), exported to an invisible position of R. For each such constraint Σ c Crit includes the constraint IsCrit(x) → ∃ y * R( t * ) where y * denotes the projection of y to the invisible positions of P and similarly for t * .</p><p>• the query p is built from p by first replacing each conjunct P ( x) with its corresponding predicate P ( ˜ x), projecting out the visible positions. After this, for every variable x that occurred in p within both a visible and an invisible position, x is replaced by v, while we add a conjunct IsCrit(v).</p><p>Correctness of the reduction. The correctness of the reduction is captured in the following result: Proposition 3. For any source constraints Σ Source consisting of IncDeps and M consisting of projection mappings, there is a disclosure over a schema S with constraints Σ Source mappings M and secret query p if and only if QEntail(D 0 , Σ, p) holds.</p><p>Proof. We start with the argument for the left to right direction. We let D be a counterexample to the entailment QEntail(D 0 , Σ, p). By Theorem 9, we can assume that D is formed by applying the chase procedure to D 0 . In particular, each fact in D can be assumed to use a predicate in Reachable(Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ), Σ). We show that there is an instance D that is a counterexample to</p><formula xml:id="formula_32">HOCWQ(D G(M) Crit , Σ Source ∪ Σ M (M), p, G(M))</formula><p>and thus (by Theorem 1) we cannot have a disclosure. We form D by filling out each visible position with c Crit . We claim that D satisfies each source constraint σ = P ( x) → ∃ y R( t). Suppose that P ( c) holds in D. Then P ( c ) holds in D , where c projects c on to the invisible positions.</p><p>• First, suppose there is a variable x in an invisible position of P ( x) exported to an invisible position in R( t).</p><p>Then since D satisfies Σ 1 , we know that for some d, R Crit ), Σ) and D satisfies Σ c Crit , we have R( e) holding in D for some e, and hence R( f ) holding in D for some tuple where c Crit fills all the visible positions. Thus σ holds in this case as well.</p><p>• Finally, note that a variable at an invisible position cannot be exported to a visible position. Therefore the only remaining case is the case where no variable has been exported. Since P is reachable, then R is also reachable therefore there is a constraints IsCrit( Note that from the preceding claims, we know that D is a possible world for HOCWQ(D</p><formula xml:id="formula_34">G(M) Crit , Σ Source ∪ Σ M (M), p, G(M))</formula><p>. Finally, we claim that D does not satisfy p.</p><p>• Suppose D |= p with homomorphism h as a witness.</p><p>Since D is a possible world for HOCWQ(D 0 , Σ, p, G(M)), for any variable v occurring in a visible position, h(v) = c Crit . Let h be formed from the restriction of h to variables that occur in p, by mapping the additional variable v to c Crit . Note that in D , IsCrit(c Crit ) holds. For this, we see that h is a homomorphism witnessing that D |= p. This is a contradiction to the fact that D is a counterexample to the entailment.</p><p>We now have argued that D is a counterexample to HOCWQ(D 0 , Σ, p, G(M)), which completes the proof of the left to right direction.</p><p>For the other direction, suppose that D is a counterexample to HOCWQ(D 0 , Σ, p, G(M)). Note that for any fact R( c) over the source relations in D, for any visible position i of R, we must have c i = c Crit . Form D by projecting each fact in D to the invisible positions of the relation. We will argue that D is a counterexample to the entailment produced by the reduction.</p><p>• D should contain IsCrit(c Crit ) therefore D extends D 0 .</p><p>• The fact that D was a solution to HOCWQ(D 0 , Σ, p, G(M)) also guarantees that for all reachable predicates P we have D |= ∃ x P ( x) and thus D |= ∃ x * P ( x * ) and thus all constraints in Σ Reachable are satisfied.</p><p>• Let us show that the constraints in Σ 1 are satisfied: fix was exported to the corresponding invisible position j in R( y), and from this we see that d j = c as required.</p><formula xml:id="formula_35">a constraint σ ∈ Σ 1 = P ( x * ) → ∃ y R( ˜ t), derived from source constraint σ = P ( x) → ∃ y R( t).</formula><formula xml:id="formula_36">• Now consider a constraint σ ∈ Σ c Crit = IsCrit(x) → ∃ y * R( ˜ * t).</formula><p>Since IsCrit(x) holds only for x = c Crit in D, we only have to verify that R( e * ) holds for some e such that e = c Crit (where is the position of x in y * ). Let us suppose that σ was derived from source constraint σ = P ( x) → ∃ y R( t) where j is the position of the exported in y and i is the position of the exported variable in t. By the definition of Σ c Crit , we know that P is a reachable predicate, and hence P ( d) must hold for some d in D and since d j is visible we have d j = c Crit . Because D |= σ we have R( e) holds in D for some e such that e i = c Crit and thus R( e * ) is the required witness for σ .</p><p>• Finally, we argue that D does not satisfy p. Suppose by way of contradiction that D satisfies p via homomorphism h . Note that the variables of p that do not occur in p are those that occur only in visible positions within an atom of p. We extend h to a mapping h from the variables of p to D by mapping each such variable x to c Crit . We argue that h is a homomorphism of p to D. Consider an atom R( t, t ) of p, where t correspond to the invisible positions. Suppose first that the corresponding atom of p is of the form R( t * ) where t * is obtained from t by replacing any variable shared with a visible position by v. We know that R(h(t * 1 ) . . . h(t * j )) holds in D because h is a homomorphism. Thus R(h(t * 1 ), . . . h(t * j ), e) holds in D for some e. By the properties of visible positions and the fact that D is a possible world for HOCWQ(D 0 , Σ, p, G(M)), we see that each e i = c Crit . Thus h not only preserves the atom R( t * ), but it also preserves the additional atom IsCrit(v), since IsCrit(c Crit ) holds in D . thus h is a homomorphism, contradicting the fact that D is a counterexample to HOCWQ(D 0 , Σ, p, G(M)).</p><p>Since D extends D 0 , satisfies the constraints Σ, and does not satisfy the query p, it is a counterexample to the entailment, completing this direction of the argument.</p><p>Overview of PTIME algorithm for entailment with UIDs over a single fact. At this point we have restricted to a CQ entailment problem for a set of UIDs and a single fact. It was claimed in <ref type="bibr" target="#b37">[Kikot et al., 2011</ref>] that there is a polynomial time query rewriting for UIDs, and from this it would easily follow that our entailment problem is in PTIME (query evaluation is PTIME when these is a single fact). However later work (footnote on page 38 of <ref type="bibr" target="#b14">[Bienvenu et al., 2018]</ref>) refers to flaws in this argument, and says that polynomial rewritability is open. We therefore give a direct proof that such an entailment problems are in PTIME. This will proceed via several steps:</p><p>• A reduction to the case of "binary schemas": those where the arity of each predicate is at most 2.</p><p>• Query simplification, which will reduce the query to a connected acyclic query.</p><p>• Reduction to atomic entailment. Reduction to binary schemas. We begin by using verbatim an idea of <ref type="bibr" target="#b37">[Kikot et al., 2011]</ref>, reducing to the same problem but when the input schema is binary. We do this via a standard reduction of general arity reasoning to binary reasoning, introducing predicates R i (t, v) for every relation R of arity n ≥ 1 and each 1 ≤ i ≤ n; informally these state that v is the value in position i of n-tuple t. We also introduce a predicate R ∃ (t) for each predicate R; informally this states that there is some tuple t in the predicate R. We translate each UID B( x) → ∃ y H( t) exporting a variable x i from position i to position j to a UID B i (t, x i ) → ∃t H j (t , x i ).</p><p>For each UID, H( x) → B( y) that is not exporting a variable, we create a rule H ∃ (t) → ∃t B ∃ (t ). We also create rules R i (t, x) → R ∃ (t) and R ∃ (t) → ∃x R i (t, x) for each predicate R and 1 ≤ i ≤ n where n is the arity of R. Finally the query p is transformed into p where each</p><formula xml:id="formula_37">conjunct R(x 1 , . . . , x n ) is transformed into the conjunction R 1 (t, x 1 ) ∧ • • • ∧ R n (t, x n ) ∧ R ∃ (t)</formula><p>, for a fresh variable t. Finally the database over the binary schema is built in the following way: for each fact R( v) of the initial database, we create a fresh value t and we add the conjunct R i (t, x) for 1 ≤ i ≤ n where n is the arity of R and we also add R ∃ (t). Further details can be found in <ref type="bibr" target="#b37">[Kikot et al., 2011]</ref>. Note that, in the resulting problem, each frontier-0 rule produced has a body with an atom over a unary predicate. Proposition 4. The transformation above preserves query entailment. Special form of the chase: annotated chase forest. In the case of UIDs the chase process applied to our single-fact instance D 0 produces an in instance Chase Σ (D 0 ) that will be infinite. However, it has a special shape that we can exploit. For the remainder of this section, by Chase Σ (D 0 ) we consider an instance formed from a restricted chase sequence, in which a witness to a TGD φ( x) → ∃ y H( t) is added to instance D i for binding c to x only if D, c |= φ( x) ∧ ¬∃ y H( t). It is known <ref type="bibr" target="#b29">[Fagin et al., 2005]</ref> that in Theorem 9 it suffices to consider such instances. The annotated chase is a node-and edge-labelled forest formed from Chase Σ (D 0 ) as follows:</p><p>• the nodes are the values of Chase(D)</p><p>• the node label of a value v is the collection of unary predicates holding at v • an edge labeled by fact F mentioning v 1 and v 2 connects a value v 1 to a value v 2 if F holds in Chase(D) and v 2 is generated in the chase step that produces F . We can see that this graph is a forest where he roots are c Crit (the value where IsCrit(c Crit ) holds) as well as some other trees rooted to reachable facts generated from frontier-0 dependencies and thus rooted at elements t where R ∃ (t) holds for some R. Further, since the chase is restricted, we can see that this graph has the unique adjoining label property: for each v 1 , for each predicate P , there cannot be two nodes v 2 , v 2 adjacent to v 1 such that the edge e from v 1 to v 2 and e from v 1 to v 2 both are labelled with the same predicate and have v 1 in the same position. Furthermore, the restricted chase also ensures that the forest is composed of at most one tree per predicate since all the roots that are produced needs to be different.</p><p>First query simplification: eliminating forking pairs. Given a CQ Q, a pair of distinct atoms A 1 and A 2 sharing the same predicate and a variable at the same position (i.e. q 1 = R(x, z) and q 2 = R(x, y) or q 1 = R(z, x) and q 2 = R(y, x)) is a forking pair of Q. We say that a query Q is non-forking when there are no forking pairs. Proposition 5. If a CQ Q has a forking pair A 1 = R(x, z) and A 2 = R(x, y) and Q is the query Q where the variable z is replaced with y, then QEntail(D 0 , Σ, Q) = QEntail(D 0 , Σ, Q ) Proof. Let D = Chase Σ (D 0 , Σ). If p holds in D, then clearly the same holds of p. Conversely suppose p holds in D via homomorphism h, and suppose h(y) = h(z). This gives us a violation of the unique adjoining label property.</p><p>Applying the proposition above, we can assume that Q is non-forking. Without loss of generality, we can also assume that Q is connected (otherwise we can test the entailment of each connected part).</p><p>Second simplification: reducing to acyclic queries The CQ-graph. of a CQ Q is the node-and edge-labelled graph whose nodes are the variables of Q and whose edges are labelled with atoms of Q such that:</p><p>• an edge between variables labelled with x and y is labelled with the binary atoms containing both x and y;</p><p>• a node x is labelled with the set of unary predicates in Q containing x.</p><p>The CQ-graph said embedded in some annotated chase forest T if there is a homomorphism h : A → T preserving edges, i.e. if there is an edge x to y labeled with R(a, b) then T should contain an A(x) to A(y) labeled with R(A(a), A(b)) and nodes, i.e. if there is a predicate P (x) on the node x then there should be P (A(x)) in T . The homomorphism h is called an embedding of Q in T .</p><p>It is immediate from the completeness of the chase procedure that for any annotated chase forest T for Chase Σ (D), a query is entailed if and only if its CQ-graph is embedded in T . Our reduction to the case of a CQ with acyclic CQ-graph will depend heavily on the following observation: Proposition 6. Any embedding of a connected and nonforking CQ Q into an annotated chase forest for Chase Σ (D 0 ) must be injective.</p><p>Proof. Let Q be a connected and non-forking and let h be an embedding. Let us prove by induction on the size of the path between x and y that h(x) = h(y) when x = y.</p><p>Two neighboring nodes cannot be sent to the same value. For a path of size 2, if we have z such that x, z, y forms a path in the CQ-graph of Q then h(x) has to be different than h(y) otherwise the label from x to z and from z to y would be the same and there would be a forking pair in Q.</p><p>Let x = p 1 , p 2 , . . . , p k = y with k ≥ 4 be a path in the CQgraph between x and y. By induction the h(p i ) for i &lt; k are all distinct and thus the distance between h(x) and h(p k-1 ) is at least k -2 hence h(y) is at least at distance k -3 &gt; 0 of h(x).</p><p>Our reduction to the acyclic case follows immediately:</p><p>Corollary 5. If a connected non-forking CQ Q is entailed by Σ over then the CQ-graph of Q is acyclic.</p><p>Proof. Q is entailed The image of the CQ-graph through the injective homomorphism is a forest.</p><p>Determining entailment for acyclic connected graphs. We now give the final setp in our algorithm, which deals with deciding entailment of a connected, non-forking query Q, which by Corollary 5 must have an acyclic CQ-graph. Given an acyclic connected undirected graph and any vertex v of the graph, we can direct it be a tree with v as the root. Thus for such a Q having n variables, the tree arrangements are the n possible ways to root the CQ-graph of the query Q. We are particularly interested in arrangements of Q where the directionality from parent to child reflects the entailment structure relative to Σ between atoms in the query. A tree arrangement A of Q is faithfully entailed if for every variable y in Q with parent x in the tree, there is an atom A containing x and not containing y such that A ∧ Σ entails ∃y B x,y , where B x,y is the conjunction of all atoms whose variables are contained in {x, y}; in the case that y is the root, we require Σ alone to entail ∃y B x,y .</p><p>In a faithfully-entailed tree arrangement, the conjunction of atoms holding at the root of the tree entails the existence of the whole tree. We can further find a single atom that entails the whole tree. A root-generating atom of a tree arrangement is an atom A (not necessarily in Q) containing the root variable r, such that A ∧ Σ generates all atoms mentioning r. Proposition 7. A faithfully entailed tree arrangement for Q must have a root-generating atom.</p><p>Proof. We know that Q must hold in the chase of the initial fact under Σ, and by Proposition 6 we know that there is an injective homomorphism h from Q to the chase. Consider the point in the chase process where value h(r) is first generated. This occurs by firing some rule with an atom, where the head has either a binary atom A(x, y) or a unary atom B(x). We consider the case where the atom is binary, and where the generated atom is A(h(r), s). In this case the fact A(h(r), s) must generate every fact containing r. Thus we can take the atom A(r, w), where w is a fresh variable, as a root-generating atom. The case of unary atoms and the case where r is in the second position of the fact is similar.</p><p>Given a tree arrangement T of Q and variable x of Q, T x denotes the the restriction of T to the variables that are descendants of x in T .</p><p>The main idea of our PTIME algorithm is that it suffices to descend through the tree arrangement, checking some entailments for each parent-child pair in isolation.</p><p>Proposition 8. There is a PTIME algorithm taking as input a variable x in a CQ Q, a tree arrangement of Q, and an atom A containing x such that the existential quantification of A is entailed by Σ, and determining whether T x is faithfully entailed and A is a root-generating atom.</p><p>Proof. We first check whether A is a root-generating atom, using a PTIME inference algorithm for UIDs <ref type="bibr" target="#b25">[Cosmadakis et al., 1990]</ref>. We then consider each child y of x in the tree arrangement. We know that there is exactly one conjunct B containing x and y. We check whether A entails ∃y B, and then call the algorithm recursively for y and B. If each recursive call succeeds, the algorithm succeeds.</p><p>From the prior proposition we get a PTIME algorithm for the arrangement as a whole: Proposition 9. There is a PTIME algorithm taking a tree arrangement of CQ Q, and an atom A containing the root of the arrangement, and determines whether the whole tree arrangement can be faithfully entailed and A is a rootgenerating atom.</p><p>Proof. We first need to check that A is entailed, which amounts to checking that Σ |= IsCrit(c) → ∃y A. As before this can be done using <ref type="bibr" target="#b25">[Cosmadakis et al., 1990]</ref>. We then utilize the algorithm of Proposition 8. Note that Proposition 9 gives a polynomial time algorithm for checking whether a tree arrangement can be faithfully entailed. We can apply the algorithm of the proposition with every possible unary and binary atom A containing the root variable. In the binary case, we consider all atoms containing the root variable and an additional fresh variable. Putting it all together. Putting together our reduction to UID-entailment (Proposition 3), our schema simplification (Proposition 4) the query simplifications (the reduction to connected CQs, Proposition 5, and Corollary 5), and our PTIME algorithm for simplified queries (Proposition 9) we obtain the proof of Theorem 5. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Detailed</head><formula xml:id="formula_38">Disclose C (IncDep, GuardedMap) is 2EXPTIME-hard.</formula><p>Recall that Theorem 1 relates disclosure to a HOCWQ problem on a very simple instance. Also recall from Section 3 the intuition that such a problem amounts to a classical entailment problem for a CQ over a very simple instance, using the source dependencies and SCEQrules: of the form φ( x) → x = c Crit , where φ will be the body of a mapping. We show here how to simulate the run of an alternating EXPSPACE Turing machine T without explicitly using SCEQrules, instead using inclusion dependencies as source constraints coupled with guarded mappings. An alternating Turing machine T is a 6-tuple (Q, Σ, δ α , δ β , q 0 , g) where:</p><p>• Q is the finite set of states • Σ is the finite tape alphabet</p><formula xml:id="formula_39">• δ α and δ β are functions from Q × Σ to Q × Σ × {L, R} • q 0 ∈ Q is the initial state • g is a function from Q to {accept, reject, ∀, ∃} that</formula><p>specifies the type of each state. We assume that T always alternates between existential and universal states, and that there is a unique final state, that can be reached only if the head is in the first cell and contains a specific symbol. All of these assumptions can be made without loss of generality. If T is in a configuration where whose state q is such that g(q) = accept, the configuration is said to be accepting. If T is in a configuration where whose state q is such that g(q) = ∀, the configuration is said to be accepting if its α and β successors (obtained after applying δ α or δ β ) are accepting. If T is in a configuration whose state q is such that g(q) = ∃, the configuration is said to be accepting if its α-successor or its β-successor is accepting. A more thorough introduction to Turing machines can be found in <ref type="bibr">[Papadimitriou, 1994]</ref>.</p><p>We first present the reduction, and show its correctness in the next subsection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 The Reduction</head><p>We will create constraints and mappings that will serve to perform the following tasks:</p><p>• generate addresses for cells of T in such a way that one can check whether two addresses are consecutive in a guarded way. The same addresses will be used for all the configurations. This will be done by a mapping creating k copies of two individuals that represent 0 and 1, along with inclusion dependencies that perform permutations and generate 2 k addresses; • encode the content of a cell, the position of the head, and the state of the head: for each cell, we store a vector whose length is the size of (Σ ∪ { }) × (Q ∪ ⊥). Each position corresponds to an element (l, s) of that set; we will arrange that the position contains c Crit if and only if the cell contains l, and either the head is over that cell and is in state s, or the head is not over that cell and s = . All values are first freshly instantiated by inclusion dependencies, and mappings are then responsible for unifying the correct positions with c Crit ;</p><p>• ensure that the tape that is associated with a successor of a configuration can be obtained by a transition of the Turing machine: this is also performed by using a mapping to enforce the correct positions of the cell to be unified with c Crit ;</p><p>• check that configurations are accepting: this is the case either when the corresponding tape is in a final accepting state, or when it is in an existential state and one of the two successor configurations is accepting, or it is in a universal state, and both successor configurations are accepting.</p><p>Let us describe the source signature. For each predicate, we will explain what feature of the ATM T it should represent in the appropriate instance generated by the constraints. By "the appropriate instance", we mean the visible chase of the initial instance over the source constraints and mappings: this was introduced after Theorem 9, and it was noted that it is the canonical instance for the source and targets to consider for disclosure.</p><p>We use y 1,k to represent a tuple (y 1 , . . . , y k ), and y k to represent the tuple (y, . . . , y) of size k.</p><p>• Children ∀ (c, c α , c β , ac, ac α , ac β , y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ). The intended meaning is that a configuration c is universal and has as children c α and c β , and that the acceptance bit of c is ac, of c α is ac α and of c β is ac β . The last four positions are placeholders: r for the root of the tree of configurations, z for c Crit , y 0 for a value representing 0 and y 1 for a value representing 1.</p><p>• Children ∃ (c, c α , c β , ac, ac α , ac β , y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ): same intended meaning, except that c is existential.</p><p>• Cell(c p , c n , y 1,k , v, v prev , v next , r, z, y 0 , y 1 ) with intended meaning that the cell of address y 1,k of the tape represented by c n has a content represented by v, while the previous cell has a content represented by v prev and the next cell has content represented by v next . The last four positions are placeholders for the root of the tree of configurations, c Crit , a value representing 0 and a value representing 1.</p><p>• Cell c i (c, y 1,k , x, z, y 0 , y 1 ) with intended meaning that the cell of address y 1,k in configuration c contains x at the i th position of the representation of its content. Cell p i and Cell n i play similar roles for the cell before and after the cell of address y 1,k .</p><p>• GenAddr is an auxiliary predicate used to generated an exponential number of addresses.</p><p>• succ α (c p , c n ) states that c n is the α-successor of c p (and similarly for β) The structure generated by the inclusion dependencies is represented Figure <ref type="figure" target="#fig_5">1</ref>. Atoms are represented by geometric shapes in the inside of which are arguments (some are omitted to ease the reading). The Children Q atoms form a tree shaped structure, and induce a tree structure on the configuration identifiers: for instance, c is the parent of α and β. Cell atoms are associated with a configuration identifier (for instance, those represented are associated with β), and has the parent configuration identifier to ensure guardedness of the mappings used in the following reduction. Note that the elements used to describe the cell's addresses (y 0 and y 1 ) also appear in the Children Q atoms, to ensure guardedness.</p><p>Initialization. We first define a mapping T Init (x), introducing some elements in the visible chase. The definition of this mapping is:</p><formula xml:id="formula_40">Children ∃ (c root ,c α , c β , ac root , ac α , ac β , y 1,k 0 , y 1,k 1 , c root ,</formula><p>x, y 0 0 , y 0 1 ) Generation of the tree of configuration. α-successors have themselves αand β-successors, and are existential if their parent is universal:</p><formula xml:id="formula_41">Children ∀ (c, α, β, ac, ac α , ac β , y 1,k 0 y 1,k 1 , r, z, y 0 , y 1 ) → ∃α α , α β , ac αα , ac α β</formula><p>Children ∃ (α, α α , α β , ac α , ac αα , ac α β , y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ) And similarly for Children ∃ and for the β-successor.</p><p>Universal and existential acceptance condition. If both successors of a universal configuration n are accepting, so is n. We create a mapping T ∀ (x) with definition:</p><formula xml:id="formula_42">Children ∀ (c, α, β, x, z, z, y k 0 , y k 1 , r, z, y 0 , y 1 )</formula><p>If the α-successor of an existential configuration n is accepting, so is n. We create a mapping T ∃,α (x) with definition:</p><p>Children ∃ (c, α, β, x, z, ac β , y k 0 , y k 1 , r, z, y 0 , y 1 )</p><p>We create a similar mapping T ∃,β for the β-successor.</p><p>Tape representation and consistency of tapes. We now focus on the representation of the tape and its consistency. We generate 2 k addresses and associated values:</p><formula xml:id="formula_43">Children Q (c, α, β, ac, ac α , ac β , y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ) → GenAddr(c, α, y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ) Children Q (c, α, β, y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 ) → GenAddr(c, β, y 1,k 0 , y 1,k 1 , r, z, y 0 , y 1 )</formula><p>GenAddr will generate addresses to represent the tape associated with its fifth argument. To emphasize this, we use the letter n (as node) at this position, while the fourth argument contains its parent configuration, denoted by p.</p><p>GenAddr(c p , c n , a 1 , . . . , a i , . . . , a k+i , . . . , a 2k , r, z, y 0 , y 1 ) → GenAddr(c p , c n , a 1 , . . . , a k+i , . . . , a i , . . . , a 2k , r, z, y 0 , y 1 )</p><p>For each address, we initialize its content (as well as the content of the previous and next cells) by fresh values v, v prev , v next .</p><p>GenAddr(c p , c n , a 1 , . . . , a 2k , z, y 0 , y 1 ) → ∃v, v prev , v next Cell(c p , c n , a 1 , . . . , a k , v, v prev , v next , r, z, y 0 , y 1 )</p><p>Note that the values v, v prev and v next are vectors of length the size of (Σ ∪ { }) × (Q ∪ ⊥). In particular, we use the notation l i (x) to represent a vector of same length, composed of fresh variables, except for the position i, that contains x.</p><p>We now use mappings to force some of these values to be equal to c Crit . Each position of v represents an element of (Σ ∪ { }) × (Q ∪ ⊥), and we will enforce exactly one of these positions to contain c Crit . If the head of the Turing machine is on the cell represented, then the position of v corresponding to (a, q) where a is the letter in the cell and q the state of the Turing machine, will contain c Crit . Otherwise, the position of v corresponding to (a, ⊥) will contain c Crit .</p><p>As we store the content of a cell in several atoms, we must ensure that the tape associated with a configuration is consistent, by checking that v next is consistent with v from the next cell. To ensure guardedness, we first introduce auxiliary predicates Cell c i , Cell p i and Cell n i that define the content of the i th bit of the value of the current, previous and next cells:</p><formula xml:id="formula_44">Cell(c p , c n , y 1,k , l i (x), v prev , v nxt , r, z, y 0 , y 1 ) → Cell c i (c n , y 1,k , x)</formula><p>We now introduce the definition of a mapping T datan (x) which ensures the consistency of the tape content (note that the first atom is a guard):</p><p>Cell(c p , c n , y b1 , . . . , y bj , y 0 , y 1 , v, v prev , l i (x), r, z, y 0 , y 1 ) ∧ Cell c i (c n , y b1 , . . . , y bj , y 1 , y 0 , z) T datap (x) is defined similarly to deal with the previous cell. We enforce the tape of the initial configuration to have the head of the Turing machine on the first cell (and assume w.l.o.g that this is represented by the first position of v containing c Crit ) and all the other cells containing (and we assume w.l.o.g that this is represented by the second position of v containing c Crit ). We thus create the mappings T tapei (x), for the the first cell, having definition:</p><formula xml:id="formula_45">Cell(c p , c n , y 0 , l 1 (x), v prev , v next , c p , z, y 0 , y 1 )</formula><p>and we introduce the mappings T tapeo (x), for all the other cells, having definition:</p><formula xml:id="formula_46">Cell(c p , c n , . . . , y 1 , . . . , a n , l 2 (x), v prev , v next , c p , z, y 0 , y 1 )</formula><p>Note that this data is associated with the children of the root (as p is both in the fourth and last minus three positions of the atoms), and not with the root itself, due to the choice of keeping in Cell the identifier of the parent of the considered configuration.</p><p>We then check that the tape associated with the α-successor of a configuration is indeed obtained by applying an αtransition. This is done by noticing that the value of each cell of the α-successor is deterministically defined by the value of the cell and its two neighbors in the original configuration (the neighbors are necessary to know whether the head of the Turing machine is now in the considered cell). To ensure guardedness, we first define a predicate marking α-successors (and similarly for β-successors):</p><formula xml:id="formula_47">Children Q (c, α, β, z, ac α , ac β , y k 0 , y k 1 , c root , z, y 0 , y 1 ) → succ α (c, α)</formula><p>Let us consider a cell of address b 1,k in c p . We assume that its content is represented by i, while the content of its left (resp. right) neighbor is represented by j (resp. k). We represent the fact that this implies that the content of the cell of address b 1,k is w in the α-successor of c p by the following mapping T α i,j,k→w (x):</p><formula xml:id="formula_48">Cell(c p , c n , b 1,k , l w (x), v prev , v next , r, z, y 0 , y 1 ) ∧ Cell c i (c p , b 1,k , z) ∧ Cell p j (c p , b 1,k , z) ∧ Cell n k (c p , b 1,k , z) ∧ succ α (c p , c n )</formula><p>Note that the above formulation requires the content of the previous and of the next cells, which makes this mappings not applicable when b 1,k is the address of either the first or the last cell. We thus add rules to specifically deal with these two cases (that looks at the content of the current and next cell when b 1,k is a vector of y 0 , and at the content of current and previous cell when b 1,k is a vector of y 1 ). Note that there is only polynomially such mappings to be built. And we finally create a mapping T accept (x) enforcing that configurations whose tape is in an accepting state (which we assume w.l.o.g. corresponds to the case where the first cell contains the l th bit) are declared as accepting.</p><p>Cell c l (c n , y k 0 , z) ∧ Children Q (c n , α, β, x, ac α , ac β , y k 0 , y k 1 , r, z, y 0 , y 1 )</p><p>The policy query is Children ∃ (root, α, β, z, ac α , ac β , y 1,k 0 , y 1,k 1 , root, z, y 0 , y 1 ), We will show that this policy query is disclosed if and only if the original Turing machine accepts on the empty tape.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Proof of Correctness</head><p>We show that the policy is disclosed if and only if T accepts on the empty tape. By Theorem 1, the policy is disclosed if and only if the corresponding HOCWQ problem has a positive answer. Further, this holds if and only if the policy query holds on the result of the visible chase (introduced after Theorem 9). We thus focus on showing the equivalence of the acceptance of the empty tape by T and the satisfaction of the policy in the visible chase.</p><p>Let us start by describing some relationships between the visible chase of D Definition 1 (Tape Representation). Let T be a tape (with head position and state included) of T . A representation of T is a set of atoms</p><formula xml:id="formula_49">{Cell(c p , c n , a, v a , v prev a , v next a , c Crit , y 0 , y 1 )} a ,</formula><p>where a ranges over the binary representations of the addresses of T , and such that for any cell of T the following holds:</p><p>• for any a, v contains fresh nulls except for the bit that represents the content of T at address a, where it contains c Crit</p><p>• for any a except the representation of the leftmost cell, v prev contains fresh nulls except for the bit that represents the content of T at address a -1; in this bit it contains c Crit (v prev exclusively contains fresh nulls for the leftmost cell)</p><p>• for any a except the representation of the rightmost cell, v next contains fresh nulls except for the bit that represents the content of T at address a + 1; on this bit it contains c Crit (v next exclusively contains fresh nulls for the rightmost cell)</p><p>In that case, c n is called a representative of T .</p><p>Lemma 1. c α and c β , as defined above Definition 1, are representatives of the initial tape.</p><p>Proof. We show the result for c α , the same reasoning being applicable to c β . As the atom</p><formula xml:id="formula_50">Children ∃ (c root ,c α , c β , ac root , ac α , ac β , y k 0 , y k 1 , c root , c</formula><p>Crit , y 0 0 , y 0 1 ), belongs to the visible chase, atoms of the shape Cell(c root , c α , a 1 , . . . , a k , v, v prev , v next , c root , z, y 0 , y 1 ) for any vector a 1 , . . . , a k with a i ∈ {y 0 , y 1 } for any i, are generated, where all nulls from v, v prev and v next are fresh (thanks to the rules involving GenAddr). As the first argument and the ante-ante-penultimate argument of such an atom are equal, the definition of T tape i (x) maps to the atom of address y 0 , . . . , y 0 , and the body of T tapeo (x) maps to all the other atoms. Applying T datan and T datap then ensures that c α is a representative for the initial tape, as no other mapping may merge a term of these atoms.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Lemma 2. If c p is a representative of a tape T and if the visible chase contains</head><p>Children Q (c p , α, β, ac, ac α , ac β , y k 0 , y k 1 , c root , c Crit , y 0 , y 1 ), then α (resp. β) is a representative of the tape T α (resp. T β ) obtained by applying the α-transition (resp. β-transition) applicable to T .</p><p>Proof. We show the result for the α-successor, the same reasoning being applicable for the β-successor. As the visible chase contains</p><formula xml:id="formula_51">Children Q (c p , α, β, ac, ac α , ac β , y k 0 , y k 1 , c root , c Crit , y 0 , y 1 ),</formula><p>it also contains atoms of the shape:</p><formula xml:id="formula_52">Cell(c p , α, a 1 , . . . , a k , v, v prev , v next , c root , c Crit , y 0 , y 1 ),</formula><p>for any vector a 1 , . . . , a k , where all nulls from v, v prev and v next are fresh. Note that c p is necessary distinct from c root (as it is the representative of a tape). Hence neither T tape i (x) nor T tapeo (x) may unify a term with c Crit . As c p is a representative of T , for any address, if the i th bit of v represents the actual value in T at address ad, then the visible chase contains Cell c i (c p , b 1,k , c Crit ) where b 1,k is the binary encoding of ad. Similarly, Cell n i (c p , b 1,k , c Crit ) and Cell p i (c p , b 1,k , c Crit ) also belong to the visible chase where applicable. Then for all addresses, an application of the relevant mapping of the shape T α i,j,k→w (x) merges the null at the position representing the content of T α with c Crit . Applying T datan and T datap then ensures that α is a representative for T α .</p><p>Wrapping up the previous two lemmas, we get that there is a tree structure in the visible chase that corresponds exactly to the tree of configurations of the run of T : the two individuals c α and c β are representatives of the initial configuration, and their children (which are the individuals at the second and third individuals in the Children atom in which they appear at the first position) are representatives of the configurations that can be reached with an α or β transition. It remains to check that the argument representing the accepting status of a configuration are correctly set, which is the topic of the following lemma.</p><p>Lemma 3. If c p is the representative of a tape, there is in the visible chase an atom of the shape Children Q (c p , α, β, c Crit , ac α , ac β , y k 0 , y k 1 , c root , c Crit , y 0 , y 1 ), if and only if T accepts on T .</p><p>Proof. Let T be a tape of representative c p . There are four cases in which T accepts on T :</p><p>• the state of T is final in T : this is the case if and only if T accept merges the fourth argument of Children Q (c p , α, β, ac, ac α , ac β , y k 0 , y k 1 , c root , c Crit , y 0 , y 1 ) with c Crit • the state of T is universal in T and both its successors are accepting: by induction assumption (on the number of transitions that need to be applied to prove acceptance of a tape), both accepting bits of α and β are unified with c Crit , and thus the accepting bit of c p is unified with c Crit thanks to T ∀</p><p>• the state of T is existential in T and its α-successor is accepting: by induction assumption, the accepting bit of α is unified with c Crit , and thus the accepting bit of c p is unified with c Crit thanks to T ∃,α</p><p>• similar case, with the β-successor.</p><p>Let us now use the above lemmas to show that T accepts if and only if the policy query p holds in the visible chase. If T accepts, let us consider an accepting run of T . From Lemmas 1 and 2, we can build a configuration tree that contains a representative for all the tapes that are involved in this run. From Lemma 3, the accepting bits of the representative are set adequately, and the policy query holds in the visible chase.</p><p>Conversely, let us consider a visible chase sequence such that the policy query holds in its result. Let us first remark that the argument of the policy query appearing in the first position is equal to the argument in the ante-ante-penultimate position. This implies that none of the witnesses of mappings other than T Init need to be applied in order to entail the policy query, which can be seen from the following three facts: (i) none of the positions that may contain a configuration identifier may be unified with c Crit ; (ii) all mappings contain configuration identifiers (iii) only the witness associated with T Init may generate an atom of the shape Children ∃ (root, α, β, z, ac α , ac β , y 1,k 0 , y 1,k 1 , root, z, y 0 , y 1 ), This implies that in the visible chase sequence entailing the policy query, we start by introducing α and β as in Lemma 1. Let us now consider the smallest set S of configuration representatives that fulfills the following conditions:</p><p>• α and β are in S • if c is in S and the tape associated with c is in a universal state, then both successors of c are in S • if c is in S and the tape associated with c is an existential state, then a successor of c having its acceptance bit equal to c Crit is in S. By the previous lemmas, there exists an accepting run of T going exactly through the represented configurations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 Second Part of Proof of Theorem 6: EXPTIME-hardness for Inclusion Dependencies and Guarded Maps in Bounded Arity</head><p>Recall the statement of the second part of Theorem 6:</p><p>Disclose C (IncDep, GuardedMap) is EXPTIME-hard even in bounded arity.</p><p>In the proof of Theorem 6, we used predicates of unbounded arity only to generate exponentially many cell addresses. Here, we use only k addresses, and can encode their content through k predicates Cell 1 to Cell k . However, the proof follows the same line of argumentation as in Theorem 6.</p><p>Let us describe the source signature.</p><p>• Children ∀ (c, c α , c β , ac, ac α , ac β , r, z) states that a configuration c is universal and has as children c α and c β , and that the acceptance bit of c is ac, of c α is ac α and of c β is ac β . The last two positions are placeholders for the root of the tree of configurations, and c Crit . • Children ∃ (c, c α , c β , ac, ac α , ac β , r, z): same meaning, except that c is existential.</p><p>• Cell l (c p , c n , v, z) states that the cell of address l of the tape represented by c n has a content represented by v.</p><p>The last position is a placeholder for c Crit .</p><p>• Cell l i (c, x, z) states that the cell of address l in configuration c contains x at the i th position of the representation of its content.</p><p>• succ α (c p , c n ) states that c n is the α-successor of c p (and similarly for β) The symbol Q always ranges over {∀, ∃}. Initialization. We first define a mapping T Init (x), introducing some elements in the visible chase, whose definition is:</p><formula xml:id="formula_53">Children ∃ (c root , c α , c β , ac root , ac α , ac β , c root , x)</formula><p>Generation of the tree of configuration. α-successors have themselves αand β-successors, and are existential if their parent is universal:</p><formula xml:id="formula_54">Children ∀ (c, α, β, ac, ac α , ac β , r, z) → ∃α α , α β , ac αα , ac α β Children ∃ (α, α α , α β , ac α , ac αα , ac α β , r, z)</formula><p>And similarly for Children ∃ and for the β-successor. Universal and existential acceptance condition. If both successors of a universal configuration n are accepting, so is n. We create a mapping T ∀ (x) having definition: <ref type="bibr">, α, β, x, z, z, r, z)</ref> If the α-successor of an existential configuration n is accepting, so is n. We create a mapping T ∃,α (x) having definition:</p><formula xml:id="formula_55">Children ∀ (c</formula><formula xml:id="formula_56">Children ∃ (c, α, β, x, z, ac β , r, z)</formula><p>We create a similar mapping T ∃,β for the β-successor. Tape representation and consistency of tapes. We now focus on the representation of the tape and its consistency. For each configuration, we generate k cells whose content is initialized freshly:</p><formula xml:id="formula_57">Children ∀ (c, α, β, ac, ac α , ac β , r, z) → ∃v Cell l (c, α, v, z)</formula><p>and similarly for existential configurations and for the βsuccessors. Note that the values v, v prev and v next are again vectors of length the size of (Σ ∪ { }) × (Q ∪ ⊥). We again use the notation l i (x) to represent a vector of same length, composed of fresh variables, except for the position i, which contains x.</p><p>To ensure guardedness, we first introduce auxiliary predicates Cell c i , Cell p i and Cell n i that define the content of the i th bit of the value of the current, previous and next cells:</p><formula xml:id="formula_58">Cell l (c p , c n , l i (x), z) → Cell l i (c n , x)</formula><p>We enforce that the tape of the initial configuration has the head of the Turing machine on the first cell (and assume w.l.o.g that this is represented by the first position of v containing c Crit ) with all the other cells containing . We also assume w.l.o.g that the other cells containing is represented by the second position of v containing c Crit . We thus create the mappings T tapei (x), for the the first cell, having definition:</p><p>Cell 1 (c p , c n , l 1 (x), c p ) and T l tapeo (x), for all the other cells (2 ≤ l ≤ n), with definition:</p><p>Cell l (c p , c n , l 2 (x), c p )</p><p>Note that this data is associated with the children of the root (as c p is both in the first and the penultimate positions of the atoms), and not with the root itself, due to the choice of keeping in Cell l the identifier of the parent of the considered configuration.</p><p>We then check that the tape associated with the α-successor of a configuration is indeed obtained by applying an αtransition. This is done by noticing that the value of each cell of the α-successor is determined by the value of the cell and its two neighbors in the original configuration (the neighbors are necessary to know whether the head of the Turing machine is now in the considered cell). To ensure guardedness, we first define a predicate marking α-successors (and similarly for β-successors):</p><formula xml:id="formula_59">Children Q (c, α, β, z, ac α , ac β , r, z) → succ α (c, α)</formula><p>Let us consider a cell of address l in c p . We assume that its content is represented by i, while the content of its left (resp. right) neighbor is represented by j (resp. k). We represent the fact that this implies that the content of the cell of address l w in the α-successor of c p by the following mapping T α i,j,k→w (x):</p><p>Cell l (c p , c n , l w (x), z)</p><formula xml:id="formula_60">∧ Cell l i (c p , z) ∧ Cell l-1 j (c p , z) ∧ succ α (c p , c n )</formula><p>As in the non-bounded case, the first (resp. last) cell should be dealt with separately, as there is no content in the (nonexistent) previous (resp. next) cell. And we finally create a mapping T accept (x) enforcing that configurations whose tape is in an accepting state (which we assume w.l.o.g. corresponds to the case where the first cell contains the l th f bit) are declared as accepting.</p><formula xml:id="formula_61">Cell 1 l f (c n , z) ∧ Children Q (c n , α, β, x, ac α , ac β , r, z)</formula><p>The policy is Children ∃ (root, α, β, z, ac α , ac β , root, z)</p><p>We can verify that this policy is disclosed if and only if the original Turing machine accepts on the empty tape, using a similar reasoning to the unbounded case. We adapt the construction used for PSPACE-hardness of entailment with IncDeps <ref type="bibr" target="#b23">[Casanova et al., 1984]</ref> to show EXPTIME-hardness for IncDep source constraints and atomic maps. We start with an alternating (rather than deterministic in <ref type="bibr" target="#b23">[Casanova et al., 1984]</ref>) Turing machine M and an input x, and consider the problem asking whether there exists a halting computation of M that uses at most |x| cells. As in the original reduction, we use inclusion dependencies to simulate the transition relation of M. The adaptation lies in the additional use of a fresh position holding a configuration identifier, and the generation of a tree of configurations, as in the reduction presented in Theorem 6.</p><p>Let us describe the signature:</p><p>• Config Q (c, ac, v, z) states the configuration c has quantification Q, has accepting bit ac, a tape represented by c. the last argument will always hold c Crit in the visible chase;</p><p>• Transition Q tα,t β (c, ac, v, α, ac α , β, ac β , z) names two successors configurations α and β, with the configurations consisting of acceptance bits ac α and ac β , which are obtained from c by applying transitions t α and t β .</p><p>Let us turn to the description of v and subsequently t α . v represents the content of the tape: for each position of the tape, there is an argument for each pair of Σ × (Q ∪ {⊥}). Intuitively, this argument is equal to c Crit if and only if the position contains the corresponding letter and head, and a fresh null otherwise.</p><p>We introduce a mapping that initializes the tape:</p><formula xml:id="formula_62">Config ∀ (x, ac, v, x)</formula><p>As in the proof of Theorem 6, we propagate the acceptance information using mappings. For a universal state, we use a mapping with definition:</p><p>Transition ∀ tα,t β (c, x, v, α, z, β, z, z) For an existential state, we use two mappings with definitions:</p><p>Transition ∃ tα,t β (c, x, v, α, z, β, ac α , z) and Transition ∃ tα,t β (c, x, v, α, ac α , β, z, z) As before, we notice that the state of a cell after applying a transition is deterministically defined by its content as well as the content of its left and right neighbor. The following inclusion dependency states that from any configuration, we can try to apply all possible transitions to generate the αand β-successors:</p><formula xml:id="formula_63">Config Q (c, ac, v, z) → ∃α, ac α , β, ac β Transition Q tα,t β (c, ac, v, α, ac α , β, ac β , z)</formula><p>We now generate the tape associated with the α-transition (and similarly for the β-transition):</p><formula xml:id="formula_64">Transition Q tα,t β (c, ac, v, α, ac α , β, ac β , z) → ∃v α Config Q (α, ac α , v α ⊕ v α , z),</formula><p>where Q denotes the dual quantifier. Let us describe the vector v α ⊕ v α . Suppose t α is the transition that checks whether position i contains a, position i + 1 contains b and the head in state s, and position i + 2 contains c; changes b to b , moves the head to the right and goes into state s . Then v α ⊕ v α is defined as follows:</p><p>• any argument that corresponds to a position distinct from i + 1 or i + 2 is chosen equal to the argument at the same position in v; • the argument that corresponds to (i + 1, (b , ⊥)) now contains the value of v at position ((i+1), (b, s)), and all other variables appearing in an argument corresponding to position (i + 1) are existentially quantified; • the argument that corresponds to ((i + 2), (c, s )) now contains the value of v at position ((i + 2), (b, ⊥)), and all other variables appearing in an argument corresponding to position (i + 1) are existentially quantified. Note that here we have a distinction with the previous reduction: we do not check that a transition is applicable before applying it, as this would be out of the capabilities of IncDep. However, the same argument as in <ref type="bibr" target="#b23">[Casanova et al., 1984]</ref> proves that a configuration reached from simulating a nonapplicable transition cannot lead to an accepting state. We choose as a policy: Proof. Given a mapping φ( x) → ∃ y H( t) where there may be repeated variables in the head atom, we replace it by a projection mapping</p><formula xml:id="formula_65">Config ∀ (x, x, v, x),</formula><formula xml:id="formula_66">φ( x) → ∃ y H ( t)</formula><p>where H is a new predicate whose arity is the number of distinct variables in H( t). H ( t ) has the same variables as H, but with no repetition. For example, if the head of the original rule is H(x, x, y), then the new rule has head H (x, y).</p><p>We additionally add the source constraint:</p><formula xml:id="formula_67">∀ t H ( t) → H( t)</formula><p>It is easy to see that this transformation preserves disclosure.</p><p>B.7 Proof of Theorem 8: lower bounds for IncDeps in bounded arity is well known that query evaluation is NP-hard on arbitrary instances. But the constraints that we are considering in this section do not allow us to generate arbitrary instances as a visible sections. In this section we will exhibit a instance D on which query evaluation is NP-hard, but where D can be the result of the visible chase using AtomMaps but no constraints, or with a visible chase using Fr1LTGD constraints and ProjMaps. The instance D. D will have one relation R with 6 atoms. We present the content of R below. Empty cells are filled with fresh nulls, c is the only value shared by two tuples and n i correspond to nulls that are shared inside a tuple:</p><formula xml:id="formula_68">a b ¬a ¬b a ∨ b ¬ 2 b d ¬d n 1 n 1 c c n 1 c n 1 c n 2 n 2 c c n 3 c c n 3 c c c n 4 n 4 c c n 5 n 5 c c</formula><p>n 6 n 6 c Note that this is a single-shared value instance: only one value, namely c, is shared among multiple tuples. Such instances can be produced as the result of the visible chase over atomic mappings with no constraints. In this case:</p><formula xml:id="formula_69">R(y, y, x, x, y, v 1 , x, y) → T 1 (x) R(x, y, y, x, x, v 1 , v 2 , v 3 ) → T 2 (x) R(y, x, x, y, x, v 1 , v 2 , v 3 ) → T 3 (x) R(x, x, y, y, x, v 1 , v 2 , v 3 ) → T 4 (x) R(x, u, y, y, v 1 , x, v 2 , v 3 ) → T 5 (x) R(v 1 , v 2 , v 3 , x, v 4 , y, y, x) → T 6 (x)</formula><p>They can also be produced as the result of the visible chase over one projection mapping A(x) → T (x) with 6 Fr1LTGDs:</p><p>A(x) → R(y, y, x, x, y, v 1 , x, y) A</p><formula xml:id="formula_70">(x) → R(x, y, y, x, x, v 1 , v 2 , v 3 ) A(x) → R(y, x, x, y, x, v 1 , v 2 , v 3 ) A(x) → R(x, x, y, y, x, v 1 , v 2 , v 3 ) A(x) → R(x, u, y, y, v 1 , x, v 2 , v 3 ) A(x) → R(v 1 , v 2 , v 3 , x, v 4 , y, y, x)</formula><p>The remainder of the argument is to show that CQ evaluation is NP-hard over this instance, via reduction from satisfiability of a propositional circuit (Circuit SAT). General idea of the reduction. The reduction that we provide will create a query Q for each instance I of Circuit SAT. Without loss of generality, we suppose that I is composed of wires w 1 , . . . , w k , of negation gates N 1 , . . . N l and of binary OR gates O 1 , . . . , O m . Wire that are not the output of any gate are the inputs of the circuit. We will suppose that the output corresponds to the wire 1.</p><p>We will build the query Q to contain conjuncts for each wire, each negation gate and each binary OR. Furthermore we will create a variable v i for each wire w i .</p><p>For the sake of readability, we present the conjuncts graphically, with each row representing an R atom. A row with entries t j1 . . . t j k represents an atom R( w) where w i is a fresh existentially quantified variable when the cell is empty and the variable t ji in the cell otherwise.</p><p>Wires. For each wire w i , we will force the value of its associated variable v i to be either c (when the wire carries the value true) or n 1 (when the wire carries false).</p><p>For each wire i, we will have a conjunct:</p><formula xml:id="formula_71">a b ¬a ¬b a ∨ b ¬ 2 b d ¬d v i v i</formula><p>For the variable v 1 corresponding to the output wire we also add a conjunct:</p><formula xml:id="formula_72">a b ¬a ¬b a ∨ b ¬ 2 b d ¬d v 1 v 1</formula><p>Negation. For each negation gate N k , whose input is the wire i and output is the wire j, we will have the following conjuncts:</p><formula xml:id="formula_73">a b ¬a ¬b a ∨ b ¬ 2 b d ¬d v i r k r k p k p k v j</formula><p>Computing binary OR. For the binary OR O gate whose inputs are the wires v i and v j and the output is v k , we introduce the following conjuncts:</p><formula xml:id="formula_74">a b ¬a ¬b a ∨ b ¬ 2 b d ¬d v i x v j y x y v k</formula><p>Proof that this reduction captures Circuit-SAT. Let us suppose that the circuit is satisfied. Towards showing that the query is satisfied in the instance D, we first build a binding for the variables that are shared between multiple of the conjunct grouping above, which are exactly the "wire variables" v i . We do this by setting v i = c when w i = and v i = n 1 when w i = ⊥. We now show that this binding extends to a valuation making the query true. Since all the other variables are not shared between the conjunct groups, it suffices to show satisfiability of each conjunct group in isolation.</p><p>• We see that all the conjuncts corresponding to wires are satisfied (even the special conjunct corresponding to the output).</p><p>• For the negation gate N k whose input is v i and output is v j . When w i = and thus v i = c, we can set r k = n 5 , p k = c and satisfy all 3 conjuncts. When w i = ⊥ and thus v i = n 1 , we can set r k = c and p k = n 6 and satisfy all 3 conjuncts.</p><p>• For an OR gate O whose inputs are v i and v j , and whose output is v k . There are four cases:</p><p>when w i = w j = and thus v i = v j = c we can set x = y = n 4 when w i = ⊥ and w j = and thus v i = n 1 , v j = c we can set x = c, y = n 3 when w j = ⊥ and w i = and thus v j = n 1 , v i = c we can set x = n 2 , y = c when w i = w j = ⊥ and thus v i = v j = n)1 we can set x = y = c In all cases, our conjuncts are satisfied.</p><p>Conversely, let us show that when the query is satisfied in our instance D, then the circuit is satisfiable. Let h be a homomorphism from the query variables to values. Since we have wire conjuncts constraining v i for each wire w i , we can see that h(v i ) = n 1 or h(v i ) = c. We now consider the circuit assignment such that w i = when h(v i ) = c and w i = ⊥ when h(v i ) = n 1 . Let us show that this assignment witnesses the satisfiability of the circuit.</p><p>• The output wire is already constrained such that h(v 1 ) ∈ {n 1 , c} but it also has a special conjunct and the only remaining possibility for h(v 1 ) is c and thus the output gate is set at . • For each negation gate whose input is w i and output is w j : when h(v i ) = n 1 then the conjunct holding v i and r k (i.e. the first row in the graphical representation) forces that h(r k ) = c. The conjunct holding r k and p k forces p k to be a fresh null or n 6 . But since p k appears in the column ¬ 2 b and in the column d, we can only have p k = n 6 and thus v j = c. when h(v i ) = c then the conjunct holding v i and r k forces that h(r k ) = n 5 or h(r k ) = n4. Then the conjunct holding r k and p k forces p k to be either a fresh null (when h(r k ) = n 4 ) or c (when h(r k ) = n 5 ). Since p k appears in the column ¬ 2 b and in the column d we cannot have p k fresh null, we conclude thatp k = c, and thus v j = n 1 . In both cases, the semantics of the negation gate is respected.</p><p>• Consider each OR gate whose inputs are w i , w j and output is w k . First we have:</p><formula xml:id="formula_75">-when h(v i ) = n 1 then necessarily h(x ) = c -when h(v i ) = c then h(x ) = n 2 or h(x ) = n 4 or h(x ) = n 5 -when h(v j ) = n 1 then necessarily h(y ) = c -when h(v j ) = c then h(x ) = n 3 or h(x ) = n 4 .</formula><p>Therefore we see that:</p><formula xml:id="formula_76">-when h(v i ) = n 1 = h(v j ) then necessarily h(x ) = h(y ) = c and thus h(v k ) = n 1 -when h(v i ) = c and h(v j ) = n 1 then h(x ) = n 2 and thus h(v k ) = c -when h(v i ) = n 1 and h(v j ) = c then necessarily h(y ) = n 3 and thus h(v k ) = c -when h(v j ) = c = h(v i ) then h(x ) = n 4 = h(y )</formula><p>and thus h(v k ) = c in all cases we do have that the semantics of the OR gate is respected. All in all, we have seen that the circuit is satisfiable if and only if the query has a solution on the visible chase.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.9 Lower Bounds Inherited from Entailment</head><p>In the body of the paper we claimed that in several cases, we could show that the complexity of disclosure for a class was at least as hard as the complexity of query entailment for the class. We do not claim that there is a generic reduction from query entailment to disclosure. There is a simple reduction from entailment for special classes of instances to disclosure. More specifically, disclosure is easily seen to subsume entailment on instances of the form Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ). But one needs to see that entailment on these specialized instances is as hard as entailment in general; this requires a separate argument for each class.</p><p>There are three cases of "lower bounds from entailment" that are used in the body of the paper: those whose lower bound is annotated with QEntail in Table <ref type="table" target="#tab_0">1</ref>. We give the details of each argument below.</p><p>In Bounded Arity, Disclosure with IncDep Source Constraints and Projection Maps is NP-hard</p><p>We begin by showing that disclosure for IncDep source constraints and projection maps inherits the NP-hardness that is known for query entailment with IncDeps. We do this via a direct reduction from 3-coloring. We make use again of the characterization of disclosure using the visible chase.</p><p>Let us take a graph G = (V, E) that is an input to 3coloring. In our reduction, the schema, the constraints and the mapping will not depend on this actual graph reduced. Only the query will depend on the graph.</p><p>We will have a single source relation OK(x, y, z) and one mapping OK(x, y, z) → M () to create canonical values for (x 0 , y 0 , z 0 ) in Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ), which is the initial instance in the visible chase. Then we will use two IncDep constraints to create all permutations for these values: OK(x, y, z) → OK(x, z, y) and OK(x, y, z) → OK(y, x, z).</p><p>Because of the mapping, Hide M (D G(M) Crit ) will have three values x 0 , y 0 , z 0 with OK(x 0 , y 0 , z 0 ). Then the constraints ensure that the canonical model contains the six permutations of arguments for OK: OK(x 0 , y 0 , z 0 ), OK(x 0 , z 0 , y 0 ), OK(y 0 , x 0 , z 0 ), OK(y 0 , z 0 , x 0 ), OK(z 0 , x 0 , y 0 ), OK(z 0 , y 0 , z 0 ).</p><p>In our query |V | variables will capture the coloring of each node, we note v(n) the variable associated with node n. For each (f, t) ∈ E the query will include a conjunct ∃c OK(v(f ), v(t), c).</p><p>We sketch the correctness of this reduction. The three values x 0 , y 0 , z 0 in Hide M (D G(M) Crit ) encode the three possible colors in a coloring. The conjunct ∃c OK(v(f ), v(t), c) forbids the nodes f and t to be mapped to the same value (x 0 , y 0 or z 0 ) as ∃c OK <ref type="bibr">(v, v, c)</ref> has no solution in Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ). Therefore if we have disclosure have a 3-coloring.</p><p>Conversely, if we have a 3-coloring, we can find a solution for the query in the visible chase.</p><p>In General Arity, Disclosure with IncDep Source Constraints and Projection Maps is PSPACE-hard Here we give a direct reduction<ref type="foot" target="#foot_0">1</ref> from the implication problem for IncDeps, or equivalently, the entailment problem for a single-atom instance and an atomic query. This is known to be PSPACE-hard <ref type="bibr" target="#b23">[Casanova et al., 1984]</ref>. Given a problem Σ R 1 ( X) ⊆ R 2 ( X) (where X has no repeated variables and Σ is composed of IDs), we introduce a fresh predicate shadowR 1 and we reduce it to the disclosure problem with query shadowR 1 ( X) ∧ R 2 ( X) on the constraints Σ plus shadowR 1 ( X) → R 1 ( X) and the mapping V () := ∃ X shadowR 1 ( X).</p><p>In Bounded Arity, Disclosure with FGTGD Source Constraints and Projection Maps is 2EXPTIME-hard The last place where we claim that disclosure is at least as hard as entailment is for FGTGD source constraints and projection maps in bounded arity. Here we will proceed by modifying the reduction used in Theorem 8. In this proof we used mappings for two distinct purposes. The initialization mapping T init () was used to generate some values in the initial instance of the visible chase. In the proof, this mapping is an atomic map but not a projection map; but we can easily change this to use a projection map and an LTGD.</p><p>The remaining maps are used to ensure that certain values get merged with c Crit in the visible chase. Put another way, they are used to enforce certain SCEQrules. But with the mappings T init () and T c Crit (x), we can ensure that the initial instance of the visible chase includes exactly one element satisfying IsCrit. Once we have done this, we can mimic a SCEQrule φ( x) → x i = c Crit by a source constraint φ( x) → IsCrit(x i )</p><p>This must be a FGTGD, since the frontier has size one. Transforming the mappings according to this methodology, while leaving the query the same as in Theorem 8 gives us a modification of the hardness proof using FGTGD source constraints and projection maps, as required.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C Refinements of our results</head><p>Atomic queries. We have focused in the body of the paper on policy queries given as general CQs. But almost all of our lower bounds can be seen to hold for atomic queries. The only exceptions are stated in Theorem 4 and Corollary 3, where we claim PTIME membership in bounded arity when restricting to atomic queries. Note that the NP-hardness bounds for general CQs corresponding to these upper bounds do not follow from our custom reductions, but using the simple reduction from entailment of CQs for the corresponding classes (e.g. IncDeps).</p><p>Non-Boolean queries. In this appendix we have provided details of our upper bounds, assuming for simplicity that the queries p are Boolean. But the proofs all extend to the non-Boolean case, as we now explain. To see this we need to go back to Theorem 1. We restate the theorem in a slightly different variant:</p><p>Theorem 11. <ref type="bibr" target="#b10">[Benedikt et al., 2016]</ref> When source constraints are TGDs and mapping rules are given by CQ definitions, then if a disclosure of a CQ (Boolean or non-Boolean) occurs, then the source instance which witnesses this can be taken to be D S Crit . The statement differs slightly from that of Theorem 1, since this version talks about getting an instance that agrees with D S Crit on the mapping images, rather than having one that extends Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ) and satisfies the constraints. The important point is that the result holds for non-Boolean queries as well as Boolean queries. Note that for a Non-Boolean query p( x), all the facts that an attacker will see in the mapping image of D S Crit will contain only the value c Crit . Thus the only query answers that can be disclosed to the attacker will involve the value c Crit . Inspection of each of the upper bound reductions will show that to detect such disclosures, it suffices to pre-process the query to add conjuncts IsCrit(x i ) for each variable x i , treating the result as a Boolean query.</p><p>Note that this transformation converts atomic queries to queries consisting of a single atom and an additional set of unary atoms. However, this will not impact the PTIME claims in Theorem 4 and Corollary 3. For example in Theorem 4, we will need only to note that for atomic queries on a bounded arity schema, we will get an atomic query with a bounded number of additional atoms of the form IsCrit(x i ). Entailment of such queries over a bounded arity schema with IncDeps is still in PTIME.</p><p>Dependencies with multiple atoms in the head. In some of our upper bound proofs, we assumed that the dependencies had a single atom in the head for simplicity, even when the classes in question (e.g. GTGDs) does not impose this. In our results that are stated for general arity, this assumption can be made without loss of generality, since one can simplify the heads by introducing intermediate predicates. In bounded arity, one must take some care, since one cannot polynomially reduce to the case of a single atom in the head. All of our results for bounded arity do in fact hold as stated, without any additional restrictions on the head. We explain how the argument needs to be customized for the most subtle case, Theorem 4.</p><p>Recall that the bounded arity case of Theorem 4 starts with the critical-instance rewriting, which reduces to reasoning with Guarded TGDs having a fixed side signature, the unary predicate IsCrit(x). The linearization of <ref type="bibr">[Amarilli and Benedikt, 2018a;</ref><ref type="bibr">Amarilli and Benedikt, 2018b]</ref>, applied in this context, proceeds in two steps. First we generate all derived rules of the form: R( x) ∧ i IsCrit(x i ) → IsCrit(x j )</p><p>Notice that these are full-dependencies: no existentials in the head. This generation can be done inductively, via the dynamic programming steps in <ref type="bibr">[Amarilli and Benedikt, 2018b]</ref>: one inductive steps composes a derived rule with one of the original non-full dependencies. A second step composes two derived full rules. This can be applied directly to the case of rules with multiple atoms in the head.</p><p>After this is done, the second step of linearization moves to an extended signature described as follows: for every relation R of arity k in the original signature (without IsCrit), and for each set of positions P of R, we introduce predicates R P of arity k. Informally, R P ( x) stands in for R( x) ∧ i∈P IsCrit(x i ). We lift every original dependency:</p><formula xml:id="formula_77">R( x) ∧ i∈P IsCrit(x i ) → ∃ y H j ( t j )</formula><p>to a linear TGD:</p><formula xml:id="formula_78">R P ( x) → ∃ y H Pj j ( t j )</formula><p>where P j contains the positions corresponding to exported variables in P . We lift every derived full dependency of the form: R( x) ∧ i∈P IsCrit(x i ) → IsCrit(x j )</p><p>to a linear TGD: R P ( x) → R P ∪{j} ( x)</p><p>Finally we have linear TGD asserting that the semantics of R P become stronger as one adds to the set of positions P : R P ( x) → R P ( x)</p><p>for P ⊂ P . We rewrite the query to the extended signature in the analogous way. The correctness of this transformation is given by an argument identical to that in the single-headed case in <ref type="bibr">[Amarilli and Benedikt, 2018b]</ref>.</p><p>Note that this transformation is in PTIME when the arity is fixed. It reduces us to an entailment problem with LTGDs, still with bounded arity, but with multiple atoms in the head. Such an entailment problem can be shown to be in NP using a simple variation of the algorithm for IncDeps of <ref type="bibr" target="#b35">[Johnson and Klug, 1984]</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>Predicate Meaning IsOpen(b, t) building b is open on date t PatBdlg(p, b) patient p is present in building b PatSpec(p, s) patient p was treated for specialty s PatDoc(p, d) patient p was treated by doctor d DocBldg(d, b) doctor d is associated with building b DocSpec(d, s) doctor d is associated with specialty s The hospital publishes the following data: OpenHours(b, t) giving opening times t for building b, VisitingHours(p, t) giving times t when a given patient p can be visited, and DocList(d, s, b) listing the doctors d with their specialty s and their building b. Formally the data being exposed is given by the following mappings: IsOpen(b, t) → OpenHours(b, t) PatBdlg(p, b) ∧ IsOpen(b, t) → VisitingHours(p, t) DocSpec(d, s) ∧ DocBldg(d, b) → DocList(d, s, b)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>see that the image of D 0 must include all the facts in D G(M) Crit , note that D includes all facts of Hide M (D G(M) Crit ), which contains witnesses for each such fact. Thus the h-image, namely D , contains witnesses for each such fact as well. Conversely, suppose the image of D 0 includes a fact F ( d); we will argue that F ( d) is in D G(M) Crit . Since D satisfied IsCrit(M), any such fact in D must have all d i satisfying IsCrit. Thus in D 0 each such fact must be of the form F (c Crit . . . c Crit ). Thus the M-image of D 0 is exactly the same D G(M)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>d) holds in D , By the definition of D, we have that R( d * ) holds, where d * fills out each visible position with c Crit . We can see that R( d * ) is the required witness for P ( c). • Next, suppose there is a variable x in a visible position j of P ( x) exported to an invisible position in R( t). Then we must have c j = c Crit . Since P is in Reachable(Hide M (D G(M)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head></head><label></label><figDesc>x) → ∃ y * R( y * ) ∈ Σ Reachable and thus R( d * ) holds in D We next claim that the image of D under M agrees with D G(M) Crit . • For every global schema predicate G, G(c Crit . . . c Crit ) occurs in the the image of D under M. This follows easily from the fact that D contains D 0 . • If G( c) holds in the M-image, then because each visible position was filled out with c Crit , we must have each c i = c Crit . Thus the result follows.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>Fix a fact F = P ( c * ) in D . By definition of D , c * extends to a c satisfying P in D. Thus, since D |= Σ, there is a fact G = R( d) that holds in D with d i = c j whenever t i = x j . We can project to the invisible positions to get a fact G = R(d j1 . . . d jn ) in D . We claim that G is a witness for the satisfaction of σ with respect to F . Consider any variable x exported from F to position j of G where x is mapped to value c in c * . Then in σ, x</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The generated structure</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head></head><label></label><figDesc>Critcontains T Init (c Crit ), there is in the visible chase the atom Children ∃ (c root ,c α , c β , ac root , ac α , ac β , y k 0 , y k 1 , c root , c Crit , y 0 0 , y 0 1 ), where all individuals but c Crit are nulls.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Complexity of disclosure: PSPACE U =C3L=QEntail means the corresponding problem is PSPACE-complete, where the Upper bound is given by Corollary 3 (U=C3) and the Lower bound is inherited from entailment. We omit bounds inferred from inclusion (M or Σ Source ).</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>AtomMap) and Disclose C (LTGD, ProjMap) are both EXPTIME-hard.</figDesc><table><row><cell>The above results, coupled with argument that the lower</cell></row><row><cell>bounds for entailment are inherited by disclosure, show tight-</cell></row><row><cell>ness of all upper bounds from Table 1 in the unbounded arity</cell></row><row><cell>case. Another variation of the encoding in Theorem 6 shows</cell></row><row><cell>that with no restriction on the mappings one can not do bet-</cell></row><row><cell>ter than the 2EXPTIME upper bound of Corollary 1 even for</cell></row><row><cell>IncDep constraints in bounded arity,</cell></row><row><cell>Theorem 8. Disclose C (IncDep, CQMap) is 2EXPTIME-hard</cell></row><row><cell>in bounded arity.</cell></row><row><cell>The theorem above, again combined with results showing</cell></row><row><cell>that the lower bounds for entailment are inherited, suffice to</cell></row><row><cell>show tightness of all upper bounds from Table 1 in the case</cell></row><row><cell>of bounded arity.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head></head><label></label><figDesc>B.5 Final Part of Proof of Theorem 6: Reduction from GTGD and ProjMap to IncDep and GuardedMap Theorem 6 states a 2EXPTIME lower bound for general arity and an EXPTIME lower bound in bounded arity for two different cases. The first case was when the source constraints are IncDeps and the mappings are guarded. The previous sections of the appendix have gone through the proofs of this case in detail. We now finish the proof of Theorem 6 showing: IncDep and GuardedMap reduces to GTGD and ProjMap, therefore we have the lower bound for Disclose(GTGD, ProjMap, p) from the lower bound Disclose(IncDep, GuardedMap, p) B.6 Proof of Theorem 7: EXPTIME-hardness for Inclusion Dependencies and Atomic Maps, and for LTGDs with Projection Maps</figDesc><table><row><cell cols="7">Disclose C (GTGD, ProjMap) is 2EXPTIME-hard, and is</cell></row><row><cell cols="4">EXPTIME-hard even in bounded arity.</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="7">The proof of both of these assertions follows directly from</cell></row><row><cell cols="7">Corollary 4 (the general reduction of maps presented in sec-</cell></row><row><cell>tion A.2).</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">We have seen that Recall the statement of Theorem 7:</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="4">Disclose C (IncDep, AtomMap)</cell><cell></cell><cell></cell><cell>and</cell></row><row><cell cols="6">Disclose C (LTGD, ProjMap) are both EXPTIME-hard.</cell><cell></cell></row><row><cell>We</cell><cell>first</cell><cell>focus</cell><cell>on</cell><cell>the</cell><cell>case</cell><cell>of</cell></row><row><cell cols="3">Disclose C (IncDep, AtomMap).</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head></head><label></label><figDesc>Proposition 10. The policy is disclosed if and only if there is an accepting computation that uses at most |x| cells. The lower bound for Disclose C (LTGD, ProjMap) follows by reduction: Proposition 11. There is a polynomial time reduction from Disclose C (IncDep, AtomMap) to Disclose C (LTGD, ProjMap).</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The original proof given here was faulty, many thanks to Balder ten Cate for noticing it and suggesting a fix.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was partially funder by <rs type="funder">CNRS Momentum</rs> project "<rs type="projectName">Managing Data without Leak</rs>".</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_nhp2Jjq">
+					<orgName type="project" subtype="full">Managing Data without Leak</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recall the statement of Theorem 8:</p><p>This proof will be very similar to the proof of Theorem 6. We will provide a reduction from an alternating EXPSPACE Turing machine to IncDep and SCEQrules. We show how to simulate the run of an alternating EXPSPACE Turing machine M with inclusion dependencies and SCEQrules.</p><p>The main difference between the proof of Theorem 6 and the proof here is that in Theorem 6 each cell carried n bits b 1 . . . b n specifying the address of the cell. In this version we cannot use this trick as we are using a reduction where all predicates are bounded. For each configuration, the tape will represented in the leaves of a full binary tree of depth n. For a cell c, the n bits specifying the address of a c will scattered across the n predicates in its lineage, each holding one bit of the address: an internal node has two descendants each carrying four values b, b, y 0 , y 1 . We will have b = y 0 and b = y 1 when then node represents the addresses where the i-th bit is 0 and b = y 1 , b = y 0 when it is 1.</p><p>Let us describe our source signature:</p><p>• Children ∀ (c, c α , c β , ac, ac α , ac β , r, y 0 , y bis 0 , y 1 , y bis 1 ) states that a configuration c is universal and has children c α and c β , and that the acceptance bit of c is ac, of c α is ac α and of c β is ac β . The last four positions are placeholders for r the root of the tree of configurations, two values y 0 = y bis 0 representing 0 and two values y 1 = y bis 1 representing 1. • Children ∃ (c, c α , c β , ac, ac α , ac β , r, y 0 , y bis 0 , y 1 , y bis 1 ): same meaning, except that c is existential.</p><p>• for i ∈ 1..n, Address i (c p , c n , b i , b i , y 0 , y 1 ) corresponds to a node of depth i in the binary tree representing the tape of a configuration. In this predicate c p is the parent of the node, c n is the current node, b i will be equal to y 0 when the node if the first child of c p and equal to y 1 otherwise. b i will be the complement of b i (i.e. y 0 = b i implies y 1 = i and y 1 = b i implies y 0 = i). • Cell c (c, v) states that the cell at position c contains the data represented by v. Cell p and Cell n play similar roles for the previous cell and the next cell. Critical element. We create a mapping T c Crit (x) defined as IsCrit(x). The relation IsCrit will allow us to test whether a variable is equal to c Crit . Initialization. We first define a mapping T init () introducing some elements in the visible chase, whose definition is:</p><p>Generating the tree of configuration. α-successors have themselves αand β-successors, and are existential if their parent is universal:</p><p>And similarly for Children ∃ and for the β-successor. Universal and Existential Acceptance Condition. If both successors of a universal configuration n are accepting, so is n. We create a mapping T ∀ (x) with definition:</p><p>If the α-successor of an existential configuration n is accepting, so is n. We create a mapping T ∃,α (x) of definition:</p><p>We create a similar mapping T ∃,β for the β-successor. Generating the tape cells. We now focus on the representation of the tape and its consistency. We generate 2 k addresses and associated values:</p><p>Finally for n we have:</p><p>Initialization of the tape. For the case 0, we use the pattern l 1 and introduce a mapping T tape0 (x) defined as:</p><p>Children ∃ (c root , α, β, ac, ac α , ac β , y 0 , y 0 , y 1 , y 1 ) ∧ Address 1 (root, id 1 , y 0 , y 1 , y 0 , y 1 ) ∧ . . .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>∧</head><p>Address n (id n-1 , id n , y 0 , y 1 , y 0 , y 1 ) ∧ Cell c (id n , l 1 (x))</p><p>For all others cases, with a first 1 at the i-th bit, we use the pattern l 0 and introduce T tape i (x):</p><p>Children ∃ (c root , α, β, ac, ac α , ac β , y 0 , y 0 , y 1 , y 1 ) ∧ Address 1 (root, id 1 , y 0 , y 1 , y 0 , y 1 ) ∧ . . .</p><p>Ensuring the coherence between Cell c and Cell p . We need to check the coherence between Cell c in an address and Cell p at the previous address. As usual when v is at the address b10 j then Cell c needs to be checked against the Cell p at the address b01 j . We introduce the mapping T prev j (x):</p><p>Address n-j-1 (id, id 1 , y 1 , y 0 , y 0 , y 1 ) ∧ Address n-j-1 (id, id 0 , y 0 , y 1 , y 0 , y 1 ) ∧ Address n-j (id 1 , id 10 , y 0 , y 1 , y 0 , y 1 ) ∧ Address n-j (id 0 , id 01 , y 1 , y 0 , y 0 , y 1 ) . . . ∧ Address n (id 10 j-1 , id 10 j , y 0 , y 1 , y 0 , y 1 ) ∧ Address n (id 01 j-1 , id 01 j , y 1 , y 0 , y 0 , y 1 )</p><p>Encoding transitions. As in previous reductions, we encode the transitions of δ as a set of (i, j, k) → w (where i is the value of the cell, j is the value at the cell before and k at the cell after and w is the written value).</p><p>For our transition, we need to write w at the same address s where l lies in the -child of the configuration of c. To be at the same address, we need to check that the path follows the same bits (that we note here b n . . . b 1 ). We use the mapping T i,j,k→w (x) defined as:</p><p>T ree (id g , id p , y 0 , y 0 , y 1 , y 1 ) ∧ Children Q (c, c α , c β , ac, ac α , ac β , r, y 0 , y 0 , y 1 , y 1 ) Encoding final states. Whenever the current state is q accept we need to enforce that the ac bit is set. To enforce that the ac bit is set, we introduce the following mapping, for each value k ∈ {q accept } × Σ marking a final state:</p><p>Policy. The policy query is Children ∃ (root, α, β, z, ac α , ac β , r, y 0 , y 0 , y 1 , y 1 ),</p><p>We can verify that the policy query is disclosed if and only if the original Turing machine accepts on the empty tape.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.8 Maximality of our Tractability Conditions</head><p>Recall that Theorem 5 shows that we can get tractability by simultaneously restricting our constraints to be UIDs and our mappings to be ProjMaps. Recall also that a UID is an IncDep with at most one exported variable. Here we show that these restrictions are maximal in the following sense: if we increase from UIDs to LTGDs with frontier one we get intractability. We also get intractability if we stick with UIDs but we allow the mappings to be atomic. Let Fr1LTGD denote the LTGDs with at most one exported variable. In fact, we will show something stronger (here ∅ denotes no constraints): Theorem 10.</p><p>Disclose C (∅, AtomMap) and Disclose C (Fr1LTGD, ProjMap) are both NP-hard.</p><p>In order to prove our results, we will rely again on Proposition 1, which states that testing for disclosure is equivalent to evaluating the policy query on the result of the visible chase process. The process starts with the instance Hide M (D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit ), which has source witnesses for each tuple in D</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G(M)</head><p>Crit . It proceeds by alternating traditional chase steps and merge steps, which are applications of a SCEQrule. It</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Complexity of answering queries using materialized views</title>
+		<author>
+			<persName><forename type="first">Duschka</forename><surname>Abiteboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Abiteboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Duschka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="1998">1998. 1998</date>
+			<biblScope unit="page" from="254" to="263" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Shqiponja Ahmetaj, Magdalena Ortiz, and Mantas Šimkus. Polynomial datalog rewritings for expressive description logics with closed predicates</title>
+		<author>
+			<persName><surname>Ahmetaj</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+			<biblScope unit="page" from="878" to="885" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">When Can We Answer Queries Using Result-Bounded Data Interfaces? In PODS</title>
+		<author>
+			<persName><forename type="first">Benedikt</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Benedikt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+			<biblScope unit="page" from="281" to="293" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">When Can We Answer Queries Using Result-Bounded Data Interfaces?</title>
+		<author>
+			<persName><forename type="first">Benedikt</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Benedikt</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/pdf/1706.07936.pdf" />
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Amendola</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Enhancing existential rules by closed-world variables</title>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Amendola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Leone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierfrancesco</forename><surname>Veltri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1676" to="1682" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Baget</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">On rules with existential variables: Walking the decidability line</title>
+		<author>
+			<persName><forename type="first">Jean-Franc ¸ois</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marie-Laure</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Salvat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">175</biblScope>
+			<biblScope unit="issue">9-10</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Bárány</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Guarded negation</title>
+		<author>
+			<persName><forename type="first">Vince</forename><surname>Bárány</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ten</forename><surname>Balder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Segoufin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="356" to="367" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Benedikt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Querying visible and invisible information</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Benedikt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Bourhis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriele</forename><surname>Balder Ten Cate</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Puppis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LICS</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="297" to="306" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Benedikt</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Logical foundations of information disclosure in ontology-based data integration</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Benedikt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernardo</forename><forename type="middle">Cuenca</forename><surname>Grau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Egor</forename><forename type="middle">V</forename><surname>Kostylev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">262</biblScope>
+			<biblScope unit="page" from="52" to="95" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Bienvenu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Ontology-mediated queries: Combined complexity and succinctness of rewritings via circuit complexity</title>
+		<author>
+			<persName><forename type="first">Meghyn</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Kikot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><forename type="middle">V</forename><surname>Podolskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Keeping Secrets in Incomplete Databases</title>
+		<author>
+			<persName><forename type="first">Weibert</forename><surname>Biskup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joachim</forename><surname>Biskup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torben</forename><surname>Weibert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Inf. Sec</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="199" to="217" />
+			<date type="published" when="2008">2008. 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Sauro</forename><surname>Bonatti</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">A confidentiality model for ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Piero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luigi</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sauro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ISWC</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="17" to="32" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Bonatti</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Foundations of Secure Deductive Databases</title>
+		<author>
+			<persName><forename type="first">Piero</forename><surname>Bonatti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sarit</forename><surname>Kraus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">S</forename><surname>Subrahmanian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TKDE</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="406" to="422" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Calì</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Taming the infinite chase: Query answering under expressive relational constraints</title>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Calì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Kifer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JAIR</title>
+		<imprint>
+			<biblScope unit="page" from="70" to="80" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Casanova</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Inclusion dependencies and their interaction with functional dependencies</title>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Casanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Papadimitriou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JCSS</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="29" to="59" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Cosmadakis</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Polynomial-time implication problems for unary inclusion dependencies</title>
+		<author>
+			<persName><forename type="first">Stavros</forename><forename type="middle">S</forename><surname>Cosmadakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paris</forename><forename type="middle">C</forename><surname>Kanellakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moshe</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">37</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="15" to="46" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Dwork</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Differential privacy</title>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Dwork</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICALP</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="1" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Fagin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Data Exchange: Semantics and Query Answering</title>
+		<author>
+			<persName><forename type="first">Ronald</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Phokion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renee</forename><forename type="middle">J</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucian</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Popa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">336</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="89" to="124" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Franconi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Query answering with DBoxes is hard</title>
+		<author>
+			<persName><forename type="first">Enrico</forename><surname>Franconi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yasmin</forename><surname>Ibáñez-García</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Inanc ¸seylan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ENTCS</title>
+		<imprint>
+			<biblScope unit="volume">278</biblScope>
+			<biblScope unit="page" from="71" to="84" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Gottlob</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Polynomial combined rewritings for existential rules</title>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Manna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Pieris</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">KR</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Johnson</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klug</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Testing Containment of Conjunctive Queries under Functional and Inclusion Dependencies</title>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">S</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><forename type="middle">C</forename><surname>Klug</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JCSS</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Kikot</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Polynomial conjunctive query rewriting under unary inclusion dependencies</title>
+		<author>
+			<persName><forename type="first">Stanislav</forename><surname>Kikot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RR</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Lenzerini</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Data integration: A theoretical perspective</title>
+		<author>
+			<persName><forename type="first">Maurizio</forename><surname>Lenzerini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="233" to="246" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Lutz</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Ontology-based data access with closed predicates is inherently intractable (sometimes)</title>
+		<author>
+			<persName><forename type="first">Carsten</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Inanc ¸seylan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1024" to="1030" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Lutz</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Ontology-mediated queries with closed predicates</title>
+		<author>
+			<persName><forename type="first">Carsten</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Inanc ¸seylan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="3120" to="3126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Papadimitriou</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christos</forename><forename type="middle">H</forename><surname>Papadimitriou</surname></persName>
+		</author>
+		<title level="m">Computational complexity</title>
+		<imprint>
+			<publisher>Addison-Wesley</publisher>
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Equivalences among relational expressions with the union and difference operators</title>
+		<author>
+			<persName><forename type="first">Yannakakis</forename><surname>Sagiv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yehoshua</forename><surname>Sagiv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mihalis</forename><surname>Yannakakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<date type="published" when="1980">1980. 1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Werner</forename><surname>Studer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Censors for Boolean Description Logic</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Studer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Werner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trans. on Data Privacy</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="223" to="252" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

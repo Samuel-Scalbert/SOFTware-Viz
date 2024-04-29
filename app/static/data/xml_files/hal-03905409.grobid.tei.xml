@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Predicting the Score of Atomic Candidate OWL Class Axioms</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Ali</forename><surname>Ballout</surname></persName>
+							<email>ali.ballout@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="department">I3S</orgName>
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<address>
+									<settlement>Sophia Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Andrea</forename><forename type="middle">G B</forename><surname>Tettamanzi</surname></persName>
+							<email>andrea.tettamanzi@unice.fr</email>
+							<affiliation key="aff1">
+								<orgName type="department">I3S</orgName>
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<address>
+									<settlement>Sophia Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Célia</forename><surname>Da Costa Pereira</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="department">I3S</orgName>
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS Sophia Antipolis</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Predicting the Score of Atomic Candidate OWL Class Axioms</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C298E533428202475D347FC7244EEBDE</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Ontology Learning</term>
+					<term>OWL Axioms</term>
+					<term>Concept Similarity</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Candidate axiom scoring is the task of assessing the acceptability of a candidate axiom against the evidence provided by known facts or data. The ability to score candidate axioms reliably is required for automated schema or ontology induction, but it can also be valuable for ontology and/or knowledge graph validation. Accurate axiom scoring heuristics are often computationally expensive, which is an issue if you wish to use them in iterative search techniques like level-wise generate-and-test or evolutionary algorithms, which require scoring a large number of candidate axioms. We address the problem of developing a predictive model as a substitute for reasoning that predicts the possibility score of candidate class axioms and is quick enough to be employed in such situations. We use a semantic similarity measure taken from an ontology's subsumption structure for this purpose. We show that the approach provided in this work can accurately learn the possibility scores of candidate OWL class axioms and that it can do so for a variety of OWL class axioms.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION AND RELATED WORK</head><p>An ontology is the explicit representation of components of a shared conceptualization <ref type="bibr" target="#b12">[13]</ref>. In machines, an ontology is a vocabulary which is used by said machine in the representation of knowledge. An AI knowledge-based system would take an ontology as its universe of components and their relations and derive new implicit knowledge within that universe.</p><p>As for the components of an ontology, Z. Dragisic <ref type="bibr" target="#b8">[9]</ref> defines them as follows:</p><p>• Concepts (classes) -the types of objects in a domain or area.</p><p>• Relations (properties, roles) -the relations between two concepts/classes. • Instances (individuals) -instances of concepts/classes.</p><p>• Axioms -model sentences that are always correct in the domain.</p><p>They're often utilized to represent information that cannot be formally specified by the other components <ref type="bibr" target="#b7">[8]</ref>.</p><p>Ontologies play a vital role in data and knowledge integration by making a common schema available <ref type="bibr" target="#b13">[14]</ref>. Unfortunately, ontology construction is extremely expensive, in terms of both time and resources, and dependent on the availability of knowledge experts <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b22">[23]</ref>. The construction of an ontology for a certain field requires the contribution of a knowledge engineer and of an expert in that specific field. This dependency persists throughout the lifetime of an ontology as an expert is required to develop and expand it as new requirements arise. To overcome such a bottleneck in knowledge acquisition, the field of ontology learning was conceived. Ontology Learning <ref type="bibr" target="#b13">[14]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b17">[18]</ref> is the task consisting of the automatic generation of ontologies. Ontology learning includes a variety of techniques and those are grouped into:</p><p>• Linguistic techniques -Natural language processing mostly used in the preprocessing of data, and some learning tasks such as term extraction <ref type="bibr" target="#b1">[2]</ref>. • Statistical techniques -such as data mining and information retrieval methods used to extract terms and associations between them <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref>. • Inductive logic programming (ILP) is a branch of machine learning that uses logic programming to generate hypotheses based on prior knowledge and a set of examples <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b19">[20]</ref>.</p><p>Each one of these technique groups is involved in one or more of the stages of ontology learning, those stages being preprocessing, term and concept extraction, relation extraction, concepts and relations hierarchies, axioms schemata and general axioms <ref type="bibr" target="#b1">[2]</ref>. Linguistic techniques can have a role in almost all the stages, but as we mentioned they are mostly used for data preprocessing.</p><p>As for statistical techniques, they are methods that rely entirely on the statistics of the textual resources without any concern for the semantics. One such method is the possibilistic (statistics-based) heuristic detailed in <ref type="bibr" target="#b24">[25]</ref>, where the authors have developed a possibilistic framework for the Web ontology language (OWL 2) to test axioms against evidence expressed in the Resource Description Framework (RDF). The heuristic uses support, confirmations, and counterexamples to define possibility and necessity of an axiom and an acceptance/rejection index combining both of them. They test the developed theory on SubClassOf axiom testing against the DBpedia<ref type="foot" target="#foot_0">1</ref> database. The results of their experiments showed that the method was suitable for axiom induction and ontology learning <ref type="bibr" target="#b23">[24]</ref>. The suggested heuristic has the drawback of being time consuming; this was addressed in a revision of the method that added a time cap for the querying process, of course at the cost of a little increase in error rate reaching 3.96% <ref type="bibr" target="#b25">[26]</ref>. The number of axioms tested was 5050 and it took almost 342 CPU hours and a half with an average of 244 s per axiom with time capping. This is a significant improvement, considering that testing the same amount of axioms without a time cap would have taken approximately 2,027 CPU days. Another limitation is that lack of support means an inconclusive judgement, as the method queries for confirmations and counterexamples, and sometimes it might find none. The third drawback is that being a statistical approach it relies solely on instance data from the dataset, data that is prone to errors.</p><p>In comparison, ILP techniques are a sub-field of machine learning that follow exhaustive statistical or linguistic processing. One such example is <ref type="bibr" target="#b16">[17]</ref>, where the authors describe a method for the automated induction of fuzzy ontology axioms which follows the machine learning approach of ILP named SoftFOIL. One of SoftFOIL's limits is a result of its sequential covering strategy. As it uses a greedy search to find rules, it does not guarantee to find the smallest or best set of rules that explain the training examples. Another is susceptibility to being trapped in a loop while searching for the best rule.</p><p>A new emerging group of techniques, is a hybrid breed that takes advantage of combining classical ILP and statistical machine learning. To stay in the context of the previous examples, a model would be trained with axioms having their scores assigned by a statistical method such as <ref type="bibr" target="#b24">[25]</ref>, as well as using a similarity measure that results from the logical processing of the data. This is exactly what was done in <ref type="bibr" target="#b18">[19]</ref>, where the authors modified the support vector clustering algorithm to attempt to predict the possibilistic score of OWL axioms. They used the heuristic from <ref type="bibr" target="#b24">[25]</ref> as the scorer, and used a model originally developed for inferring the membership function for fuzzy sets. As a similarity measure they used one specific for subsumption axioms based on semantic considerations and reminiscent of the Jaccard index. The predictor performance was poor in terms of root mean square error (RMSE) scoring 0.572 (Table <ref type="table">3</ref> in <ref type="bibr" target="#b18">[19]</ref>). In addition, the authors mentioned that they found a group of axioms that were hard to predict, and could not find a reason that explains why. This method was computationally far more efficient than <ref type="bibr" target="#b23">[24]</ref>, yet it was still reliant on the instances in the data set and querying them to construct the similarity measure, meaning that even though it is an improvement, it still falls victim to the same problems. The authors explicitly mention that a major weakness of their method is that training such a model consumes a significant amount of resources.</p><p>Our work addresses the shortcomings of the previous techniques that heavily rely on error-prone instance-dependent statistics. It is also able to predict the scores of multiple types of axioms and is not bound to simply subsumption. We propose a method that can be used as a building-block or an extension/plug-in to other existing statistical analysis or ILP options, such as DL-Learner <ref type="bibr" target="#b3">[4]</ref>, to allow faster execution while maintaining high scoring accuracy, while still having the ability to perform as a simpler stand-alone scorer. The method works by training a model on a set of atomic class axioms scored by an algorithm, in this case <ref type="bibr" target="#b24">[25]</ref>. This enables the model to predict the score of any new atomic (consisting of a single concept on each side) candidate axiom. We experimented using multiple machine learning methods, and compared our work to the state of the art <ref type="bibr" target="#b18">[19]</ref> that aims to achieve the same goal. This paper is structured as follows: Sect. II provides some background about both axiom scoring and concept semantic similarity which are both prerequisites to training the models. As for Sect. III it lays out the methodology explaining how the axioms were extracted and scored, how the semantic measure we use was developed, and also how an axiom based vector space was modeled leading to the prediction of the scores. We detail our experiments including a comparison with the method presented in <ref type="bibr" target="#b18">[19]</ref> in Sect. IV then present the results while listing our observations and findings. We end the paper with some notes and conclusions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Axiom Scoring</head><p>Axiom scoring can be done using statistical analysis, we mentioned in the previous section a heuristic <ref type="bibr" target="#b24">[25]</ref> that does this using the theory of possibility. Possibility theory <ref type="bibr" target="#b26">[27]</ref> is a mathematical theory of epistemic uncertainty. Its central notion is that of a possibility distribution which assigns to each elementary event a degree of possibility ranging from 0 (impossible, excluded) to 1 (completely possible, normal). A possibility distribution π induces a possibility measure Π, corresponding to the greatest of the possibilities associated to an event and the dual necessity measure N , equivalent to the impossibility of the negation of an event.</p><p>Here we provide a brief explanation of the theory behind the scoring. Given a candidate OWL 2 axiom ϕ, expressing a hypothesis about the relations holding among some entities of a domain, we wish to evaluate its credibility, in terms of possibility and necessity, based on the evidence available in the form of a set of facts contained in an RDF dataset K.</p><p>The content of ϕ is defined as a (finite) set of basic statements ψ which are logical consequences of ϕ, i.e., ϕ |= ψ. The open-world hypothesis (OWA) is fully taken into account. Therefore, given K, for each such ψ, there are three cases:</p><p>1) K |= ψ: in this case, we will call ψ a confirmation of ϕ; 2) K |= ¬ψ: if so, we will call ψ a counterexample of ϕ; 3) K ̸ |= ψ and K ̸ |= ¬ψ: in this case, ψ is neither a confirmation nor a counterexample of ϕ. If we denote by u ϕ the support of ϕ, which is the cardinality of its content, by u + ϕ the number of confirmations of ϕ and by u - ϕ the number counterexamples of ϕ, the possibility and the necessity of candidate axiom ϕ may be defined as follows:</p><p>• if u ϕ &gt; 0,</p><formula xml:id="formula_0">Π(ϕ) = 1 -1 - u ϕ -u - ϕ u ϕ 2 ;<label>(1)</label></formula><formula xml:id="formula_1">N (ϕ) =        1 - u ϕ -u + ϕ u ϕ 2 , if u - ϕ = 0, 0, if u - ϕ &gt; 0;<label>(2)</label></formula><p>• if u ϕ = 0, Π(ϕ) = 1 and N (ϕ) = 0, i.e., we are in a state of maximum ignorance, given that no evidence is available in the RDF dataset to assess the credibility of ϕ. The possibility and necessity of an axiom can then be combined into a single handy acceptance/rejection index</p><formula xml:id="formula_2">ARI(ϕ) = N (ϕ) + Π(ϕ) -1 = N (ϕ) -N (¬ϕ) = Π(ϕ) -Π(¬ϕ) ∈ [-1, 1],<label>(3)</label></formula><p>because N (ϕ) = 1 -Π(¬ϕ) and Π(ϕ) = 1 -N (¬ϕ) (duality of possibility and necessity). A negative ARI(ϕ) suggests rejection of ϕ (Π(ϕ) &lt; 1), whilst a positive ARI(ϕ) suggests its acceptance (N (ϕ) &gt; 0), with a strength proportional to its absolute value. A value close to zero reflects ignorance about the status of ϕ.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Ontological Semantic Similarity</head><p>Semantic similarity is a notion used to define a distance between terms or concepts based on meaning or semantics. It includes in its calculation only relations of the type IS-A <ref type="bibr" target="#b2">[3]</ref>. It is often confused with semantic relatedness, for example a train and train tracks are functionally complementary, where as a train and an airplane are functionally similar. The latter is an instance of semantic similarity where the relatedness of both terms is based on the defining features they share where both are vehicles <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b5">[6]</ref>. Most semantic similarity measures that rely on a structured ontology, are based on path lengths between concepts as well as depth of concept nodes in an IS-A hierarchy. As for information-based measures they use information content (IC) of concept nodes derived from the ontology hierarchy structure and corpus statistics <ref type="bibr" target="#b0">[1]</ref>.</p><p>The similarity measure we utilize in our work is the one detailed in <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, under the subsection titled Ontological Approximation. The idea is to calculate the ontological distance between two concepts by using the subsumption path length. Following is the general definition:</p><formula xml:id="formula_3">∀(t1, t2) ∈ H 2 , DH (t1, t2) = mint(lH (⟨t1, t⟩) + lH (⟨t2, t⟩)) = mint   {x∈&lt;t 1 ,t&gt;,x̸ =t 1 } 1/2 d H (x) + {x∈&lt;t 2 ,t&gt;,x̸ =t 2 } 1/2 d H (x)   (4)</formula><p>Formula 4 translates to: for all type pairs t 1 and t 2 in an inheritance hierarchy H, the ontological distance between t 1 and t 2 in the inheritance hierarchy H is the minimum of the sum of the lengths of the subsumption paths between each of them and a common super type. And the length of the subsumption path between a type t 1 and its direct super type t is equal to 1/2 d H (t) with d H (t) being the depth of t in H.</p><p>The authors of <ref type="bibr" target="#b5">[6]</ref> implemented this measure as part of a larger ontology-based search engine tool named Corese <ref type="bibr" target="#b6">[7]</ref> 2 . This is the tool that has been used as means of extracting the semantic similarity between concepts in our method.</p><p>We propose an extension to this similarity to present similarities between axioms, this process is detailed in Sect. III-B. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Instance Semantic Similarity</head><p>This similarity is used in the state of the art method detailed in <ref type="bibr" target="#b18">[19]</ref>. The support vector clustering method the authors used requires a kernel function which was assumed to return the similarity between two axioms.</p><p>Similar to the ontological similarity, it is based on the semantics of axioms and not on their syntax. The measure S is defined with values in [0, 1], satisfying the following desirable properties: for all axioms ϕ and ψ,</p><formula xml:id="formula_4">1) 0 ≤ S(ϕ, ψ) ≤ 1; 2) S(ϕ, ψ) = 1 if and only if ϕ ≡ ψ; 3) S(ϕ, ψ) = S(ψ, ϕ).</formula><p>The similarity is defined based on a fuzzy implication operator =⇒ : we can say two axioms ϕ and ψ are similar to the extent that ϕ ⇒ ψ and ψ ⇒ ϕ.</p><p>A fuzzy definition, based on the Herbrand semantics of the axioms, might be the following:</p><formula xml:id="formula_5">=⇒ (ϕ, ψ) = ∥{I : I |= ¬ϕ ∨ ψ}∥ ∥Ω∥ = ∥[¬ϕ] ∪ [ψ]∥ ∥Ω∥ = ∥[ϕ] ∪ [ψ]∥ ∥Ω∥ ,<label>(5)</label></formula><p>where [ϕ] denotes the set of the models of ϕ. <ref type="foot" target="#foot_1">3</ref>One problem is that instead of exactly computing the numerator, which would require to count the models and counter models of both axioms being compared, a not so convincing rough approximation of it was used. This approximation was obtained by replacing models and counter models with instances occurring in the RDF dataset that confirm or contradict the two axioms. This renders the similarity bound to and limited by instance data, which means it is prone to errors as well as unusable in case instance data is scarce or non existent.</p><p>The similarity addresses and works with subsumption axioms only, of the form C ⊑ D, where C and D are two OWL class expressions, and their negation C ̸ ⊑ D. Given an individual a occurring in an RDF dataset, we may say that</p><formula xml:id="formula_6">• a confirms axiom C ⊑ D (contradicts C ̸ ⊑ D) iff C(a)∧D(a); • a contradicts axiom C ⊑ D (confirms C ̸ ⊑ D) iff C(a) ∧ ¬D(a).</formula><p>Instead of counting the models of an axiom, the individuals that confirm it are counted; instead of counting its counter models, the individuals that contradict it. Given four OWL class expressions A, B, C, and D, the similarity which is also the degree to which axiom A ⊑ B implies axiom C ⊑ D can be computed as</p><formula xml:id="formula_7">S(A ⊑ B, C ⊑ D) = ∥[A] ∩ [B] ∪ [C] ∩ [D]∥ ∥[A] ∪ [C]∥ .<label>(6)</label></formula><p>In order to predict the ARI of subsumption axioms in this case, similarities between positive and negated subsumption axioms need to be computed. The similarity between two candidate OWL axioms of the form A ⊑ B and C ⊑ D, can be computed using SPARQL counting queries. For instance, the denominator ∥[A] ∪ [C]∥ may be computed by</p><formula xml:id="formula_8">SELECT (count(DISTINCT ?x) AS ?n) WHERE { { ?x a A . } UNION { ?x a C . } },<label>(7)</label></formula><p>whereas the numerators (which are four when comparing two axioms and their negations) may be computed by SPARQL queries of the form</p><formula xml:id="formula_9">SELECT (count(DISTINCT ?x) AS ?n) WHERE { { Q([A]) . Q([B]) . } UNION{ { Q([C]) . Q([D]) . } },<label>(8)</label></formula><p>where</p><formula xml:id="formula_10">Q([X]) = ?x a X, Q([X]) = FILTER NOT EXISTS ?x a X.</formula><p>This is a slow process, and for every candidate axiom you would need to calculate the similarity for it and its negation. Since the queries used are counting queries similar to those used in the scoring heuristic this means it also suffers from the same limitations such as heavy computation cost and instance dependency.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. METHODOLOGY</head><p>In an OWL ontology containing an inheritance hierarchy of concepts formed by the subsumption axiom rdfs:subClassOf, our aim is to predict an acceptability score for a candidate atomic class axiom by learning a set of previously scored axioms of the same type, the score used is the one detailed in II-A. A model is built for each type of axiom to be predicted, this means that the method is repeated for the number of axiom types being dealt with. To measure the similarity between (candidate) axioms, we construct a similarity measure by extending the ontological distance discussed in II-B, which is defined among concepts, not axioms. To this end, we consider the following necessary steps:</p><p>1) Axiom extraction and scoring: This step constitutes the creation of the set of scored axioms of a certain type to be learned. We either use a ready scored set such as we did for our comparison, or we score a new generated set. 2) Semantic measure construction and assignment: This step involves the retrieval of concepts used in our set of axioms, and their ontological distance from the ontology. Followed by extending that similarity to those axioms. This was done by calculating a single value that represents the similarity between each pair of axioms, by applying a function such as Average to the ontological distances of concepts in those axioms. 3) Axiom base vector space modeling: This step focuses on using axiom similarity measures as weights, each axiom can be represented as a vector in an axiom based vector space. 4) Score prediction: This step is dedicated to training a Machine Learning model with the data set (vector space model in addition to the scores) and predicting the acceptability score of new candidate axioms. We start by collecting the set of scored axioms we plan to train and test our method with. After that, we query the ontology to retrieve the ontological distances between all concepts. Then similarity measures between axioms will be derived from those distances and assigned as weights to represent the axioms as vectors in an axiom-based vector space. Machine learning models are used in the end to learn the set of scored axioms with their similarity weights and predict the acceptability score of a candidate axiom. We will consider subClassOf axioms for the comparison with <ref type="bibr" target="#b18">[19]</ref> since that is the only type of axiom they can address, and their dataset which we use for said comparison is made of subClassOf axioms. We will also use disjointWith axioms for our experiment to show that we can apply our method to all atomic owl class axiom types, as well as highlight that no leakage or bias is present from utilizing the subclass of hierarchy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Axiom Extraction and Scoring</head><p>In this paper, we consider two approaches. First generating a number of atomic class candidate axioms randomly. The generated candidates are filtered for duplicates. We then make sure non of the candidates already exist in the ontology explicitly or implicitly, using the search engine and its reasoner, then we score them.</p><p>The other, which we prefer and use for controlled tests is to query existing axioms. To make sure we have positive scores we query the ontology for existing axioms and score them. The same can be said for negatively scored axioms, we can query the counter type and score it as if it were the first. For example subClassOf and disjointWith are counter types so if disjointW ith(C 1 C 2 ) has a positive score, subClassOf (C 1 C 2 ) will have a negative one. This is bound by how many axioms exist to be queried (after inferring implicit axioms).</p><p>Query 1 is used to extract existing axioms of both types and labeling them to be scored after with the heuristic. The search engine used is Corese <ref type="bibr" target="#b6">[7]</ref> and the ontology is Dbpedia. After the extraction of the axioms, we select an equal amount of both classes. The second step is to score, this is done by simply inputting the extracted axioms as a text file using the possibilistic heuristic <ref type="bibr" target="#b24">[25]</ref>, and receiving an output file containing the scores (ARI), it should be noted that the process is very slow thus the need for a method such as ours.</p><p>For disjointWith axioms, possibility only is considered since necessity is meaningless in the case of this axiom and incalculable. So the score is between 0 and 1. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Concepts</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Semantic Measure Construction and Assignment</head><p>To be able to assign similarity measures between axioms, we need to retrieve the ontological distances between all classes. Using Corese in which the ontological distance metric is implemented, this translates into a function added to the SPARQL query. Query 2 retrieves three columns, the first two contain the combination of all classes with the third containing the ontological distance denoted by similarity. Blank nodes are ignored. After retrieving the table of similarities it is pivoted to construct a symmetric n×n matrix where the first column and the first row are the classes and the cells are the similarities between them with a diagonal of only 1's since as we mentioned the similarity between a class C and itself is 1. The shape of the concept similarity matrix is illustrated in Matrix 1.</p><p>From this matrix, we can derive the similarity between axioms. The goal is to end up with a similar square symmetric matrix of the shape m × m, m being the number of axioms, that has axioms instead of concepts as both first row and column, and the cells would be the similarities between a pair of axioms. Exactly as in the case of the concept similarity matrix, the diagonal of this matrix will contain only 1's as the similarity between an axiom A and itself is 1.</p><p>In order to construct this axiom similarity matrix M A depicted in Matrix 2 alongside the labels, we use Algorithm 1. The algorithm iterates over the set of labeled axioms T A which we extracted in Section III-A, comparing each axiom A i to all other axioms A j in T A having j increment from i to length of T A -1 after each iteration of i. This is so we avoid redundant calculations. While comparing axioms A i and A j , we first deal with the concept on the left side of each axiom, so the left Algorithm 1 Constructing the matrix of axiom similarities Require: All concepts included in axioms in T A be present in concept similarity matrix M C Ensure: 0 ≤ S ≤ 1 ▷ S is the similarity between 2 axioms M C ← Concept similarity matrix T A ← Set of labeled axioms M A ← Axiom similarity matrix to be f illed</p><formula xml:id="formula_11">for i = 0 → Length(T A ) -1 do for j = i → Length(T A ) -1 do S L ← M C [Ai[L], Aj [L]] S R ← M C [Ai[R], Aj [R]] S 1 ← Avg(S L , S R )</formula><p>▷ Experiments were done with (min, Avg) if Axiom Type is Disjointness or Equivalence then </p><formula xml:id="formula_12">S L ← M C [Ai[L], Aj [R]] S R ← M C [Ai[R], Aj [L]] S 2 ← Avg(S L , S R ) else S 2 ← 0 end if S ← M ax(S 1 , S 2 ) M A .Add(Ai,</formula><formula xml:id="formula_13">C for concept A j [L]. M C [A i [L], A j [L]</formula><p>], the intersection between the row where A i [L] was found, and the column where A j [L] was found represents the left side similarity between axioms A i and A j . The same process is repeated for the right side, and then the axiom similarity S is calculated as a function between S L and S R . In this work we applied two functions and they were minimum and average. After calculating S in each iteration of j it is added to M A in the cell where the row is the index of A i and column the index of A j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Axiom Base Vector Space Modeling</head><p>We define a vector-space model to represent axioms as vectors. The number of dimensions d of our vector space is equal to the number of axioms we have in the labeled set T A . Each axiom can be represented as a vector V in this ddimensional space. Now that we have the similarities between axioms in our ontology, looking at the axiom-similarity matrix it would be intuitive to consider each row of the matrix as a vector V in a vector space where the dimensions d are the columns which are the axioms themselves having as weights the similarities S. Thus Algorithm 1 is utilized whenever an axiom is generated or a new candidate axiom is suggested and will encode said axiom into a vector V in this vector space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Score Prediction</head><p>After constructing our vector space and representing axioms as vectors, we consider the set of scored axioms as a set of vectors. It is now possible to apply regression machine learning methods on the vector space representation of an axiom base. We used a range of methods throughout our experiments such as random forests, Support vector regressor, and neural networks. Trees and random forests were mostly used to check that there was no bias during the prediction, since they allow us to interpret our predictive model easily and visually analyse the decisions.</p><p>To avoid information leakage since the matrix is symmetric, considering the size of the matrix is n × n, all models would be trained using an m × m sub-matrix of the axiom similarity matrix with the labels, and then tested on a z × m sub-matrix. This means an axiom vector V will have m dimensions (features) which are the ones used to train the model, regardless what the number of dimensions (features) in the full matrix is. In other words the symmetric part of the matrix equivalent to z (the columns of n outside the range of m) is discarded. The model's goal is to predict the score of a candidate axiom, which is represented as a vector V in our vector space having m dimensions (features), which are the axiom's similarities with the axioms of the same type used to train the model. The score is a number between -1 and 1 for subClassOf and equivalence, and between 0 and 1 for disjointWith. where 1 represents the highest acceptability. Any scorer/scoring algorithm can be used, we decided on <ref type="bibr" target="#b24">[25]</ref> to be able to compare our results with <ref type="bibr" target="#b18">[19]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. EXPERIMENTS AND RESULTS</head><p>For the experiments <ref type="foot" target="#foot_2">4</ref> , the workstation that was used had the following hardware configuration:</p><formula xml:id="formula_14">• Dual CPUs: 2 × Intel(R) Xeon(R) CPU E5-2689 0 @ 2.60GHz</formula><p>base and 3.30 all core boost. With 8 cores and 16 threads per CPU for a total of 16 cores and 32 threads. • A total of 32 GB of RAM memory with frequency 1600 MHZ distributed as 8 × 4 GB sticks with 4 sticks assigned to each CPU. • 1 TB of NVME SSD storage with read and write speeds of up to 2000 MB per second.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Dataset Preparation</head><p>For our testing and experiments, and to comply with both the scorer and the experiment of <ref type="bibr" target="#b18">[19]</ref>, the ontology used is Dbpedia. This also allows us to show how our method would perform in a real-world case.</p><p>We used two datasets for our experiments, one for axiom type subClassOf and it is the one used in <ref type="bibr" target="#b18">[19]</ref>, and another for axiom type disjointWith which is a generated set of atomic disjointWith candidate axioms, as described in Sect. III-A, scored using <ref type="bibr" target="#b24">[25]</ref>.</p><p>For the axiom set used in <ref type="bibr" target="#b18">[19]</ref>, they have 722 subClassOf axioms and their negations, making it 1444 axioms. The negations are specific for that similarity and for the support vector clustering method that was applied in <ref type="bibr" target="#b18">[19]</ref>. These negations serve no meaning if it is possible to predict the scores of the original 722 axioms. For this reason, and since we had the possibility of an axiom and its negation, we can use that to calculate the ARI using 3. Then the dataset we work this will be the 722 axioms with their ARI score, since we will not be using the same machine learning method nor similarity for our proposed solution.</p><p>We did not include tests of equivalentClass axiom types since the process of creating the axiom similarity matrix of that axiom type is the same as disjointWith. They are both symmetrical axioms and equivalentClass axioms are basically a two way subClassOf axiom. For that reason we decided to include our experiment on the type disjointWith.</p><p>For the set of axioms of type disjointWith, we load the Dbpedia OWL file into Corese. The OWL file contains no individual data which means faster processing in the search engine, corese reasoner was applied to it to deduce the maximum number of axioms. Positively scored disjointness axioms were obtained from the results of <ref type="bibr" target="#b21">[22]</ref>. <ref type="foot" target="#foot_3">5</ref> Negatively scored disjointWith axioms were existing subClassOf axioms, explained in Section III-A. In case the used ontology is already populated with explicit axioms, this would be done in an attempt to obtain a set of axioms that the scorer will not provide a score close to 0 i.e., a score that implies ignorance for lack of instance data. This allows us to learn a better model that makes better predictions and surpasses the limitations a statistical scorer can face. But in our case this would result in a small set of 1120 scored axioms. One of the issues the authors of <ref type="bibr" target="#b18">[19]</ref> faced is that the dataset they were working with was too small and they point out that this had prevented them from running certain experiments. For this case we combined both approaches expressed in Section III-A. Randomly generating atomic candidates and checking that they do not already exist, we managed to score an additional 2748 axioms for a total of 3868. This will allow better testing to see how the method performs in real-world cases and on a different axiom type.</p><p>We will denote by T A the axiom set being used. We will not be comparing the time needed to score the set of axioms since they both use the same scorer. Heuristic <ref type="bibr" target="#b24">[25]</ref> takes a list of candidate axioms as input and provides as output a list of scored candidate axioms. It is a slow but precise heuristic that depends on instance data and counting queries.</p><p>After preparing the set of axioms, we have to produce the concept similarity Matrix (CSM) 1, a process we detailed in Section II-B. The processing time for creating the (CSM) is dependent on the number of concepts. In our tested dataset, the number of unique concepts was 762 and creating its (CSM) took 2.0362 seconds.</p><p>The next step is constructing the axiom similarity matrix (ASM), and encoding each of the axioms as vectors V in our vector space. This step is detailed in the second half of Section III-B and in Section III-C. The algorithm applied to our axiom data set T A is Algorithm 1, this is the same algorithm used to encode candidate axioms into the vector space, it is the equivalent of running queries 7 and 8 for the method proposed in <ref type="bibr" target="#b18">[19]</ref> to retrieve the similarity. In contrast the algorithm we use is not based on instance counting and is much faster in comparison.  While constructing the ASM using the instance similarity method, we had to calculate the denominators of all axiom pairs as in Equation <ref type="formula" target="#formula_7">6</ref>. We ran into an issue of lack of instance data, this means a 0 in the denominator which is obviously a huge problem. The authors of <ref type="bibr" target="#b18">[19]</ref> address this by denoting any similarity between a pair of axiom where the denominator is 0 (lack of instances) with a 0 as well. This highlights the weakness of instance based similarity methods. We do not believe that simply saying the similarity between a pair of axioms is 0 because they do not share individual data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Training and Testing</head><p>After obtaining our datasets as described in the previous section, we applied different regression methods as mentioned in Section III-D to check how the similarity measure performs.</p><p>The methods we tested include, but are not limited to, Random Forests, Neural Networks and Support Vector Regression. Experiments were with both Average and Minimum functions to get the similarity S between axioms, from S L and S R (as explained in Section III-B), we will denote by ASF the axiom similarity function here on out. All this means that the number of experiments performed was large so we will only report on some scenarios.</p><p>We used RMSE (root mean squared error) as the score, to be consistent with <ref type="bibr" target="#b18">[19]</ref> during the comparison. We applied hyper-parameter tuning using grid search as well as five fold cross validation to infer better models. Table <ref type="table" target="#tab_3">I</ref> shows the best results (in terms of RMSE) for each experiment using each model.</p><p>While replicating the experiment of <ref type="bibr" target="#b18">[19]</ref>, we decided to test other methods in addition to theirs. We will use the authors' best result for the comparison with the original model. We will be using the original 722 for our proposed method, since our similarity does not require negated axioms (no need for the extra 722 negated axioms).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Results and Observations</head><p>Comparing ASM creation and candidate axiom encoding time costs in Table <ref type="table" target="#tab_3">I</ref>, for both our proposed method and the one in <ref type="bibr" target="#b18">[19]</ref>, our ontological based similarity seems almost instantaneous. For the instance based similarity it is a problem during dataset preparation as it needs seven and a half days to prepare a data set of 722 axioms (and their negations), as well as candidate axiom encoding/processing where it takes half an hour to process every candidate axiom we want to predict a score to, whereas our ontological based method requires about fourteen seconds to process and prepare the exact same dataset, and less than 0.1 s to encode a new axiom, making it much more preferable with regards to time cost.</p><p>During the experiments we were unable to compare both methods in anything other than subClassOf axioms. This is because the method detailed in <ref type="bibr" target="#b18">[19]</ref> can only handle subClassOf axioms making it very limited and constrained, whereas our proposed method can address all atomic class axiom types, all that is needed is training one model for each set. Considering the timing needed to prepare the training data (ASM), as seen in Table <ref type="table" target="#tab_3">I</ref>, this is easily doable and very efficient.</p><p>We observe in Table <ref type="table" target="#tab_3">I</ref> that the time cost for creating the disjointWith (129 seconds for 3868 axioms) experiment's ASM was almost ten times that of the subClassOf (13 seconds for 722 axioms), even though the number of axioms is not ten times as much, only about five. This is normal since disjoin-tWith axioms are symmetrical, and as shown in Algorithm 1 and explained in Section III-B, the calculation is doubled for every axiom to check forwards and backwards the similarity between the pair of axioms.</p><p>It is very important to note that the instance-based similarity method performed better when used with a machine learning method different from the modified support vector clustering method used in <ref type="bibr" target="#b18">[19]</ref>. It was able to achieve less than half the RMSE score of what was stated in <ref type="bibr" target="#b18">[19]</ref>. This suggests that the modified support vector clustering method is unnecessarily complicated and not the most appropriate method to deal with this problem, which turns out to be relatively easy once a good similarity measure manages to transform it to a suitable representation. The ontological based method outperformed the instance based method in Neural Network and Random forests models. For the same data set, the subClassOf set, the two methods seem to perform closely in terms of RMSE, while the ontological distance method seems to be achieving very good scores in the larger disjointWith set. This made us look more in-depth to what was happening. Turning our attention to the support vector regression model, we can see in Table <ref type="table" target="#tab_3">I</ref> that for the same dataset (subClassOf) the instance based measure performed considerably better than the ontological based method, but was still outperformed in the larger (disjointWith) set as far as performance goes. So we investigated the reason behind this specific performance for this specific dataset in this model, and found the best explanation in the explained variance score. We found that for the instance based method, according to the explained variance score of 0.56252 for its best performing model the support vector regressor, this performance is specific to this dataset. This means there exists a bias in the training set and it is expected that any new candidate will suffer from a higher error rate than what is experienced in the training stage. This is explained by the fact that both similarity method and dataset were handcrafted and picked to work with a support vector clustering method modified to work as a regressor. On the other hand for the ontological based method the explained variance score throughout all our experiments ranged between 0.71 up to 0.88 meaning this method will produce better results when predicting scores for new candidate axioms.</p><p>All results shown in Table <ref type="table" target="#tab_3">I</ref> were obtained using the Average ASF, as it outperformed the Minimum ASF in all our runs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. CONCLUSION</head><p>We have proposed a method with the aim of learning predictors for the acceptability of an atomic candidate OWL axiom of any type. The method relies on a semantic similarity measure derived from the ontological distance between concepts in a subsumption hierarchy. Extensive tests that covered multiple parameters and settings were carried out to investigate the effectiveness and potential of the method compared with the state of the art.</p><p>The results obtained strongly support the effectiveness of the proposed method in predicting the scores of the considered OWL axiom types with a consistently low error rate. This allows us to confidently say that our proposed method can be used in combination with ILP or statistical methods, such as Dl-learner <ref type="bibr" target="#b3">[4]</ref> or a Grammatical evolution approach such as <ref type="bibr" target="#b20">[21]</ref>, as a building block or extension/plugin to allow faster execution while maintaining accuracy.</p><p>We attribute the high accuracy and extremely good performance of our method to the close relation between the similarity measure and the model-theoretic semantics of axioms. This merits further investigation of links between similarity/distance measures and semantics, and the effect on performance of machine learning models in logical reasoning tasks.</p><p>Based on our findings, some research paths emerge, including:</p><p>• Developing the method to predict the scores of complex candidate axioms. • Extending the method to property axioms since they also possess an IS-A hierarchy, which is the base of our similarity measure.</p><p>• Considering an ensemble approach that incorporates active learning based of the agreement or disagreement of included models based on a threshold such as the variance.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>2 https://project.inria.fr/corese/</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>0 1 {</head><label>1</label><figDesc>SELECT ?class1 ?class2 ?label WHERE { ?class1 a owl:Class . ?class2 a owl:Class . ?class1 rdfs:subClassOf ?class2 2 filter (!isBlank(?class1) &amp;&amp; !isBlank(?class2)) a owl:Class . ?class2 a owl:Class . ?class1 owl:disjointWith ?class2 6 filter (!isBlank(?class1) &amp;&amp; !isBlank(?class2))</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>0 1 ?Query 2 :</head><label>12</label><figDesc>select * (kg:similarity(?class1, ?class2) as ?similarity) where { class1 a owl:Class . ?class2 a owl:Class 2 filter (!isBlank(?class1) &amp;&amp; !isBlank(?class2)) } Class ontological distance retrieval</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>For Symmetric axioms, we have to compare both ways which is what we do inside the if statement for Disjointness and Equivalence axioms. concept of A i denoted by A i [L] and that of A j denoted by A j [L]. To retrieve S L the similarity between those concepts from M C , we search in the first row of the concept similarity matrix M C for concept A i [L], and in the first column of M</figDesc><table><row><cell>Aj , S)</cell></row><row><cell>end for</cell></row><row><cell>end for</cell></row><row><cell>Note:</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>Table I details the time required to complete the axiom similarity matrix. As observed the time needed to complete the task of building the ASM significantly</figDesc><table><row><cell>Similarity Method</cell><cell>Type</cell><cell>Set size</cell><cell>ASM</cell><cell>Candidate processing</cell><cell>NN</cell><cell>Random Forest</cell><cell>SVR</cell><cell cols="2">Modified SVC Explained variance</cell></row><row><cell>Instance based</cell><cell>subClassOf</cell><cell>1444</cell><cell>649,440</cell><cell>1,799</cell><cell>0.35299</cell><cell>0.30707</cell><cell>0.26721</cell><cell>0.572</cell><cell>0.52652</cell></row><row><cell>Ontological based</cell><cell>subClassOf</cell><cell>722</cell><cell>13.7275</cell><cell>0.01901</cell><cell>0.31442</cell><cell>0.30231</cell><cell>0.33972</cell><cell>NA</cell><cell>0.88859</cell></row><row><cell>Ontological based</cell><cell>disjointWith</cell><cell>3868</cell><cell>129.9637</cell><cell>0.03359</cell><cell>0.23325</cell><cell>0.21754</cell><cell>0.23771</cell><cell>NA</cell><cell>0.73462</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>TABLE I :</head><label>I</label><figDesc>Time cost in seconds, performance scores in RMSE per model, and the explained variance score of the best performing model per experiment.increases as the number of axioms processed increases, but we also know that it depends on the size of the CSM as well from the time needed to encode a single axiom into a vector. As the number of concepts increases the CSM being searched increases as it has the shape n concepts × n concepts and the number of cells n 2 . We would note that the test scenario (3868 disjointWith axioms) presented in TableIis extreme, especially the case of Dbpedia, as the number of axioms needed for training a model does not need to be as large to achieve peak accuracy/results. It is possible with a dataset size of subClassOf experiment (722).</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://www.dbpedia.org/resources/ontology/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>A model of ϕ is an interpretation that satisfies ϕ and a counter-model is an interpretation that does not satisfy ϕ.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>All the data and code needed to replicate the experiments available at https://anonymous.4open.science/r/axiom-score-prediction-BC16</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://bitbucket.org/RDFMiner/classdisjointnessaxioms/src/ master/Results/ClassDisjointnessAxioms/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">A cluster-based approach for semantic similarity in the biomedical domain</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Al-Mubaid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A</forename><surname>Nguyen</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IEMBS.2006.259235</idno>
+		<ptr target="https://doi.org/10.1109/IEMBS.2006.259235" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Engineering in Medicine and Biology</title>
+		<imprint>
+			<biblScope unit="page" from="2713" to="2717" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A survey of ontology learning techniques and applications</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Asim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wasim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">U G</forename><surname>Khan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Mahmood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">M</forename><surname>Abbasi</surname></persName>
+		</author>
+		<idno type="DOI">10.1093/database/bay101</idno>
+		<ptr target="https://doi.org/10.1093/database/bay101" />
+	</analytic>
+	<monogr>
+		<title level="j">Database</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="24" />
+			<date type="published" when="2018">2018. 2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">An evaluative baseline for geo-semantic relatedness and similarity</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ballatore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bertolotto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Wilson</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10707-013-0197-8</idno>
+		<ptr target="https://doi.org/10.1007/s10707-013-0197-8" />
+	</analytic>
+	<monogr>
+		<title level="j">GeoInformatica</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="747" to="767" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Dl-learner-a framework for inductive learning on the semantic web</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bühmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Westphal</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.websem.2016.06.001</idno>
+		<ptr target="https://doi.org/https://doi.org/10.1016/j.websem.2016.06.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Web Semantics</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="page" from="15" to="24" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Searching the Semantic Web: Approximate Query Processing Based on Ontologies</title>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rose</forename><surname>Dieng-Kuntz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabien</forename><surname>Gandon</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/MIS.2006.16</idno>
+		<ptr target="https://doi.org/https://doi.org/10.1109/MIS.2006.16" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intelligent Systems</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="20" to="27" />
+			<date type="published" when="2006-01">2006. January 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Ontologybased Approximate Query Processing for Searching the Semantic Web with Corese</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dieng-Kuntz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/inria-00070387" />
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+		<respStmt>
+			<orgName>INRIA</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Querying the semantic web with corese search engine</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dieng-Kuntz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECAI 2004</title>
+		<imprint>
+			<biblScope unit="page" from="705" to="709" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Ontological engineering: Principles, methods, tools and languages</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corcho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fernández-López</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gómez-Pérez</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/3-540-34518-31</idno>
+		<ptr target="https://doi.org/10.1007/3-540-34518-31" />
+	</analytic>
+	<monogr>
+		<title level="j">Ontologies for Software Engineering and Software Technology</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="48" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Completion of Ontologies and Ontology Networks</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Dragisic</surname></persName>
+		</author>
+		<idno type="DOI">10.3384/diss.diva-139487</idno>
+		<ptr target="https://doi.org/10.3384/diss.diva-139487" />
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+		<respStmt>
+			<orgName>Linköping University, Faculty of Science &amp; Engineering</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">DL-FOIL concept learning in description logics</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fanizzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Amato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Esposito</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-540-85928-412</idno>
+		<ptr target="https://doi.org/10.1007/978-3-540-85928-412" />
+	</analytic>
+	<monogr>
+		<title level="j">ILP</title>
+		<imprint>
+			<biblScope unit="page" from="107" to="121" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Inductive learning of disjointness axioms</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fleischhacker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Völker</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-642-25106-120</idno>
+		<ptr target="https://doi.org/10.1007/978-3-642-25106-120" />
+	</analytic>
+	<monogr>
+		<title level="j">OTM</title>
+		<imprint>
+			<biblScope unit="page" from="680" to="697" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Mining RDF data for property axioms</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fleischhacker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Völker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Stuckenschmidt</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-642-33615-718</idno>
+		<ptr target="https://doi.org/10.1007/978-3-642-33615-718" />
+	</analytic>
+	<monogr>
+		<title level="j">OTM</title>
+		<imprint>
+			<biblScope unit="page" from="718" to="735" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Toward Principles for the Design of Ontologies Used for Knowledge Sharing</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gruber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of human-computer studies</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">5-6</biblScope>
+			<biblScope unit="page" from="907" to="928" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Introduction to ontology learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hadzic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wongthongtham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chang</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-642-01904-33</idno>
+		<ptr target="https://doi.org/10.1007/978-3-642-01904-33" />
+	</analytic>
+	<monogr>
+		<title level="j">Studies in Computational Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">219</biblScope>
+			<biblScope unit="page" from="37" to="60" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">DL-Learner: Learning concepts in description logics</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="2639" to="2642" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Perspectives on Ontology Learning</title>
+		<idno type="DOI">10.3233/978-1-61499-379-7-i</idno>
+		<ptr target="https://doi.org/10.3233/978-1-61499-379-7-i" />
+	</analytic>
+	<monogr>
+		<title level="j">Studies on the Semantic Web</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Völker</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<date type="published" when="2014">2014</date>
+			<publisher>IOS Press</publisher>
+			<pubPlace>Amsterdam</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A logic-based computational method for the automated induction of fuzzy ontology axioms</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">A</forename><surname>Lisi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Straccia</surname></persName>
+		</author>
+		<idno type="DOI">10.3233/FI-2013-846</idno>
+		<ptr target="https://doi.org/10.3233/FI-2013-846" />
+	</analytic>
+	<monogr>
+		<title level="j">Fundamenta Informaticae</title>
+		<imprint>
+			<biblScope unit="volume">124</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="503" to="519" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Ontology learning for the semantic web</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maedche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staab</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intelligent Systems</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="72" to="79" />
+			<date type="published" when="2001-03">March 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Predicting the possibilistic score of OWL axioms through modified support vector clustering</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Malchiodi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3167132.3167345</idno>
+		<ptr target="https://doi.org/10.1145/3167132.3167345" />
+	</analytic>
+	<monogr>
+		<title level="m">SAC 2018</title>
+		<imprint>
+			<biblScope unit="page" from="1984" to="1991" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">ILP turns 20: Biography and future challenges</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Muggleton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>De Raedt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Poole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Bratko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Flach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Inoue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10994-011-5259-2</idno>
+		<ptr target="https://doi.org/10.1007/s10994-011-5259-2" />
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="page" from="3" to="23" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Learning Class Disjointness Axioms Using Grammatical Evolution</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G B</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-030-16670-018</idno>
+		<ptr target="https://doi.org/10.1007/978-3-030-16670-018" />
+	</analytic>
+	<monogr>
+		<title level="j">EuroGP</title>
+		<imprint>
+			<biblScope unit="page" from="278" to="294" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<title level="m" type="main">An evolutionary approach to class disjointness axiom discovery</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3350546.3352502</idno>
+		<ptr target="https://doi.org/10.1145/3350546.3352502" />
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<pubPlace>WI</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">ON-TOCOM: A reliable cost estimation method for ontology development projects</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Simperl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bürger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hangl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wörgl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Popov</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.websem.2012.07.001</idno>
+		<ptr target="https://doi.org/10.1016/j.websem.2012.07.001" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Web Semantics</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="1" to="16" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Testing owl axioms against RDF facts: A possibilistic approach</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-13704-939</idno>
+		<ptr target="https://doi.org/10.1007/978-3-319-13704-939" />
+	</analytic>
+	<monogr>
+		<title level="j">EKAW</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Possibilistic testing of OWL axioms against RDF data</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.ijar.2017.08.012</idno>
+		<ptr target="https://doi.org/10.1016/j.ijar.2017.08.012" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Approximate Reasoning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Dynamically time-capped possibilistic testing of SubClassOf axioms against RDF data to enrich schemas</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Tettamanzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">F</forename><surname>Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2815833.2815835</idno>
+		<idno>K-CAP</idno>
+		<ptr target="https://doi.org/10.1145/2815833.2815835" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Possibility Theory-An Approach to Computerized Processing of Uncertainty</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Prade</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+			<publisher>Plenum Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,207 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Web Audio Modules: Swiss knife for audio plugin developments on the Web Platform</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d'Azur</orgName>
+								<address>
+									<addrLine>buffa</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Antoine</forename><surname>Vidal-Mazuy</surname></persName>
+							<email>antoine-vidalmazuy@univ-cotedazur.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d'Azur</orgName>
+								<address>
+									<addrLine>buffa</addrLine>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Quentin</forename><surname>Plet</surname></persName>
+							<email>quentin.plet@etu.univ-st-etienne.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Université Jean Monnet</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Web Audio Modules: Swiss knife for audio plugin developments on the Web Platform</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">BA0F530EEB7BD814B3740DA56291AD84</idno>
+					<idno type="DOI">10.5281/zenodo.6769408</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>We propose to present in this demo a large set of web audio plugins (aka web audio modules), real-time effects (most classic audio effects, tube guitar amplifier simulations, etc.), instruments (synthesizers, samplers,) along with an open source DAW (wamstudio) and a real time collaborative host called sequencer.party. <software>Web Audio Modules</software> (WAM) is a standard for developing Web Audio plugins and hosts first proposed in 2015, that recently had a major update in 2021 for its 2.0 version.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Web Audio, Web Midi, Web Assembly</head><p>Introduced in 2012 by the World Wide Web Consortium (W3C), the <software ContextAttributes="created">Web Audio API</software> reached the "Recommendation" status in June 2021 (Official Standard). This JavaScript API allows the developer to manipulate a set of "Audio Nodes" that process or produce sound and that can be connected to form an "audio graph". Audio Nodes process the sound in the audio thread, and the algorithms used cannot be changed, only parameter changes are allowed. The recent addition (2018) of the AudioWorklet node provided a solution for implementing custom low-level audio processing running in the audio thread <ref type="bibr" target="#b4">[5]</ref>. Furthermore, it became possible to cross compile existing C/C++/Rust/Domain Specific Language code to <software ContextAttributes="created">WebAssembly</software>, a byte <software ContextAttributes="created">code</software> representation supported by web browsers, facilitating the port of existing DSP code to the web platform.</p><p>Over the years, lots of high-level audio effects and instruments have been developed using a combination of such audio nodes. Also, the <software>WebMidi API</software>, recently supported by all Major browsers, mobile and desktop ones, brings <software ContextAttributes="created">MIDI</software> support to the browser and combined with Web Audio it became possible to control instruments using external devices (midi piano keyboard, control surfaces, pads etc.).</p></div>
+<div><head n="2.">Web Audio Modules: VST for the Web</head><p>In  Another concern was performance. The WAM framework uses an original design for handling the communication between plugins and host applications that do not rely on the low-level parameter management provided by the <software ContextAttributes="created">Web Audio API</software>. The main reason for that is to allow high performances in the case where both a DAW and plugins are implemented as <software ContextAttributes="created">AudioWorklets</software>. At the time the <software ContextAttributes="created">WebAudio</software> API has been designed, <software ContextAttributes="created">AudioWorklets</software> did not exist and some use cases could not be taken into account. Indeed, if the DAW is built using <software ContextAttributes="created">AudioWorklet</software> nodes for processing audio, then some parts of the code run in the high priority / audio thread. Then, if a WAM plugin is associated with a given track in a DAW project (Figure <ref type="figure" target="#fig_0">1</ref>), and if the plugin is itself built using an <software ContextAttributes="created">AudioWorklet</software> node, it also has custom code running in the audio thread. The WAM framework has been designed to handle this particular case and will enable DAW/plugins communication without crossing the audio thread barrier. Let us take one example: while playing, a MIDI track sends notes to a virtual instrument plugin, and changes some of the parameters of this plugin at the frequency rate. Remember that a DAW can have multiple tracks associated to dozen of plugins, and each plugin can have dozens of parameters.</p><p>The WAM framework detects this case, and will seamlessly use Shared Array Buffers and a ring buffer, without crossing the audio thread barrier. No need to send events from the control/GUI thread, that would have been mandatory if the <software>Web Audio API</software> audio node parameter management was used. To sum up, the WAM framework streamlines the creation of plugins and host applications and enables highly efficient communication between hosts and plugins.</p><p>A video of WAMs in action is available online 1 .  Today, a WAM community Github repository proposes dozen of plugins (Figure <ref type="figure" target="#fig_3">3</ref>: effects, instruments, utility plugins), an open source DAW called <software ContextAttributes="created">wam-studio</software> 2 (Figure <ref type="figure" target="#fig_0">1</ref>) is being proposed as a demonstrator for WAM plugins <ref type="bibr" target="#b3">[4]</ref>, and a real-time collaborative host called sequencer.party 3 is a great showcase for the WAM standard (Figure <ref type="figure" target="#fig_2">2</ref>). We propose to demonstrate the WAM ecosystem at the conference, using an electric guitar <ref type="bibr" target="#b2">[3]</ref>, microphones, midi controllers, pads for controlling a WAM sampler (Figure <ref type="figure" target="#fig_4">4</ref>) etc.</p><p>3.</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Wam-Studio, an open source DAW, written to showcase Web Audio Modules.</figDesc><graphic coords="1,55.50,306.36,240.10,127.55" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head /><label /><figDesc>2015, Jari Kleimola and Olivier Larkin proposed the Web Audio Modules (WAM)<ref type="bibr" target="#b0">[1]</ref>, a standard for Web Audio plugins and DAWs. The 2.0 version of Web Audio Modules has been released in 2021 as a group effort by a large set of people<ref type="bibr" target="#b1">[2]</ref> and since then, multiple plugins and hosts have been published, mostly as open source and free software. WAM 2.0 comes with a SDK, an abstract API, several open source repositories with dozen of plugins, tutorials, and two hosts for demonstrating the capabilities of WAMs. When we designed WAM 2.0 we wanted to support as many development workflow as possible, from the simple web developer who code on plain JavaScript, the React developer used to build his applications, to the C/C++ developer who is used to pro DSP development and who will cross compile his existing code to WebAssembly and reuse a minimal set of features from the WAM SDK.</figDesc></figure>
+<figure xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: sequencer.party: a collaborative online host. All you see are WAM plugins.</figDesc><graphic coords="1,323.90,178.51,230.96,388.94" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: some WAM plugins developed by the community.</figDesc><graphic coords="2,55.50,233.09,240.10,134.20" type="bitmap" /></figure>
+<figure xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: a WAM sampler that can be MIDI controlled, used freesounds.org for finding samples.</figDesc><graphic coords="2,55.50,381.64,250.29,149.90" type="bitmap" /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">WebAudioModules</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Sound and Music Computing Conference</title>
+		<meeting>the Sound and Music Computing Conference</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Web Audio Modules 2.0, an open Web Audio plugin standard</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Campbell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings (Developer's track) of the The Web Conference 2022 (WWW '22, ranked A*)</title>
+		<meeting><address><addrLine>Lyon, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-04">April 2022</date>
+		</imprint>
+	</monogr>
+	<note>Accepted, to be presented</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">From blues to rock to jazz: three different Web Audio tube guitar amplifier simulator plugins</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sintes</surname></persName>
+		</author>
+		<idno type="DOI">10.5281/zenodo.6769408</idno>
+		<ptr target="https://dx.doi.org/10.5281/zenodo.6769408" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 7th Web Audio Conference (WAC 2022)</title>
+		<meeting>7th Web Audio Conference (WAC 2022)<address><addrLine>Cannes, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-07">2022 Jul.</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">WAM-studio, a Digital Audio Workstation (DAW) for the Web</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vidal-Mazuy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings of the ACM Web Conference</title>
+		<imprint>
+			<date type="published" when="2023-04">2023. April. 2023</date>
+			<biblScope unit="page" from="543" to="548" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Using Faust DSL to develop custom, sample accurate DSP code and audio plugins for the Web browser</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+		<idno>⟨hal-03087763⟩ 1</idno>
+		<ptr target="https://www.youtube.com/watch?v=w7a_Kbx7nA82https://wam-studio.i3s.univ-cotedazur.fr/3https://sequencer.party/" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Audio Eng. Soc</title>
+		<imprint>
+			<biblScope unit="volume">68</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="703" to="716" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

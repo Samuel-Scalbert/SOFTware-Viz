@@ -1,0 +1,799 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Benchmark Collection of Deterministic Automata for XPath Queries</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Antonio</forename><surname>Al Serhali</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria Lille</orgName>
+								<orgName type="institution" key="instit2">Université de Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joachim</forename><surname>Niehren</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria Lille</orgName>
+								<orgName type="institution" key="instit2">Université de Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Benchmark Collection of Deterministic Automata for XPath Queries</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">2D6899F94D808C01306414DEA3B47822</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>XML</term>
+					<term>regular path queries</term>
+					<term>automata</term>
+					<term>nested words</term>
+					<term>trees</term>
+					<term>hedges. docbook/Latex</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>We provide a benchmark collection of deterministic automata for regular XPath queries. For this, we select the subcollection of forward navigational XPath queries from a corpus that Lick and Schmitz extracted from real-world XSLT and <software>XQuery</software> programs, compile them to stepwise hedge automata (Shas), and determinize them. Large blowups by automata determinization are avoided by using schema-based determinization. The schema captures the XML data model and the fact that any answer of a path query must return a single node. Our collection also provides deterministic nested word automata that we obtain by compilation from deterministic Shas.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>XML is one of the most used standardized formats for representing exchanging structured data between various tools and applications. XML documents form unranked data trees. Processing XML documents in both in-memory and streaming modes are widely studied for many years <ref type="bibr" target="#b14">[15]</ref>  <ref type="bibr" target="#b15">[16]</ref> [14] <ref type="bibr" target="#b12">[13]</ref>  <ref type="bibr" target="#b10">[11]</ref>. The most frequent tasks are validating, querying and transforming XML documents. In the XML technology, this is done with standardized languages based on XPath queries, such as Xslt and <software ContextAttributes="used">XQuery</software>.</p><p>Automata-based algorithms are not only relevant for validating XML documents with respect to a schema (as with RelaxNG) but also for querying XML streams <ref type="bibr" target="#b22">[23]</ref>  <ref type="bibr" target="#b6">[7]</ref>  <ref type="bibr" target="#b21">[22]</ref>  <ref type="bibr" target="#b11">[12]</ref>. The problem with syntax-oriented approaches for answering XPath queries on XML streams yield only low coverage. Automata approaches, in contrast, can deal with all of XPath 3.0 as shown by Sebastian, Niehren, and Debarbieux <ref type="bibr" target="#b6">[7]</ref>. When applying automata, however, it is natural to abstract XML documents to nested words <ref type="bibr" target="#b1">[2]</ref>, which generalize on unranked data trees and sequences thereof that are also called forests or hedges. Automata for nested words are also relevant for enumerating query answers of document spanners in in-memory mode <ref type="bibr" target="#b7">[8]</ref>  <ref type="bibr" target="#b27">[28]</ref>, and for enumerating query answers on data trees <ref type="bibr" target="#b19">[20]</ref> [3] <ref type="bibr" target="#b5">[6]</ref>.</p><p>Deterministic automata are relevant to keep the computational complexity of various problems tractable. In particular it enables automata minimization in polynomial time and universality testing in linear time. In contrast, universality becoming EXP-complete for nondeterministic automata on trees or nested words <ref type="bibr" target="#b4">[5]</ref>  <ref type="bibr" target="#b28">[29]</ref>. Note that universality testing can be used as a stopping condition for automata algorithms. More concretely, determinism is required for the streaming algorithms of <ref type="bibr" target="#b22">[23]</ref> and <ref type="bibr" target="#b11">[12]</ref> but also for the inmemory algorithm of <ref type="bibr" target="#b27">[28]</ref>. Therefore, deterministic automata on nested words need to be produced for regular path queries <ref type="bibr" target="#b16">[17]</ref> [21] <ref type="bibr" target="#b8">[9]</ref> for benchmarking these algorithms.</p><p>Compiling regular path queries to automata is less problematic, but their determinization may blowup the automata sizes exponentially. This also happens in practice. For the XPath query //a[following-sibling::b[.//c][./d]]/e for instance, <ref type="bibr" target="#b6">[7]</ref> construct a nested word automaton (Nwa) with 38 states of overall size 7338. The determinization of this automaton has more than 5000 states and 20 million transition rules. It is so big that it cannot be computed an a standard laptop. This shows that the usual determinization algorithm for Nwas <ref type="bibr" target="#b3">[4]</ref> [1] <ref type="bibr" target="#b25">[26]</ref> quickly leads to a size explosion.</p><p>Niehren and Sakho <ref type="bibr" target="#b23">[24]</ref> improved this situation by using the determinization algorithm for stepwise hedge automata (Shas), which in turn can be compiled to deterministic Nwas. In this way deterministic Shas and Nwas of decent size could be obtained for the 10 forward navigational XPath queries for the XPathMark benchmark <ref type="bibr" target="#b9">[10]</ref>. But even the determinization of Shas may lead to unreasonably large automata for pratically relevant XPath queries. For the XPath query /a/b//(* | @* | comment() | text()), for instance, a deterministic Sha with 145 states and size 348 got reported, whose determinization has 10 005 states and overall size 1 634 123 <ref type="bibr" target="#b24">[25]</ref>.</p><p>Niehren, Sakho, and Al Serhali showed recently <ref type="bibr" target="#b24">[25]</ref> that this determinization problem for Shas can be solved by using schemas, i.e., deterministic automata that model which nested words are valid inputs of the automaton. In the case of XPath queries, the schema captures the XML data model, and that each query answer must return a unique node of the XML document.</p><p>The first schema-based approach is to determinize the product of the query automaton with the schema automaton. For the above XPath query, this yields a deterministic Sha with 92 states and size 417, which after minimization goes down to 27 states and size 98. Nevertheless, this approach may seem surprising at first sight, since the schema-product is usually bigger than the query automaton itself. But indeed it works quite nicely in practice. The intuition is that the deterministic schema reduces the number of subsets of states that are to be considered during determinization since all states in such subsets must be aligned to the same schema state.</p><p>The second schema-based approach is to clean the determinized automaton with respect to the schema. This means removing all states and transitions that cannot be aligned to the schema. Schema-based cleaning has the advantage of always yielding smaller automata. Unfortunately, however, it is not always computationally feasible in practice, since the automaton produced by determinization is often too large for being schema-cleaned.</p><p>The third schema-based approach is schema-based determinization, an algorithm proposed in <ref type="bibr" target="#b24">[25]</ref>. The idea is integrate schema-based cleaning directly into the determinization algorithm, in order to avoid large blowups from the beginning, while producing the same result as with the second approach. The automata obtained by schema-based determinization are usually smaller than by determinizing the schema-product, also after minimization, since they do not recognize the same language.</p><p>We applied the implementations of all three approaches to show that small deterministic Shas and Nwas can be obtained for all the regular XPath queries in the benchmark corpus that Lick and Schmitz <ref type="bibr" target="#b18">[19]</ref>  <ref type="bibr" target="#b17">[18]</ref> harvested from Xslt and <software ContextAttributes="used">XQuery</software> programs available online (<software ContextAttributes="used">docbook</software>, <software ContextAttributes="used">teixml</software>, htmlbook, ...). The third solution based on schema-based determinization followed by minimization yields the best results. The largest Sha obtained in this way for the whole benchmark collection has 58 states. In average there are 22 states and 71 transition rules per automaton. All automata are published in the software heritage archive at https://archive.softwareheritage.org/browse/origin/?origin_url=https: //gitlab.inria.fr/aalserha/xpath-benchmark.</p><p>The fact that we can indeed determinize the automata of most if not all practical XPath queries with a mild size increase, gives new hope to improve the situation on XML streaming in the near future, building on approaches requiring deterministic automata <ref type="bibr" target="#b22">[23]</ref> [12] <ref type="bibr" target="#b26">[27]</ref>.</p></div>
+<div><head n="1.1">Outline</head><p>We present our selection of regular XPath benchmark queries from the corpus of Lick and Schmitz <ref type="bibr" target="#b18">[19]</ref> in in Section 2. Nested words and their relationship to XML documents are recalled in in Section 3. A deterministic stepwise hedge automata defining the schema of valid XML documents is given in in Section 3.2. A formal definition of stepwise hedge automata follows for the sake of self-containedness in in Section 4. In in Section 5 we discuss our compiler from XPath expressions to deterministic automata, and illustrate it by example automata from our benchmark collection. In in Section 6 we discuss how we tested our automata for correctness on a sample of annotated XML documents produced from the XPath query based on Saxon Xslt. The sizes of automata in our benchmark collection of Shas are discussed in in Section 7. We conclude in in Section 8. Some complementary information can be found in in Appendix A.</p></div>
+<div><head n="2">XPath Benchmark Queries</head><p>We start with the collection of 21000 XPath queries that Lick and Schmitz <ref type="bibr" target="#b18">[19]</ref> extracted from real-world <software ContextAttributes="used">XQuery</software> and Xslt programs available on the Web. The purpose of this corpus is to reflect the form and distribution of XPath queries in practical applications. The much smaller XPathMark benchmark <ref type="bibr" target="#b9">[10]</ref>, in contrast, focuses on functionality testing.</p><p>We then filter the subclass of around 4500 forward navigational XPath queries of Lick's and Schmitz's corpus. The other queries contain comparisons of data values, arithmetics, and functions, including higher-order functions to iterate over sequences, which may be nonregular. We also removed boolean queries and kept only node selection queries. We then selected the 180 largest queries of this subcorpus.</p><p>Finally, we removed duplicates of queries up to renaming of XML namespace prefixes and local names, and syntactical details, such as .//author or descendant-or-self::author or descendant-or-self::corpauthor. This leads us to the collection of 79 queries. The first 10 queries are shown in in Table <ref type="table" target="#tab_0">1</ref>.</p></div>
+<div><head>Id</head><p>XPath Query 18330 /descendant-or-self::node()/child::parts-of-speech 17914 /descendant-or-self::node()/child::tei:back/descendant-or-self::node() /child::tei:interpGrp The first 10 of the 79 queries of the benchmark collection (see Table <ref type="table">3</ref>).</p><p>We note that the XPath query 18339 is considered as large since it contains the recursive axis descendant-or-self. Other queries are considered as large since having a parse tree with more than 15 nodes, for instance 05684 and 05684.</p></div>
+<div><head n="3">Nested Words for XML Documents</head><p>We use nested words to abstract from XML documents since automata can be defined more easily for nested words.</p></div>
+<div><head n="3.1">Nested Words</head><p>Nested words generalize on words by adding parenthesis that must be wellnested. Nested words also generalize on unranked trees and over sequences thereof that are often called hedges. We restrict ourselves to nested words with a single pair of opening and closing parenthesis 〈 and 〉 since named parenthesis can be encoded easily. Let Σ be a set that we call the alphabet. Nested words in N Σ have the following abstract syntax.</p><formula xml:id="formula_0">w, w ∈ N Σ ::= ε | a | w | w • w</formula><p>where a ∈ Σ.</p><p>We assume that concatentation • is associative, and that the empty word ε is a neutral element, that is w</p><formula xml:id="formula_1">• (w • w ) = (w • w ) • w and ε • w = w = w • ε.</formula><p>Nested words can be identified with hedges, i.e., sequences of unranked trees and letters, that is</p><formula xml:id="formula_2">N Σ = (Σ ∪ N Σ ) * .</formula></div>
+<div><head n="3.2">XML Documents</head><p>XML documents are labeled unranked trees that can be serialized into a text, such as for instance:</p><p>&lt;s:a name="uff"&gt; &lt;s:b&gt; gaga &lt;s:d/&gt; &lt;s:b/&gt; &lt;s:c/&gt; &lt;s:a&gt; We represent XML documents as nested words over the signature Σ XM L that contains 4 disjoint types of letters: the XML node-types {elem, attr, text, comment}, the XML namespaces of the document {s}, the XML names of the document {a, . . . , d, name}, and the characters of the data values, say UTF8. For the above example, we get the nested word:</p><formula xml:id="formula_3">elem•s•a• attr•name•u•f •f elem•s•b• text•g•a•g•a elem•s•d elem•s•c</formula></div>
+<div><head n="4">Automata for Nested Words</head><p>Stepwise hedge automata (Shas) <ref type="bibr" target="#b23">[24]</ref> extend on classical finite state automata (Nfas) from words to nested words. They provide a graphical way to define regular languages of nested words, and thus regular languages of XML documents. Shas are often easier to read that the better-known nested word automata (Nwas) and help us to avoid large size blowups coming with Nwa determinization. In this section we recall the definition of Shas based on the definition of Nfas and discuss their relationship Nwas.</p></div>
+<div><head n="4.1">Finite State Automata (NFAs)</head><p>We consider finite state automata with else rules and possibly infinite alphabets. Definition 1. An Nfa (with else rules) is a tuple A=(Σ, Q, ∆, I, F ) such that alphabet Σ is a possibly infinite set, ∆ = ∆ ∆ contains a subset of transition rules for letters ∆ ⊆ (Q×Σ)×Q and a subset of else rules ∆ ⊆ Q×Q. We call Nfa A deterministic or equivalently a Dfa if ∆ and ∆ are partial function.</p><p>As usual when using automata, we draw Nfas as graphs whose nodes are the states. A state q ∈ Q is drawn with a circle q , an initial state q ∈ I with an incoming arrow → q , and a final state with a double circle q . A letter transition rule (q 1 , a, q 2 ) ∈ ∆ is drawn as a black edge q 1 a -→ q 2 that is labeled by a letter a ∈ Σ. An else rule (q, q ) ∈ ∆ is drawn as q -→ q . It permits that the automaton in state q can go to state q when reading any letter a ∈ Σ such that there exists no q with q a -→ q ∈ ∆. Any else rule can be expanded to a set of letter transitions rules as follows:</p><formula xml:id="formula_4">q - → q ∈ ∆ a ∈ Σ ¬∃q ∈ Q. q a -→ q ∈ ∆ q a -→ q ∈ ∆ exp q a -→ q ∈ ∆ q a -→ q ∈ ∆ exp</formula></div>
+<div><head n="4.2">Stepwise Hedge Automata (SHAs)</head><p>We extend Nfas to Shas by adding adding apply rules that read states of subtrees rather than letters from the alphabet. Definition 2. An Sha (with else rules) is a tuple A = (Σ, Q, P, ∆, I, F ) where ∆ = ∆ ∆ so that A = (Σ, Q, ∆ , I, F ) is a Nfa. Furthermore, P is a finite set of tree states and ∆ = ( ∆ , @ ∆ , -→ ∆ ) such that ∆ ⊆ Q is a subset of tree initial states, @ ∆ ⊆ (Q × P) × Q a set of apply rules, and -→ ∆ ⊆ Q × P a set of tree final rules.</p><p>We draw Shas as graphs extending on the graphs of Nfas. A tree state p ∈ P is drawn in gray p . A tree initial state q ∈ ∆ is a hedge state is drawn as -→ q with an incoming tree arrow. An apply rule (q 1 , p, q 2 ) ∈ @ ∆ is drawn by a blue edge q 1 p -→ q 2 carrying a state p ∈ P rather than a letter a ∈ Σ. It states that a nested word in state q 1 ∈ Q can be extended by a tree in state p ∈ P and go into state q 2 ∈ Q. A tree final rule (q, p) ∈-→ ∆ is drawn as q -→ p . It states that if w is a nested word in state q ∈ Q then w is a tree in state p ∈ P.</p><p>Transitions of Shas have the form q w -→ q wrt ∆ where w ∈ N Σ and q, q ∈ Q. They are defined by the inference rules:</p><formula xml:id="formula_5">q ∈ Q q ε -→ q wrt ∆ q a -→ q ∈ ∆ exp q a -→ q wrt ∆ q 0 w1 --→ q 1 wrt ∆ q 1 w2 --→ q 2 wrt ∆ q 0 w1•w2 ----→ q 2 wrt ∆ q ∈ ∆ q w -→ q wrt ∆ q -→ p ∈ ∆ q 1 p -→ q 2 ∈ ∆ q 1 w --→ q 2 wrt ∆</formula><p>The last inference rule says that when reading a tree w the automaton can transit from a state q 1 to a state q 2 if with w it can transit from some tree initial state q to q, so that there is some tree final rule q -→ p ∈ ∆ and some apply rule q 1 p -→ q 2 ∈ ∆. The language L(A) of a Sha is defined as usual for Nfas except that nested words may be recognized too:</p><formula xml:id="formula_6">L(A) = {w ∈ N Σ | q w -→ q wrt ∆, q ∈ I, q ∈ F }</formula><p>The notion of determinism for Shas extends on the notion of left-to-right determinism of Nfas and on the notion of bottom-up determinism of tree automata. Definition 3. We call an Sha A deterministic or equivalently a <software>dSha</software>, if the contained finite automaton A is a Dfa, there is at most one tree initial state in ∆ , and @ ∆ and -→ ∆ are partial functions.</p></div>
+<div><head n="4.3">Adding Typed Else Rules</head><p>Suppose that the alphabet Σ is typed, in that any letter a ∈ Σ can be given some types in some type set T . We can then add typed else rules (q, τ, q ) ∈ ∆ × T × ∆ that we draw as q -τ --→ q . In contrast to untyped else rules, a typed else rule cannot be expanded with all letters from Σ, but only with those that can be given the type τ .</p></div>
+<div><head n="4.4">A Schema for XML Documents</head><p>The most frequent type of XPath queries select nodes of XML documents. For referring to selected nodes, we fix a single selection variable x. We call an XML document or subdocument, in which a single node is annotated by x, an x-annotated example. An x-annotated example is called positive for a query if the query selects the x-annotated node in the XML document, and negative otherwise.</p><p>The <software ContextAttributes="used">dSha</software> xml&amp;one x : a schema for x-annotated XML documents in Fig. <ref type="figure" target="#fig_0">1</ref> recognizes the set of all x-annotated examples. These must satisfy the XML data model and contain exactly one occurence of x. The automaton starts in hedge state 0 where it expects to read a nested word w , that can be evaluated to tree state 28, in order to go to the final state 29, where it accepts. The sequence of children w of the tree must be evaluated form the tree initial state, which is equally the hedge state 0. If w starts with letter doc indicating an XML document node at the root, the automaton moves from state 0 to state 5. There it may either read the variable x and go to state 5, where it expects a subtree in state 21, i.e. an XML element of which no node is annotated by x. Or it may read the symbol ¬x and move to state 6, where it expects a subtree in state 19, i.e. an XML element of which exactely one node is annotated by x. In both cases it can go to the hedge state 26 and from there to the tree state 28. The automaton also states the relationships of elements, attributes, text and comment nodes according to the XML data model.</p><p>The alphabets of names and namespaces of XML documents are infinite. In order to represent infinite sets of transition rule symbolically in a finite manner, the automaton use type else rules. The typed else rule in state 3, for instance, is labeled by -namespace, permitting to read any namespace and to go to state 9. State 9 in turn has an else rule labeled by -name which permits to read any (local) name and move to state 13.</p></div>
+<div><head n="4.5">Nested Word Automata (NWAs)</head><p>Nested word automata (Nwas) <ref type="bibr" target="#b25">[26]</ref>[1] are well known pushdown machines for defining regular languages of nested words. They can process nested words in a streaming manner: top-down, left-to-right, and bottom-up manner. Shas in contrast operate bottom-up and left-to right only. They avoid any top-down processing, since it quickly leads to huge size increases during Nwa determinization.</p><p>Any Sha can be compiled in linear time to an Nwa such that determinism is preserved. There also exists an inverse translation in quadratic time (but not preserving determinisim), so both automata classes have the same expressiveness, also when restricted by determinism. We omit the details, but provide deterministic Nwas in our collection. See for instance: The dNwa nwa(det(A 2 )) obtained from the <software ContextAttributes="used">dSha</software> det(A 2 ) in Fig. <ref type="figure" target="#fig_4">4</ref>.</p></div>
+<div><head n="5">Compiler to Automata</head><p>We extended on the compilation chain for regular XPath queries to automata from <ref type="bibr" target="#b23">[24]</ref>. As a running example, we consider the following query:</p><formula xml:id="formula_7">Q 2 : h:body[@lang != '']</formula><p>Query Q 2 selects a node if it has a child named body in namespace h, that has the attribute node named lang containing a nonempty text.</p></div>
+<div><head n="5.1">Parser</head><p>Our parser for XPath expressions computes a parse tree following the grammar of XPath 3.1 from the W3C. In addition, it returns for any forward regular XPath expression a logical formula in the language FXP <ref type="bibr" target="#b6">[7]</ref>. For the XPath example Q 2 , we obtain the following FXP formula: child(lab elem:type ∧ lab h:namespace ∧ lab body:name ∧ lab x:var ∧ child(lab att:type ∧ cand def ault:namespace ∧ lab lang:name ∧ string = ))</p><p>Our previous parser needed considerable improvement in order to be able to cover the large variety of queries from the corpus of Lick and Schmitz <ref type="bibr" target="#b18">[19]</ref>.</p></div>
+<div><head n="5.2">Nested Regular Expressions</head><p>We next compile Fxp formulas to nested regular expressions, which extend on standard regular expressions from words to nested words. Again, considerable work was needed to enable a sufficiently large coverage. For the query Q 2 our compiler yields the nested regular expression:  </p></div>
+<div><head n="5.3">Compiler to SHAs</head><p>The compiler then converts nested regular expressions into Shas. This is done by extending a usual compiler from regular expressions to Nfas. The interaction of recursion and nesting leads to some nasty issues, that are discussed and resolved in <ref type="bibr" target="#b23">[24]</ref>. For developping the present benchmark, we needed to add a treatment of typed wildcards such as -char. This is done by introducing typed else rules. For the query Q 2 we obtain: Sha in The nondeterministic Sha A 2 = sha(Q 2 ). in Fig. <ref type="figure" target="#fig_2">2</ref>. Similarly to the nested regular expression, this Sha may recognize some annotated nested words, that are not x-annotated examples, i.e., that do not belong to the language of the schema L(xml&amp;one x ).</p></div>
+<div><head n="5.4">Determinization</head><p>The usual determinization algorithms for Nfas and tree automata can be lifted to a determinization algorithm for Shas. When applied to query Q 2 however, we obtain a Sha with 25 states and 183 transition rules, which is much larger than one might expect. It is given in The determinization det(A 2 ) of the Sha A 2 in Fig. <ref type="figure">5</ref> of the appendix. Even worse, in some cases, the determinization algorithm does not finish after some hours.</p></div>
+<div><head n="5.5">Determinizing the Schema Product</head><p>Determinization applied to the product of the queries' automaton and the schema xml&amp;one x permits to compute deterministic automata for all queries of our benchmark within a timeout of 100 seconds. The result for Q 2 is a <software ContextAttributes="used">dSha</software> with 53 states and 110 transition rules, see automaton The determinization of the schema product det(A 2 × xml&amp;one x ) in Fig. <ref type="figure" target="#fig_5">6</ref> of the appendix. The overall size is smaller, and the automaton is much easier to understand, but the number of states increased. </p></div>
+<div><head n="5.6">Schema-Based Determinization</head><p>Schema-based determinization as proposed in <ref type="bibr" target="#b24">[25]</ref> improves the situation further. For query Q 2 it yields: Sha in The schema-based determinization det S (A 2 ) where S = xml&amp;one x in Fig. <ref type="figure" target="#fig_3">3</ref> which has only 22 states and 45 transitions. The size is roughly devided by 2 compared to: The determinization of the schema product det(A 2 × xml&amp;one x ) in Fig. <ref type="figure" target="#fig_5">6</ref>.</p></div>
+<div><head n="5.7">Minimization</head><p>We then minimize the <software ContextAttributes="used">dSha</software> from The schema-based determinization det S (A 2 ) where S = xml&amp;one x in Fig. <ref type="figure" target="#fig_3">3</ref>. This often reduces the size and the number of states in an important manner and often makes it easy to see how the automaton is functioning. Exceptionally in the case of Q 2 , no states are fusioned when minimizing the <software ContextAttributes="used">dSha</software> obtained by schema-based determinization.</p><p>It should be noticed that minimizing the determinization of the schema product usually yields a different result then minimizing the schema-based determinization. This is since both automata may recognize different languages. Some nested words outside the schema may be accepted after schema-based determinization, but not by the schema product.</p></div>
+<div><head n="5.8">Compiler to NWAs</head><p>The compiler finally maps Shas to Nwas in linear time, while preserving determinism. For instance the minimal <software ContextAttributes="used">dSha</software> in The schema-based determinization det S (A 2 ) where S = xml&amp;one x in Fig. <ref type="figure" target="#fig_3">3</ref> is converted to: The dNwa nwa(det(A 2 )) obtained from the <software ContextAttributes="used">dSha</software> det(A 2 ) in Fig. <ref type="figure" target="#fig_4">4</ref>.</p></div>
+<div><head n="6">Testing Automata on Samples</head><p>For testing the stepwise hedge automata, we created a sample with positive and negative x-annotated examples for each of the queries. Please contact the authors if you are interested in the test samples. They can be provided without problem.</p><p>For this we produced an XML document for each of the Xslt programs from which the XPath queries of Lick and Schmitz were extracted. We did this in such a way that each of the queries has at least one answer on one of the subdocuments of the document of its collection. Subdocuments are important here, since the XPath queries of an Xslt program will be applied to subdocumens naturally.</p><p>By using Saxon Xslt, we computed the answer set of all the queries on all the subdocument of the produced XML documents. For this, we exported query answers in Dewey notation, similarly to the way that nodes are returned by Schematron: The Dewey noation of a node is its relative address from the root, i.e., by the list of child steps leading to the node. Such lists can be easily encoded in XML format.</p><p>Each query query answer yields a positive x-annotated examples for the query, that is obtained by annotating the XML document by x at the selected position. Negative x-annotated examples are obtained from the answers of the other queries on the same document. The annotation of the XML document is done by yet another Xslt stylesheet that we wrote for this purpose. Here we use the fact that query answers are also represented in XML format.</p><p>By testing the automaton on these samples, we could fix various problems that arised on the way to our final collection. Currently, no test failures are remaining, except for the query 13896 below that we removed from the corpus for the current version. The problem here is raised by the blank symbol in the attribute value 'evans citation': //HEADER//IDNO[@TYPE='evans citation']</p></div>
+<div><head n="7">Statistics of the Benchmark Automata</head><p>We compiled all of our 79 XPath queries to deterministic automata using the compilation chain described in in Section 5. Here we present the statistics of the benchmark automata that we obtained. The summary is given in in Table <ref type="table">2</ref>. We show for each automaton two numbers size(#states) where size is the overall size of the automaton and #states the number of its states. The nondetermnistic Shas compiled from the nested regular expressions was cleaned using the schema xml&amp;one x : The <software ContextAttributes="used">dSha</software> xml&amp;one x : a schema for xannotated XML documents in Fig. <ref type="figure" target="#fig_0">1</ref>. The result is called A = sha(Q) leading to the statistics in the second column of in Table <ref type="table">2</ref>.</p><p>We note that 37% of the Shas original stepwise hedge automata for the queries A = sha(Q) have more than 100 states, so they are sometimes bigger than one might expect. The biggest is for query 06176 with 630 states and an overall size of 1391. The reason is that this query is selecting a union of 20 subqueries, all with descendant-or-self axis. Foe each subquery, we have 4 construsts of respective state sizes: 2, 6, 10 and 13, making a subtotal of 31 * 20 = 620. With an additional 8 states for one subquery that select all descendants with an attribute named id and another 2 for reading any tree, we end up with our total 630 states.</p><p>Table <ref type="table">2</ref>: Experiment results on the XPath subcorpus from Lick and Schmitz in Table <ref type="table">3</ref>. For each automaton we present: size(number-of-states).</p><formula xml:id="formula_8">query B = C = B = C = Q of id A det(A) det(A × S) det S (A) mini(B) mini(C) nwa(C )<label>18330</label></formula><p>99 (41) 465 ( <ref type="formula">43</ref>) 145 (44) 74 ( <ref type="formula">22</ref>) 128 (39) 61 ( <ref type="formula">18</ref>) 73 ( <ref type="formula">18</ref>)</p><p>The column for det(A) contains the statistics for the determinization of A. No schema is used there. We use a timeout of 100 seconds. Whenever this is not enough, the cell in the table is left blank. Indeed, the determinization fails with this timeout for 37% of the queries of our corpus. Roughly, the determinization fails for all Shas with more than 100 states. For instance, for query 11780 the Sha A has has size 205 (88), while the <software ContextAttributes="used">dSha</software> det(A) has size 3832 <ref type="bibr">(190)</ref>.</p><p>The column for B = det(A × S) contains the determinization of the product of A and the schema S = xml&amp;one x . Even though A × S is always larger than A, we were able to always determinize A × S within the timeout, in contrast to A. The largest <software>dSha</software> B obtained is for for query 04358: it has size 3580 (559). This show that B may still be quite big, but often a big improvement in size over det(A).</p><p>The next column reports on C = det S (A) obtained by schema-based determinization with schema S = xml&amp;one x . Again, the computation succeeds in all cases within the timeout of 100 seconds. The size of C for query 04358 is 2021 (433), which improves in size over B.</p><p>In the next two columns, we respectively minimize the determinized Shas B and C, using a naïve minimization algorithm. All automata can be minimized within the timeout of 100 seconds. We note that C = mini(C) is always smaller than B = mini(B), showing that schema-based determinization yields smaller minimal automata than determinizing the The maximal number of states of the minimal dShas C = mini(C) is 58 for query 04358. In average the number of states decreases by 55%.</p><p>In the last column, we compiled the minimized dShas of C to the dNwa nwa(C ). It has the same number of states than C for all queries and a minor increase is the number of transitions. All these results, including the automata of the intermediate steps, generated during the whole compilation chain are available at in the software heritage archive at the following url: https://archive. softwareheritage.org/browse/origin/?origin_url=https://gitlab.inria. fr/aalserha/xpath-benchmark.</p></div>
+<div><head n="8">Conclusion</head><p>We provide a benchmark of deterministic automata for regular XPath queries obtained with an algorithm for schema-based determinization of symbolic Shas that we presented. Our benchmark is compiled from forward navigational XPath queries: the 79 largest queries modulo renaming of the 4500 forward navigational XPath queries of the corpus of Lick and Schmitz <ref type="bibr" target="#b18">[19]</ref>. From the Shas of these 79 queries, 37% cannot be determinized in less then 100 seconds by schema-less determinization. Schema-based determinization, in contrast, succeeds for 100% of them. Furthermore, all dShas obtained by schema-based determinization are sufficiently small so that they can be minimized with the naïve quadratic algorithm. This leads us to a collection of minimal dShas with an average number of states of 22, and 71 as the average number of transition rules.</p><p>We hope that the automata of our collection will be used for experimenting with algorithms for XPath queries in the near future and for developing and comparing the performance of algorithms for answering XPath queries on XML streams in particular. </p></div><figure xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: The dSha xml&amp;one x : a schema for x-annotated XML documents.</figDesc><graphic coords="8,134.77,361.91,345.84,236.72" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head /><label /><figDesc>(elem:type. ) + doc:type). . . elem:type.h:namespace.body:name.x:var. att.type.def ault:namespace.lang:name. .( char.( char) * . . .Note that the test for a nonempty string got translated by the regular expression char.( char) * . It should also be noticed that this expression matches some x-annotated nested words, that are not x-annotated examples, i.e. not belonging to the language L(xml&amp;one x ) of the schema. This is since the nested subwords matching universal expression are completely unconstrained.</figDesc></figure>
+<figure xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: The nondeterministic Sha A 2 = sha(Q 2 ). .</figDesc><graphic coords="10,134.77,415.06,345.84,217.86" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: The schema-based determinization det S (A 2 ) where S = xml&amp;one x .</figDesc><graphic coords="11,134.77,489.05,345.83,143.64" type="bitmap" /></figure>
+<figure xml:id="fig_4"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: The dNwa nwa(det(A 2 )) obtained from the dSha det(A 2 ) .</figDesc><graphic coords="13,134.77,108.63,345.83,206.64" type="bitmap" /></figure>
+<figure xml:id="fig_5"><head>Fig. 6 :</head><label>6</label><figDesc>Fig. 6: The determinization of the schema product det(A 2 × xml&amp;one x ).</figDesc><graphic coords="25,134.77,215.36,345.84,333.32" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc /><table /><note><p>10745 *//tei:imprint/tei:date[@type='access'] 02091 * | .//refentry 00744 .//@id | .//@xml:id 12060 .//attDef 02762 .//authorgroup/author | .//author 06027 .//authorinitials | .//author 02909 .//bibliomisc[@role='serie'] 06415 .//email | address/otheraddr/ulink</p></note></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Marrying words and trees</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1265530.1265564</idno>
+		<ptr target="http://dx.doi.org/10.1145/1265530.1265564" />
+	</analytic>
+	<monogr>
+		<title level="m">26th ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<biblScope unit="page" from="233" to="242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Adding nesting structure to words</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Madhusudan</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1516512.1516518</idno>
+		<ptr target="http://doi.acm.org/10.1145/1516512.1516518" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">MSO queries on tree decomposable structures are computable with linear delay</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bagan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Computer Science Logic. Lecture Notes in Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">4646</biblScope>
+			<biblScope unit="page" from="208" to="222" />
+			<date type="published" when="2006">2006</date>
+			<publisher>Springer Verlag</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Input driven languages are recognized in log n space</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Von Braunmühl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Verbeek</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/S0304-0208(08)73072-X</idno>
+		<ptr target="http://www.sciencedirect.com/science/article/pii/S030402080873072X" />
+	</analytic>
+	<monogr>
+		<title level="m">Topics in the Theory of Computation</title>
+		<title level="s">North-Holland Mathematics Studies</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Karplnski</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Van Leeuwen</surname></persName>
+		</editor>
+		<meeting><address><addrLine>North-Holland</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="1985">1985</date>
+			<biblScope unit="volume">102</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Tree automata techniques and applications</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Comon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dauchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gilleron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Löding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Jacquemard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lugiez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<ptr target="http://tata.gforge.inria.fr" />
+		<imprint>
+			<date type="published" when="1997-10">1997. Oct 2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Linear delay enumeration and monadic second-order logic</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Courcelle</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.dam.2008.08.021</idno>
+		<ptr target="http://dx.doi.org/10.1016/j.dam.2008.08.021" />
+	</analytic>
+	<monogr>
+		<title level="j">Discrete Applied Mathematics</title>
+		<imprint>
+			<biblScope unit="volume">157</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2675" to="2700" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Early nested word automata for xpath query answering on XML streams</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Debarbieux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sebastian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zergaoui</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.tcs.2015.01.017</idno>
+		<ptr target="http://dx.doi.org/10.1016/j.tcs.2015.01.017" />
+	</analytic>
+	<monogr>
+		<title level="j">Theor. Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">578</biblScope>
+			<biblScope unit="page" from="100" to="125" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Document spanners: A formal approach to information extraction</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Reiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vansummeren</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2699442</idno>
+		<ptr target="https://doi.org/10.1145/2699442" />
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="12" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Propositional dynamic logic of regular programs</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Ladner</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0022-0000(79)90046-1</idno>
+		<ptr target="https://doi.org/10.1016/0022-0000(79)90046-1" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Comput. Syst. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="194" to="211" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Franceschet</surname></persName>
+		</author>
+		<ptr target="https://users.dimi.uniud.it/~massimo.franceschet/xpathmark/PTbench.html" />
+		<title level="m">Xpathmark performance test</title>
+		<imprint>
+			<date type="published" when="2020-10-25">2020-10-25</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Streaming Tree Automata and XPath</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">1. 2009</date>
+		</imprint>
+		<respStmt>
+			<orgName>Université Lille</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Earliest query answering for deterministic nested word automata</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<ptr target="http://hal.inria.fr/inria-00390236/en" />
+	</analytic>
+	<monogr>
+		<title level="m">17th International Symposium on Fundamentals of Computer Theory</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="volume">5699</biblScope>
+			<biblScope unit="page" from="121" to="132" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A system for the static analysis of xpath</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Genevès</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Layaïda</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1185877.1185882</idno>
+		<ptr target="https://doi.org/10.1145/1185877.1185882" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="475" to="502" />
+			<date type="published" when="2006-10">Oct 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">The complexity of XPath query evaluation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Koch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pichler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">22nd ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="179" to="190" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kay</surname></persName>
+		</author>
+		<ptr target="https://www.saxonica.com" />
+		<title level="m">The saxon xslt and xquery processor</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">A uniform programming language for implementing XML standards</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Labath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-662-46078-8_45</idno>
+		<ptr target="http://dx.doi.org/10.1007/978-3-662-46078-8_45" />
+	</analytic>
+	<monogr>
+		<title level="m">SOFSEM 2015: Theory and Practice of Computer Science -41st International Conference on Current Trends in Theory and Practice of Computer Science</title>
+		<meeting><address><addrLine>Pec pod Sněžkou, Czech Republic</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">January 24-29, 2015. 2015</date>
+			<biblScope unit="page" from="543" to="554" />
+		</imprint>
+	</monogr>
+	<note>Proceedings</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Querying graph databases with xpath</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Libkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vrgoč</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2448496.2448513</idno>
+		<ptr target="https://doi.org/10.1145/2448496.2448513" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th International Conference on Database Theory</title>
+		<meeting>the 16th International Conference on Database Theory<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="129" to="140" />
+		</imprint>
+	</monogr>
+	<note>ICDT '13</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lick</surname></persName>
+		</author>
+		<ptr target="https://tel.archives-ouvertes.fr/tel-02276423" />
+		<title level="m">Logique de requêtes à la XPath : systèmes de preuve et pertinence pratique</title>
+		<imprint>
+			<date type="published" when="2019-07">Jul 2019</date>
+		</imprint>
+		<respStmt>
+			<orgName>Université Paris-Saclay</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Theses</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">XPath Benchmark (Last visited</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sylvain</surname></persName>
+		</author>
+		<ptr target="https://archive.softwareheritage.org/browse/directory/1ea68cf5bb3f9f3f2fe8c7995f1802ebadf17fb5" />
+		<imprint>
+			<date type="published" when="2022-04-13">April 13th 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Expressiveness and complexity of XML Schema</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Bex</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1166074.1166076</idno>
+		<ptr target="http://dx.doi.org/10.1145/1166074.1166076" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Database Systems</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="770" to="813" />
+			<date type="published" when="2006-09">Sep 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Evaluation and Enumeration Problems for Regular Path Queries</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Trautner</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2018.19</idno>
+		<ptr target="http://drops.dagstuhl.de/opus/volltexte/2018/8594" />
+	</analytic>
+	<monogr>
+		<title level="m">21st International Conference on Database Theory (ICDT 2018)</title>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Amsterdamer</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Dagstuhl, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">98</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+		<respStmt>
+			<orgName>Schloss Dagstuhl-Leibniz-Zentrum fuer Informatik</orgName>
+		</respStmt>
+	</monogr>
+	<note>Leibniz International Proceedings in Informatics (LIPIcs)</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">High-performance complex event processing over XML streams</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mozafari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zaniolo</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2213836.2213866</idno>
+		<ptr target="https://doi.org/10.1145/2213836.2213866" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGMOD International Conference on Management of Data, SIGMOD 2012</title>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Candan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Snodgrass</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Gravano</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fuxman</surname></persName>
+		</editor>
+		<meeting>the ACM SIGMOD International Conference on Management of Data, SIGMOD 2012<address><addrLine>Scottsdale, AZ, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2012">May 20-24, 2012. 2012</date>
+			<biblScope unit="page" from="253" to="264" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Streaming enumeration on nested documents</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Muñoz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Riveros</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2022.19</idno>
+		<ptr target="https://doi.org/10.4230/LIPIcs.ICDT.2022.19" />
+	</analytic>
+	<monogr>
+		<title level="m">25th International Conference on Database Theory, ICDT 2022</title>
+		<title level="s">Virtual Conference</title>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Olteanu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Vortmeier</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Edinburgh, UK</addrLine></address></meeting>
+		<imprint>
+			<publisher>Schloss Dagstuhl -Leibniz-Zentrum für Informatik</publisher>
+			<date type="published" when="2022-04-01">March 29 to April 1, 2022. 2022</date>
+			<biblScope unit="volume">220</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Determinization and Minimization of Automata for Nested Words Revisited</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sakho</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-03134596" />
+	</analytic>
+	<monogr>
+		<title level="j">Algorithms</title>
+		<imprint>
+			<date type="published" when="2021-02">Feb 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Schema-Based Automata Determinization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sakho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Al Serhali</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-03536045" />
+		<imprint>
+			<date type="published" when="2022-01">Jan 2022</date>
+		</imprint>
+	</monogr>
+	<note>working paper or preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Complexity of input-driven pushdown automata</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Okhotin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Salomaa</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2636805.2636821</idno>
+		<ptr target="https://doi.org/10.1145/2636805.2636821" />
+	</analytic>
+	<monogr>
+		<title level="j">SIGACT News</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="47" to="67" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Certain Query Answering on Hyperstreams</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sakho</surname></persName>
+		</author>
+		<ptr target="https://tel.archives-ouvertes.fr/tel-03028074" />
+		<imprint>
+			<date type="published" when="2020-07">Jul 2020</date>
+		</imprint>
+		<respStmt>
+			<orgName>Université de Lille ; Inria</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Theses</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A Purely Regular Approach to Non-Regular Core Spanners</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Schmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schweikardt</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2021.4</idno>
+		<ptr target="https://drops.dagstuhl.de/opus/volltexte/2021/13712" />
+	</analytic>
+	<monogr>
+		<title level="m">24th International Conference on Database Theory (ICDT 2021)</title>
+		<title level="s">Schloss Dagstuhl -Leibniz-Zentrum für Informatik</title>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Yi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Z</forename><surname>Wei</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Dagstuhl, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">186</biblScope>
+			<biblScope unit="page" from="1" to="4" />
+		</imprint>
+	</monogr>
+	<note>Leibniz International Proceedings in Informatics (LIPIcs)</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Deciding equivalence of finite tree automata</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Seidl</surname></persName>
+		</author>
+		<ptr target="-or-self::node()/child::parts-of-speech17914/descendant-or-self::node()/child::tei:back/descendant-or-self::node()/child::tei:interpGrp10745*//tei:imprint/tei:date[@type='access']02091*|.//refentry00744.//@id|.//@xml:id12060.//attDef02762.//authorgroup/author|.//author06027.//authorinitials|.//author02909.//bibliomisc[@role='serie']06415.//email|address/otheraddr/ulink03257.//equation[titleorinfo/title]05122.//procedure[title]09138.//rng:ref|.//tei:elementRef|.//tei:classRef|.//tei:macroRef|.//tei:dataRef05460.//table//footnote|.//informaltable//footnote12404.//tei:dataRef[@name]10337.//tei:note[@place='end']06639.//tgroup//footnote14340//*13804//GAP/@DISP13896//HEADER//IDNO[@TYPE='evanscitation']02194//annotation06726//doc:table|//doc:informaltable13640//equiv[@filter]05735//glossary[@role='auto']15766//h:body/h:section[@data-type='titlepage']15524//h:section[@data-type='titlepage']06512//refentry//text()06176//set|//book|//part|//reference|//preface|//chapter|//appendix|//article|//colophon|//refentry|//section|//sect1|//sect2|//sect3|//sect4|//sect5|//" />
+	</analytic>
+	<monogr>
+		<title level="m">Annual Symposium on Theoretical Aspects of Computer Science</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="1989">1989</date>
+			<biblScope unit="volume">349</biblScope>
+			<biblScope unit="page" from="480" to="492" />
+		</imprint>
+	</monogr>
+	<note>A Complementary Information Table 3: The 79 largest forward navigational queries of the XPath corpus of Lick and Schmitz without dublicates up to renaming. Id XPath Query 18330 / descendant</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

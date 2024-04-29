@@ -13,7 +13,7 @@ def dashboard(db):
     nb_mention = 0
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list[:]:
+    for file_id in file_id_list:
         hal_id = file_id['hal_id']
         file_id = file_id['_id']
         edges_id_software_doc = db['edge_software'].getEdges(file_id)

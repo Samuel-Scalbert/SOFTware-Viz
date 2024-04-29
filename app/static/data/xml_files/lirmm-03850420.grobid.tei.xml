@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Integrating Machine Learning Model Ensembles to the SAVIME Database System</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Anderson</forename><surname>Silva</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Laboratório Nacional de</orgName>
+								<orgName type="institution">Computac ¸ão Científica (LNCC) Petrópolis</orgName>
+								<address>
+									<settlement>Rio de Janeiro</settlement>
+									<country key="BR">Brazil</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Patrick</forename><surname>Valduriez</surname></persName>
+							<email>patrick.valduriez@inria.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">University of Montpellier</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">LIRMM Montpellier</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fabio</forename><surname>Porto</surname></persName>
+							<email>fporto@lncc.br</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Laboratório Nacional de</orgName>
+								<orgName type="institution">Computac ¸ão Científica (LNCC) Petrópolis</orgName>
+								<address>
+									<settlement>Rio de Janeiro</settlement>
+									<country key="BR">Brazil</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Integrating Machine Learning Model Ensembles to the SAVIME Database System</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D4768565E9AD87CE5D1370E148671B18</idno>
+					<idno type="DOI">10.5753/sbbd_estendido.2022.21870</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The integration of machine learning algorithms into database systems has brought new opportunities in different areas from indexing to query optimization. In this paper, we describe the integration of an approach for the automatic computation of model ensembles to answer a predictive query. We have extended the SAVIME multi-dimensional array DBMS by adding a new function to its query language and implementing the selection and allocation ensemble model dataflow into the query processing component of SAVIME. We show some initial experimental results depicting its performance against a pure Python implementation of the ensemble approach. Interestingly enough the C++ implementation within SAVIME is up to 4 times faster than its competitor.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>The adoption of Machine Learning (ML) models in replace of different database management techniques has been a hot research topic since the appearance of the Learned Index paper by <ref type="bibr" target="#b8">Kraska [Kraska et al. 2018]</ref>. Since then, a number of different applications of machine learning in databases has been proposed, such as learning cardinality estimation <ref type="bibr" target="#b7">[Kim et al. 2022]</ref>, a long time difficult problem to be solved algorithmically, and join ordering selection and query optimization <ref type="bibr" target="#b11">[Marcus et al. 2021]</ref>, just to name a few. Another area of intense activity, strongly pushed by the database systems industry, is the integration of machine learning models as prediction functions receiving input from a query expression <ref type="bibr" target="#b5">[Fard et al. 2020</ref><ref type="bibr" target="#b6">][Jasny et al. 2020]</ref>. Another area of interest is the investigation of the performance of training machine learning models in the database, taking advantage of years of efficient data processing, specially for large input training sets <ref type="bibr" target="#b14">[Sandha et al. 2019]</ref>.</p><p>In this paper, we present initial results on the integration of machine learning models ensembles into the SAVIME database system [L. S. <ref type="bibr" target="#b9">Lustosa et al. 2021</ref>]. We consider the DJEnsemble approach <ref type="bibr" target="#b12">[Pereira et al. 2021</ref>] that combines a set of spatio-temporal deep learning models automatically selected by a cost-based model. As in other works, we argue that database systems already offer a declarative query language to which model invocation can be easily integrated, as in SQL user defined functions <ref type="bibr" target="#b3">[Duta and Grust 2020]</ref>. Once added to a query plan all data transformation needed when preparing the model input can be specified as a query expression placing ML model inference as part of an efficient query processing framework. Moreover, we observe that the multidimensional array model of SAVIME is particularly suited to model 3D input tensors, as required by deep learning input data. We describe the decisions taken during the design of the integration of DJEnsemble into the SAVIME system and some challenges still remaining to be solved. We highlight that by adding DJEnsemble to SAVIME, or any other DBMS, its model selection and allocation problem can be solved as part of the query optimization process.</p><p>We have run some initial experiments highlighting the overhead of invoking the model integrated into SAVIME against its execution on pure ML engine/programming language combination. The rest of this paper is organized as follows. Section 2 present the DJEnsemble approach and the SAVIME DBMS system. Next, in Section 3, we describe the implementation of the ensemble approach into SAVIME. Section 4 present some initial experimental results. The section 5 discusses works that integrated ML into database systems and 6 present some final remarks and points to future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Preliminaries</head><p>In this section we provide background on the DJEnsemble ensemble approach and on the SAVIME multidimensional array database system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">DJEnsemble Approach</head><p>The machine learning ensemble approach is a technique to improve the accuracy of predictions by using multiple models for the same prediction task and applying a linear function to combine their results. The assumption is that by combining different models the weakness of a one is compensated by the strength of another. The DJEnsemble takes a slightly different approach <ref type="bibr" target="#b12">[Pereira et al. 2021</ref>]. As the traditional ensemble approach, it considers a set of available trained models M = {M 1 , M 2 , . . . , M n } for the prediction of a spatio-temporal variable, i.e. a spatio time series. Examples of spatio-temporal variables are temperature and precipitation. However, instead of invoking all available models to compute a prediction, DJEnsemble selects the best models to be applied at each data subdomain. We consider a domain the dataset composed of time series of a variable. For instance, the domain of the precipitation variable comprises the dataset of time series of a region. In this context subdomains characterizes regions sharing similar precipitation behavior.</p><p>DJEnsemble is applicable to answer to spatio-temporal queries (SPTQ), which are expressed as Q =&lt; R, I, V, t &gt;, where R is a spatio-temporal region where predictions are desired, for instance the region of the Rio de Janeiro city in January 2022, I is a tensor of input to the model, V is the predicted variable, for instance, precipitation, and t is the number of time instances ahead for the prediction. The approach is integrated into the SAVIME system (see section 2.2) in two parts: offline and online. The offline part structures the domain dataset into clusters and tiles. The former finds the time series sharing similar behaviors in time, whereas the latter structures the dataset domain into regular tiles i.e. rectangles with a high percentage of time-series of a single cluster. Lastly, to each tile, we associate its representative, which is a time series elected as the medoid of the cluster bearing the majority of time series in the corresponding tile.</p><p>Figure <ref type="figure" target="#fig_0">1</ref> illustrates the process described. The image at the left shows the clusters of a spatial domain containing precipitation readings, discretized in 7 x 7 regions. An analysis using silhouette clustering index <ref type="bibr" target="#b13">[Rousseeuw 1987</ref>] indicates 2 clusters. At right, it is illustrated the results of the tiling process applied over the clustered of the spatiotemporal domain. At each iteration of the tiling algorithm, a position is chosen as the starting point of a new tile. The tile area is then extended to the right and bottom, as long as the number of regions from different clusters in the tile is not exceeded.  • O2 obtain the tiles representatives;</p><p>• BO5 for each query tile computes its representative distance to the tiles representative of the candidate models; • BO6 use the models learning functions to compute their estimated error for each query tile and associate to each tile the model with the least estimated error • BO7 invoke each of the selected model having as input the part of I corresponding to its tile • BO8 compose the predictions for each of the models into a single prediction volume.</p><p>The step BO6 runs an optimization weighted cost function that takes into account the error estimate computed by the learning function and the estimated execution cost. Thus, at the end of this process an ensemble of models has been selected and run for computing the predictions as requested by the query Q.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">SAVIME Array DBMS</head><p>The SAVIME multidimensional array database system is a NOSQL system developed at the DEXL Laboratory <ref type="bibr" target="#b10">[Lustosa 2020</ref>]. SAVIME logical data representation is modeled by a Typed Array (TAR) data model. A TAR schema (TARS) specifies the arrays in a database. A TAR definition holds a name, that uniquely identifies the array, and counts with two main data elements for an array definition: dimensions and attributes. There is no restriction on the number of dimensions an array may specify. A typical dimension is defined as d = ([1 : n], step), where the interval indicates integer indexing from 1 to n, with integer steps between index values. For a k dimensional array, a cell is specified as the array position indicated by a vector of dimensions v =&lt; v 1 , v 2 , . . . , v k &gt;, where v i is an index of dimension i, for all 1 ≤ i ≤ k. A cell may hold a tuple of attributes of simple types, such as: integer, float, double etc. SAVIME implements a functional query language, inspired by AFL, one of the query languages adopted by the SciDB system <ref type="bibr" target="#b2">[Brown 2010</ref>]. A function in SAVIME is implemented by an operator that consumes TAR objects as input, and produce a single TAR array as output. The list of current available operators in SAVIME is depicted in Table <ref type="table" target="#tab_0">1</ref>.</p><p>Query optimization in SAVIME adopts a generalization of push down selection approach, pushing down all operations that reduce the size of arrays: Where, Subset, Select and Aggregate. The Predict operation specifies ML models to be executed with inputs produced by inner operations of a query expression. During optimization, the predict operation is pulled up in the physical query plan. A TAR is redefined by one or multiple SubTARs. The latter is an irregular partitioning of a TAR, such that the union of all SubTARs S = {S 1 , S 2 , ..., S n } reproduces in definition and in content the corresponding TAR T . The SubTARs are the unit of processing of an operator. SAVIME uses the Sub-TAR for parallelizing the computation of operators. Considering system characteristics, SAVIME is an in-memory system that considers arrays to be allocated in main memory for query processing. Moreover, the system reads data in raw file format, not requiring an ingestion phase for processing it. Another interesting feature is its integration with the Python language, through the Pysavime library. TAR arrays returned by queries in SAV-IME are transformed into Numpy arrays for processing using the scripting programming language. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Operator</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Integrating DJEnsemble in SAVIME</head><p>We present the integration of DJEnsemble into SAVIME in order to support spatiotemporal queries execution. To execute an inductive query, SAVIME makes use of a predictive engine module external to the system based on tensorflow server <ref type="bibr" target="#b1">[Baylor et al. 2017]</ref>. This module allows SAVIME to answer predictive queries in general.</p><p>Currently, SAVIME is capable of executing the entire online stage of DJEnsemble within the system, through the ENSEMBLE operator built into the query language. The syntax of ENSEMBLE operator is: ENSEMBLE(&lt;tar&gt;, &lt;query-region&gt;, predictive-variable)</p><p>Figure <ref type="figure" target="#fig_2">3</ref> illustrates how this process is achieved. The results of the offline stage must be previously registered in the system through metadata files, namely: the tiling resulting of the time series categorization process and the error estimation function for each predictive model, along with the time series that best represents the models training data. Once a query is performed, SAVIME executes the Error Estimation Functions in order to choose the best candidate models to answer the query. The error estimated to each model for each tile intersecting with the query region is based on the distance between its representative time series and each model's representative sequences. We utilize Dynamic Time Warping to calculate the distances between sequences. The composition of each tile paired with the model with the least estimated cost for it constitutes the query model ensemble, which can be finally executed to return the result to the user.</p><p>It is worth mentioning that the Ensemble operator is part of SAVIME's DML, and thus the operator's input TAR can be resulting from a previous executed nested query. Similarly, to make use of the full potential of SAVIME's query language, the data returned by Ensemble can also be chained together as input to new queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental Evaluation</head><p>To analyze the algorithm performance when integrated to SAVIME, we performed a series of experiments evaluating the execution time of the different steps. For reference, we also measured the offline step execution time (already presented in <ref type="bibr" target="#b12">[Pereira et al. 2021]</ref>). For our experiments, we built a dataset from rain data from the city of Rio de Janeiro, provided by 33 pluviometrical stations. The constructed dataset represents a 7 x 7 mesh over the city, containing the precipitation values along 20 years, recorded at 15-minute intervals.</p><p>The experiments were run using the hardware configurations: Intel Core i5-5200U CPU @ 2.20GHz, 8 GB RAM.</p><p>We synthetically partitioned the obtained data into 3 tiles, representing 3 different regions of the city. We also built 3 Convolutional Long Short-Term Memory (ConvLSTM) neural network model models, with input dimensions of 3x3, 4x4 and 7x7. The training data for each model and corresponding representing sequences were defined in such a way that the estimated error for each tile would be optimal by choosing a different model by the algorithm.</p><p>Based on the described experimental scenario, we submitted 3 different predictive queries to SAVIME, Q1, Q2 and Q3, using the Ensemble operator. In order to evaluate the runtime variation as the number of tiles increases, each query is designed so that it would intersect with one, two or three tiles of the domain. For comparison purposes, we performed a test with the same data under the DJEnsemble version purely written in Python, not integrated to SAVIME. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Related Work</head><p>The integration of machine learning algorithms into database systems initiated with the now famous Learning Index <ref type="bibr" target="#b8">[Kraska et al. 2018]</ref> paper by Tim Kraska. In that paper Kraska and colleagues showed that a B+tree could be substituted by a learned model. Since then, other areas of the database systems have been explored as opportunities for ML algorithms. Computing cardinalities of operations has always been a difficult task that is at the heart of query optimization. Many authors have been working in learned techniques modeling it as a regression problem <ref type="bibr" target="#b4">[Dutt et al. 2019</ref><ref type="bibr" target="#b15">][Woltmann et al. 2019]</ref>. A second approach involves applying ML models to data in databases. In this context, ML algorithm are integrated to the system that may support ML models training and inferencing <ref type="bibr" target="#b5">[Fard et al. 2020</ref>]. Model inferencing is integrated to the system inheriting the existing code to support user-defined function execution. Other systems such as Post-greSQL [Pos 2022] and Greenplum [gre 2022] have added the support to the ML library MADLib. The work we describe in this paper considers the integration of ML models for inferencing and uses an external ML engine for model execution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>Machine learning algorithms have shown concrete results in a myriad of applications. In the database system this has not been different. In this paper, we describe a new opportunity for applying machine learning predictions by adding model ensembles as part of a query specification. We integrate the DJEnsemble approach to the SAVIME query engine. The approach automatically selects and allocates deep learning models to solve a spatio-temporal predictive query. Our initial results show that the C++ implementation of DJEnsemble in SAVIME is up to 4 times faster when compared against a typical data science Python implementation. There are a number of opportunities for future work, including integrating the cost function of DJEnsemble with the SAVIME query optimizer and improving models' results composition algorithm.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. DJEnsemble clustering and tiling identified by the offline stage</figDesc><graphic coords="4,170.08,183.46,255.13,140.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Dataflow for the execution of DJEnsemble</figDesc><graphic coords="4,148.82,441.79,297.56,184.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Overview of DJEnsemble integration into SAVIME</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Comparative specification and results between DJEnsemble and SAVIME. All times refer to average in seconds</figDesc><graphic coords="7,85.04,543.25,425.19,123.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 . SAVIME query language operators</head><label>1</label><figDesc></figDesc><table><row><cell></cell><cell>Description</cell></row><row><cell>SELECT</cell><cell>Projects dimensions and attributes</cell></row><row><cell>WHERE</cell><cell>Filters data according to a predicate on dimensions and at-tributes</cell></row><row><cell>SUBSET</cell><cell>Creates a n-dimensional data slice according to specified bounds</cell></row><row><cell>DERIVE</cell><cell>Adds an attribute with derived values</cell></row><row><cell cols="2">CROSS JOIN Implements a cartesian product of cells in TARs</cell></row><row><cell>DIM JOIN</cell><cell>Implements an equi-join by corresponding dimensions of two TARs</cell></row><row><cell>AGGREGATE</cell><cell>Summarizes data according to a subset of dimensions and applying a common aggregate function</cell></row><row><cell>PREDICT</cell><cell>Invokes a single ML model with input from a TAR</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<ptr target="https://www.postgresql.org/" />
+		<title level="m">Greenplum</title>
+		<imprint>
+			<date type="published" when="2022-07-20">2022. 20-July-2022. 2022. 20-July-2022</date>
+		</imprint>
+	</monogr>
+	<note>PostgreSQL</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Tfx: A tensorflow-based production-scale machine learning platform</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Baylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Breck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-T</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Fiedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Y</forename><surname>Foo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Haque</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Haykal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ispir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Koc</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 23rd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining<address><addrLine>Nova Scotia, Canada</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1387" to="1395" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Overview of scidb: Large scale array storage, processing and analysis</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Brown</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2010 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;10</title>
+		<meeting>the 2010 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;10<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="963" to="968" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Functional-style SQL UDFs with a capital &apos;F&apos;</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Duta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Grust</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20</title>
+		<meeting>the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1273" to="1287" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Selectivity estimation for range predicates using lightweight models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dutt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kandula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Narasayya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chaudhuri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1044" to="1057" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Vertica-ML: Distributed machine learning in Vertica database</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Larionov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dhillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bear</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20</title>
+		<meeting>the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="755" to="768" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">DB4ML -An inmemory database kernel with machine learning support</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jasny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Ziegler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kraska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Roehm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Binnig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20</title>
+		<meeting>the 2020 ACM SIGMOD International Conference on Management of Data, SIGMOD &apos;20<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="159" to="173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Learned cardinality estimation: An in-depth study</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-S</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2022 International Conference on Management of Data, SIGMOD &apos;22</title>
+		<meeting>the 2022 International Conference on Management of Data, SIGMOD &apos;22<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1214" to="1227" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">The case for learned index structures</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kraska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Beutel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">H</forename><surname>Chi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Polyzotis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 International Conference on Management of Data, SIGMOD &apos;18</title>
+		<meeting>the 2018 International Conference on Management of Data, SIGMOD &apos;18<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="489" to="504" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">SAVIME: An array DBMS for simulation analysis and ML models prediction</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Lustosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Da Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Valduriez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Porto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Information and Data Management</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">SAVIME:Enabling Declarative Array Processing in Memory</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lustosa</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+		<respStmt>
+			<orgName>National Laboratory of Scientific Computing</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Bao: Making learned query optimization practical</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Marcus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Negi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tatbul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kraska</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2021 International Conference on Management of Data, SIGMOD &apos;21</title>
+		<meeting>the 2021 International Conference on Management of Data, SIGMOD &apos;21<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1275" to="1288" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Djensemble: A cost-based selection and allocation of a disjoint ensemble of spatio-temporal models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pereira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Souto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chaves</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zorilla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Tsan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Rusu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ogasawara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ziviani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Porto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">33rd International Conference on Scientific and Statistical Database Management, SSDBM 2021</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="226" to="231" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Silhouettes: a graphical aid to the interpretation and validation of cluster analysis</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Rousseeuw</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of computational and applied mathematics</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page" from="53" to="65" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">In-database distributed machine learning: Demonstration using teradata SQL engine</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">S</forename><surname>Sandha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Cabrera</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Al-Kateb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Srivastava</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1854" to="1857" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Cardinality estimation with local deep learning models</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Woltmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hartmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thiele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Habich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lehner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Second International Workshop on Exploiting Artificial Intelligence Techniques for Data Management, aiDM &apos;19</title>
+		<meeting>the Second International Workshop on Exploiting Artificial Intelligence Techniques for Data Management, aiDM &apos;19<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

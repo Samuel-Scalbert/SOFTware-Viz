@@ -1,0 +1,1184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Transformer-based Argument Mining for Healthcare Applications</title>
+				<funder>
+					<orgName type="full">French government</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">3IA Côte d&apos;Azur Investments</orgName>
+				</funder>
+				<funder ref="#_YxrqR65 #_VfhV6GE">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Tobias</forename><surname>Mayer</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+						</author>
+						<title level="a" type="main">Transformer-based Argument Mining for Healthcare Applications</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">91A3FBBE427CF647D46FB658C9036722</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Argument(ation) Mining (AM) typically aims at identifying argumentative components in text and predicting the relations among them. Evidence-based decision making in the healthcare domain targets at supporting clinicians in their deliberation process to establish the best course of action for the case under evaluation. Although the reasoning stage of this kind of frameworks received considerable attention, little effort has been devoted to the mining stage. We extended an existing dataset by annotating 500 abstracts of Randomized Controlled Trials (RCT) from the MEDLINE database, leading to a dataset of 4198 argument components and 2601 argument relations on different diseases (i.e., neoplasm, glaucoma, hepatitis, diabetes, hypertension). We propose a complete argument mining pipeline for RCTs, classifying argument components as evidence and claims, and predicting the relation, i.e., attack or support, holding between those argument components. We experiment with deep bidirectional transformers in combination with different neural architectures (i.e., LSTM, GRU and CRF) and obtain a macro F1-score of .87 for component detection and .68 for relation prediction, outperforming current state-of-the-art end-to-end AM systems.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>In the healthcare domain, there is an increasing interest in the development of intelligent systems able to support and ease clinicians' everyday activities. These systems apply to clinical trials, clinical guidelines, and electronic health records, and their solutions range from the automated detection of PICO<ref type="foot" target="#foot_1">2</ref> elements <ref type="bibr" target="#b18">[19]</ref> in health records to evidence-based reasoning for decision making <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b34">35]</ref>. These applications highlight the need of clinicians to be supplied with frameworks able to extract, from the huge quantity of data available for the different diseases and treatments, the exact information they necessitate and to present this information in a structured way, easy to be (possibly semi-automatically) analyzed. Argument(ation) Mining (AM) <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b6">7]</ref> deals with finding argumentative structures in text. Standard tasks in AM consist in the detection of argument components (i.e., evidence and claims), and the prediction of the relations (i.e., attack and support) holding among them. Given its aptness to automatically detect in text those argumentative structures that are at the basis of evidence-based reasoning applications, AM represents a potential valuable contribution in the healthcare domain.</p><p>However, despite its natural employment in healthcare applications, only few approaches have applied AM methods to this kind of text <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26]</ref>, and their contribution is limited to the detection of argument components, disregarding the more complex phase of predicting the relations among them. In addition, no huge annotated dataset for AM is available for the healthcare domain. In this paper, we cover this gap, and we answer the following research question: how to define a complete AM pipeline for clinical trials? To answer this question, we propose a deep bidirectional transformer approach combined with different neural networks to address the AM tasks of component detection and relation prediction in Randomized Controlled Trials, and we evaluate this approach on a new huge corpus of 659 abstracts from the MEDLINE database.</p><p>More precisely, the contributions of this paper are as follows:</p><p>1. We build a new dataset from the MEDLINE database, consisting of 4198 argument components and 2601 argument relations on five different diseases (neoplasm, glaucoma, hepatitis, diabetes, hypertension)<ref type="foot" target="#foot_2">3</ref> ; 2. We present a complete AM pipeline for clinical trials relying on deep bidirectional transformers combined with different neural networks, i.e., Long Short-Term Memory (LSTM) networks, Gated Recurrent Unit (GRU) networks, and Conditional Random Fields (CRFs) <ref type="foot" target="#foot_3">4</ref> ; 3. Our extensive evaluation of various AM architectures (e.g., for persuasive essays) reveals that current approaches are unable to adequately address the challenges raised by medical text and we show that transformer-based approaches outperform these AM pipelines as well as standard baselines.</p><p>In the following, Section 2 compares the proposed approach with related work. We then describe the corpus we built, the methods we employed and the experimental setting. Finally, we report the obtained results and we address an error analysis before concluding.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related work</head><p>One of the latest advances in artificial argumentation <ref type="bibr" target="#b1">[2]</ref> is the socalled Argument(ation) Mining <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b6">7]</ref>. Argument mining consists of two standard tasks: (i) the identification of arguments within the text, that may be further split in the detection of argument components (e.g., claims, evidence) and the identification of their textual boundaries. Different methods have been used for this task (e.g., Support Vector Machines (SVMs), Naïve Bayes classifiers, and Neural Networks (NNs)); (ii) the prediction of the relations holding between the arguments identified in the first stage. They are used to build the argument graphs, in which the relations connecting the retrieved argumentative components correspond to the edges. Different methods have been employed to address these tasks, from standard SVMs to NNs. AM methods have been applied to heterogeneous types of textual documents, e.g., persuasive essays <ref type="bibr" target="#b37">[38]</ref>, scientific articles <ref type="bibr" target="#b38">[39]</ref>, Wikipedia articles <ref type="bibr" target="#b3">[4]</ref>, political speeches and debates <ref type="bibr" target="#b26">[27]</ref>, and peer reviews <ref type="bibr" target="#b16">[17]</ref>. However, only few approaches <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b25">26]</ref> focused on automatically detecting argumentative structures from textual documents in the medical domain, such as clinical trials, clinical guidelines, and Electronic Health Records.</p><p>Few approaches consider the whole AM pipeline in different application scenarios. In particular, Stab and Gurevych <ref type="bibr" target="#b37">[38]</ref> propose a feature-based Integer Linear Programming approach to jointly model argument component types and argumentative relations in persuasive essays. Differently from our data, essays have exactly one major claim each. The authors impose the constraint such that each claim has no more than one parent, while no constraint holds in our case. In contrast with this approach, Eger et al. <ref type="bibr" target="#b10">[11]</ref> present neural end-toend learning methods in AM, which do not require the hand-crafting of features or constraints, using the persuasive essays dataset. They employ TreeLSTM on dependency trees <ref type="bibr" target="#b27">[28]</ref> to identify both components and relations between them. They decouple component classification and relation classification, but they are jointly learned, using a dependency parser to calculate the features. In our approach, we also decouple the two classification tasks, in line with the claim of <ref type="bibr" target="#b10">[11]</ref> that decoupling component and relation classification improves the performance. Furthermore, the same work addresses component detection as a multi-class sequence tagging problem <ref type="bibr" target="#b36">[37]</ref>. Differently from their approach, which does not scale with long texts as it relies on dependency tree distance, our approach is distance independent. In addition, whilst persuasive essay components are usually linked to components close by in the text, in our dataset links may span across the whole RCT abstract.</p><p>Recent approaches for link prediction rely on pointer networks <ref type="bibr" target="#b33">[34]</ref> where a sequence-to-sequence model with attention takes as input argument components and returns the links between them. In these approaches, neither the boundary detection task nor the relation classification one are tackled. Another approach to link prediction relies on structured learning <ref type="bibr" target="#b11">[12]</ref>. The authors propose a general approach employing structured multi-objective learning with residual networks, similar to approaches on structured learning on factor graphs <ref type="bibr" target="#b28">[29]</ref>. Recently, the argument classification task was addressed with contextualized word embeddings <ref type="bibr" target="#b35">[36]</ref>. However, differently from our approach, they assume components are given, and boundary detection is not considered. In line with their work, we experimented with the BERT <ref type="bibr" target="#b9">[10]</ref> base model to address parts of the AM pipeline <ref type="bibr" target="#b25">[26]</ref>. Contrary to this preliminary work, we now employ and evaluated various contextualized language models and architectures on each task to span the full AM pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Corpus creation</head><p>To address AM on clinical data, we rely on and extend our previous dataset <ref type="bibr" target="#b24">[25]</ref>, the only available corpus of Randomized Controlled Trial abstracts annotated with the different argument components (evidence, claims and major claims). Such corpus contains the same abstracts used in the corpus of RCT abstracts of <ref type="bibr" target="#b39">[40]</ref>, that were retrieved directly from PubMed<ref type="foot" target="#foot_4">5</ref> by searching for the disease name and specifying that it has to be a RCT. The first version of the corpus with coarse labels contained 919 argument components (615 evidence and 304 claims) from 159 abstracts comprising 4 different diseases (i.e., glaucoma, hypertension, hepatitis b, diabetes).</p><p>To obtain more training data, we have extracted from PubMed 500 additional abstracts following Strategy 1 in <ref type="bibr" target="#b39">[40]</ref>. We selected neoplasm<ref type="foot" target="#foot_5">6</ref> as a topic, assuming that the abstracts would cover experiments over dysfunctions related to different parts of the human body (providing therefore a good generalization as for training instances).</p><p>Annotation was started after a training phase, where amongst others the component boundaries were topic of discussion. Gold labels were set after a reconciliation phase, during which the annotators tried to reach an agreement. While the number of annotators vary for the two annotation phases (component and relation annotation), the inter-annotator agreement (IAA) was always calculated with three annotators based on a shared subset of the data. The third annotator was participating in each training and reconciliation phase as well.</p><p>In the following, we describe the data annotation process for the argument components in the neoplasm dataset, and for the argumentative relations in the whole dataset. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Annotation of argument components</head><p>Following the guidelines for the annotation of argument components in RCT abstracts provided in <ref type="bibr" target="#b24">[25]</ref>, two annotators with background in computational linguistics <ref type="foot" target="#foot_6">7</ref> carried out the annotation of the 500 abstracts on neoplasm. IAA among the annotators has been calculated on 30 abstracts, resulting in a Fleiss' kappa of 0.72 for argumentative components and 0.68 for the more fine-grained distinction between claims and evidence (meaning substantial agreement for both tasks).</p><p>Example 1 shows a sample annotated abstract, where claims are written in bold, major claims are highlighted with a dashed underline, and evidence are written in italics. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Claims</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Annotation of argumentative relations</head><p>As a next step towards modeling the argumentative structures in the data, it is crucial to annotate the relations, i.e., directed links connecting the components. Those relations are connecting argument components to form the graph like structure of an argument. The relation is a directed link from an outgoing node (i.e., the source) to a target node. The nature of the relation can be supporting or attacking, meaning that the source component is justifying or undermining the target component. Links can occur only between certain components: evidence can be connected to either a claim or another evidence, whereas claims can only point to other claims (including major claims). The polarity of the relation (supporting or attacking) does not limit the possibility to what type of component a component can be connected. Theoretically, all types of relations are possible between the allowed combination pairs. Practically, some relations occur rather seldom compared to the frequency of others. The number of outgoing links from a component may exceed one. Furthermore, in rare cases, components cannot be connected at all. This can happen for major claims in the beginning of an abstract, whose function is to point out a related problem, unconnected to the outcome of the study itself. We carried out the annotation of argumentative relations over the whole dataset of RCT abstracts, including both the first version of the dataset <ref type="bibr" target="#b24">[25]</ref> and the newly collected abstracts on neoplasm. An expert in the medical domain (a pharmacist) validated the annotation guidelines before starting the annotation process. IAA has been calculated on 30 abstracts annotated in parallel by three annotators (the same two annotators that carried out the argument component annotation, plus one additional annotator), resulting in a Fleiss' kappa of 0.62. The annotation of the remaining abstracts was carried out by one of the above mentioned annotators.</p><formula xml:id="formula_0">Attack A component</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">The AM pipeline for clinical trials</head><p>In this section, we first describe the argument component detection and relation classification tasks, and then we report about the experimental setting to solve these tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Argument Component Detection</head><p>The first step of the AM pipeline (visualized in Figure <ref type="figure" target="#fig_0">1</ref>) is the detection of argumentative components and their boundaries. As described above, most of the AM approaches classify the type of component assuming the boundaries of argument components as given. To merge the component classification and boundary detection into one problem, we cast the component detection as sequence tagging task. Following the BIO-tagging scheme, each token should be labeled as either being at the Beginning, Inside or Outside of a component. As we have two component types in AM, this translates into a sequence tagging problem with five labels, i.e., B-Claim, I-Claim, B-Evidence, I-Evidence and Outside. To model the temporal dynamics of sequence tagging problems, usually Recurrent Neural Networks (RNN) are used. In our experiments, we evaluate different combinations of RNNs with various types of pre-trained word representations. Each embedding method is combined with uni-or bidirectional LSTMs or GRUs with and without a CRF as a last layer. Furthermore, we are the first to do token level classification on AM by fine-tuning different transformer models.</p><p>Embeddings There are two ways to create an input word representation for sequence modelling. One way is to look up the representation from pre-trained embeddings. This static method has the advantage that one does not need to train its own embeddings. However, the vocabulary is limited, and the context of the word is not considered. State-of-the-art embeddings are generated dynamically from the context of the target word based on pre-trained language models (LM) <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b32">33]</ref>. In our experiments, we consider both kinds of embeddings. Furthermore, since our data is from the medical domain containing very specific terminology which might not be covered in the vocabulary of general word embeddings, we experiment with different approaches to overcome this problem.</p><p>As for the static embeddings, we employ GloVe <ref type="bibr" target="#b30">[31]</ref> and extvec <ref type="bibr" target="#b19">[20]</ref> embeddings, which are commonly used and are based on aggregated global word-word co-occurence statistics trained on Wikipedia and the Gigaword 5 corpus. Words are considered to be the smallest unit. Contrary to that, fastText <ref type="bibr" target="#b12">[13]</ref> and byte-pair embeddings BPEmb <ref type="bibr" target="#b15">[16]</ref> use subword segments to increase the capability of their vocabulary and might because of that be a better choice for a setting with unusual and specific terminology. Moving to the dynamically generated embeddings, Embeddings from Language Models (ELMo) <ref type="bibr" target="#b32">[33]</ref> are generating the representation of a word by contextualizing it with the whole input sentence. They use a bidirectional LSTM to independently train a left-to-right and right-to-left character based LM. We use the ELMo model trained on PubMed to have a model which is trained on the type of data we are using. For the same reason, we use the on PubMed trained Contextualized String Embeddings (FlairPM) <ref type="bibr" target="#b0">[1]</ref>, another character-based language model. We compare them directly to embeddings trained on web content, Wikipedia, subtitles and news (FlairMulti). The third type of dynamic embedding are Bidirectional Encoder Representations from Transformers (BERT) <ref type="bibr" target="#b9">[10]</ref>. The language model considers subwords and the position of the word in the sentence to give the final repre-sentation of a word.</p><p>Transformers can be used as features to an RNN, but also have the possibility to fine-tune the pre-trained model on a target dataset, which we make use of. Beside the original BERT, which is pretrained on the BooksCorpus and English Wikipedia, there exists multiple other BERT models by now. BioBERT <ref type="bibr" target="#b20">[21]</ref> is pre-trained on large-scale biomedical corpora outperforming the general BERT model in representative biomedical text mining tasks. The authors initialize the weights with the original BERT model and train on PubMed abstracts and full articles. Therefore, the vocabulary is the same as for the original BERT. Contrary to that, SciBERT <ref type="bibr" target="#b4">[5]</ref> is trained from scratch with an own vocabulary. While SciBERT is trained on full papers from Semantic Scholar it also contains biomedical data, but to a smaller degree than BioBERT. We chose to use the uncased SciBERT model, meaning that we ignore the capitalization of words. As it was the case for the original BERT, the uncased model of SciBERT performs slightly better for sentence classification tasks than the cased model. Another new model, which outperforms BERT on the General Language Understanding Evaluation (GLUE) benchmark, is RoBERTa <ref type="bibr" target="#b22">[23]</ref>. There, the BERT pre-training procedure is modified by exchanging static with dynamic masking, using larger byte-pair encoding and batches size, and increasing the size of the dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Relation Classification</head><p>After the argument component detection, the next step is to determine which relations hold between the different components (Figure <ref type="figure" target="#fig_0">1</ref>). We extract valid BI tag sequences from the previous step, which are then considered to be the argumentative components of one RCT. Those sequences are phrases and do not necessarily correspond to full sentences. The list of components then serves as input for the relation classification. As explained in Section 2, the relation classification task can be tackled with different approaches. We treat it as a sequence classification problem, where the sequence consists of a pair of two components, and the task is to learn the relation between them. For this purpose, we use self-attending transformers, since these models are dominating the benchmarks for tasks which involve classifying the status between two sentences <ref type="bibr" target="#b9">[10]</ref>. Treating it as a sequence classification problem gives us two options to model it: (i) jointly modelling the relations by classifying all possible argumentative component combinations or (ii) predicting possible link candidates for each entity and then classifying the relation only for plausible entity pairs. In the literature, both methods are represented. Therefore, we decided to evaluate both ways of solving the problem. We experiment with various transformer architectures and compare them with state-of-the-art AM models, i.e., the Tree-LSTM based end-to-end system from Miwa and Bansal <ref type="bibr" target="#b27">[28]</ref> as employed by Eger et al. <ref type="bibr" target="#b10">[11]</ref>, and the multi-objective residual network of Galassi et al. <ref type="bibr" target="#b11">[12]</ref>. For option (i), we use bi-directional transformers <ref type="bibr" target="#b9">[10]</ref>, which consists of an encoder and decoder which themselves consists of multi-head self-attention layer each followed by a fully-connected dense layer. Contrary to the sequence tagging transformer, where each token of the sequence has a representation which is fed into the RNN, for sequence classification a pooled representation of the whole sequence is needed. This representation is passed into a linear layer with a softmax which decodes it into a distribution over the target classes. We treat it as a three class classification problem (Support, Attack and NoRelation). We refer to this type of transformer as SentClf. Using this architecture one component can have relations with multiple other components, since each component combination is classified independently. This is not the case in a multiple choice setting (MultiChoice), where possible links are predicted taking the other combinations into account and which we employ for (ii). Here, each component (source) is given the list of all the other components as possible target relation candidates and the goal is to determine the most probable candidate as a target component from this list. This problem definition corresponds to the grounded common sense inference problem <ref type="bibr" target="#b42">[43]</ref>. To model components which have no outgoing link to other components, we add the noLink option to the choice selection. As an encoder for phrase pairs, we evaluate various BERT models which are explained in the transformers section, just as we do for the SentClf task. With respect to the neural transformer architecture, a multiple choice setting means that each choice is represented by a vector Ci ∈ R H , where H is the hidden size of the output of an encoder. The trainable weight is a vector V ∈ R H whose dot product with the choice vector Ci is the score of the choice. The probability distribution over all possible choices is given by the softmax, where n is the number of choices:</p><formula xml:id="formula_1">Pi = e V •C i n j=1 e V •C j<label>(1)</label></formula><p>The component combination with the highest score of having a link between them is then passed into a linear layer to determine which kind of relation is holding between the two components, i.e., Attack or Support. The MultiChoice model is trained jointly with two losses, i.e., one for the multiple choice task and one for for the relation classification task. Furthermore, we experimented with linear options for link prediction, such as matrix or tensor factorization. Those methods are widely used on graph data, e.g., knowledge graphs, to discover new links between existing nodes <ref type="bibr" target="#b40">[41]</ref>. The matrix or tensor representation of the graph data is decomposed and a model specific scoring function, which assigns a score to each triple<ref type="foot" target="#foot_7">8</ref> , is minimized, like a loss function in neural architectures. We experiment by combining those graph-based embeddings and enriching the nodes with linguistic features/embeddings to learn hybrid graph embeddings for relations and discover new links between arguments. The tested linear models are: TuckER <ref type="bibr" target="#b2">[3]</ref>, TransE <ref type="bibr" target="#b5">[6]</ref> and ComplEX <ref type="bibr" target="#b40">[41]</ref>. Unfortunately, those models did not learn a meaningful relation representation. We assume this might be due to our relatively small graph data. In the literature, the smallest dataset these models have been experimented on has around 93k triples <ref type="bibr" target="#b8">[9]</ref>, whereas our dataset has less than 20k.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Experimental Setup</head><p>For sequence tagging, each of the above mentioned embeddings were combined with either (i) a GRU, (ii) a GRU with a CRF, (iii) a LSTM, or (iv) a LSTM with a CRF. Additionally, the best performing static and dynamic embeddings were concatenated and evaluated as if they were one embedding. The Flair <ref type="bibr" target="#b0">[1]</ref> PyTorch NLP framework version 0.4.1 was used for implementing the sequence tagging task. For BERT, we use the PyTorch implementation of huggingface<ref type="foot" target="#foot_8">9</ref> version 2.3. Hyper parameter tuning was done with hyperopt 10 version 0.1.2. The learning rate was selected from {0.05, 0.1, 0.15, 0.2}, RNN layers {1, 2}, hidden size {32, 64, 128, 256}, dropout {0.1, 0.2, 0.5}, and batch size from {8, 16, 32}. The RNNs were trained over 100 epochs with early stopping and SGD optimizer. For fine-tuning the BERT model, we used the uncased base model with 12 transformer blocks, a hidden size of 768, 12 attention heads, a learning rate of 2e-5 with Adam optimizer for 3 epochs. The same configuration was used for fine-tuning Sci-and BioBERT. For SciBERT, we used the uncased model with the SciBERT vocabulary. For BioBERT, we used version 1.1. For RoBERTa, we increased the number of epochs for fine-tuning to 10, as it was done in the original paper. The best learning rate was 3e-5 on our task. The number of choices for the multiple choice model was 6. Batch size was 8 with a maximum sequence length of 256 subword tokens per input example. We split our neoplasm corpus such that 350 abstracts are assigned to the train, 50 to the development, and 100 to the test set. Additionally, we use the first version of the dataset <ref type="bibr" target="#b24">[25]</ref> to create two extra test sets, both comprising 100 abstracts. The first one includes only glaucoma, whereas the second is a mixed set with 20 abstracts of each disease in the dataset (neoplasm, glaucoma, hypertension, hepatitis and diabetes), respectively.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Evaluation</head><p>This section presents and discusses the empirical results of our AM pipeline for RCTs.</p><p>Sequence Tagging We show the results for the best performing RNN models and the best performing embedding combinations in Table <ref type="table" target="#tab_4">2</ref>. Results are given on all three test sets in micro and macro multi-class F1-score and for claim and evidence, respectively. Comparing the static word embeddings, fastText with a GRU and a CRF is the best performing combination, where extvec is only slightly worse and is usually better for evidence classification. For the dynamic embeddings coming from LMs, the ones trained on the medical domain corpus, i.e., FlairPM and ELMo, show similar performances with a macro F1-score of .68 on the neoplasm test set. They have the edge over the non-specialized LMs like BERT with .66 or FlairMulti with .63 macro F1-score. Concatenating static and dynamic embeddings does not bring a notable difference, when taking all test sets into account. Generally, evidence scores are higher than claim scores, leading to the conclusion that claims are more diverse than evidence. The explanation is that, since natural language reports of measurements in clinical trials vary mostly only in the measured parameter and its values, claims can be made about almost everything. Another observation is that the performance of the models trained on neoplasm data do not significantly decrease for test sets on other disease treatments. This fact supports our choice of a more general high level disease type like neoplasm for training the models. The performance for many model combinations even increases on the glaucoma test set. The glaucoma test set comprises only a handful of different glaucoma treatments and is therefore less diversified than the neoplasm or mixed test sets. Looking at the main difference in the results, finetuning BERT outperforms all other model combinations, where the version with a GRU and CRF is the best performing model. Finetuning without any kind of sequence modelling on top of it results in worse performance. Especially with respect to the validity of BIO sequences, where disproportionately many invalid sequences are generated. This is not useful when extracting the components based on BIO-scheme. Comparing the specialized with the general models, Bio-and SciBERT show a better performance than the general BERT model, where the cased BioBERT tends to be more reliable for the out of domain test data. This is in line with the findings that the cased transformer model works better for tasks like Named Entity Recognition (NER), which is also a sequence tagging task. The difference on our data is marginal: while for NER the casing of a word is relevant, in our task it does not seem to be a sensitive information.</p><formula xml:id="formula_2">Neoplasm Glaucoma Mixed Embedding Model f1 F1 C-F1 E-F1 f1 F1 C-F1 E-F1 f1 F1 C-F1 E-F1 GloVe GRU+CRF .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Relation Classification</head><p>The results for relation classification are shown in Table <ref type="table" target="#tab_5">3</ref>. The numbers are not calculated on gold standard, but show the actual relation classification performance when the components come from the sequence tagging module of the pipeline. We used the best performing sequence tagger, i.e. the finetuned SciBERT with a GRU and CRF. We follow previous work on AM <ref type="bibr" target="#b31">[32]</ref> and consider the overlap percentage of the components to determine the base if a predicted component matches the annotated component in the gold standard. Since in our data a lot of the components span over 50% or more of a sentence and the exact boundary detection is not always clear, even for human annotators, we consider a predicted and a gold standard component as matched, when at least 75% of the words overlap. The Tree-LSTM based end-to-end system performed the worst with a F1-score of .37. This can be explained by the positional encoding in the persuasive essay dataset being more relevant than in ours. There, components are likely to link to a neighboring component, whereas in our dataset the position of a component only partially plays a role, and therefore the distance in the dependency tree is not a meaningful feature. Furthermore, the authors specify that their system does not scale with increasing text length <ref type="bibr" target="#b10">[11]</ref>. Especially detailed reports of measurements can make RCT abstracts quite long, such that this system becomes not applicable for this type of data.</p><p>The residual network performed better with a F1-score of .42. The main problem here is that it learns a multi-objective for link prediction, relation classification and type classification for source and target component, where the latter classification step is already covered by the sequence tagger and therefore unnecessary at this step.</p><p>Similar to sequence tagging, one can see a notable increase in performance when applying a BERT model. Comparing the specialized and general BERT model, the Bio-and SciBERT increase the performance by up to .06 F1-score. Interestingly, RoBERTa delivers com-parable results even though it is a model trained on general data. We speculate that parts of the web crawl data which was used to train RoBERTa contain PubMed articles, since they are freely available on the web. Independently of that, RoBERTa shows more reliable results when looking at the performance on the out of domain test sets. While SciBERT as the best performing system on the in-domain test set drops .06 points on the glaucoma test set, RoBERTa stays almost the same and only drops from .67 to .66 F1-score. Looking at the difference between the MultiChoice and SentClf architectures, the SentClf delivers slightly better results, but the drawback is that this technique tends to link components to multiple components. Since most of our components have only one outgoing edge, it creates a lot of false positives, i.e., links which do not exist.</p><p>While our dataset consists of only study abstracts for practical reasons, the pipeline can be applied on full text articles as well. Alas, we cannot provide a quantitative analysis on full articles due to missing annotated data. In preliminary experiments on full articles, we have observed a notable increase of false positives in the relation classification, which is the expected consequence of an increased number of components. Furthermore, with the number of components rising in the double-digit range, the multiple-choice architecture loses its predictive power. We leave further investigations to determine the exact limit of this architecture applied on full text articles to future work.</p><p>Error Analysis Common mistakes for the sequence tagger are the invalid BIO sequences. Especially when there are multiple components in one sentence, the tagger tends to mislabel Btokens as Itokens. This is due to the natural imbalance between Band Itokens. Training the sequence tagging without the BIO scheme using only claim and evidence as labels, poses problems when multiple components are following each other in the text. They would be extracted as one single component instead. This is a common case in concluding sentences at the end of a study, which strikingly often comprise multiple claims. Further experiments could go in the direction of weighted loss functions like focal loss to overcome this problem. Notable mistakes arise for determining the exact component boundaries. Especially in the case of connectives, e.g., however, which have sometimes nothing but a conjunctive function, and in other cases signal a constraint of a previous statement. Another mistake is the misclassification of the description of the initial state of the participant groups as an observation of the study and therefore an evidence, e.g., there were no significant differences in pregnancyinduced hypertension across supplement groups. In the study abstract these descriptions occur usually relatively close to the actual result description, which means that adding information of the position in the text will not avoid this error. While only some abstracts are structured, the full study report does usually have separated sections. This structure can be exploited when analysing full reports, and in the simplest case one would analyse only the sections of interest.</p><p>Concerning link prediction, general components like the difference was not statistically significant are problematic, since it could be linked to most of the components/outcomes of the trial. Here, a positional distance encoding could be beneficial, since those components are usually connected to the previous component. In general, most of the errors in the MultiChoice architecture were made in the multiple choice part by predicting a wrong link and not at the stage of classifying the relation type. Interestingly, comparing the two domain adapted models, Bio-and SciBERT, there were no regular errors, which allows any conclusion about the advantages or disadvantages of one model. Looking at the confusion matrices, all tested SentClf models show a higher error rate for the NoRelation class. Both transformer approaches have in common the problem of dealing with negations and limitations or associating the polarity of a measurement and therefore confusing support and attack. Example 4 shows two claims with a limiting/attacking relation, which was wrongly classified as supporting. For Example 5, not improving progression-free survival (PFS) corresponds to a reduced PFS time, while for other factors reducing the value means it is beneficial and therefore improving some study parameter. Here, the inclusion of external expert knowledge is crucial to learn these fine nuances. The polarity of a measurement cannot be learnt from textual features alone. Especially in the medical domain, there are complex interrelationships which are not often explicitly mentioned and therefore are impossible to capture with a model trained solely on character-based input. Phrases like increased the blood pressure by X or showed no symptom of Y can connote different messages depending on the context. Future work needs to consider this challenge of incorporating external expert knowledge. While we do not think this is a problem limited to a special domain, we consider it greatly important for understanding and representing medical text.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>To support clinicians in decision making or in (semi)-automatically filling evidence tables for systematic reviews in evidence-based medicine, we propose a complete argument mining pipeline for the healthcare domain. To this aim, we built a novel corpus of healthcare texts (i.e., RCT abstracts) from the MEDLINE database, which are annotated with argumentative components and relations. Indeed, we show that state-of-the-art argument mining systems are unable to satisfactorily tackle the two tasks of argument component detection and relation prediction on this kind of text, given its peculiar features (e.g., component relations spanning across the whole RCT abstract). We expect that our work will have a large impact for clinicians as it is a crucial step towards AI supported clinical deliberation at a large scale.</p><p>We employ a sequence tagging approach combining a domain specific BERT model with a GRU and CRF to identify and classify argument components. We cast the relation classification task as a multiple choice problem and compare it with recent transformers for sequence classification. In our extensive evaluation, addressed on a newly AM annotated dataset of RCTs, we investigate the use of different neural transformer architectures and pre-trained models in this pipeline, showing an improvement of the results in comparison with standard baselines and state-of-the-art AM systems.</p><p>For future work, we will annotate relations across different RCTs to allow reasoning on the resulting argument graphs and clustering of arguments about the same disease. Furthermore, we will investigate different ways to efficiently deal with medical abbreviations and incorporate a distance parameter to overcome the problem that general components talking about limitations are linked to unrelated components far away in the text of the RCT abstract.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Illustration of the full argument mining pipeline on clinical trials.</figDesc><graphic coords="5,42.11,71.12,508.08,164.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc></figDesc><table><row><cell>reports on the statistics</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 .</head><label>1</label><figDesc>Statistics of the extended dataset. Showing the numbers of evidence, claims, major claims, supporting and attacking relations for each disease-based subset, respectively.</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>Evidence An evidence in RCT abstracts is an observation or measurement in the study, which supports or attacks another argument component, usually a claim. Those observations comprise side effects and the measured outcome of the intervention and control arm. They are observed facts, and therefore credible without further justifications, as this is the ground truth the argumentation is based on. Example 1 Extracellular adenosine 5'-triphosphate (ATP) is involved in the regulation of a variety of biologic processes, including neurotransmission, muscle contraction, and liver glucose metabolism, via purinergic receptors. [In nonrandomized studies involving patients with different tumor types including non-small-cell lung cancer (NSCLC), ATP infusion appeared to inhibit loss of weight and deterioration of quality of life (QOL) and performance status]. We conducted a randomized clinical trial to evaluate the effects of ATP in patients with advanced NSCLC (stage IIIB or IV). [...] Fifty-eight patients were randomly as-</figDesc><table><row><cell>also occur at the beginning of the text as an introductory claim, as in</cell></row><row><cell>Example 1. Given the negligible occurrences of major claims in our</cell></row><row><cell>dataset, we merge them with the claims for the classification task.</cell></row><row><cell>In the context of RCT abstracts, a claim is a concluding</cell></row><row><cell>statement made by the author about the outcome of the study. It gen-</cell></row><row><cell>erally describes the relation of a new treatment (intervention arm)</cell></row><row><cell>with respect to existing treatments (control arm) and is derived from</cell></row><row><cell>the described results. Major claims are more a general/concluding</cell></row><row><cell>claim, which is supported by more specific claims. The concluding</cell></row><row><cell>statements do not have to occur at the end of the abstract, and may</cell></row></table><note><p>signed to receive either 10 intravenous 30-hour ATP infusions, with the infusions given at 2-to 4-week intervals, or no ATP. Outcome parameters were assessed every 4 weeks until 28 weeks. Between-group differences were tested for statistical significance by use of repeated-measures analysis, and reported P values are two-sided. Twenty-eight patients were allocated to receive ATP treatment and 30 received no ATP. [Mean weight changes per 4-week period were -1.0 kg (95% confidence interval [CI]= 1.5 to -0.5) in the control group and 0.2 kg (95% CI =-0.2 to +0.6) in the ATP group (P=.002)]1. [Serum albumin concentration declined by -1.2 g/L (95% CI=-2.0 to -0.4) per 4 weeks in the control group but remained stable (0.0g/L; 95% CI=-0.3 to +0.3) in the ATP group (P =.006)]2. [Elbow flexor muscle strength declined by -5.5% (95% CI=-9.6% to -1.4%) per 4 weeks in the control group but remained stable (0.0%; 95% CI=-1.4% to +1.4%) in the ATP group (P=.01)]3. [A similar pattern was observed for knee extensor muscles (P =.02)]4. [The effects of ATP on body weight, muscle strength, and albumin concentration were especially marked in cachectic patients (P=.0002, P=.0001, and P=. 0001, respectively, for ATP versus no ATP)]5. [...] This randomized trial demonstrates that [ATP has beneficial effects on weight, muscle strength, and QOL in patients with advanced NSCLC] 1 .</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head></head><label></label><figDesc>is attacking another one, if it is i) contradicting the proposition of the target component, or ii) undercutting its implicit assumption of significance, i.e., stating that the observed effects are not statistically significant. The latter case is shown in Example 2. Here, evidence 1 is attacked by evidence 2, challenging the generality of the prior observation.The partial-attack is used when the source component is not in full contradiction, but weakening the target component by constraining its proposition. Those can be implicit statements about the significance of the study outcome, which usually occur between two claims (see Example 3). Attacks and partial-attacks are identified with a unique class for the relation classification task.</figDesc><table><row><cell>Example 2 [True acupuncture was associated with 0.8 fewer hot</cell></row><row><cell>flashes per day than sham at 6 weeks,]1 [but the difference did</cell></row><row><cell>not reach statistical significance (95% CI, -0.7 to 2.4; P = .3).]2</cell></row></table><note><p>Example 3 [SLN biopsy is an effective and well-tolerated procedure.]1 [However, its safety should be confirmed by the results of larger randomized trials and meta-analyses.]2 Support All statements or observations justifying the proposition of the target component are considered as supporting the target (even if they justify only parts of the target component). In Example 1, all the evidence support claim 1.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 2 .</head><label>2</label><figDesc>Results of the multi-class sequence tagging task are given in micro F1 (f 1 ) and macro F1 (F1). The binary F1 for claims are reported as C-F1 and for evidence as E-F1. Best scores in each column are marked in bold; significance was tested with a two-sided Wilcoxon signed rank test.</figDesc><table><row><cell></cell><cell></cell><cell>61 .58 .50</cell><cell>.66</cell><cell>.60 .52 .36</cell><cell>.68</cell><cell>.55 .50 .36</cell><cell>.64</cell></row><row><cell>extvec</cell><cell>GRU+CRF</cell><cell>.67 .65 .58</cell><cell>.72</cell><cell>.68 .64 .57</cell><cell>.72</cell><cell>.67 .64 .57</cell><cell>.71</cell></row><row><cell>fastText(fT)</cell><cell>GRU+CRF</cell><cell>.68 .66 .61</cell><cell>.71</cell><cell>.68 .65 .60</cell><cell>.71</cell><cell>.65 .60 .52</cell><cell>.69</cell></row><row><cell>BPEmb</cell><cell>LSTM+CRF</cell><cell>.64 .60 .59</cell><cell>.76</cell><cell>.64 .60 .52</cell><cell>.69</cell><cell>.61 .57 .48</cell><cell>.66</cell></row><row><cell>ELMo</cell><cell>LSTM+CRF</cell><cell>.70 .68 .59</cell><cell>.76</cell><cell>.74 .72 .67</cell><cell>.77</cell><cell>.72 .70 .67</cell><cell>.74</cell></row><row><cell>BERT</cell><cell>LSTM+CRF</cell><cell>.69 .66 .58</cell><cell>.75</cell><cell>.70 .68 .63</cell><cell>.73</cell><cell>.68 .66 .61</cell><cell>.71</cell></row><row><cell>FlairMulti</cell><cell>LSTM+CRF</cell><cell>.66 .63 .53</cell><cell>.72</cell><cell>.58 .55 .50</cell><cell>.60</cell><cell>.52 .50 .44</cell><cell>.56</cell></row><row><cell>FlairPM</cell><cell>LSTM+CRF</cell><cell>.70 .68 .60</cell><cell>.75</cell><cell>.74 .72 .69</cell><cell>.75</cell><cell>.70 .68 .64</cell><cell>.72</cell></row><row><cell>FlairPM + extvec</cell><cell>GRU+CRF</cell><cell>.68 .65 .54</cell><cell>.74</cell><cell>.74 .72 .67</cell><cell>.77</cell><cell>.68 .66 .60</cell><cell>.72</cell></row><row><cell>FlairPM + fT</cell><cell>GRU+CRF</cell><cell>.68 .64 .53</cell><cell>.75</cell><cell>.71 .68 .62</cell><cell>.74</cell><cell>.67 .63 .56</cell><cell>.71</cell></row><row><cell>FlairPM + BERT</cell><cell>LSTM+CRF</cell><cell>.70 .69 .61</cell><cell>.76</cell><cell>.71 .70 .67</cell><cell>.73</cell><cell>.68 .67 .62</cell><cell>.72</cell></row><row><cell>BERT + fT</cell><cell>LSTM+CRF</cell><cell>.68 .65 .55</cell><cell>.74</cell><cell>.68 .66 .60</cell><cell>.71</cell><cell>.67 .65 .58</cell><cell>.71</cell></row><row><cell>ELMo + fT</cell><cell>LSTM+CRF</cell><cell>.71 .68 .59</cell><cell>.77</cell><cell>.74 .72 .69</cell><cell>.77</cell><cell>.72 .70 .65</cell><cell>.75</cell></row><row><cell>fine-tuning BERT</cell><cell>dense layer</cell><cell>.82 .60 .69</cell><cell>.83</cell><cell>.77 .55 .63</cell><cell>.80</cell><cell>.80 .57 .65</cell><cell>.83</cell></row><row><cell>fine-tuning BERT</cell><cell>GRU+CRF</cell><cell>.89 .85 .78</cell><cell>.90</cell><cell>.89 .86 .76</cell><cell>.89</cell><cell>.90 .88 .81</cell><cell>.91</cell></row><row><cell cols="2">fine-tuning BioBERT GRU+CRF</cell><cell>.90 .84 .87</cell><cell>.90</cell><cell>.92 .91 .93</cell><cell>.91</cell><cell>.92 .91 .91</cell><cell>.92</cell></row><row><cell>fine-tuning SciBERT</cell><cell>GRU+CRF</cell><cell>.90 .87 .88</cell><cell>.92</cell><cell>.91 .89 .93</cell><cell>.91</cell><cell>.91 .88 .90</cell><cell>.93</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 3 .</head><label>3</label><figDesc>Results of the relation classification task, given in macro F1-score.</figDesc><table><row><cell>Method</cell><cell>Neoplasm</cell><cell cols="2">Glaucoma Mixed</cell></row><row><cell>Tree-LSTM</cell><cell>.37</cell><cell>.44</cell><cell>.39</cell></row><row><cell>Residual network</cell><cell>.42</cell><cell>.38</cell><cell>.43</cell></row><row><cell>BERT MultiChoice</cell><cell>.58</cell><cell>.56</cell><cell>.55</cell></row><row><cell>BioBERT MultiChoice</cell><cell>.61</cell><cell>.58</cell><cell>.57</cell></row><row><cell>SciBERT MultiChoice</cell><cell>.63</cell><cell>.59</cell><cell>.60</cell></row><row><cell>BERT SentClf</cell><cell>.62</cell><cell>.53</cell><cell>.66</cell></row><row><cell>BioBERT SentClf</cell><cell>.64</cell><cell>.58</cell><cell>.61</cell></row><row><cell>SciBERT SentClf</cell><cell>.68</cell><cell>.62</cell><cell>.69</cell></row><row><cell>RoBERTa</cell><cell>.67</cell><cell>.66</cell><cell>.67</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head></head><label></label><figDesc>Example 4 [more research about the exact components of a VR intervention and choice of outcomes to measure effectiveness is required]source [Conducting a pragmatic trial of effectiveness of a VR intervention among cancer survivors is both feasible and acceptable]target Example 5 [this did not translate into improved progressionfree survival (PFS) or overall survival]source [The addition of gemcitabine to carboplatin plus paclitaxel increased treatment burden, reduced PFS time, and did not improve OS in patients with advanced epithelial ovarian cancer]target</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Université Côte d'Azur, CNRS, Inria, I3S, France, email: {tmayer, vil-lata}@i3s.unice.fr, elena.cabrio@unice.fr</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>2 Patient Problem or Population, Intervention, Comparison or Control, and Outcome.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>The newly created dataset, called AbstRCT, and the annotation guidelines are available here: https://gitlab.com/tomaye/abstrct/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>The source code is available here: https://gitlab.com/tomaye/ ecai2020-transformer_based_am</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>PubMed (https://www.ncbi.nlm.nih.gov/pubmed/) is a free search engine accessing primarily the MEDLINE database on life sciences and biomedical topics.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>While neoplasms can either be benign or malignant, the vast majority of articles is about malignant neoplasm (cancer). We stick with neoplasm as a term, since this was the MeSH term used for the PubMed query.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_6"><p>In<ref type="bibr" target="#b14">[15]</ref>, researchers with different backgrounds (biology, computer science, argumentation pedagogy, and BioNLP) have annotated medical data for an AM task, showing to perform equally well despite their backgrounds.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_7"><p>A triple consists of a subject (source node), a predicate (labeled edge between nodes) and an object (target node).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_8"><p>https://github.com/huggingface/transformers</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENTS</head><p>This work is partly funded by the <rs type="funder">French government labelled</rs> <rs type="programName">PIA program</rs> under its <rs type="projectName">IDEX UCA JEDI</rs> project (<rs type="grantNumber">ANR-15-IDEX-0001</rs>). This work has been supported by the <rs type="funder">French government</rs>, through the <rs type="funder">3IA Côte d'Azur Investments</rs> in the Future project managed by the <rs type="funder">National Research Agency (ANR)</rs> with the reference number <rs type="grantNumber">ANR-19-P3IA-0002</rs></p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_YxrqR65">
+					<idno type="grant-number">ANR-15-IDEX-0001</idno>
+					<orgName type="project" subtype="full">IDEX UCA JEDI</orgName>
+					<orgName type="program" subtype="full">PIA program</orgName>
+				</org>
+				<org type="funding" xml:id="_VfhV6GE">
+					<idno type="grant-number">ANR-19-P3IA-0002</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Contextual string embeddings for sequence labeling</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Akbik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duncan</forename><surname>Blythe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Vollgraf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of COLING 2018</title>
+		<meeting>of COLING 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1638" to="1649" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Towards artificial argumentation</title>
+		<author>
+			<persName><forename type="first">Katie</forename><surname>Atkinson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Baroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimiliano</forename><surname>Giacomin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Prakken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillermo</forename><forename type="middle">Ricardo</forename><surname>Simari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthias</forename><surname>Thimm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Magazine</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="25" to="36" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">TuckER: Tensor factorization for knowledge graph completion</title>
+		<author>
+			<persName><forename type="first">Ivana</forename><surname>Balazevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carl</forename><surname>Allen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Hospedales</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP-IJCNLP 2019</title>
+		<meeting>of EMNLP-IJCNLP 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="5185" to="5194" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Stance classification of context-dependent claims</title>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Bar-Haim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Indrajit</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Dinuzzo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amrita</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Slonim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EACL 2017</title>
+		<meeting>of EACL 2017</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="251" to="261" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">SciBERT: A pretrained language model for scientific text</title>
+		<author>
+			<persName><forename type="first">Iz</forename><surname>Beltagy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyle</forename><surname>Lo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arman</forename><surname>Cohan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP-IJCNLP 2019</title>
+		<meeting>of EMNLP-IJCNLP 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3615" to="3620" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Translating embeddings for modeling multirelational data</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>García-Durán</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oksana</forename><surname>Yakhnenko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NIPS 2013</title>
+		<meeting>of NIPS 2013</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="2787" to="2795" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Five years of argument mining: a data-driven analysis</title>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of IJCAI 2018</title>
+		<meeting>of IJCAI 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5427" to="5433" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Efficient argumentation for medical decisionmaking</title>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Craven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesca</forename><surname>Toni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Cadar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Hadad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of KR 2012</title>
+		<meeting>of KR 2012</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="598" to="602" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Convolutional 2d knowledge graph embeddings</title>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Dettmers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minervini</forename><surname>Pasquale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stenetorp</forename><surname>Pontus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI 2018</title>
+		<meeting>of AAAI 2018</meeting>
+		<imprint>
+			<date type="published" when="2018-02">February 2018</date>
+			<biblScope unit="page" from="1811" to="1818" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NAACL-HLT 2019</title>
+		<meeting>of NAACL-HLT 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4171" to="4186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Neural endto-end learning for computational argumentation mining</title>
+		<author>
+			<persName><forename type="first">Steffen</forename><surname>Eger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Daxenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ACL 2017</title>
+		<meeting>of ACL 2017</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="11" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Argumentative link prediction using residual networks and multi-objective learning</title>
+		<author>
+			<persName><forename type="first">Andrea</forename><surname>Galassi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Lippi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Torroni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ArgMining 2018 workshop</title>
+		<meeting>of ArgMining 2018 workshop</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Learning word vectors for 157 languages</title>
+		<author>
+			<persName><forename type="first">Edouard</forename><surname>Grave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Bojanowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prakhar</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armand</forename><surname>Joulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of LREC 2018</title>
+		<meeting>of LREC 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="3483" to="3487" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Argumentation for scientific claims in a biomedical research article</title>
+		<author>
+			<persName><forename type="first">Nancy</forename><surname>Green</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ArgNLP 2014 workshop</title>
+		<meeting>of ArgNLP 2014 workshop</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Annotating evidence-based argumentation in biomedical text</title>
+		<author>
+			<persName><forename type="first">Nancy</forename><surname>Green</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE BIBM</title>
+		<imprint>
+			<biblScope unit="volume">2015</biblScope>
+			<biblScope unit="page" from="922" to="929" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Bpemb: Tokenization-free pre-trained subword embeddings in 275 languages</title>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Heinzerling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Strube</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of LREC 2018</title>
+		<meeting>of LREC 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2989" to="2993" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Argument mining for understanding peer reviews</title>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mitko</forename><surname>Nikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikhil</forename><surname>Badugu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NAACL-HLT 2019</title>
+		<meeting>of NAACL-HLT 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2131" to="2137" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Aggregating evidence about the positive and negative effects of treatments</title>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence in Medicine</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="173" to="190" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">PICO element detection in medical text via long short-term memory neural networks</title>
+		<author>
+			<persName><forename type="first">Di</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Szolovits</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of BioNLP 2018 workshop</title>
+		<meeting>of BioNLP 2018 workshop</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="67" to="75" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Dependency based embeddings for sentence classification tasks</title>
+		<author>
+			<persName><forename type="first">Alexandros</forename><surname>Komninos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suresh</forename><surname>Manandhar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NAACL-HLT 2016</title>
+		<meeting>of NAACL-HLT 2016</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1490" to="1500" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">BioBERT: a pre-trained biomedical language representation model for biomedical text mining</title>
+		<author>
+			<persName><forename type="first">Jinhyuk</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wonjin</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sungdong</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donghyeon</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sunkyu</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chan</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">So</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaewoo</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Bioinformatics</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Argumentation mining: State of the art and emerging trends</title>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Lippi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Torroni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Internet Techn</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">10</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Roberta: A robustly optimized BERT pretraining approach</title>
+		<author>
+			<persName><forename type="first">Yinhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<idno>CoRR, abs/1907.11692</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Argumentation theory for decision support in health-care: A comparison with machine learning</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Longo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucy</forename><surname>Hederman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of BHI 2013</title>
+		<meeting>of BHI 2013</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="168" to="180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Argument mining on clinical trials</title>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Lippi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Torroni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of COMMA 2018</title>
+		<meeting>of COMMA 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="137" to="148" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">ACTA a tool for argumentative clinical trial analysis</title>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of IJCAI 2019</title>
+		<meeting>of IJCAI 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="6551" to="6553" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Never retreat, never retract: Argumentation analysis for political speeches</title>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Menini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Tonelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI 2018</title>
+		<meeting>of AAAI 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4889" to="4896" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">End-to-end relation extraction using lstms on sequences and tree structures</title>
+		<author>
+			<persName><forename type="first">Makoto</forename><surname>Miwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Bansal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ACL 2016</title>
+		<meeting>of ACL 2016</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1105" to="1116" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Argument mining with structured SVMs and RNNs</title>
+		<author>
+			<persName><forename type="first">Joonsuk</forename><surname>Vlad Niculae</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claire</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cardie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ACL 2017</title>
+		<meeting>of ACL 2017</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="985" to="995" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">From argument diagrams to argumentation mining in texts: A survey</title>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Peldszus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manfred</forename><surname>Stede</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Cogn. Inform. Nat. Intell</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="31" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Glove: Global vectors for word representation</title>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Pennington</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP 2014</title>
+		<meeting>of EMNLP 2014</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1532" to="1543" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">End-to-end argumentation mining in student essays</title>
+		<author>
+			<persName><forename type="first">Isaac</forename><surname>Persing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NAACL-HLT 2016</title>
+		<meeting>of NAACL-HLT 2016</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1384" to="1394" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Deep contextualized word representations</title>
+		<author>
+			<persName><forename type="first">Matthew</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohit</forename><surname>Iyyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matt</forename><surname>Gardner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of NAACL-HLT 2018</title>
+		<meeting>of NAACL-HLT 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2227" to="2237" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Here&apos;s my point: Joint pointer architecture for argument mining</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Potash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexey</forename><surname>Romanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Rumshisky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP 2017</title>
+		<meeting>of EMNLP 2017</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1364" to="1373" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Analysis of clinical discussions based on argumentation schemes</title>
+		<author>
+			<persName><forename type="first">Malik</forename><surname>Al Qassas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Fogli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Massimiliano</forename><surname>Giacomin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giovanni</forename><surname>Guida</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Procedia Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="page" from="282" to="289" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Classification and clustering of arguments with contextualized word embeddings</title>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Schiller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tilman</forename><surname>Beck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Daxenberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Stab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ACL 2019</title>
+		<meeting>of ACL 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="567" to="578" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Deep multi-task learning with low level tasks supervised at lower layers</title>
+		<author>
+			<persName><forename type="first">Anders</forename><surname>Søgaard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoav</forename><surname>Goldberg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ACL 2016</title>
+		<meeting>of ACL 2016</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="231" to="235" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Parsing argumentation structures in persuasive essays</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Stab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Comput. Linguist</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="619" to="659" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Towards domain-independent argumentative zoning: Evidence from chemistry and computational linguistics</title>
+		<author>
+			<persName><forename type="first">Simone</forename><surname>Teufel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Advaith</forename><surname>Siddharthan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Batchelor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP 2009</title>
+		<meeting>of EMNLP 2009</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1493" to="1502" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Extraction of evidence tables from abstracts of randomized clinical trials using a maximum entropy classifier and global constraints</title>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Trenta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anthony</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<idno>CoRR, abs/1509.05209</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Complex embeddings for simple link prediction</title>
+		<author>
+			<persName><forename type="first">Théo</forename><surname>Trouillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Welbl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Riedel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Éric</forename><surname>Gaussier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Bouchard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ICML 2016</title>
+		<meeting>of ICML 2016</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="2071" to="2080" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Argument based machine learning in a medical domain</title>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Zabkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Mozina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerneja</forename><surname>Videcnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Bratko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of COMMA 2006</title>
+		<meeting>of COMMA 2006</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="59" to="70" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">SWAG: A large-scale adversarial dataset for grounded commonsense inference</title>
+		<author>
+			<persName><forename type="first">Rowan</forename><surname>Zellers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yonatan</forename><surname>Bisk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roy</forename><surname>Schwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of EMNLP 2018</title>
+		<meeting>of EMNLP 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="93" to="104" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

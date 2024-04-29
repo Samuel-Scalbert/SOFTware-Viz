@@ -1,0 +1,1466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Autonomous search in a social and ubiquitous Web</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Andrei</forename><surname>Ciortea</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Simon</forename><surname>Mayer</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Simon</forename><surname>Bienz</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fabien</forename><surname>Gandon</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Olivier</forename><surname>Corby</surname></persName>
+						</author>
+						<title level="a" type="main">Autonomous search in a social and ubiquitous Web</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">11BCB912EFDA8E339B265217A0C32E71</idno>
+					<idno type="DOI">10.1007/s00779-020-01415-1</idno>
+					<note type="submission">Received: 31 October 2019 / Accepted: 8 May 2020</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Autonomous agents</term>
+					<term>Hypermedia search engines</term>
+					<term>Web of Things</term>
+					<term>Semantic Web</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent W3C recommendations for the Web of Things (WoT) and the Social Web are turning hypermedia into a homogeneous information fabric that interconnects heterogeneous resources: devices, people, information resources, abstract concepts, etc. The integration of multi-agent systems with such hypermedia environments now provides a means to distribute autonomous behavior in worldwide pervasive systems. A central problem then is to enable autonomous agents to discover heterogeneous resources in worldwide and dynamic hypermedia environments. This is a problem in particular in WoT environments that rely on open standards and evolve rapidly-thus requiring agents to adapt their behavior at run time in pursuit of their design objectives. To this end, we developed a hypermedia search engine for the WoT that allows autonomous agents to perform approximate search queries in order to retrieve relevant resources in their environment in (weak) real time. The search engine crawls dynamic WoT environments to discover and index device metadata described with the W3C WoT Thing Description, and exposes a SPARQL endpoint that agents can use for approximate search. To demonstrate the feasibility of our approach, we implemented a prototype application for the maintenance of industrial robots in worldwide manufacturing systems. The prototype demonstrates that our semantic hypermedia search engine enhances the flexibility and agility of autonomous agents in a social and ubiquitous Web.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The Web of Things (WoT) fosters innovation and rapid prototyping in the Internet of Things (IoT): developers can use standard Web technologies to create and execute mashups of devices and digital services-so-called physical mashups <ref type="bibr" target="#b19">[20]</ref>. WoT systems are often required to evolve rapidly as the availability of devices-and their servicesfluctuates. This is particularly true for constrained devices that are often duty-cycled, and for mobile devices (as well This article is an extended version of our publication at the 9th International Conference on the Internet of Things (IoT 2019) <ref type="bibr" target="#b1">[2]</ref> and positions our search engine for the Web of Things in the broader context of a social and ubiquitous Web, which is presented in Section 3. Andrei Ciortea andrei.ciortea@unisg.ch 1 University of St. Gallen, St. Gallen, Switzerland 2 Inria, Université Côte d'Azur, CNRS, I3S, Sophia Antipolis, France 3 ETH Zürich, Zürich, Switzerland as people) that physically move between spatial domains together with the (localized) services they provide. These inherent dynamics can make a WoT system evolve every few seconds or even faster.</p><p>In such settings, the manual definition and maintenance of static physical mashups (e.g., via tools such as Node-RED <ref type="foot" target="#foot_0">1</ref> and IFTTT 2 ) become impractical: (i) once deployed, they cannot adapt to dynamic environments, and (ii) manually "wiring" the WoT cannot scale well to large numbers of heterogeneous devices (see also <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b32">33]</ref>). The W3C WoT Thing Description (TD) helps mitigate these limitations through interaction affordances and hypermedia controls <ref type="bibr">[25]</ref>: it allows physical mashups to be defined in terms of abstract interaction patterns rather than specific protocols and device APIs. The resulting physical mashups are then more flexible as they are loosely coupled to the underlying device APIs, but they still have to be defined and maintained manually. Ideally, WoT systems would be able to adapt to large and dynamic settings in an autonomous manner-with minimal human intervention. Such autonomous systems have been studied to a large extent in the scientific literature on distributed artificial intelligence (AI) and, in particular, multi-agent systems (MAS) <ref type="bibr" target="#b49">[50]</ref>. In the past, we have shown that MAS research already provides models, programming paradigms, languages, and tooling that can be used to engineer more adaptive WoT systems (e.g., see <ref type="bibr" target="#b8">[9]</ref>). However, autonomous agents operating in such systems need to make decisions based on the systems' current state: they need to find and use available resources in real time and with minimal outof-band information in order to achieve their goals in an autonomous and flexible manner.</p><p>We hypothesize that, similarly to how people need hypermedia search engines to find resources on the Web required to achieve their everyday goals (online shopping, travel planning, etc.), autonomous agents will also require hypermedia search engines to help them achieve their goals in the WoT. This analogy is particularly relevant in the context of the W3C WoT <ref type="bibr" target="#b27">[28]</ref>, which relies on interaction affordances as fundamental building blocks. Hypermedia search is still insufficiently investigated in the WoT. A common solution for resource discovery in the WoT is the use of directories, such as the CoRE Resource Directory <ref type="bibr" target="#b41">[42]</ref> or the Thing Directory. <ref type="foot" target="#foot_2">3</ref> Autonomous agents could then query directories individually or as a federation. However, existing approaches for federated query processing assume that the complete federation is known beforehand <ref type="bibr" target="#b0">[1]</ref>-an assumption that fails in an open and dynamic WoT. Hypermedia search, on the other hand, facilitates the flexible discovery of resources on the Weban important property for sustaining large-scale, open, and long-lived systems.</p><p>We developed a hypermedia search engine for the WoT that allows autonomous agents to perform approximate search queries in (weak) real time in order to find resources in their environment that are required to achieve their goals. The search engine crawls hypermedia environments and keeps track of their evolution in order to discover device metadata described with the W3C WoT TD. The discovered descriptions are indexed and exposed to clients via a SPARQL endpoint that can process approximate queries. The search engine is based on Corese <ref type="bibr" target="#b12">[13]</ref>, an open-source inference and query engine for Linked Data, <ref type="foot" target="#foot_3">4</ref> together with our own implementation of a hypermedia crawler for dynamic WoT environments. To demonstrate the feasibility of our approach, we implemented a demonstrator based on a concrete scenario for the maintenance of industrial robots in worldwide manufacturing systems. The demonstrator shows that our search engine allows agents to cope better with dynamic WoT environments and to pursue their goals in a more flexible and agile manner-therefore enhancing their autonomous behavior in WoT environments.</p><p>This paper is structured as follows. We discuss related work on searching the WoT in Section 2. In Section 3, we then present our approach for creating a hypermedia-driven Social Ubiquitous Web and define the search problem in this context. We give an overview of the design and implementation of our system in Section 4. We present our application scenario and the demonstrator deployment in Section 5, and discuss the benefits and limitations of our approach in Section 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background and related work</head><p>In this section, we first introduce several concepts from MAS research that we use throughout the rest of this paper-with a focus on defining a conceptual bridge between MAS and WoT systems. We then discuss related work on searching the WoT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">From multi-agent systems to autonomous WoT systems</head><p>In AI research, an agent is commonly defined as an entity "situated in some environment, that is capable of flexible autonomous action in order to meet its design objectives" <ref type="bibr" target="#b23">[24]</ref>. Autonomy is central to this definition and refers to the agent's ability to operate on its own, without the need of direct intervention from people or other agents. The agent is situated in an external environment that it can perceive via sensors and influence via actuators. A distinctive feature of an autonomous agent is its flexibility in the pursuit of some design objectives <ref type="bibr" target="#b23">[24]</ref>: the agent is reactive by responding to changes in the environment in a timely fashion, proactive by exhibiting goal-directed behavior and taking the initiative when appropriate, and social by interacting with humans or other agents in order to achieve complex tasks that would surpass its individual capabilities. In distributed AI, a multi-agent system is then a system conceptualized in terms of agents that are situated in a shared environment and interact with one another to achieve their design objectives <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b49">50]</ref>.</p><p>Agent-oriented programming was first articulated as a paradigm in <ref type="bibr" target="#b42">[43]</ref>, but its origins can be traced back to the mid-1980s <ref type="bibr" target="#b18">[19]</ref>. A well-known meta-model for designing and programming MAS-that we use in our approachis Agents &amp; Artifacts (A&amp;A) <ref type="bibr" target="#b39">[40]</ref>. In A&amp;A, the agents' environment is considered a first-class abstraction in the MAS: a component designed and programmed with clearcut responsibilities, such as mediating interaction among agents or access to the deployment context (devices, digital services, etc.).</p><p>The environment is modeled as a dynamic set of workspaces, where a workspace is a dynamic set of artifacts. An artifact is a computational object that exposes:</p><p>-Observable properties: state variables that can be perceived by the agent; -Observable events: non-persistent, fire-and-forget signals that carry information and can be perceived by the agent; -Operations: environment actions provided to the agent; operations can change the values of observable properties or they can trigger events.</p><p>The set of all interactions an agent can have with its environment is determined by the artifacts available at run time. Agents use artifacts in pursuit of their goals, and they can create and destroy artifacts at run time.</p><p>It is worth to note the similarity between the artifact model defined by A&amp;A and the Web Thing model defined by the W3C WoT TD <ref type="bibr">[25]</ref>. Both models define three types of interaction affordances, namely observable properties, observable events, and operations or actions, with the Web Thing model being slightly more generic: a W3C WoT TD can expose writable properties, whereas artifact properties are read-only. Applying the W3C WoT TD to decouple artifacts from devices is thus straightforward and provides a conceptual bridge for deploying autonomous agents in WoT environments <ref type="bibr" target="#b8">[9]</ref>. A central problem then is to provide agents with the search facility that would allow them to find relevant resources in an efficient manner <ref type="bibr" target="#b7">[8]</ref>.</p><p>The Web has already raised a lot of interest in MAS research, in particular in the context of service-oriented computing <ref type="bibr" target="#b44">[45]</ref>. Although related, this work is outside of the scope of this paper, which focuses on the more specific problem of autonomous search in a social and ubiquitous Web. A concise overview of the last decade of research on Web-based MAS is available in <ref type="bibr" target="#b7">[8]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Searching the Web of Things</head><p>There is already a considerable body of research on searching the IoT/WoT and several surveys are available, such as <ref type="bibr" target="#b40">[41]</ref> and the more recent <ref type="bibr" target="#b52">[53]</ref>. The latter, in particular, provides an extensive review of search techniques for the WoT.</p><p>Keyword-based search techniques for the WoT (e.g., <ref type="bibr" target="#b46">[47,</ref><ref type="bibr" target="#b48">49,</ref><ref type="bibr" target="#b51">52]</ref>) typically target human users-given that choosing meaningful keywords is then of central importance. These techniques are thus less suitable for machines (or autonomous agents), which would rather benefit from approaches that support approximate search. Other search techniques rely on location-based clustering-often in combination with keyword-or tag-based search-and follow the assumption that in the WoT there is a high degree of locality of interactions among human users and devices (e.g., <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b31">32]</ref>). In another approach, Dyser <ref type="bibr" target="#b35">[36]</ref> focuses on real-time search given dynamic sensor readings in WoT environments and uses statistical models to predict the state of registered resources: these models induce a ranking on known resources that determine which are contacted first by the engine to find out whether their actual current state matches the query.</p><p>More recent approaches include directory-based discovery mechanisms, such as the CoRE Resource Directory <ref type="bibr" target="#b41">[42]</ref> and the Thing Directory, <ref type="foot" target="#foot_4">5</ref> which can be queried individually or as a federation. Most interestingly, Thing Directories store device metadata described using the W3C WoT TD [25] and can expose SPARQL endpoints. Nevertheless, existing approaches for federated SPARQL query processing assume that the complete federation is known beforehand <ref type="bibr" target="#b0">[1]</ref>-an assumption that fails in an open and dynamic WoT.</p><p>Hypermedia-based discovery via crawling, on the other hand, has proven practical for coping with an open Web. A crawling-based mechanism for WoT devices was proposed in DiscoWoT <ref type="bibr" target="#b30">[31]</ref>, which allows WoT devices to be crawled in order to discover their properties and any exposed interfaces. However, DiscoWoT assumes that an entry point for the WoT device to be crawled (e.g., its IRI) is known beforehand. To discover devices and other resources, the SPITFIRE architecture <ref type="bibr" target="#b37">[38]</ref> suggested crawling the (semantic) WoT periodically, but the crawling process is not discussed in detail-and given the dynamicity of WoT systems, periodical crawling seems impractical.</p><p>Another approach aiming to crawl the WoT at Web-scale was proposed in WOTS2E <ref type="bibr" target="#b25">[26]</ref>, which uses meta-crawling (i.e., it relies on popular search engines such as Google or Bing) to discover SPARQL endpoints that contain WoTrelated datasets and ontologies. WOTS2E focuses on the global discovery of relevant SPARQL endpoints (rather than individual devices), which is complementary to our proposal (see also <ref type="bibr">Section 6)</ref>.</p><p>To the best of our knowledge, a search engine for dynamic WoT environments that would allow machines to perform approximate queries in real time is not yet available.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Searching a Social Ubiquitous Web</head><p>Hypermedia is emerging as a homogeneous information fabric that interconnects everything: not only documents, Fig. <ref type="figure">1</ref> Hypermedia MAS: Agents are situated in a shared environment designed as a distributed hypermedia application (sourced from <ref type="bibr" target="#b7">[8]</ref>) but also people, autonomous agents, devices, data, organizations, etc. <ref type="bibr" target="#b29">[30]</ref>. This evolution enables the engineering of a new generation of sociotechnical systems for the Web: systems in which both people and autonomous agents are firstclass citizens situated in a worldwide hypermedia environment that spans across the physical-digital space. We refer to such systems as Hypermedia Multi-Agent Systems <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8]</ref>.</p><p>In this section, we motivate and position our contribution in the broader research context of a social and ubiquitous Web. We first present Hypermedia MAS in Section 3.1. In Section 3.2, we then present a specific type of Hypermedia MAS, namely socio-technical networks <ref type="bibr" target="#b9">[10]</ref>, which define a least common denominator for the Web of Things and the Web of People-and thus enable the seamless integration of these two facets of the Web. This seamless integration defines the search space for our autonomous agents: a hypermedia-driven Social Ubiquitous Web. Within this context, in Section 3.3, we then motivate and define in more detail the search problem we tackle.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Hypermedia multi-agent systems</head><p>Hypermedia MAS have been introduced as an emerging class of MAS that are designed for the Web and are aligned with the Web architecture <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8]</ref>. In a Hypermedia MAS, such as the one depicted in Fig. <ref type="figure">1</ref>, agents are situated in a distributed hypermedia environment that they can navigate and use in pursuit of their goals-much like we, as human agents, achieve most of our everyday goals (e.g., shopping, travel planning) by browsing and acting on Web resources. The agents' hypermedia environment is weaved into the fabric of the Web, which enables its seamless distribution across the Web. The Web thus provides the underpinning that interconnects all entities within and across Hypermedia MAS.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.1">The hypermedia environment as a first-class abstraction</head><p>In Hypermedia MAS, we conceive of the agents' environment as a first-class abstraction <ref type="foot" target="#foot_5">6</ref> [40]: it is an information layer that provides agents with various functionalities, such as mediating interaction, communication, and coordination among agents; mediating access to the external environment (e.g., devices, digital services); providing an abstraction layer for modeling, representing, and programming artifacts that agents can use to achieve their goals.</p><p>Unlike typical environments in MAS, however, the environment in a Hypermedia MAS uses hypermedia to drive interaction in the system: agents navigate the hypermedia environment to discover other entities in the MAS as well as the means to interact with those entities. The hypermedia environment thus serves as a conceptual bridge between MAS and the Web architecture <ref type="bibr" target="#b7">[8]</ref>.</p><p>From the agents' viewpoint, hypermedia enables a seamless distribution of MAS on the Web: similar to how people navigate and use Web pages regardless of their location, autonomous agents use hypermedia controls to discover and interact with other entities (other agents, tools, etc.) regardless of their location. Hypermedia controls allow autonomous agents to discover at run time the affordances of entities in their environment, such as the operations exposed by a light bulb (cf. Fig. <ref type="figure">1</ref>). In the WoT, such affordances can be described in a standard manner using the W3C WoT TD <ref type="bibr">[25]</ref>.</p><p>Hypermedia can also be used to advertise in the environment various other resources that agents can discover and consume at run time, such as specifications of interaction protocols (e.g., using BSPL <ref type="bibr" target="#b43">[44]</ref>), specifications of organizations (e.g., using MOISE <ref type="bibr" target="#b22">[23]</ref>), and data licensing policies <ref type="bibr" target="#b47">[48]</ref> (cf. Fig. <ref type="figure">1</ref>). Such resources can be designed into the environment to further reduce coupling in MAS: for instance, engineers in different parts of the world could develop and deploy autonomous agents and interaction protocols independently from one another. To discover such heterogeneous resources, agents can navigate the hypermedia environment themselves (e.g., see <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b10">11]</ref>), or they can use hypermedia search engines (cf. Fig. <ref type="figure">1</ref>)-an approach that has proven successful on the Web <ref type="bibr" target="#b4">[5]</ref>. Agents can also manipulate the hyperlinks in their hypermedia environment in order to "rewire" the MAS to fit their needs. We return to this discussion in Section 3.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.2">Hypermedia MAS on the Web</head><p>In REST-style hypermedia systems, such as the Web, a resource is the key abstraction of information <ref type="bibr" target="#b15">[16]</ref>. In a Hypermedia MAS, the entire observable state of the MAS (e.g., agents, artifacts, relations among them) is projected into the distributed hypermedia environment in a resourceoriented manner, for instance as an RDF graph <ref type="bibr" target="#b13">[14]</ref> (cf. Fig. <ref type="figure">1</ref>). This makes the Hypermedia MAS crawlable and searchable, and allows agents to interact with the MAS in a uniform manner by consuming and producing hypermedia. To illustrate the latter, one agent can send a message to another by writing an RDF representation of the message in the hypermedia (e.g., using an OWL ontology for describing messages). To receive messages, an agent can observe a resource that represents its mailbox in the hypermedia. To turn on a light bulb, an agent can manipulate the state of a resource that represents the light bulb in the hypermedia. All these resources-and the means to interact with these resources-can be discovered by crawling the hypermedia environment of the MAS.</p><p>All resources in a Hypermedia MAS are identified using IRIs <ref type="bibr" target="#b14">[15]</ref> such that they can be referenced globally. The uniform identification of resources is essential to allow agents to reference and interact with other entities in the MAS regardless of context. For instance, if an agent or a light bulb in their environment is identified via an IRI, they can be referenced without the need for contextual information such as how to interpret platformspecific identifiers or low-level network information (e.g., IP addresses of hosts)-in non-hypermedia MAS, this is not generally the case. 7 The uniform representation of 7 See <ref type="bibr" target="#b6">[7]</ref> for a more detailed discussion.</p><p>resources (e.g., in RDF) allows hiding any implementationspecific details behind standardized knowledge models. For instance, the state of a light bulb could be represented in the hypermedia environment using RDF together with a standard ontology. An agent could then interact with the light bulb by interpreting and manipulating its semantic representation either directly or via some intermediary tool (e.g., via an artifact). The relations among entities in a hypermedia MAS (e.g., agents, artifacts, organizations, datasets) are also represented explicitly in the hypermedia environment in a uniform manner-such that they can be crawled, manipulated, and reasoned about.</p><p>The uniform identification and representation of resources in Hypermedia MAS, together with the explicit and uniform representation of relations among those resources, allow creating a homogeneous information fabric that (i) interconnects heterogeneous resources in a Social Ubiquitous Web, and (ii) can be reliably crawled and indexed for resource retrieval.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Bridging the Web of Things and the Web of People</head><p>A specific type of Hypermedia MAS is the Socio-Technical Network (STN). The STN model, which was formally defined in <ref type="bibr" target="#b9">[10]</ref>, provides a least common denominator for the Web of People and the Web of Things: it defines concepts and terms that capture the commonality from existing online social platforms, W3C recommendations and open standards for the Social Web, <ref type="foot" target="#foot_6">8</ref> and research on social aspects in the WoT. The STN Ontology, which defines these concepts and terms, is available online. 9 In previous work, it was demonstrated that the STN ontology can be used to create a homogenous hypermedia overlay that spans across silos in the WoT and the Social Web <ref type="bibr" target="#b10">[11]</ref>-allowing agents (and any other software clients) to navigate across the otherwise "walled gardens" of the Web.</p><p>An overview of the core concepts and properties defined in the STN Ontology is depicted in Fig. <ref type="figure">2a</ref>. In more recent work, the STN ontology was extended with a vocabulary for describing agent environments on the Web (EVE), which is depicted in Fig. <ref type="figure">2b</ref>. Both the STN ontology and the EVE vocabulary have their roots in the A&amp;A meta-model (see Section 2.1)-and we used both to design the distributed hypermedia environment in our system, which is presented in Section 4.</p><p>Fig. <ref type="figure">2</ref> An overview of the core concepts and properties used to design the distributed environment in our Hypermedia MAS. Term prefixes are omitted for legibility (see Table <ref type="table" target="#tab_0">1</ref> in Section 4.2). Figure <ref type="figure">2b</ref> is sourced from <ref type="bibr" target="#b6">[7]</ref> Informally, STNs are dynamic networks of agents and artifacts. All entities in an STN (stn:Agents, stn: Artifacts, etc.) are interrelated in a meaningful manner via typed relations. Typed relations allow STNs to be navigated in an informed manner. The STN Ontology defines stn:connectedTo as a generic relation between agents, which can be further extended with domain-and application-specific relation types. On top, the EVE vocabulary adds new concepts and properties that further enhance navigability. For instance, the properties eve:joined and eve:contains can be used to represent explicitly in the environment hyperlinks to all stn:Agents and stn:Artifacts in the system-thus making them discoverable via crawling. The affordances of artifacts are also described explicitly in the hypermedia environment using the EVE vocabulary (cf. Fig. <ref type="figure">2b</ref>)-in conjunction with other vocabularies that can be used to describe implementations of affordances via hypermedia controls, such as the W3C WoT TD [25] and Hydra <ref type="bibr" target="#b28">[29]</ref>.</p><p>By enabling the seamless integration of the Web of Things and the Web of People, STNs define a flexible backbone for a Social Ubiquitous Web-and can be crawled and indexed to retrieve resources that are relevant for people and autonomous agents.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Searching for heterogeneous resources in a Social Ubiquitous Web</head><p>Along its evolution, the Web required increasingly sophisticated machines to sustain its growth. In the early days of the Web, hypermedia by itself was sufficient to allow people to publish documents and to discover documents by following hyperlinks. But as the number of documents grew, new mechanisms were developed to manage this growth: from manually maintained Web directories (e.g., the now defunct Yahoo! Directory, DMOZ), to automatic search engines that use crawlers and information retrieval algorithms to exploit the hypermedia structure of the Web (e.g., via PageRank <ref type="bibr" target="#b36">[37]</ref>). As we now move toward a Social Ubiquitous Web, this evolution raises new challenges that are not addressed by traditional hypermedia search engines.</p><p>First, unlike the documentary Web, the Social Ubiquitous Web is populated with non-textual resources (e.g., agents, devices, people) that cannot be simply indexed and ranked based on term frequency-this is particularly the case in the WoT (see also <ref type="bibr" target="#b31">[32]</ref>). Rather, it would be more appropriate to index semantic descriptions of such resources, which can also capture relevant contextual information (e.g., the current location of a maintenance engineer). Furthermore, the Social Ubiquitous Web is already populated with heterogeneous resources that can be described using a plurality of Web ontologies (one of the main challenges in the Semantic Web community <ref type="bibr" target="#b16">[17]</ref>). For instance, to adjust the brightness in a room, an autonomous agent may derive the need to find resources that can increase the room's light level-such as light bulbs or window blinds. The resources can be manufactured by different vendors and described using various ontologies. This motivates the need for methods that support approximate query processing when searching the Social Ubiquitous Web.</p><p>Second, the Social Ubiquitous Web is expected to evolve more rapidly than the documentary Web-particularly in the context of the WoT, since the nature of WoT services is more sporadic and transient (e.g., due to physical locality, sleeping nodes, and other contextual factors). This motivates the need for methods that support searching for resources in real time, a research topic that has already been identified in early work on search engines for the WoT (e.g., <ref type="bibr" target="#b31">[32,</ref><ref type="bibr" target="#b34">35]</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">System architecture</head><p>To address the challenges identified in the previous section, we developed a hypermedia search engine that allows machines to perform approximate queries for finding relevant resources in their WoT environments in (weak) real time. To achieve this, our approach integrates results from research on the WoT, MAS, and the Semantic Web.</p><p>Figure <ref type="figure">3</ref> depicts an overview of our system. Following our discussion in the previous section, we design and program the system as a Hypermedia MAS: people and autonomous agents are situated in a distributed hypermedia environment, and we model devices and any other tools that agents use to achieve their goals as artifacts in this environment. All entities in our system (agents, artifacts, workspaces, etc.) are represented as Web resources described in RDF and projected into the distributed hypermedia environment, which enables their system-wide discovery via crawling. We present the main components of our system in what follows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Agents &amp; Artifacts container</head><p>We use an Agents &amp; Artifacts (A&amp;A) container for programming and running agents and artifacts in W3C WoT environments. The A&amp;A Container is developed using JaCaMo <ref type="bibr" target="#b2">[3]</ref>, a MAS platform that includes the reference implementation for the A&amp;A meta-model (see Section 2.1). Among others, JaCaMo provides developers with a customizable architecture for cognitive agents, a language for programming cognitive agents, and a Java-based framework for programming artifacts according to A&amp;A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1">Agent architecture</head><p>We model the autonomous agents in our system as Belief-Desire-Intention (BDI) agents <ref type="bibr" target="#b3">[4]</ref>-a type of cognitive agent designed and programmed in terms of mental attitudes: beliefs held about the world, goals desired to be achieved, and plans used to achieve goals. The BDI agent architecture-which is the mainstream architecture for cognitive agents in MAS research-thus provides developers with a formal "human-oriented" level of abstraction that facilitates not only designing and programming, but also inspecting and debugging autonomous behavior. It therefore facilitates the engineering of autonomous WoT systems. Another important feature of the BDI agent architecture that makes it a good fit for our approach is that it can balance goal-directed and reactive behavior: BDI agents commit to goals by executing plans, but they can still react to events and changes in the environment while executing their plans. The JaCaMo platform allows agents to observe artifacts in their environment: changes in an artifact's state and signals emitted by the artifact are reflected in the observing agent's belief base.</p><p>The typical program of a BDI agent is composed of the agent's initial sets of beliefs, goals, and plans-all of which can evolve at run time. Multiple languages and frameworks are available for programming BDI agents. One</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Fig. 3 Conceptual overview of our system</head><p>Listing 1 Extract from the Jason program of a maintenance agent in our demonstrator. The IoT Schema IRIs in this listing are used only for illustrative purposes of the most prominent agent programming languages is AgentSpeak(L) <ref type="bibr" target="#b38">[39]</ref> and its more recent extended version commonly known as Jason <ref type="bibr" target="#b3">[4]</ref>. Jason is the language used in the JaCaMo platform on which our A&amp;A container is based. BDI agents in our system are equipped with libraries of Jason plans, where a Jason plan has the form:</p><p>triggering event : application context &lt;-plan body .</p><p>For illustrative purposes, Listing 1 shows an extract from a Jason program used by a maintenance agent in our demonstrator (see Section 5 for details). The !start goal on line 9 in Listing 1 is the entry point into our agent program. Depending on the evolution of the system at run time, the !start goal may eventually lead to the sub-goal !notify engineer(...) to be created-that is, if the agent decides it is necessary to notify an on-site engineer of a malfunction (cf. scenario in Section 5.2).</p><p>In our demonstrator, malfunctions are signaled visually to on-site engineers via light bulbs. The creation of the !notify engineer(...) sub-goal would then trigger the execution of the plan on lines 13-20 of Listing 1: the agent turns on a light bulb with a given color code for 2 s, and then turns off the light bulb. The initial set of beliefs in our agent program includes, among others, the CIE 1931 XY color codes <ref type="bibr" target="#b45">[46]</ref> to be used when notifying on-site engineers (lines 2-3). 10</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Infrastructure artifacts</head><p>The A&amp;A container provides agents with several types of infrastructure artifacts that they can use: browser artifacts, crawler artifacts, and finder artifacts. 10 The color code values used in our demonstrator correspond to nuances of green and red used by Philips Hue.</p><p>Browser artifacts serve as facades that allow agents to interact with artifacts discovered at run time in their hypermedia environment as they would interact with any artifact in a local workspace (see Section 2.1) on the JaCaMo platform. Browser artifacts are instantiated with IRIs of W3C WoT TDs, and we refer to them as "browser" artifacts because they perform functions similar to Web browsers: they retrieve and parse W3C WoT TDs, expose interaction affordances to agents, and translate agents' actions to interactions with the Web Thing [25] being described (e.g., via HTTP or CoAP). Unlike regular JaCaMo artifacts, browser artifacts expose metadata (e.g., about the supported types of actions provided to agents) via observable properties. To perform actions, such as the action of changing the color of a light bulb in Listing 1 (line 14), agents use a generic act operation provided by the browser artifact. The act operation takes as arguments the IRI of the action type to be executed as well as IRIs of any required parameter types specified in the W3C WoT TD used by the browser artifact. If the W3C WoT TD provides multiple hypermedia controls for the same action type, the first hypermedia control is used.</p><p>Agents can use crawler artifacts to configure the search engine, for instance by providing seeds to be crawled or by setting the link types to be followed when crawling (see Section 4.3.1), and they can use finder artifacts to perform search queries (see Section 4.3.2). The role of crawler and finder artifacts is to simplify the agents' logic by encapsulating all logic required to access the HTTP and SPARQL endpoints exposed by our semantic hypermedia search engine.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Distributed hypermedia environment</head><p>All resources in our system (agents, workspaces, artifacts, devices, etc.) and relations among them are described in RDF using the STN ontology and the EVE vocabulary (see Section 3.2). In addition, we use the W3C WoT TD <ref type="bibr">[25]</ref> for describing devices and other artifacts together with the interaction affordances they provide. Throughout the rest of this paper, we use the prefix bindings in Table <ref type="table" target="#tab_0">1</ref>.</p><p>We map W3C WoT TDs to descriptions of artifacts as defined by the A&amp;A meta-model (see discussion in Section 2.1)-i.e., a Web resource can be both a td:Thing http://w3id.org/eve# ex: http://example.org/# Fig. <ref type="figure" target="#fig_0">4</ref> From seeding to query-answering and an eve:Artifact. This mapping allows autonomous agents to use Web Things as they would use any other artifacts programmed with JaCaMo (via the browser artifacts presented in the previous section).</p><p>Both people and autonomous agents can manipulate the hypermedia environment, for instance by adding devices to the system. The hypermedia environment is hosted on Yggdrasil <ref type="bibr" target="#b6">[7]</ref>, our prototypical platform for programming hypermedia environments for autonomous agents, and can be distributed across multiple nodes. The version of Yggdrasil used in our demonstrator is on GitHub 11 and provides two core functionalities:</p><p>-It serves as a repository for semantic descriptions of hypermedia environments; each Yggdrasil node exposes a REST HTTP API for creating, updating, and deleting RDF representations of environment, workspace, and artifact abstractions (cf. A&amp;A metamodel in Section 2.1); -It acts as a hub that (partially) implements the W3C</p><p>WebSub recommendation <ref type="bibr" target="#b17">[18]</ref>; agents-or indeed any software client, such as our A&amp;A container-can use this functionality to observe resources in the environment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Semantic hypermedia search engine</head><p>Autonomous agents in such distributed hypermedia environments need to be able to conduct searches for a broad range of goals and require structured query and result capabilities to achieve their goals. To this end, we developed a hypermedia search engine for the WoT that autonomous agents can use to perform approximate search queries in (weak) real time. The search engine consists of two components: (i) our own implementation of a hypermedia crawler for dynamic WoT environments, and (ii) Corese <ref type="bibr" target="#b12">[13]</ref>, an opensource inference and query engine for Linked Data. 12 The search engine implements an event-driven non-blocking architecture using Vert.x. 13 The hypermedia crawler and the query engine are loosely coupled (and deployed in separate Vert.x verticles), which enhances the evolvability of the system. The semantic hypermedia search engine of our demonstrator is on GitHub.  (iii) the discovered W3C WoT TDs are indexed and (iv) queried using SPARQL. We elaborate on these steps in the following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Hypermedia crawler</head><p>We designed and implemented a crawler that navigates distributed hypermedia environments to discover any resources described with the W3C WoT TD. The seeds for initiating the crawling process can be provided by any entity in the system: humans, autonomous agents, resource directories, etc. We enriched the Yggdrasil platform (see Section 4.2) with the functionality to automatically register seeds with the crawler whenever a component is added to a hypermedia environment it hosts (e.g., the IRI of a newly created workspace). This functionality allows the crawler to keep track of the evolution of the distributed hypermedia environment more efficiently as it can rely on Yggdrasil nodes to push notifications whenever parts of the distributed hypermedia environment need to be (re-)crawled.</p><p>In addition to seeds, humans and autonomous agents can also configure the crawler with the link types to be followed when navigating hypermedia environments, such as links among W3C WoT TDs, links between workspaces and contained artifacts, or any link types defined in the context of domain-and application-specific STNs (see Section 3.2). This functionality allows the crawler (i) to be customized for hypermedia environments described with various ontologies, and (ii) to navigate large-scale hypermedia environments more efficiently.</p><p>The crawler exposes two HTTP endpoints: /links for pushing IRIs denoting link types that should be followed when crawling hypermedia environments, and /registrations for pushing seeds for the crawling process (IRIs of artifacts, workspaces, etc.). Agents can access these endpoints using the crawler artifacts provided by the A&amp;A container (see Section 4.1). After being seeded, the crawler dereferences the registered IRIs to obtain resource representations. From these representations, it extracts links to be followed and continues the crawling recursively in a depth-first manner. We study optimized crawling plans in another work <ref type="bibr" target="#b21">[22]</ref> and leave the integration of more sophisticated crawling techniques for future development. The crawler stores discovered W3C WoT TDs as RDF data to be indexed and queried.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Semantic query engine</head><p>The W3C WoT TDs discovered by our crawler are indexed and queried using Corese<ref type="foot" target="#foot_7">15</ref>  <ref type="bibr" target="#b12">[13]</ref>. The query engine exposes a SPARQL endpoint /search that autonomous agents can use to search for artifacts needed to achieve their goals. Agents access the SPARQL endpoint using the finder artifacts provided by the A&amp;A container (see Section 4.1).</p><p>A feature of Corese that is central to our system is the ability to process approximate queries: if there is no exact answer for a query, Corese can approximate the semantics of the query or its structure, or both <ref type="bibr" target="#b11">[12]</ref>. To illustrate this feature, let there be an OWL ontology that describes industrial robots in which the UR5 and UR10 series of single-armed robots from Universal Robots are sibling subclasses of SingleArmedRobots, while the Baxter series of two-armed robots from Rethink Robotics is a subclass of TwoArmedRobots (where SingleArmedRobots and TwoArmedRobots are sibling subclasses of RobotsWithArms. If an agent searches for a UR5 robot and none is available, Corese uses the ontological distance between the classes (as they are defined in the class hierarchy) to approximate a UR10 robot as being semantically closer to a UR5 than a Baxter robot is. We refer the interested reader to <ref type="bibr" target="#b11">[12]</ref> for further details on all the query approximation techniques used by Corese-Corese also provides several other features that could be leveraged for searching the WoT, such as federated queries over heterogeneous data sources (see also <ref type="bibr">Section 6)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Prototypical deployment</head><p>We deployed a demonstrator based on a concrete application scenario in which agents have to cope with open and dynamic WoT environments: the maintenance of industrial robots in worldwide manufacturing systems, in which production sites are distributed across the globe <ref type="bibr" target="#b8">[9]</ref>. For our scenario, we consider two types of robots: manufacturing robots and maintenance robots. Manufacturing robots might require maintenance tasks, and they can delegate such tasks either to maintenance robots or to maintenance engineers. To this end, the manufacturing robots thus have to find in real time what heterogeneous resources (robots or engineers) are available across production sites, and to decide what maintenance tasks can (and should) be fulfilled by a robot and what tasks would require an engineer considering also their locality (e.g., engineers can travel between production sites).</p><p>A video of our demonstrator is on YouTube, <ref type="foot" target="#foot_8">16</ref> and the source code is on GitHub. <ref type="foot" target="#foot_9">17</ref> In the following, we first present our deployment setup and then discuss the demonstrator scenario.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Deployment setup</head><p>We deployed our system in a laboratory at the University of St. Gallen. We used two devices in our deployment: a PhantomX AX-12 Reactor Robot Arm controlled via an HTTP API <ref type="foot" target="#foot_10">18</ref> that can be accessed from the Internet, and a Philips Hue light bulb controlled via an HTTP API exposed by a Philips Hue bridge in the local network. We deployed a hypermedia environment distributed across two Yggdrasil nodes running on a MacBook Pro machine in the local network. We deployed the search engine on the same machine together with two A&amp;A containers that host the agents in our demonstrator. Even though in this setup all software components are deployed on the same machine, the components interact with one another via HTTP and could be easily deployed across the Internet.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Demonstrator scenario</head><p>Each of the two Yggdrasil nodes in our deployment hosts the hypermedia environment of a production site-Site A and Site B. The Philips Hue light bulb is deployed on Site A and the PhantomX robot is deployed on Site B. Both the light bulb and the robot are modeled as artifacts that agents can observe and use. In our scenario, agents use the light bulb to signal malfunctions to on-site engineers. We deploy two autonomous agents for each production site: on Site A, we deploy a maintenance agent tasked with monitoring and maintaining industrial robots across all production sites; and on Site B, we deploy a manufacturing agent tasked with controlling the robot arm during normal operation. Each agent runs in one A&amp;A container.</p><p>In what follows, we present our demonstrator across three phases (cf. demonstrator video).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">Phase 1</head><p>In the first phase, the maintenance agent on Site A is launched, starts to observe the light bulb (see Section 4.1), and seeds the crawler with the IRI of its local workspace on Site A.</p><p>The crawler then crawls the workspace by following all stn:connectedTo links (meaning here: a workspace is connected to another work-space) and all eve:contains links (meaning here: an artifact is contained in a workspace), which lead the crawler to discover a second workspace on Site B that contains the robot artifact.</p><p>The maintenance agent on Site A searches for robots to be monitored-across all existing production sites-by querying the search engine for artifacts that are robotic devices. The ability of Corese to process approximate queries allows the maintenance agent to query for devices of type ex:RoboticDevice and to receive as a result the PhantomX robot on Site B, which is of type ex:Ax12ReactorArm-in the vocabulary used for this demonstrator, ex:Ax12ReactorArm is a subclass of ex:RoboticDevice.</p><p>Once the robot artifact on Site B is found, the maintenance agent at Site A starts observing it to receive any events it might generate. The manufacturing agent on Site B is launched at the end of Phase 1 and starts operating the robot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">Phase 2</head><p>The robot at Site B malfunctions and issues a maintenance event. This event is pushed from the Yggdrasil node on Site B to the A&amp;A container on Site A, which dispatches the event to the maintenance agent due to the subscription created earlier. When the event is received, the maintenance agent queries the search engine to find maintenance suppliers that can perform the required maintenance task.</p><p>Since no maintenance robot is deployed at Site B, the search returns an empty result.</p><p>The agent then notifies any maintenance engineer that might be available on Site A by switching on the light bulb with a red color (cf. Listing 1). A maintenance engineer travels to Site B, repairs the manufacturing robot, and the robot resumes its tasks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.3">Phase 3</head><p>A maintenance robot is deployed on Site B and registered with the local Yggdrasil node, which automatically updates the workspace of Site B. Yggdrasil pushes the IRI of the newly added robot to the crawler, which discovers the robot.</p><p>Similar to Phase 2, the manufacturing robot malfunctions and issues a maintenance event, which is dispatched to the maintenance agent on Site A. Upon receiving the event, the maintenance agent queries again the search engine and receives as a result the newly installed maintenance robot on Site B. The maintenance agent delegates the task to the maintenance robot and informs manufacturing engineers on Site A by switching on a green light (cf. Listing 1).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion and limitations</head><p>The deployed demonstrator proves the two key elements of our approach. First, the maintenance agent is able to use approximate search queries to find industrial robots in a hypermedia environment distributed across two production sites. In our setup, the Yggdrasil nodes for the two production sites run on the same machine, but they could be easily distributed across the Web -as they are in the Yggdrasil demonstrator presented in <ref type="bibr" target="#b6">[7]</ref>. Second, our prototypical search engine has the ability to keep track of the evolution of the hypermedia environments it indexes, which allows the maintenance agent to perform searches in (weak) real time: when the maintenance robot is added to the environment, Yggdrasil notifies the search engine, which crawls and indexes the robot. In the future, we intend to implement a similar mechanism for tracking components that are removed from the environment. We say searches are performed in weak real time because the notification-based mechanism used in our prototype would be insufficient for keeping track of large-scale, rapidly evolving environments. In the future, complementary mechanisms could be added to improve real-time search. For instance, predictive crawling (e.g., see <ref type="bibr" target="#b20">[21]</ref>) could be used to crawl and index fastchanging areas in the environment more frequently, or to determine which parts of an environment should be prioritized during crawling.</p><p>Our search engine crawls WoT environments to discover and index W3C WoT TDs. In most cases, the TDs would describe devices, but they could also describe resource directories, such as the Thing Directory. <ref type="foot" target="#foot_11">19</ref> Ou r current implementation would treat a discovered Thing Directory as any regular Thing in the environment-and thus leaves it to agents to use the Thing Directory if they are able to do so. In the future, we intend to extend our search engine with the ability to automatically query SPARQL endpoints discovered in the environment at run time. Corese already supports federated SPARQL queries, and we study the automatic discovery and querying of SPARQL endpoints in another work <ref type="bibr" target="#b33">[34]</ref>. Our current implementation also does not check the correctness of discovered TDs beyond RDF syntax-for instance, to check if a given TD is usable and corresponds to the Web Thing being described, or if a described device is operational. We leave it as future work to investigate such mechanisms.</p><p>As a direction for future research, we intend to investigate the ranking of resources based on agents' goals and current context. For instance, an agent having the goal to increase the brightness in a room could do so using either light bulbs or window blinds, but the relevance of these resources is also contextual: opening the window blinds during nighttime would have little impact on the room's light level. Going further, in our current approach, agents rely on libraries of plans programmed by developers in order to "bridge" their goals to relevant resources. Currently, this knowledge has to be programmed into the agents (cf. Listing 1); it can be obtained at run time from other agents (if available), or could potentially be inferred at the expense of added complexity (e.g., via automated planning). Providing agents with a context-aware search engine that can process goal-oriented queries (rather than resource-oriented queries) would further enhance the agents' flexibility in achieving their goals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusions</head><p>We hypothesize that similar to how hypermedia search enhances people's ability to achieve their everyday goals through the Web (for online shopping, travel planning, etc.), semantic hypermedia search can enhance the autonomous behavior of software agents in a Social Ubiquitous Web. To this end, we designed and implemented a prototypical search engine that allows autonomous agents to use approximate search queries for finding relevant resources in their WoT environment in (weak) real time. We demonstrate these features in a maintenance scenario for a prototypical agent-based manufacturing system deployed in one of our laboratories at the University of St. Gallen. Our demonstrator shows that-through these features-the search facility enhances the agents' flexibility and agility in achieving their goals.</p><p>We presented an approach to create a hypermedia-driven Social Ubiquitous Web on top of interlinked socio-technical networks. Agents can configure our prototypical search engine to crawl any relation types in these networks, and they can manipulate the networks to "rewire" their environments according to their needs. The current search engine prototype is indexing only W3C WoT TDs, but the same search facility could serve a broader range of purposes. For instance, autonomous agents could use the search engine to discover how to interact with one another based on declarative specifications of agent interaction protocols (e.g., in a formal language such as BSPL <ref type="bibr" target="#b43">[44]</ref>) or of multiagent organizations (e.g., in a formal language such as MOISE OML <ref type="bibr" target="#b22">[23]</ref>). Such resources could be designed into the hypermedia environment to further enhance autonomous behavior in a social and ubiquitous Web.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Compliance with Ethical Standards</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 4</head><label>4</label><figDesc>Figure 4 depicts an overview of the functioning of our search engine: (i) seed IRIs are pushed to the search engine via crawler artifacts; (ii) the seed IRIs are dereferenced and crawled to discover any available W3C WoT TDs;(iii) the discovered W3C WoT TDs are indexed and (iv) queried using SPARQL. We elaborate on these steps in the following.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="5,185.07,61.61,350.44,147.16" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="7,113.61,59.81,366.04,154.48" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="8,178.23,478.67,365.80,235.60" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Prefix bindings</figDesc><table><row><cell>Prefix</cell><cell>IRI</cell></row><row><cell>td:</cell><cell>http://www.w3.org/ns/td#</cell></row><row><cell>stn:</cell><cell>http://w3id.org/stn/core#</cell></row><row><cell>eve:</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>14   </figDesc><table /><note><p><p><p><p><p><p>11 </p>https://github.com/Interactions-HSG/yggdrasil/tree/iot2019/</p>12 </p>See https://project.inria.fr/corese/ and also http://corese.inria.fr/ 13 https://vertx.io/, accessed: April 15, 2020.</p>14 </p>https://github.com/Interactions-HSG/wot-search/</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>http://nodered.org/, accessed:April 15,  </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2020" xml:id="foot_1"><p>2 http://www.ifttt.com/, accessed: April 15, 2020.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>https://github.com/thingWeb/thingWeb-directory/, accessed: April 15, 2020.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>https://project.inria.fr/corese/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>https://github.com/thingWeb/thingWeb-directory/, accessed: April 15, 2020.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>This design choice draws from a line of research on engineering agent environments<ref type="bibr" target="#b50">[51]</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_6"><p>Such as the activity of the W3C Social Web Working Group (https:// www.w3.org/Social/WG) and Interest Group (https://www.w3.org/ Social/IG).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="15" xml:id="foot_7"><p>https://github.com/Wimmics/corese</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="16" xml:id="foot_8"><p>https://youtu.be/iuTzzMA-7FI</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="17" xml:id="foot_9"><p>https://github.com/Interactions-HSG/wot-search-manufacturing/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="18" xml:id="foot_10"><p>https://github.com/Interactions-HSG/leubot</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="19" xml:id="foot_11"><p>https://github.com/thingWeb/thingWeb-directory/, accessed: September 08,</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2019" xml:id="foot_12"><p></p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conflict of interest</head><p>The authors declare that they have no conflict of interest.</p><p>Publisher's note Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Federated RDF query processing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Acosta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Hartig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sequeda</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-63962-8_228-1</idno>
+		<ptr target="https://doi.org/10.1007/978-3-319-63962-8228-1" />
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>Springer International Publishing</publisher>
+			<biblScope unit="page" from="1" to="8" />
+			<pubPlace>Cham</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Escaping the streetlight effect: semantic hypermedia search enhances autonomous behavior in the Web of Things</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bienz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<ptr target="https://www.alexandria.unisg.ch/257439/" />
+	</analytic>
+	<monogr>
+		<title level="m">9th International conference on the internet of things</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Multi-agent oriented programming with jacamo</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Bordini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Hübner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Santi</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.scico.2011.10.004</idno>
+		<ptr target="http://www.sciencedirect.com/science/article/pii/S016764231100181X" />
+	</analytic>
+	<monogr>
+		<title level="j">Sci Comput Program</title>
+		<imprint>
+			<biblScope unit="volume">78</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="747" to="761" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Programming multi-agent systems in AgentSpeak using Jason</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Bordini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Hübner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wooldridge</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>Wiley</publisher>
+			<biblScope unit="volume">8</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The anatomy of a large-scale hypertextual Web search engine</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Page</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/S0169-7552(98)00110-X</idno>
+		<ptr target="http://www.sciencedirect.com/science/article/pii/S016975529800110X" />
+	</analytic>
+	<monogr>
+		<title level="j">Comput Netw ISDN Syst</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="107" to="117" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Beyond physical mashups: autonomous systems for the Web of Things</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ricci</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3199919.3199924</idno>
+		<ptr target="https://doi.org/10.1145/3199919.3199924" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the eighth international workshop on the Web of things, WoT 2017</title>
+		<meeting>the eighth international workshop on the Web of things, WoT 2017<address><addrLine>New York</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="16" to="20" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Engineering world-wide multi-agent systems with hypermedia</title>
+		<editor>Ciortea A, Boissier O, Ricci AWeyns D, Mascardi V, Ricci A</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>Springer International Publishing</publisher>
+			<pubPlace>Cham</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">A decade in hindsight: the missing bridge between multi-agent systems and the World Wide Web</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zimmermann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th international conference on autonomous agents and multiagent systems, AAMAS 2019</title>
+		<meeting>the 18th international conference on autonomous agents and multiagent systems, AAMAS 2019<address><addrLine>Montreal, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-05-13">2019. May 13-17, 2019</date>
+		</imprint>
+	</monogr>
+	<note>International foundation for autonomous agents and multiagent systems</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Repurposing manufacturing lines on the fly with multi-agent systems for the Web of Things</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Michahelles</surname></persName>
+		</author>
+		<ptr target="https://www.alexandria.unisg.ch/255802/" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th international conference on autonomous agents and multiagent systems (AAMAS)</title>
+		<meeting>the 17th international conference on autonomous agents and multiagent systems (AAMAS)</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="813" to="822" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Towards a social and ubiquitous Web: a model for socio-technical networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zimmermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Florea</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/WI-IAT.2015.205</idno>
+		<ptr target="https://doi.org/10.1109/WI-IAT.2015.205" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/WIC/ACM international conference on Web intelligence and intelligent agent technology (WI-IAT)</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="461" to="468" />
+			<date type="published" when="2015">2015. 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Hypermedia-driven socio-technical networks for goal-driven discovery in the Web of Things</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zimmermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Florea</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3017995.3018001</idno>
+		<ptr target="https://doi.org/10.1145/3017995.3018001" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the seventh international workshop on the Web of Things, WoT &apos;16</title>
+		<meeting>the seventh international workshop on the Web of Things, WoT &apos;16<address><addrLine>New York</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="25" to="30" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Searching the semantic Web: approximate query processing based on ontologies</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dieng-Kuntz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/MIS.2006.16</idno>
+		<ptr target="https://doi.org/10.1109/MIS.2006.16" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intell Syst</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="20" to="27" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">KGRAM versatile inference and query engine for the Web of linked data</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gaignard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Montagnat</surname></persName>
+		</author>
+		<ptr target="https://hal.archives-ouvertes.fr/hal-00746772" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/WIC/ACM International conference on Web intelligence</title>
+		<meeting><address><addrLine>Macao</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">RDF 1.1 concepts and abstract syntax, W3C recommendation 25</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cyganiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanthaler</surname></persName>
+		</author>
+		<ptr target="http://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C Recommendation World Wide Web Consortium (W3C)</title>
+		<imprint>
+			<date type="published" when="2014-02">2014. February 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Duerst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Suignard</surname></persName>
+		</author>
+		<ptr target="http://www.ietf.org/rfc/rfc3987.txt" />
+		<title level="m">Internationalized resource identifiers (IRIs) RFC 3987 (proposed standard)</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Principled design of the modern Web architecture</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Fielding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">N</forename><surname>Taylor</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/514183.514185</idno>
+		<ptr target="https://doi.org/10.1145/514183.514185" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans Internet Technol</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="115" to="150" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A survey of the first 20 years of research on semantic Web and linked data</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<idno type="DOI">10.3166/ISI.23.3-4.11-56</idno>
+		<ptr target="https://hal.inria.fr/hal-01935898" />
+	</analytic>
+	<monogr>
+		<title level="j">Revue des Sciences et Technologies de l&apos;Information -Série IS. Ingénierie des Systèmes d&apos;Information</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">WebSub, W3C Recommendation 23</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Genestoux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Parecki</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/2018/REC-Websub-20180123/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C Recommendation World Wide Web Consortium (W3C)</title>
+		<imprint>
+			<date type="published" when="2018-01">2018. January 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Reactive reasoning and planning</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Georgeff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Lansky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AAAI</title>
+		<imprint>
+			<biblScope unit="volume">87</biblScope>
+			<biblScope unit="page" from="677" to="682" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Towards physical mashups in the Web of things</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guinard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Trifa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Liechti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Sixth international conference on networked sensing systems (INSS)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="1" to="4" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Predictive crawling for commercial Web content</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Brodowsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gajda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Novikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bendersky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Najork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Popescul</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 World Wide Web conference</title>
+		<meeting>the 2019 World Wide Web conference</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="627" to="637" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Learning URI selection criteria to improve the crawling of linked open data</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-02073854" />
+	</analytic>
+	<monogr>
+		<title level="m">ESWC2019 -The 16th extended semantic Web conference</title>
+		<meeting><address><addrLine>Portoroz</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Developing organised multiagent systems using the MOISE+ model: programming issues at the system and agent levels</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Hübner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Sichman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Boissier</surname></persName>
+		</author>
+		<idno type="DOI">10.1504/IJAOSE.2007.016266</idno>
+		<ptr target="https://doi.org/10.1504/IJAOSE.2007.016266" />
+	</analytic>
+	<monogr>
+		<title level="j">Int J Agent-Oriented Softw Eng</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="370" to="395" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Applications of intelligent agents</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">R</forename><surname>Jennings</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wooldridge</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-662-03678-5_1</idno>
+		<ptr target="https://doi.org/10.1007/978-3-662-03678-5" />
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="3" to="28" />
+			<pubPlace>Berlin</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Web of Things (WoT) thing description, W3C Recommendation 9</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaebisch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kamiya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mccool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Charpenay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kovatsch</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/2020/REC-wot-thing-description-20200409/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C Recommendation World Wide Web Consortium (W3C)</title>
+		<imprint>
+			<date type="published" when="2020-04">2020. April 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Wots2e: a search engine for a semantic Web of Things</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kamilaris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yumusak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Ali</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/WF-IoT.2016.7845448</idno>
+		<ptr target="https://doi.org/10.1109/WF-IoT.2016.7845448" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE 3rd World forum on internet of things (WF-IoT)</title>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+			<biblScope unit="page" from="436" to="441" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">SenseWeb: an infrastructure for shared sensing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zhao</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/MMUL.2007.82</idno>
+		<ptr target="https://doi.org/10.1109/MMUL.2007.82" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE MultiMedia</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="8" to="13" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Web of Things (WoT) architecture, W3C recommendation 9</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kovatsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Matsukura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lagally</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kawaguchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toumura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kajimoto</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/2020/REC-wot-architecture-20200409/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C Recommendation World Wide Web Consortium (W3C)</title>
+		<imprint>
+			<date type="published" when="2020-04">2020. April 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Hydra: a vocabulary for hypermediadriven Web APIs</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanthaler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gütl</surname></persName>
+		</author>
+		<ptr target="http://ceur-ws.org/Vol-996/papers/ldow2013-paper-03.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the WWW2013 workshop on linked data on the Web</title>
+		<title level="s">CEUR WS</title>
+		<meeting>the WWW2013 workshop on linked data on the Web</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">996</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Hypermedia to connect them all: autonomous hypermedia agents and socio-technical interactions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ciortea</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Robles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kovatsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Croatti</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/itl2.50</idno>
+		<ptr target="https://doi.org/10.1002/itl2.50" />
+	</analytic>
+	<monogr>
+		<title level="j">Internet Technol Lett</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">50</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">An extensible discovery service for smart things</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guinard</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1993966.1993976</idno>
+		<ptr target="https://doi.org/10.1145/1993966.1993976" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the second international workshop on Web of things, WoT &apos;11</title>
+		<meeting>the second international workshop on Web of things, WoT &apos;11<address><addrLine>New York</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1" to="7" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Searching in a Webbased infrastructure for smart things</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guinard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Trifa</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IOT.2012.6402313</idno>
+		<ptr target="https://doi.org/10.1109/IOT.2012.6402313" />
+	</analytic>
+	<monogr>
+		<title level="m">2012 3rd IEEE international conference on the internet of things</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="119" to="126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Smart configuration of smart environments</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Verborgh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kovatsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mattern</surname></persName>
+		</author>
+		<ptr target="https://www.alexandria.unisg.ch/255762/" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans Autom Sci Eng</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1247" to="1255" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Enabling automatic discovery and querying of Web APIs at Web scale using linked data standards</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron-Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Corby</forename><forename type="middle">O</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename></persName>
+		</author>
+		<idno type="DOI">10.1145/3308560.3317073</idno>
+		<ptr target="https://hal.archives-ouvertes.fr/hal-02060966" />
+	</analytic>
+	<monogr>
+		<title level="m">WWW 2019 -LDOW/LDDL workshop of the world wide Web conference</title>
+		<meeting><address><addrLine>San Francisco</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">A real-time search engine for the Web of Things</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ostermaier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Römer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mattern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fahrmair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kellerer</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/IOT.2010.5678450</idno>
+		<ptr target="https://doi.org/10.1109/IOT.2010.5678450" />
+	</analytic>
+	<monogr>
+		<title level="m">2010 internet of things (IOT)</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">A real-time search engine for the Web of Things</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ostermaier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Römer</forename><surname>Mattern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fahrmair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kellerer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Internet of Things 2010 international conference</title>
+		<meeting>Internet of Things 2010 international conference<address><addrLine>Tokyo</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2010">2010. IoT 2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<monogr>
+		<title level="m" type="main">The pagerank citation ranking: bringing order to the Web</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Page</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Brin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Winograd</surname></persName>
+		</author>
+		<idno>1999-66 Stanford InfoLab</idno>
+		<ptr target="http://ilpubs.stanford.edu:8090/422/.Previousnumber=SIDL-WP-1999-0120" />
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Technical Report</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Spitfire: toward a semantic Web of Things</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pfisterer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Romer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bimschas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Kleine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mietz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Truong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hasemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kröller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pagel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hauswirth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Karnstedt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leggieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Richardson</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/MCOM.2011.6069708</idno>
+		<ptr target="https://doi.org/10.1109/MCOM.2011.6069708" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Commun Mag</title>
+		<imprint>
+			<biblScope unit="volume">49</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="40" to="48" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Agentspeak (l): Bdi agents speak out in a logical computable language</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Rao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Workshop on modelling autonomous agents in a multi-agent world</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1996">1996</date>
+			<biblScope unit="page" from="42" to="55" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Environment programming in multi-agent systems: an artifact-based perspective</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ricci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Piunti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Viroli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Auton Agent Multi-Agent Syst</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="158" to="192" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Real-time search for real-world entities: a survey</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Römer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ostermaier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mattern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fahrmair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Kellerer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc IEEE</title>
+		<imprint>
+			<biblScope unit="volume">98</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1887" to="1902" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Shelby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Koster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bormann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Van Der Stok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Amusüss</surname></persName>
+		</author>
+		<ptr target="https://tools.ietf.org/html/draft-ietf-core-resource-directory-24" />
+		<title level="m">CoRE resource directory</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Internet Engineering Task Force</note>
+	<note>Internet Draft</note>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Agent-oriented programming</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shoham</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif Intell</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="51" to="92" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Information-driven interaction-oriented programming: Bspl, the blindingly simple protocol language</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Singh</surname></persName>
+		</author>
+		<ptr target="http://dl.acm.org/citation.cfm?id=2031678.2031687" />
+	</analytic>
+	<monogr>
+		<title level="m">The 10th International conference on autonomous agents and multiagent systems</title>
+		<meeting><address><addrLine>Richland, SC</addrLine></address></meeting>
+		<imprint>
+			<publisher>International Foundation for Autonomous Agents and Multiagent Systems</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="491" to="498" />
+		</imprint>
+	</monogr>
+	<note>AAMAS &apos;11</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Service-oriented computing: semantics, processes, agents</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">P</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Huhns</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/0470091509</idno>
+		<ptr target="https://doi.org/10.1002/0470091509" />
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>Wiley</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">The c.i.e. colorimetric standards and their use</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Guild</surname></persName>
+		</author>
+		<idno type="DOI">10.1088/1475-4878/33/3/301</idno>
+		<ptr target="https://doi.org/10.1088/1475-4878/33/3/301" />
+	</analytic>
+	<monogr>
+		<title level="j">Trans Opt Soc</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="73" to="134" />
+			<date type="published" when="1931">1931</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Microsearch: a search engine for embedded devices used in pervasive computing</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Sheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1721695.1721709</idno>
+		<ptr target="https://doi.org/10.1145/1721695.1721709" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans Embed Comput Syst</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="43" />
+			<date type="published" when="2010">2010. 29</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Licenses compatibility and composition in the Web of Data</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Villata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<ptr target="http://dl.acm.org/citation.cfm?id=2887367.2887378" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Third international conference on consuming linked data -volume 905, COLD&apos;12</title>
+		<meeting>the Third international conference on consuming linked data -volume 905, COLD&apos;12<address><addrLine>Aachen</addrLine></address></meeting>
+		<imprint>
+			<publisher>CEUR-WS.org</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="124" to="135" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Snoogle: a search engine for pervasive environments</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TPDS.2009.145</idno>
+		<ptr target="https://doi.org/10.1109/TPDS.2009.145" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans Parallel Distrib Syst</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1188" to="1202" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Multiagent systems: a modern approach to distributed artificial intelligence</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Weiss</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<publisher>MIT Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Environment as a first class abstraction in multiagent systems</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weyns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Omicini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Odell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Autonom Agents Multi-Agent Syst</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5" to="30" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Max: humancentric search of the physical world</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">K</forename><surname>Yap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Srinivasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Motani</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1098918.1098937</idno>
+		<ptr target="https://doi.org/10.1145/1098918.1098937" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd international conference on embedded networked sensor systems, SenSys &apos;05</title>
+		<meeting>the 3rd international conference on embedded networked sensor systems, SenSys &apos;05<address><addrLine>New York</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="166" to="179" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Search techniques for the Web of Things: a taxonomy and survey</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Moessner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sensors</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page">600</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

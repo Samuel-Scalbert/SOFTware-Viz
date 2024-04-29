@@ -1,0 +1,834 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Automatically Inferring the Document Class of a Scientific Article</title>
+				<funder ref="#_hnUVFS3">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">French government</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+							<email>pierre@senellart.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">ENS</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Automatically Inferring the Document Class of a Scientific Article</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">EE64D525C97F23267F72D4689FB3840B</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Information systems → Information extraction scholarly articles</term>
+					<term>information extraction</term>
+					<term>image classification</term>
+					<term>document class</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We consider the problem of automatically inferring the (L A T E X) document class used to write a scientific article from its PDF representation. Applications include improving the performance of information extraction techniques that rely on the style used in each document class, or determining the publisher of a given scientific article. We introduce two approaches: a simple classifier based on hand-coded document style features, as well as a CNN-based classifier taking as input the bitmap representation of the first page of the PDF article. We experiment on a dataset of around 100k articles from arXiv, where labels come from the source L A T E X document associated to each article. Results show the CNN approach significantly outperforms that based on simple document style features, reaching over 90% average F 1 -score on a task to distinguish among several dozens of the most common document classes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>The majority of research papers in fields such as mathematics, physics and computer science are written using the L A T E X document composition system. L A T E X documents have a document class, which defines the type of document to be generated and how it is styled. The standard L A T E X document classes include article, book and report, but many others have been defined and are included in modern L A T E X distributions. In particular, many publishers of academic journals and conference proceedings created specific document classes, to define their own document structure standards, and to get a uniform style for all the papers in a given conference or journal. For instance, the current paper was generated using the acmart document class, which is commonly used to write articles for venues sponsored by the Association for Computing Machinery. Each document class structures papers differently: some are formatted in single-column, others in double-column; different margins or fonts are used; author names, abstracts or page numbers are displayed differently.</p><p>Given a scientific article in PDF format, determining its document class has several applications. First, systems for information extraction over scholarly articles (such as GROBID <ref type="bibr" target="#b13">[14]</ref> for metadata extraction or TheoremKB <ref type="bibr" target="#b14">[15]</ref> for extraction of mathematical statements) could benefit of knowing the document class to train better models: it is easier to know how to extract section headings, author's institutions or statements of theorems when the document class if known and all these elements are formatted similarly from one article to the next. Second, academic search engines such as Google Scholar<ref type="foot" target="#foot_0">1</ref> or BASE Search<ref type="foot" target="#foot_1">2</ref> , which index PDF articles found in preprint repositories and on the Web at large could derive information about where a document was published (e.g., that it is published at an ACM or IEEE venue) based on its document class.</p><p>However, determining the document class of a scientific article is far from trivial. Indeed, we often only have access to a PDF version of the paper, and not to its L A T E X source code. It is true that it may be easy for a human being familiar with the various famous document classes to determine, given only the PDF of the paper, the document class used. However, this manual method cannot be scaled up to the use cases above. This motivates the current work, which explores automatic inference of the document class of a given scientific article in PDF.</p><p>There is a relatively rich literature on information extraction from scholarly articles. For instance, there is previous work on extraction of headers and meta-data <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b13">14]</ref>, citations <ref type="bibr" target="#b18">[19]</ref>, acknowledgments <ref type="bibr" target="#b10">[11]</ref> or figure meta-data <ref type="bibr" target="#b2">[3]</ref>. <ref type="foot" target="#foot_2">3</ref> The exploitation of the layout and visual rendering of PDF documents to make inference about their content or structure has also been considered <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b22">23]</ref>, especially for applications such as extraction of data from invoice-type documents. However, to the best of our knowledge, the specific task of L A T E X document class inference from PDF articles has not been addressed to this date.</p><p>The goal of this work is to propose relatively simple, scalable, tractable, and effective methods to achieve this classification task. We propose a supervised machine learning approach to this classification problem, each class corresponding to one (or several related) document class(es). A first idea is to engineer discriminant features based on some simple geometric and style-based characteristics of the document. A second idea is to rely on the rendering of the PDF document as a bitmap image and use standard modern image classification techniques. Indeed, these are the two methods described in this paper: using a set of simple, hand-coded document style features; and using computer-vision methods relying on deep learning.</p><p>In Section 2, we present the methodology used to construct a set of five, simple, hand-coded document style features, based on human knowledge of the structuring of scientific publications. In Section 3, we introduce a more advanced model based on convolutional neural networks (CNNs) <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b11">12]</ref>; we also identify the presence of so-called heterogeneous classes of documents, and the interest of using reject options <ref type="bibr" target="#b8">[9]</ref>. In Section 4, we discuss our dataset, as well as performance metrics used to analyze our results. Finally, we presents experimental results for both approaches in Sections 5 and 6, before concluding with perspectives for future work.</p><p>The code, trained models, and instructions to obtain the dataset can be found at https://github.com/AntoineGauquier/inferring_ document_class_of_scientific_article/. Additional content (especially a list of all labels and detailed experimental results) is available in an extended version of this paper, available from the same repository and as supplementary material.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">CLASSIFICATION ON HAND-CODED FEATURES</head><p>In this section, we discuss the method developed to infer the L A T E X document class with only five, sample, hand-coded, document style features.</p><p>In order to construct our set of features, we generate an XML representation of each paper, thanks to a tool called pdfalto 4 , which automatically reconstructs a structured line-based representation of a PDF document. More precisely, pdfalto is a tool for parsing PDF files and producing an XML representation of the PDF content in the ALTO 5 standard format, with information about page geometry, individual text tokens and lines, font styles, etc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Hand-Coded Document Style Features</head><p>Before going into the technical details of the definition of features, let us motivate our choice of variables. We follow two main goals. First, we want to investigate whether a classification approach is relevant, i.e., that feature values have different distributions per different document class and thus make the data separable. Second, we want to validate that an approach based on geometry is relevant, which paves the way for the CNN model presented in Section 3. This is why we chose to construct a set of five simple, humanunderstandable, geometric features. The idea of each feature took birth through human observation of scientific papers, and through the prior knowledge that we have about how scientific papers are usually organized.</p><p>We thus want to exploit: left margins of text blocks (1), top margins on each page (2), the width of text columns (3), as well as font families and font sizes used. A graphical illustration of the first three of these elements is shown in Figure <ref type="figure">1</ref>.</p><p>However, each of these elements is presented in multiple copies in the document. Indeed, a scientific article almost always include several blocks of text, several pages and several fonts. Therefore, it is necessary to build aggregated features composed of the different instances of the elements presented above. We now present our five features.</p><p>Weighted average left margin (lm). The average is weighted by text-block length, in order to obtain the most representative value for the left margin. Let us denote 𝑚 h 𝑖 the left margin of the 𝑖-th text-block of the document and 𝑙 𝑖 its vertical height. Then, the </p><formula xml:id="formula_0">𝑚 h = 𝑁 𝑏 𝑖=1 𝑚 h 𝑖 × 𝑙 𝑖 𝑁 𝑏 𝑖=1 𝑙 𝑖</formula><p>where 𝑁 𝑏 denotes the number of text-blocks in the document. This is a numerical feature (floating-point number).</p><p>Average first top margin (tm). We are here interested in the gap between the top of the page and the very first block of content (and not between the top of the page and all blocks of content). By denoting 𝑚 v 𝑖,𝑗 the distance between the top of the page and the 𝑗-th block of the 𝑖-th page of the document, the average first top margin 𝑚 v is defined as:</p><formula xml:id="formula_1">𝑚 v = 𝑁 𝑝 𝑖=1 min 𝑗 𝑚 v 𝑖,𝑗</formula><p>𝑁 𝑝 where 𝑁 𝑝 denotes the number of pages in the document. Again here, this feature is numerical (floating-point number).</p><p>Weighted average column width (cw). Technically, it corresponds to the average of the width of every text block in the document, weighted by the height of the block (so as not to put importance on very short blocks, such as equations or sections headings, which do not have a typical width). We here denote 𝑤 𝑖 the width of the 𝑖-th text-block in the document, and 𝑙 𝑖 its vertical height. The weighted average column-width 𝑤 is defined as:</p><formula xml:id="formula_2">𝑤 = 𝑁 𝑏 𝑖=1 𝑤 𝑖 × 𝑙 𝑖 𝑁 𝑏 𝑖=1 𝑙 𝑖</formula><p>where 𝑁 𝑏 is still the number of text-blocks in the document. Note this is very similar to the definition of lm. It is also a numerical feature (floating-point number).</p><p>Most common font family (ff). Choosing the most common font family requires defining a criterion. We choose to quantify the importance of a font family by the space it occupies in the document. Assume we have 𝑁 𝑓 different fonts used in the document (in the ALTO representation, this corresponds to the number of &lt;TextStyle&gt; tags). Let us denote 𝑆 𝑖 the set of all tokens in the document styled in the 𝑖-th font of the document. We define the font importance 𝑓 𝑖 of the 𝑖-th font as:</p><formula xml:id="formula_3">𝑓 𝑖 = 𝑠 ∈𝑆 𝑖 𝑙 𝑠 × ℎ 𝑠 𝑁 𝑓 𝑗=1 𝑠 ∈𝑆 𝑗 𝑙 𝑠 × ℎ 𝑠</formula><p>where 𝑙 𝑠 is the length of token 𝑠, and ℎ 𝑠 the height of token 𝑠. The product 𝑙 𝑠 × ℎ 𝑠 thus gives an area, and we compute the space ratio that each font family occupies. To finally get the most common font-family 𝑓 family , we take the font family of the font with the highest 𝑓 𝑖 :</p><formula xml:id="formula_4">𝑓 family = family arg max 𝑖 ∈ {1,...,𝑁 𝑓 } 𝑓 𝑖 .</formula><p>This feature is a categorical one.</p><p>Most common font size (fs). The computation is based on the computation 𝑓 𝑖 defined above for each font 𝑖, and then we obtain the feature</p><formula xml:id="formula_5">𝑓 size = size arg max 𝑖 ∈ {1,...,𝑁 𝑓 } 𝑓 𝑖 .</formula><p>This is a numerical value, though in practice it mostly acts as a categorical feature as the number of different font sizes is limited.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Random Forest Model</head><p>We train a supervised machine learning model based on these five features per document. After trying different models such as Support Vector Machines (SVM) <ref type="bibr" target="#b3">[4]</ref> or logistic regression, we settled on using random forests <ref type="bibr" target="#b1">[2]</ref>. Random forests have the advantage of giving good classification results on this kind of task (as we experimented compared to SVMs and logistic regression), are reasonably fast to train, and lend themselves well to explanations.</p><p>In more detail, models based on random forests are a type of ensemble methods. The principle of ensemble methods is to combine multiple weak learners (i.e., models whose performance is not considered as being good enough) in order to have a global model with good performance. The weak learners of random forests are decision trees. On each node of the tree, a condition (usually, an inequality) over one feature of the data is evaluated. Depending on the answer, a branch is followed, and either leads to another node (and thus, another evaluation), or a leaf, corresponding to one of the possible classes. The random forest is thus composed of a set of decision trees (also called estimators), each of them being trained with a different subset of the data. The random forest provides the data to be classified to all the estimators, and finally makes a majority vote to decide which class is to be selected.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">CNN-BASED APPROACH</head><p>In this section, we present an alternative approach, based on convolutional neural networks, trained on a bitmap rendering of the PDFs. We first explain which bitmap images are selected as input to the model. We then present the general composition of a CNN, as well as a sample simple architecture. We subsequently describe other standard architectures we train, as well as their complexity through two criteria. Finally, we discuss a limitation of the modeling with respect to heterogeneous document classes, as well as a potential solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Input to the Model</head><p>In order to use CNNs on PDF renderings, we need to decide which exact content to show to the model. A natural idea is to simply transform each page of the PDF into an image, by choosing a fixed resolution and size for each image, so that the input size of the model is the same for all papers, no matter the original format of the paper. This of course has for consequence to distort the aspect ratio of the PDFs, but it still preserves their structure and organization on the page.</p><p>Convolutional neural networks are particularly suited for our task, since they perform well in image processing and geometric pattern learning through the use of convolution, while limiting the number of parameters to be trained (in comparison with fully connected, feed-forward, neural networks). However, they do not support the observation of sequential data (in our case, a sequence of images from the PDF paper) as RNNs or transformers do, so we decided to only keep one image per paper, namely the rendering of the very first page of the paper, since it contains much information that can be used to discriminate document classes: position and size of the title, of the author's names, of the abstract, of copyright statements, etc. Some document classes even have some specific content in a header or footer.</p><p>An example of such an image, at the exact resolution that we use in experiments and which is taken randomly from our dataset, is shown in Figure <ref type="figure" target="#fig_1">2</ref>. Note that, though the text is illegible, much information about the structure, geometry, and style of the document, which are helpful to determine the document class, is apparent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Design of a Simple Architecture</head><p>Convolutional Neural Networks <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b11">12]</ref> are a deep learning technique involving an input layer, an output layer, and at least one hidden layer. As opposed to fully connected layers of other forms of neural networks, CNN uses convolutional layers, based on the convolution operation. Denoted * , it is defined, in its discrete form in two dimensions, which is the one we are interested in, as:</p><formula xml:id="formula_6">(𝑓 * 𝑔) 𝑚,𝑛 = +∞ ∑︁ 𝑖=-∞ +∞ ∑︁ 𝑗=-∞ 𝑓 𝑖,𝑗 × 𝑔 𝑚-𝑖,𝑛-𝑗</formula><p>where 𝑓 is the kernel or filter, and 𝑔 is the 2D input. For numerical applications, 𝑓 and 𝑔 are finite.</p><p>The parameters of the model consists in the values of the 𝑓 matrices. We can have several filters per hidden layer, as well as several hidden layers. In addition to these convolution operations, we also apply a set of other operations, such as: activation functions, to know which convolutional neurons are activated by the parameters; pooling operations, to progressively reduce the size of the images through the hidden layers and to get a small set of embeddings at the end of the model; and dropout operations, which aim at randomly dropping some of the neurons to avoid overfitting.</p><p>We then concatenate several of these layers, and finally add a flattening operation and one (or several) last fully-connected layer, to transform our set of small matrices of embeddings into a set of logits, corresponding to the number of classes in our problem. As a sample simple architecture (but see following section for more complex ones), we designed, in a fairly typical way for simple CNNs, a simple model with four hidden layers, with increasing numbers of filters and decreasing size of the embeddings throughout the layers. Its architecture is presented in Figure <ref type="figure" target="#fig_2">3</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Comparison with Other Architectures</head><p>Our assumption is that our simple architecture is sufficient to discriminate document classes since, as already mentioned above, first images of papers contain an important number of possible patterns indicative of document classes. To verify this assumption, we also train some more complex architectures from the state of the art. Thus, we also consider the following ones: a 50-layer ResNet from 2016 <ref type="bibr" target="#b7">[8]</ref>, a Mobile version of NASNet from 2018 <ref type="bibr" target="#b23">[24]</ref>, and a B0 version of EfficientNetV2 from 2021 <ref type="bibr" target="#b19">[20]</ref>. These are chosen because they are standard CNN architectures and have a reasonably limited number of parameters. We pay special attention to EfficentNetV2-B0, first because it is the most recent of the considered architectures, and second because it was designed to propose better parameter efficiency than previous models. We set aside even more modern architectures with a large number of parameters, such as the Con-vNeXt architecture of 2022 <ref type="bibr" target="#b12">[13]</ref>, whose basic model nearly reaches 90 million parameters.</p><p>To be able to compare the complexity of these different models, we present in Table <ref type="table" target="#tab_0">1</ref> the total number of parameters of each architecture, as well as the number of floating-point operations (FLOPs) required for inference (as defined in <ref type="bibr" target="#b20">[21]</ref>), for the same (fixed) size of input images, which is a machine-independent way to measure the time for inference. It is important to consider these two criteria in order to check that our model is respectively simple, light (thus, that its number of parameters is limited and that it takes little space in memory), as well as fast, in training phase, but especially in inference phase: it is an essential criterion so that the model can be scaled up.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Modeling with Reject Option</head><p>As mentioned in the introduction, L A T E X includes several standard document classes (including article, book, and report). In fact, these are still widely used because they are guaranteed to be installed on any L A T E X distribution, and because authors are used to them. Indeed, it is very common to find articles with widely different styles that have been written using these classes (chosen "by default") and numerous extra L A T E X packages to customize the style. This is in contrast with document classes developed by publishers, which are usually followed quite strictly.</p><p>We can thus expect some difficulties in determining the document class of a paper, when there is too much heterogeneity in documents produced using them. As an alternative to the modeling proposed so far, we consider an approach allowing us to put apart these so-called heterogeneous classes, in order to potentially improve the performance of our classifier on non-heterogeneous classes.</p><p>The idea of judging a subset of a dataset as "irrelevant" for a machine learning model is something that has already been studied under the name of classification with reject option <ref type="bibr" target="#b8">[9]</ref>. The name comes from the idea that we want our model to be able to reject a prediction (or a training sample, considering training phase) if it belongs to the irrelevant subset of our data (of course with respect to the classification task we are considering).</p><p>There are two main kinds of reject options: novelty rejection and ambiguity rejection. In the first case, the model receives an unobserved sample that is significantly dissimilar to what has been seen during training phase; in the second case, the learned model does not behave correctly in certain regions of the instance space it is evolving in. The idea of separating the heterogeneous classes from the other ones is closer to the first type of rejection: the model is observing, in inference phase, papers associated to one of the heterogeneous classes having a structure which is too dissimilar with the ones of this class on training phase. However, it is also linked to ambiguity rejection, because a paper with completely personalized structure from a heterogeneous class could be equally distant from several document classes.</p><p>In order to keep a simple modeling, and since we expect the task of distinguishing heterogeneous classes to be hard, we stick to novelty rejection, and we propose an architecture that uses a separate rejector, i.e., having one dedicated model for rejection, and one  The architectures of each of the models (both rejector and classifier) are close to the one presented in Section 3.2: we only modified the last dense layer to be consistent with the tasks we do (respectively, binary classification and multi-class classification with 31 possible classes). We also added one dense layer for the rejector before the last dense layer to help it discriminate heterogeneous classes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">DATASET AND PERFORMANCE METRICS</head><p>In this section, we present the dataset we are using to conduct our experiments, as well as some (usual) performance metrics used to evaluate our trained models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Dataset</head><p>To conduct our experiments, we used a set of 119 087 scientific papers, extracted from the ArXiv<ref type="foot" target="#foot_3">6</ref> platform, a free open access archive of scientific publications. This set of papers corresponds to all papers from the year 2018. The choice of this platform is justified by the joint availability of the PDF document and its L A T E X Figure <ref type="figure">5</ref>: Selection process of papers source, both of which can be obtained through arXiv's bulk access from AWS <ref type="foot" target="#foot_4">7</ref> . The document class is extracted from the L A T E X source through simple rules based on regular expressions. However, among the 119 087 papers, only 98 713 could be exploited. Indeed, for some of them, the L A T E X source is missing, for example in the case where the paper was written using word processing software such as Microsoft Word, making it impossible to infer any document class. For others, document class extraction was ambiguous or impossible (e.g., some authors use Plain T E X instead of L A T E X or redefine the \documentclass macro), or the extraction of ALTO or image representations was not possible (because of failures of pdfalto or of the bitmap rendering); for more on arXiv extraction issues, see [5, Section 6.2]. A diagram summarizing these steps is shown in Figure <ref type="figure">5</ref>.</p><p>Within these remaining 98 713 documents, we identify more than 1 200 different document classes (based on their names). But we observe that an overwhelming majority of papers correspond to only a few classes. Indeed, the first 20 classes represent 90% of the papers, and more than half of document classes are only used in one paper. In order to be able to use statistical learning methods, we need enough data for each class so that the models can be properly trained. We therefore impose a criterion of data representativeness, namely that each class kept must contain at least one thousandth of the data (thus appearing in around one hundred articles). 44 document classes satisfy this criterion. As article, the most commonly used class, was also the one that was the most heterogeneous, we renamed that class to other and mapped all documents whose class was not among the 44 to that class. This means the other class partly act as a reject option, though we also consider a better rejection strategy as detailed in Section 6.</p><p>The reduced list of 44 classes still contain very similar classes (as can directly be observed by name similarities). For example, classes aastex6, aastex61 and aastex62; ieeeconf and ieeetran; or amsart and amsproc. It is therefore likely that some classes are in fact very similar, but a similarity in name only is not enough to justify merging these classes. We could also miss similar classes whose names are too different to predict that they are similar. To properly deal with similar document classes with different names, we compute a similarity metric between the source codes of the .cls document classes, usually available within the arXiv source archive.</p><p>We chose term frequency-inverse document frequency (TF-IDF) <ref type="bibr" target="#b17">[18]</ref>, which evaluates, for a given document class, the importance of each term in the source code of that class. We therefore compute a vector whose size is the number of distinct terms and associates to each term an importance score. Once those scores are computed for all document classes, we can compute a pairwise similarity, by computing, for all pairs of document classes (𝑖, 𝑗) with 𝑖 ≠ 𝑗 the dot product of their TF-IDF vectors. This results in a score between 0 and 1, representing how similar the pair of document classes is. We set a threshold of 0.8.</p><p>By applying this rule, we have a new short-list of 33 classes, corresponding to individual or groups of document classes, which is our final label set for the different approaches.</p><p>We split our dataset between a train and a test set, by randomly selecting papers for each class with a ratio of 0.8 (80% of the dataset for training, and 20% of the dataset for test).</p><p>The dataset is heavily unbalanced across document classes: the biggest class other has 31 759 samples, while some others have just above 100 instances. To deal with this while training our models, we use oversampling techniques <ref type="bibr" target="#b15">[16]</ref>. For each of the 32 classes except other, we randomly duplicate papers to reach the same number of samples as class other. We do this within the training set so as to do unbiased training across classes; this allows the model to pay as much attention to each of the classes, but also to show more data to the model, thus ensuring its convergence and stability. We also perform oversampling over the test set, in order to properly measure its performance, as described next.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Performance Metrics</head><p>We define performance metrics to evaluate and compare our results on the test set. Global accuracy of the classification over the entire test set is not sufficient as we want to investigate in more detail misclassification errors. We therefore report the individual precision, recall, and F 1 -score of the classification for every class (in the extended version of this paper) and their mean (as a summary), which will be unaffected by data imbalance.</p><p>Let us denote TP 𝑖 the number of "true positives" for class 𝑖, i.e., the number of samples that the model classifies in class 𝑖 and that actually belong to this class. TN 𝑖 will then be the number of "true negatives" for class 𝑖, i.e., the samples that were rejected by the model (for a multi-class problem, it corresponds to the situation recall 𝑖 = TP 𝑖 TP 𝑖 + FN 𝑖 And the F 1 -score, which is the harmonic mean on of both precision and recall, is defined as follows:</p><formula xml:id="formula_7">F 1 -score 𝑖 = 2 precision 𝑖 × recall 𝑖 precision 𝑖 + recall 𝑖</formula><p>Note that per-class recall is the same as per-class accuracy: the proportion of documents of this class that are correctly classified.</p><p>Precision, recall, and F 1 -score are then summarized across all classes by their unweighted arithmetic mean.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">EXPERIMENTS FOR HAND-CODED FEATURES</head><p>In this section, we present the data distribution and experimental results obtained with the five hand-coded document style features described in Section 2 and the random forests model built on top of them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Data Distribution</head><p>We analyze the distribution of feature values on the entire dataset of 98 713 articles described in Section 4. Table <ref type="table" target="#tab_1">2</ref> presents some key figures about the distribution of the data, for all the numerical features (i.e., all except ff).</p><p>Weighted average left margin (lm). Figure <ref type="figure">6</ref> shows the plot of the histogram for this feature. As with all other histogram charts (Figures <ref type="figure">7 to 9</ref>), the 𝑥-axis represents the values taken by the feature (i.e., here, the value in points <ref type="foot" target="#foot_5">8</ref> ), and the 𝑦-axis the corresponding frequency (as a number between 0 and 1, summing up to 1) of the range values referenced by the histogram bar. We observe what seems to be the superposition of two Gaussian-like distributions: the first with a mean close to 140 and the other one with a mean Average first top margin (tm). Figure <ref type="figure">7</ref> shows the plot of the histogram for this feature. We can also observe a Gaussian-like distribution of the data, around the value 90, with an important peak at approximately 40 points.</p><p>Weighted average column width (cw). Figure <ref type="figure">8</ref> shows the plot of the histogram for this feature. By observing the shape of the histogram, we again identify what seems to be the superposition of two Gaussian-like distributions: one with mean around 200 points, and one around 300 points. Given the fact that the width of a page is usually around 600 points 9 , and that some space is kept for margins, these two distributions most likely respectively correspond to papers with two columns (smaller column widths) and one column (larger column widths).</p><p>This tends to show that the column-width represents papers with two or one columns: the papers with two columns are more likely to have smaller horizontal margins than papers with a single column. 9 More precisely, 612 points for US letter and approximately 595 for ISO 216 A4. Most common font family (ff). This feature is different from the other ones, since it is categorical. We cannot describe it with continuous, numerical metrics, but the histogram presented in Figure <ref type="figure">9</ref> is sufficient to correctly describe its distribution. It is important to note that we have not displayed all possible font-families, since there are 109 of them, and that would have become impossible to read. In the histogram, we only show font families that have at least 100 representatives (samples that take this value). The rest is put together in a class "All others". We see that we only have a few significant font families in terms of frequency (the three most frequent being cmr, i.e., the default Computer Modern font family of T E X; nimbusromnol, i.e., Nimbus Roman No.9 L, a free serif font designed to have the same metrics as Times New Roman; and sfrm, the Computer Modern font from the CM-Super family which is a redesign of T E X's classic Computer Modern font). Other font families may still be important to identify specific document classes.</p><p>Most common font size (fs). Figure <ref type="figure" target="#fig_6">10</ref> shows the plot of the histogram for this feature. We observe here that, despite the fact that it is a numerical feature, we could consider it a categorical one. This is due to the fact that the font sizes associated with the most  Correlation of features with each other are presented in the Table <ref type="table" target="#tab_2">3</ref>. Note the strong (negative) correlation between the cw and lm which is intuitive: a document with small column width will have high left margin, for a fixed number of columns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Results of the Random Forest Model</head><p>We now report on the results of the random forest model. The use of random forests in practice requires making some choices in terms of hyperparameter. The first one to be considered is the minimum number of samples per leaf in the decision trees. In fact, since we have important heterogeneity in our data, and given the quite high number of classes, there is a high risk of overfitting if we let this parameter free (i.e., no minimum number of samples per leaf: we could end up only having one sample per leaf). In fact, without setting this one, we ended up having 100% of accuracy on the training set (classes being now balanced), but low global accuracy on the test set (around 40%). We set this parameter to be 0.01% of total observed samples. The second such parameter is the number of estimators (i.e., the number of decision trees involved in the forest). We set it to 1 000; the default value is 100, but this would low for a 33-class classification process and might impact the stability of the most common decision. We used the random forest implementation of the scikit-learn <ref type="bibr" target="#b16">[17]</ref> Python library.</p><p>By training such a model with these parameters, we got, on the training set, a global accuracy of 87.6%, and of 66.0% on the test set. The mean precision is 64%, recall 66%, and F 1 -Score 64%, all on the test set. Note that a Dummy classifier which would predict the most frequent class would have an accuracy of 31 759 98712 ≈ 32.2% while it would have a mean recall of 1 33 ≈ 3.03%, a mean precision of 32×0+1/33 33 ≈ 0.09%, and F 1 -score of ≈ 0.18%. This illustrates the importance of considering these three metrics instead of just using global accuracy, and this means the random forest model very significantly outperforms the Dummy classifier.</p><p>We observe that some classes are really well classified, on which the model generalizes well. We can cite the document class bmvc2k which has perfect scores in training, and around 97% in test. We identify other classes well classified by the model, such as cms, eptcs, iau/jfm, lipics, mdpi, sigma or wbofc. This shows that the classification approach is relevant for the data we are interested in, since the model succeeds in classifying an important number of classes very well (i.e., the features are such that the data belonging to those classes are easily separable).</p><p>But we also identify some classes that are very poorly classified. In particular, two classes have performance in test (for at least one metric) which is similar or even worse than a dummy classifier. Those classes are other and book. This is not very surprising, as these document classes, as previously discussed are very heterogeneous. Indeed, heterogeneous classes are particularly hard to classify using our random forest model.</p><p>Remaining classes have performance that vary from around 25% up to 85% for the different metrics.</p><p>Those results are particularly encouraging, since we must keep in mind that we are doing a hard classification task, on 33 classes. Thus, even classes with performance metrics around 25% are way above the results of the dummy classifier. Moreover, this is only using five hand-designed features, chosen from the prior knowledge we have about the domain. This proves that not only a classification approach is justified and relevant for this task, but also that using geometric and style features is relevant.</p><p>We consider the importance of features used in the random forest model, a measure that quantifies how much each feature on average reduces entropy of the distribution averaged over all nodes of the forest. The feature with highest impact is tm, with 32.7% of importance, then lm with 19.3% of importance, ff 18.4%, cw 16.5%, and fs has 13.1%. All features thus had some non-negligible impact on the result of the classifier.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">EXPERIMENTS USING CNN MODELS</head><p>In this section, we present the results of the training of the several CNNs we presented in Section 3. We first compare the results of our simple architecture from Section 3.2 with the ones from the literature described in Section 3.3; then we present results related to the modeling with reject option of Section 3.4.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Results of the CNN Architectures</head><p>The training of each CNN model requires specifying some parameters for the image generation part. We recall that each input image has a fixed size. We set this to 256×256. Each image is converted to 256-level grayscale, so each image weighs 256 × 256 × 1 = 64 kB. We report the mean performance (precision, recall, and F 1 -score) across all classes, as defined in Section 4.2. The average performance (mean precision, recall and F 1 -Score, as defined in section 4) are reported in Table <ref type="table" target="#tab_3">4</ref>, compared to that of the Dummy classifier for context. The best performance is obtained with the most recent CNN architecture tested, i.e., EfficientNetV2B0, with 93.4% F 1 -Score. However, all models have similar performance, roughly within 1% of the performance of EfficientNetV2B0, all achieving a very high mean precision and recall across classes, significantly above that of the random forest approach with hand-coded features of Sections 2 and 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Results of Modeling with Reject Option</head><p>Now that we have trained our CNN architecture with the 33 classes, we can check whether the classes article (included in class other), report (included in class report/wlscirep) and book have bad classification performance, because of their heterogeneous nature. Their precision, recall, and F 1 -Score on our simple CNN architecture are shown in Table <ref type="table" target="#tab_4">5</ref>.</p><p>Indeed, the performance of these three classes is the worst across all classes (the next-worst classes have F 1 -score above 87%). This validates the need for using a rejector to discriminate between homogeneous and heterogeneous classes. First, Table <ref type="table">6</ref> presents the number of parameters and FLOPs for both rejector and classifier. Performance of both rejector and classifier after rejection, as described in Section 3.4 are presented in Table <ref type="table" target="#tab_5">7</ref>.</p><p>The performance metrics show that removing the heterogeneous classes from the classifier allows it to perform even better, since we gain 4.5% of F 1 -Score in comparison with our modeling including heterogeneous classes. However, the overall pipeline will perform worse than the first CNN modeling, due to the lower F 1 -Score of the rejector: even if we had a perfect classifier after rejection, we would still have an overall F 1 -Score for the whole pipeline below 90%. Lower performance does not mean that this modeling is useless. In fact, it may be particularly useful when it comes to processing articles which are known not to belong to heterogeneous classes. Indeed, from Table <ref type="table" target="#tab_6">8</ref>, which presents the detailed performance metrics of the rejector, we see that the recall for non-heterogeneous document classes is above 98%. In practice, it means that less than 2% of papers belonging to non-heterogeneous classes are classified as heterogeneous classes. Since we have a near-perfect recall for the non-heterogeneous document classes, most of them will be presented to the classifier, which has above 96% of F 1 -Score, resulting in very high overall classification performance. This can be used in some important use cases. For instance, if we are interested in determining the publisher of a given published (scientific) scholarly article (say, whether it is ACM, IEEE, Schloß Dagstuhl, etc.), it will usually be part of some non-heterogeneous document class; the approach with reject option will allow us to detect outliers while reaching near-perfect classification performance for documents of those publishers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">CONCLUSIONS</head><p>In this paper, we consider the task of inferring the document class of a PDF scientific article, through the use of classifiers. The first one is a random forest classifier trained on five hand-coded document style features. It is giving satisfactory results considering the number of document classes we are dealing with, but the other model based on computer-vision approaches (through the use of CNNs) gives significantly better results, whatever the choice of the precise CNN architecture (a simple one as proposed in the paper or some stateof-the-art architectures). We note that CNNs do require more (GPU) computation power for training and inference than the random forest approach. Moreover, a prediction of the random forest model is relatively easily explainable, and can be related to the decision a human being would make. This is not directly possible with CNNs, which mostly act as a "black box", hard to explain.</p><p>The approach proposed in this paper can be applied to a number of tasks, as hinted to in the Introduction, from inferring some publication meta-information from a PDF found on the Web to the use of the knowledge of the document class to improve techniques aiming at extracting information from the PDF of articles. A natural perspective for this work is to assess the usefulness of document class inference for such tasks.</p><p>We must keep in mind that the entire study was done on PDFs from a specific dataset: papers published in 2018 on the arXiv which had L A T E X sources available. This means only specific fields, those common on arXiv, are represented, and thus only specific document classes. Also, evolution of document classes before and after that date are not captured. As a consequence, the set of document classes we considered in this paper might not correspond to the set of most common document classes we might encounter in the wild, even only considering scientific articles. We note however that we are unaware of any other labeled dataset with readily available document class information.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A EXTRA MATERIAL FOR SECTION 4 (DATASET AND PERFORMANCE METRICS)</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>1 2 3 Figure 1 :</head><label>131</label><figDesc>Figure 1: Illustration of major geometric elements: 1/ left margin; 2/ top margin; 3/ column width</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example of a generated image from a paper, taken randomly in the dataset</figDesc><graphic coords="4,57.19,87.07,240.25,240.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Diagram of our CNN architecture</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Modeling with reject option</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 6 :Figure 7 :</head><label>67</label><figDesc>Figure 6: Histogram of values of weighted average left margin (lm)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 8 :Figure 9 :</head><label>89</label><figDesc>Figure 8: Histogram of values of weighted average column width (cw)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Histogram of values of most common font-size (fs)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Complexity comparison between different architectures of CNN, for input size 256×256</figDesc><table><row><cell>Architecture</cell><cell cols="2">Total # of parameters FLOPs</cell></row><row><cell>Our simple architecture</cell><cell>0.04M</cell><cell>1.36B</cell></row><row><cell>ResNet50V2</cell><cell>23.63M</cell><cell>9.13B</cell></row><row><cell>NASNetMobile</cell><cell>4.30M</cell><cell>1.50B</cell></row><row><cell>EfficientNetV2B0</cell><cell>4.09M</cell><cell>0.80B</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Key figures of the distribution of the numerical handcoded features8   We also define FP 𝑖 as the number of "false positives" for class 𝑖, which is the number of samples that the model classifies in class 𝑖 while belonging to another class. Finally, we define FN 𝑖 the number of "false negatives" for class 𝑖, which correspond to the samples that are rejected by the model for class 𝑖 but that do belong to this class 𝑖.The precision score of a given class 𝑖 is defined as follows:precision 𝑖 = TP 𝑖 TP 𝑖 + FP 𝑖 The recall score of a given class 𝑖 is defined as follows:</figDesc><table><row><cell cols="4">Feature Unit Mean Median</cell><cell>SD</cell></row><row><cell>lm</cell><cell cols="2">points 159.99</cell><cell>166.42</cell><cell>38.20</cell></row><row><cell>tm</cell><cell>points</cell><cell>89.58</cell><cell>87.39</cell><cell>44.33</cell></row><row><cell>cw</cell><cell cols="2">points 424.25</cell><cell>228.51</cell><cell>65.93</cell></row><row><cell>fs</cell><cell>size</cell><cell>10.44</cell><cell>10.00</cell><cell>0.89</cell></row><row><cell cols="5">where a model classified the sample not to belong to class 𝑖, so</cell></row><row><cell cols="5">basically to any other class), while actually not belonging to this</cell></row><row><cell>class 𝑖.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Correlation matrix, involving numerical hand-coded</figDesc><table><row><cell cols="3">document style features</cell><cell></cell></row><row><cell></cell><cell>lm</cell><cell>tm</cell><cell>cw</cell><cell>fs</cell></row><row><cell>lm</cell><cell>-</cell><cell cols="3">-20.46% -65.28% -1.86%</cell></row><row><cell>tm</cell><cell></cell><cell>-</cell><cell>9.62%</cell><cell>1.17%</cell></row><row><cell>wc</cell><cell></cell><cell></cell><cell>-</cell><cell>3.22%</cell></row></table><note><p>common fonts are usually 9, 10 (T E X's default font size), 11, or 12 points, with very few exceptions.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Mean precision, recall and F 1 -Score (over all oversampled classes) for different architectures of CNN</figDesc><table><row><cell>Architecture</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>Dummy</cell><cell>0.09%</cell><cell>3.03%</cell><cell>0.18%</cell></row><row><cell>Our simple architecture</cell><cell>92.67%</cell><cell>92.70%</cell><cell>92.31%</cell></row><row><cell>ResNet50V2</cell><cell>93.59%</cell><cell>92.34%</cell><cell>92.28%</cell></row><row><cell>NASNetMobile</cell><cell>93.23%</cell><cell>91.17%</cell><cell>91.31%</cell></row><row><cell>EfficientNetV2B0</cell><cell>93.63%</cell><cell>93.52%</cell><cell>93.43%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 5 :</head><label>5</label><figDesc>Precision, recall, and F 1 -Score for heterogeneous classes on our CNN architecture</figDesc><table><row><cell cols="5">Document class Precision Recall F 1 -Score</cell></row><row><cell>book</cell><cell></cell><cell>56.84%</cell><cell>21.39%</cell><cell>31.09%</cell></row><row><cell>other</cell><cell></cell><cell>69.17%</cell><cell>65.00%</cell><cell>67.02%</cell></row><row><cell cols="2">report/wlscirep</cell><cell>52.09%</cell><cell>77.69%</cell><cell>62.37%</cell></row><row><cell cols="5">Table 6: Complexity of both rejector and classifier</cell></row><row><cell>Model</cell><cell cols="4">Total # of parameters FLOPs</cell></row><row><cell>Rejector</cell><cell></cell><cell>0.038M</cell><cell></cell><cell>1.360B</cell></row><row><cell>Classifier</cell><cell></cell><cell>0.046M</cell><cell></cell><cell>1.418B</cell></row><row><cell>Total</cell><cell></cell><cell>0.084M</cell><cell></cell><cell>2.778B</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 7 :</head><label>7</label><figDesc>Precision, recall, and F 1 -Score for both rejector and classifier</figDesc><table><row><cell>Model</cell><cell cols="4">Precision Recall F 1 -Score # classes</cell></row><row><cell>Rejector</cell><cell>90.55%</cell><cell>89.15%</cell><cell>89.04%</cell><cell>2</cell></row><row><cell>Classifier</cell><cell>96.94%</cell><cell>96.73%</cell><cell>96.83%</cell><cell>31</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>Table 8 :</head><label>8</label><figDesc>Performance by class for the rejector, on test set</figDesc><table><row><cell>Class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>Non-heterogeneous</cell><cell>83.03%</cell><cell>98.43%</cell><cell>90.07%</cell></row><row><cell>Heterogeneous</cell><cell>98.07%</cell><cell>79.88%</cell><cell>88.04%</cell></row><row><cell>Dummy (Mean)</cell><cell>25.00%</cell><cell>50.00%</cell><cell>33.33%</cell></row><row><cell>Mean</cell><cell>90.55%</cell><cell>89.15%</cell><cell>89.04%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 9 :</head><label>9</label><figDesc>List of filtered and merged classes, with their number of associated scientific papers</figDesc><table><row><cell>Document class</cell><cell>Number of papers</cell></row><row><cell>other</cell><cell>31759</cell></row><row><cell>revtex4</cell><cell>17266</cell></row><row><cell>amsart/amsproc</cell><cell>15271</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>9473</cell></row><row><cell>elsarticle</cell><cell>3903</cell></row><row><cell>svproc/svmult/llncs</cell><cell>3183</cell></row><row><cell>mn2e/mnras</cell><cell>3031</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>2282</cell></row><row><cell>acmart</cell><cell>2035</cell></row><row><cell>aa</cell><cell>1541</cell></row><row><cell>svjour/svjour3</cell><cell>1434</cell></row><row><cell>iopart/jpconf</cell><cell>1228</cell></row><row><cell>emulateapj</cell><cell>1030</cell></row><row><cell>pos</cell><cell>559</cell></row><row><cell>scrartcl</cell><cell>484</cell></row><row><cell>aastex</cell><cell>445</cell></row><row><cell>report/wlscirep</cell><cell>394</cell></row><row><cell>iau/jfm</cell><cell>332</cell></row><row><cell>imsart</cell><cell>330</cell></row><row><cell>lipics</cell><cell>320</cell></row><row><cell>achemso</cell><cell>306</cell></row><row><cell>spie</cell><cell>284</cell></row><row><cell>ws</cell><cell>249</cell></row><row><cell>siamart171218</cell><cell>220</cell></row><row><cell>eptcs</cell><cell>183</cell></row><row><cell>mdpi</cell><cell>178</cell></row><row><cell>siamltex</cell><cell>175</cell></row><row><cell>webofc</cell><cell>174</cell></row><row><cell>sig</cell><cell>146</cell></row><row><cell>bmvc2k</cell><cell>134</cell></row><row><cell>cms</cell><cell>129</cell></row><row><cell>book</cell><cell>122</cell></row><row><cell>sigma</cell><cell>113</cell></row><row><cell>Total</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 10 :</head><label>10</label><figDesc>Performance by class for the random forest classifier model, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>77%</cell><cell>83%</cell><cell>80%</cell></row><row><cell>aastex</cell><cell>51%</cell><cell>52%</cell><cell>51%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>57%</cell><cell>58%</cell><cell>57%</cell></row><row><cell>achemso</cell><cell>58%</cell><cell>65%</cell><cell>61%</cell></row><row><cell>acmart</cell><cell>90%</cell><cell>95%</cell><cell>93%</cell></row><row><cell>amsart/amsproc</cell><cell>19%</cell><cell>28%</cell><cell>23%</cell></row><row><cell>bmvc2k</cell><cell>98%</cell><cell>97%</cell><cell>97%</cell></row><row><cell>book</cell><cell>0%</cell><cell>0%</cell><cell>0%</cell></row><row><cell>cms</cell><cell>94%</cell><cell>100%</cell><cell>97%</cell></row><row><cell>elsarticle</cell><cell>40%</cell><cell>52%</cell><cell>45%</cell></row><row><cell>emulateapj</cell><cell>55%</cell><cell>63%</cell><cell>59%</cell></row><row><cell>eptcs</cell><cell>89%</cell><cell>88%</cell><cell>88%</cell></row><row><cell>iau/jfm</cell><cell>96%</cell><cell>86%</cell><cell>90%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>53%</cell><cell>84%</cell><cell>65%</cell></row><row><cell>imsart</cell><cell>43%</cell><cell>31%</cell><cell>36%</cell></row><row><cell>iopart/jpconf</cell><cell>59%</cell><cell>66%</cell><cell>62%</cell></row><row><cell>lipics</cell><cell>86%</cell><cell>86%</cell><cell>86%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>63%</cell><cell>73%</cell><cell>68%</cell></row><row><cell>mdpi</cell><cell>87%</cell><cell>100%</cell><cell>93%</cell></row><row><cell>mn2e/mnras</cell><cell>62%</cell><cell>95%</cell><cell>65%</cell></row><row><cell>other</cell><cell>24%</cell><cell>3%</cell><cell>6%</cell></row><row><cell>pos</cell><cell>84%</cell><cell>87%</cell><cell>85%</cell></row><row><cell>report/wlscirep</cell><cell>58%</cell><cell>47%</cell><cell>52%</cell></row><row><cell>revtex4</cell><cell>68%</cell><cell>60%</cell><cell>64%</cell></row><row><cell>scrartcl</cell><cell>40%</cell><cell>44%</cell><cell>42%</cell></row><row><cell>siamart171218</cell><cell>58%</cell><cell>63%</cell><cell>60%</cell></row><row><cell>siamltex</cell><cell>56%</cell><cell>43%</cell><cell>49%</cell></row><row><cell>sig</cell><cell>81%</cell><cell>26%</cell><cell>39%</cell></row><row><cell>sigma</cell><cell>94%</cell><cell>100%</cell><cell>97%</cell></row><row><cell>spie</cell><cell>84%</cell><cell>80%</cell><cell>82%</cell></row><row><cell>svjour/svjour3</cell><cell>62%</cell><cell>64%</cell><cell>63%</cell></row><row><cell>webofc</cell><cell>89%</cell><cell>93%</cell><cell>91%</cell></row><row><cell>ws</cell><cell>54%</cell><cell>65%</cell><cell>59%</cell></row><row><cell>Dummy (Mean)</cell><cell>0%</cell><cell>3%</cell><cell>0%</cell></row><row><cell>Mean</cell><cell>64%</cell><cell>66%</cell><cell>64%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 11 :</head><label>11</label><figDesc>Performance by class for our CNN architecture, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>99.86%</cell><cell>99.57%</cell><cell>99.71%</cell></row><row><cell>aastex</cell><cell>97.86%</cell><cell>94.17%</cell><cell>95.98%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>90.93%</cell><cell>98.92%</cell><cell>94.76%</cell></row><row><cell>achemso</cell><cell>95.09%</cell><cell>100.00%</cell><cell>97.48%</cell></row><row><cell>acmart</cell><cell>96.21%</cell><cell>98.87%</cell><cell>97.52%</cell></row><row><cell>amsart/amsproc</cell><cell>88.34%</cell><cell>97.25%</cell><cell>92.58%</cell></row><row><cell>bmvc2k</cell><cell>99.48%</cell><cell>100.00%</cell><cell>99.74%</cell></row><row><cell>book</cell><cell>56.84%</cell><cell>21.39%</cell><cell>31.09%</cell></row><row><cell>cms</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>elsarticle</cell><cell>97.55%</cell><cell>96.52%</cell><cell>97.03%</cell></row><row><cell>emulateapj</cell><cell>98.73%</cell><cell>97.56%</cell><cell>98.14%</cell></row><row><cell>eptcs</cell><cell>97.50%</cell><cell>100.00%</cell><cell>98.73%</cell></row><row><cell>iau/jfm</cell><cell>96.35%</cell><cell>100.00%</cell><cell>98.14%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>90.26%</cell><cell>98.18%</cell><cell>94.05%</cell></row><row><cell>imsart</cell><cell>95.21%</cell><cell>92.55%</cell><cell>93.86%</cell></row><row><cell>iopart/jpconf</cell><cell>94.81%</cell><cell>99.68%</cell><cell>97.18%</cell></row><row><cell>lipics</cell><cell>99.41%</cell><cell>94.37%</cell><cell>96.83%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>93.89%</cell><cell>98.39%</cell><cell>96.09%</cell></row><row><cell>mdpi</cell><cell>99.73%</cell><cell>96.89%</cell><cell>98.29%</cell></row><row><cell>mn2e/mnras</cell><cell>99.03%</cell><cell>99.40%</cell><cell>99.21%</cell></row><row><cell>other</cell><cell>69.17%</cell><cell>65.00%</cell><cell>67.02%</cell></row><row><cell>pos</cell><cell>99.94%</cell><cell>98.38%</cell><cell>99.15%</cell></row><row><cell>report/wlscirep</cell><cell>52.09%</cell><cell>77.69%</cell><cell>62.37%</cell></row><row><cell>revtex4</cell><cell>87.08%</cell><cell>98.27%</cell><cell>92.34%</cell></row><row><cell>scrartcl</cell><cell>90.35%</cell><cell>84.22%</cell><cell>87.17%</cell></row><row><cell>siamart171218</cell><cell>89.91%</cell><cell>91.71%</cell><cell>90.80%</cell></row><row><cell>siamltex</cell><cell>90.61%</cell><cell>84.11%</cell><cell>87.24%</cell></row><row><cell>sig</cell><cell>99.48%</cell><cell>93.99%</cell><cell>96.65%</cell></row><row><cell>sigma</cell><cell>98.64%</cell><cell>100.00%</cell><cell>99.32%</cell></row><row><cell>spie</cell><cell>99.44%</cell><cell>96.48%</cell><cell>97.94%</cell></row><row><cell>svjour/svjour3</cell><cell>94.97%</cell><cell>96.94%</cell><cell>95.95%</cell></row><row><cell>webofc</cell><cell>99.92%</cell><cell>96.88%</cell><cell>98.38%</cell></row><row><cell>ws</cell><cell>99.31%</cell><cell>91.67%</cell><cell>95.34%</cell></row><row><cell>Dummy (Mean)</cell><cell>0.09%</cell><cell>3.03%</cell><cell>0.18%</cell></row><row><cell>Mean</cell><cell>92.67%</cell><cell>92.70%</cell><cell>92.31%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head>Table 12 :</head><label>12</label><figDesc>Performance by class for the ResNet50V2 architecture, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>99.46%</cell><cell>99.57%</cell><cell>99.51%</cell></row><row><cell>aastex</cell><cell>96.27%</cell><cell>92.07%</cell><cell>94.12%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>96.74%</cell><cell>96.82%</cell><cell>96.78%</cell></row><row><cell>achemso</cell><cell>99.70%</cell><cell>96.94%</cell><cell>98.30%</cell></row><row><cell>acmart</cell><cell>96.86%</cell><cell>98.10%</cell><cell>97.47%</cell></row><row><cell>amsart/amsproc</cell><cell>79.88%</cell><cell>98.32%</cell><cell>88.14%</cell></row><row><cell>bmvc2k</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>book</cell><cell>69.20%</cell><cell>26.08%</cell><cell>37.88%</cell></row><row><cell>cms</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>elsarticle</cell><cell>97.21%</cell><cell>98.02%</cell><cell>97.61%</cell></row><row><cell>emulateapj</cell><cell>95.91%</cell><cell>99.35%</cell><cell>97.60%</cell></row><row><cell>eptcs</cell><cell>99.98%</cell><cell>97.25%</cell><cell>98.60%</cell></row><row><cell>iau/jfm</cell><cell>99.72%</cell><cell>100.00%</cell><cell>99.86%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>93.63%</cell><cell>97.19%</cell><cell>95.37%</cell></row><row><cell>imsart</cell><cell>99.81%</cell><cell>82.53%</cell><cell>90.35%</cell></row><row><cell>iopart/jpconf</cell><cell>97.81%</cell><cell>98.70%</cell><cell>98.25%</cell></row><row><cell>lipics</cell><cell>99.77%</cell><cell>94.37%</cell><cell>97.00%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>97.94%</cell><cell>93.35%</cell><cell>95.59%</cell></row><row><cell>mdpi</cell><cell>99.94%</cell><cell>96.89%</cell><cell>98.39%</cell></row><row><cell>mn2e/mnras</cell><cell>99.35%</cell><cell>99.72%</cell><cell>99.54%</cell></row><row><cell>other</cell><cell>45.41%</cell><cell>79.70%</cell><cell>57.86%</cell></row><row><cell>pos</cell><cell>99.98%</cell><cell>98.49%</cell><cell>99.23%</cell></row><row><cell>report/wlscirep</cell><cell>59.22%</cell><cell>76.81%</cell><cell>66.88%</cell></row><row><cell>revtex4</cell><cell>83.05%</cell><cell>98.79%</cell><cell>90.24%</cell></row><row><cell>scrartcl</cell><cell>99.42%</cell><cell>63.75%</cell><cell>77.69%</cell></row><row><cell>siamart171218</cell><cell>92.57%</cell><cell>89.43%</cell><cell>90.97%</cell></row><row><cell>siamltex</cell><cell>95.48%</cell><cell>90.17%</cell><cell>92.75%</cell></row><row><cell>sig</cell><cell>99.31%</cell><cell>93.99%</cell><cell>96.58%</cell></row><row><cell>sigma</cell><cell>99.98%</cell><cell>100.00%</cell><cell>99.99%</cell></row><row><cell>spie</cell><cell>99.94%</cell><cell>100.00%</cell><cell>99.97%</cell></row><row><cell>svjour/svjour3</cell><cell>95.39%</cell><cell>97.28%</cell><cell>96.33%</cell></row><row><cell>webofc</cell><cell>99.97%</cell><cell>100.00%</cell><cell>99.98%</cell></row><row><cell>ws</cell><cell>99.67%</cell><cell>93.43%</cell><cell>96.45%</cell></row><row><cell>Dummy (Mean)</cell><cell>0.09%</cell><cell>3.03%</cell><cell>0.18%</cell></row><row><cell>Mean</cell><cell>93.59%</cell><cell>92.34%</cell><cell>92.28%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>Table 13 :</head><label>13</label><figDesc>Performance by class for the NasNetMobile architecture, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>99.67%</cell><cell>98.93%</cell><cell>99.30%</cell></row><row><cell>aastex</cell><cell>99.42%</cell><cell>89.77%</cell><cell>94.35%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>94.83%</cell><cell>95.83%</cell><cell>95.33%</cell></row><row><cell>achemso</cell><cell>99.96%</cell><cell>81.85%</cell><cell>90.01%</cell></row><row><cell>acmart</cell><cell>96.74%</cell><cell>93.91%</cell><cell>95.30%</cell></row><row><cell>amsart/amsproc</cell><cell>88.67%</cell><cell>97.14%</cell><cell>92.71%</cell></row><row><cell>bmvc2k</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>book</cell><cell>69.01%</cell><cell>17.48%</cell><cell>27.90%</cell></row><row><cell>cms</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>elsarticle</cell><cell>98.75%</cell><cell>91.73%</cell><cell>95.11%</cell></row><row><cell>emulateapj</cell><cell>99.74%</cell><cell>94.95%</cell><cell>97.28%</cell></row><row><cell>eptcs</cell><cell>100.00%</cell><cell>97.25%</cell><cell>98.61%</cell></row><row><cell>iau/jfm</cell><cell>99.82%</cell><cell>96.65%</cell><cell>98.21%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>94.13%</cell><cell>94.93%</cell><cell>94.53%</cell></row><row><cell>imsart</cell><cell>99.87%</cell><cell>72.22%</cell><cell>83.83%</cell></row><row><cell>iopart/jpconf</cell><cell>98.44%</cell><cell>99.54%</cell><cell>98.99%</cell></row><row><cell>lipics</cell><cell>99.77%</cell><cell>94.37%</cell><cell>97.00%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>95.42%</cell><cell>96.89%</cell><cell>96.15%</cell></row><row><cell>mdpi</cell><cell>99.45%</cell><cell>94.23%</cell><cell>96.77%</cell></row><row><cell>mn2e/mnras</cell><cell>99.32%</cell><cell>99.32%</cell><cell>99.32%</cell></row><row><cell>other</cell><cell>37.29%</cell><cell>77.06%</cell><cell>50.26%</cell></row><row><cell>pos</cell><cell>99.94%</cell><cell>96.72%</cell><cell>98.30%</cell></row><row><cell>report/wlscirep</cell><cell>55.64%</cell><cell>84.40%</cell><cell>67.07%</cell></row><row><cell>revtex4</cell><cell>89.70%</cell><cell>94.91%</cell><cell>92.23%</cell></row><row><cell>scrartcl</cell><cell>82.34%</cell><cell>82.96%</cell><cell>82.65%</cell></row><row><cell>siamart171218</cell><cell>93.36%</cell><cell>87.82%</cell><cell>90.51%</cell></row><row><cell>siamltex</cell><cell>95.67%</cell><cell>90.85%</cell><cell>93.20%</cell></row><row><cell>sig</cell><cell>97.61%</cell><cell>93.99%</cell><cell>95.76%</cell></row><row><cell>sigma</cell><cell>99.98%</cell><cell>100.00%</cell><cell>99.99%</cell></row><row><cell>spie</cell><cell>99.89%</cell><cell>100.00%</cell><cell>99.95%</cell></row><row><cell>svjour/svjour3</cell><cell>93.61%</cell><cell>97.40%</cell><cell>95.47%</cell></row><row><cell>webofc</cell><cell>98.88%</cell><cell>100.00%</cell><cell>99.44%</cell></row><row><cell>ws</cell><cell>99.69%</cell><cell>95.64%</cell><cell>97.63%</cell></row><row><cell>Dummy (Mean)</cell><cell>0.09%</cell><cell>3.03%</cell><cell>0.18%</cell></row><row><cell>Mean</cell><cell>93.23%</cell><cell>91.17%</cell><cell>91.31%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 14 :</head><label>14</label><figDesc>Performance by class for the EfficientNetV2B0 architecture, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>99.75%</cell><cell>99.57%</cell><cell>99.66%</cell></row><row><cell>aastex</cell><cell>99.26%</cell><cell>93.94%</cell><cell>96.53%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>88.37%</cell><cell>98.79%</cell><cell>93.29%</cell></row><row><cell>achemso</cell><cell>96.52%</cell><cell>100.00%</cell><cell>98.23%</cell></row><row><cell>acmart</cell><cell>92.57%</cell><cell>99.24%</cell><cell>95.79%</cell></row><row><cell>amsart/amsproc</cell><cell>92.14%</cell><cell>98.76%</cell><cell>95.34%</cell></row><row><cell>bmvc2k</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>book</cell><cell>68.63%</cell><cell>47.66%</cell><cell>56.25%</cell></row><row><cell>cms</cell><cell>99.80%</cell><cell>100.00%</cell><cell>99.90%</cell></row><row><cell>elsarticle</cell><cell>98.36%</cell><cell>95.50%</cell><cell>96.91%</cell></row><row><cell>emulateapj</cell><cell>99.09%</cell><cell>98.10%</cell><cell>98.59%</cell></row><row><cell>eptcs</cell><cell>93.52%</cell><cell>97.25%</cell><cell>95.35%</cell></row><row><cell>iau/jfm</cell><cell>99.55%</cell><cell>100.00%</cell><cell>99.78%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>88.58%</cell><cell>98.44%</cell><cell>93.25%</cell></row><row><cell>imsart</cell><cell>95.15%</cell><cell>94.31%</cell><cell>94.73%</cell></row><row><cell>iopart/jpconf</cell><cell>99.58%</cell><cell>98.28%</cell><cell>98.93%</cell></row><row><cell>lipics</cell><cell>99.71%</cell><cell>94.37%</cell><cell>96.97%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>95.96%</cell><cell>98.13%</cell><cell>97.03%</cell></row><row><cell>mdpi</cell><cell>99.79%</cell><cell>96.89%</cell><cell>98.32%</cell></row><row><cell>mn2e/mnras</cell><cell>99.28%</cell><cell>99.85%</cell><cell>99.56%</cell></row><row><cell>other</cell><cell>67.00%</cell><cell>74.29%</cell><cell>70.46%</cell></row><row><cell>pos</cell><cell>99.94%</cell><cell>97.76%</cell><cell>98.84%</cell></row><row><cell>report/wlscirep</cell><cell>61.48%</cell><cell>68.84%</cell><cell>64.95%</cell></row><row><cell>revtex4</cell><cell>88.29%</cell><cell>98.21%</cell><cell>92.98%</cell></row><row><cell>scrartcl</cell><cell>92.93%</cell><cell>80.65%</cell><cell>86.35%</cell></row><row><cell>siamart171218</cell><cell>92.80%</cell><cell>84.93%</cell><cell>88.69%</cell></row><row><cell>siamltex</cell><cell>85.79%</cell><cell>93.80%</cell><cell>89.62%</cell></row><row><cell>sig</cell><cell>99.43%</cell><cell>93.99%</cell><cell>96.63%</cell></row><row><cell>sigma</cell><cell>99.94%</cell><cell>100.00%</cell><cell>99.97%</cell></row><row><cell>spie</cell><cell>98.62%</cell><cell>98.22%</cell><cell>98.42%</cell></row><row><cell>svjour/svjour3</cell><cell>98.53%</cell><cell>97.59%</cell><cell>98.06%</cell></row><row><cell>webofc</cell><cell>99.63%</cell><cell>100.00%</cell><cell>99.81%</cell></row><row><cell>ws</cell><cell>99.91%</cell><cell>88.85%</cell><cell>94.06%</cell></row><row><cell>Dummy (Mean)</cell><cell>0.09%</cell><cell>3.03%</cell><cell>0.18%</cell></row><row><cell>Mean</cell><cell>93.63%</cell><cell>93.52%</cell><cell>93.43%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 15 :</head><label>15</label><figDesc>Performance by class for the classifier without heterogeneous classes, on test set</figDesc><table><row><cell>Document class</cell><cell cols="3">Precision Recall F 1 -Score</cell></row><row><cell>aa</cell><cell>99.95%</cell><cell>99.20%</cell><cell>99.58%</cell></row><row><cell>aastex</cell><cell>95.35%</cell><cell>94.18%</cell><cell>94.76%</cell></row><row><cell>aastex6/aastex61/aastex62</cell><cell>94.09%</cell><cell>98.25%</cell><cell>96.13%</cell></row><row><cell>achemso</cell><cell>99.88%</cell><cell>96.96%</cell><cell>98.40%</cell></row><row><cell>acmart</cell><cell>88.76%</cell><cell>99.00%</cell><cell>93.60%</cell></row><row><cell>amsart/amsproc</cell><cell>86.93%</cell><cell>97.70%</cell><cell>92.00%</cell></row><row><cell>bmvc2k</cell><cell>100.00%</cell><cell>96.68%</cell><cell>98.31%</cell></row><row><cell>cms</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>elsarticle</cell><cell>99.18%</cell><cell>97.91%</cell><cell>98.54%</cell></row><row><cell>emulateapj</cell><cell>99.66%</cell><cell>98.43%</cell><cell>99.04%</cell></row><row><cell>eptcs</cell><cell>96.83%</cell><cell>100.00%</cell><cell>98.39%</cell></row><row><cell>iau/jfm</cell><cell>95.89%</cell><cell>100.00%</cell><cell>97.90%</cell></row><row><cell>ieeeconf/ieeetran</cell><cell>94.04%</cell><cell>98.32%</cell><cell>96.13%</cell></row><row><cell>imsart</cell><cell>95.65%</cell><cell>94.83%</cell><cell>95.24%</cell></row><row><cell>iopart/jpconf</cell><cell>99.46%</cell><cell>99.48%</cell><cell>99.47%</cell></row><row><cell>lipics</cell><cell>99.62%</cell><cell>94.36%</cell><cell>96.92%</cell></row><row><cell>llncs/svmult/svproc</cell><cell>96.03%</cell><cell>98.21%</cell><cell>97.11%</cell></row><row><cell>mdpi</cell><cell>99.99%</cell><cell>97.02%</cell><cell>98.48%</cell></row><row><cell>mn2e/mnras</cell><cell>99.43%</cell><cell>99.80%</cell><cell>99.62%</cell></row><row><cell>pos</cell><cell>100.00%</cell><cell>99.01%</cell><cell>99.50%</cell></row><row><cell>wlscirep</cell><cell>100.00%</cell><cell>97.40%</cell><cell>98.68%</cell></row><row><cell>revtex4</cell><cell>97.32%</cell><cell>96.77%</cell><cell>97.05%</cell></row><row><cell>scrartcl</cell><cell>89.64%</cell><cell>90.35%</cell><cell>89.99%</cell></row><row><cell>siamart171218</cell><cell>84.03%</cell><cell>100.00%</cell><cell>91.32%</cell></row><row><cell>siamltex</cell><cell>99.15%</cell><cell>77.51%</cell><cell>87.00%</cell></row><row><cell>sig</cell><cell>99.79%</cell><cell>87.95%</cell><cell>93.50%</cell></row><row><cell>sigma</cell><cell>100.00%</cell><cell>100.00%</cell><cell>100.00%</cell></row><row><cell>spie</cell><cell>99.25%</cell><cell>100.00%</cell><cell>99.62%</cell></row><row><cell>svjour/svjour3</cell><cell>98.28%</cell><cell>95.69%</cell><cell>96.96%</cell></row><row><cell>webofc</cell><cell>98.23%</cell><cell>100.00%</cell><cell>99.10%</cell></row><row><cell>ws</cell><cell>98.85%</cell><cell>93.73%</cell><cell>96.22%</cell></row><row><cell>Dummy (Mean)</cell><cell>0.10%</cell><cell>3.23%</cell><cell>0.20%</cell></row><row><cell>Mean</cell><cell>96.94%</cell><cell>96.73%</cell><cell>96.83%</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://scholar.google.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://www.base-search.net/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>More examples can be found on the CiteSeerX webpage https://csxstatic.ist.psu.edu/ downloads/software</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_3"><p>https://arxiv.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_4"><p>https://info.arxiv.org/help/bulk_data_s3.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_5"><p>The point is the space unit in the PDF file format, with value<ref type="bibr" target="#b0">1</ref> </p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>This work was funded in part by the <rs type="funder">French government</rs> under management of <rs type="funder">Agence Nationale de la Recherche</rs> as part of the "<rs type="programName">Investissements d'avenir" program</rs>, reference <rs type="grantNumber">ANR-19-P3IA-0001</rs> (<rs type="projectName">PRAIRIE 3IA Institute</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_hnUVFS3">
+					<idno type="grant-number">ANR-19-P3IA-0001</idno>
+					<orgName type="project" subtype="full">PRAIRIE 3IA Institute</orgName>
+					<orgName type="program" subtype="full">Investissements d&apos;avenir&quot; program</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">SciPlore Xtract: Extracting Titles from Scientific PDF Documents by Analyzing Style Information (Font Size)</title>
+		<author>
+			<persName><forename type="first">Jöran</forename><surname>Beel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bela</forename><surname>Gipp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ammar</forename><surname>Shaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Friedrich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Research and Advanced Technology for Digital Libraries</title>
+		<editor>
+			<persName><forename type="first">Mounia</forename><surname>Lalmas</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joemon</forename><surname>Jose</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Andreas</forename><surname>Rauber</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Fabrizio</forename><surname>Sebastiani</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ingo</forename><surname>Frommholz</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin Heidelberg, Berlin, Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="413" to="416" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Random Forests</title>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Breiman</surname></persName>
+		</author>
+		<idno type="DOI">10.1023/A:1010933404324</idno>
+		<ptr target="https://doi.org/10.1023/A:1010933404324" />
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5" to="32" />
+			<date type="published" when="2001-10-01">2001. 01 Oct 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Figure Metadata Extraction from Digital Documents</title>
+		<author>
+			<persName><forename type="first">Ray</forename><surname>Sagnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Prasenjit</forename><surname>Choudhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andi</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvia</forename><surname>Kirk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><forename type="middle">A</forename><surname>Szep</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sue</forename><surname>Pellegrino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Lee</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Giles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">12th International Conference on Document Analysis and Recognition</title>
+		<imprint>
+			<date type="published" when="2013">2013. 2013. 2013</date>
+			<biblScope unit="page" from="135" to="139" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Support-vector networks</title>
+		<author>
+			<persName><forename type="first">Corinna</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Vapnik</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/BF00994018</idno>
+		<ptr target="https://doi.org/10.1007/BF00994018" />
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="273" to="297" />
+			<date type="published" when="1995-09-01">1995. 01 Sep 1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">A Knowledge Base of Mathematical Results</title>
+		<author>
+			<persName><forename type="first">Theo</forename><surname>Delemazure</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-02940819" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+		<respStmt>
+			<orgName>Ecole Normale Supérieure (ENS</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Master&apos;s thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Extracting and Matching Authors and Affiliations in Scholarly Documents</title>
+		<author>
+			<persName><forename type="first">Huy</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nhat</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Muthu</forename><surname>Kumar Chandrasekaran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Cho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><forename type="middle">Yen</forename><surname>Kan</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2467696.2467703</idno>
+		<ptr target="https://doi.org/10.1145/2467696.2467703" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th ACM/IEEE-CS Joint Conference on Digital Libraries</title>
+		<meeting>the 13th ACM/IEEE-CS Joint Conference on Digital Libraries<address><addrLine>Indianapolis, Indiana, USA; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="219" to="228" />
+		</imprint>
+	</monogr>
+	<note>JCDL &apos;13)</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ian</forename><forename type="middle">J</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Courville</surname></persName>
+		</author>
+		<ptr target="http://www.deeplearningbook.org" />
+		<title level="m">Deep Learning</title>
+		<meeting><address><addrLine>Cambridge, MA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Identity Mappings in Deep Residual Networks</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Computer Vision -ECCV 2016</title>
+		<editor>
+			<persName><forename type="first">Bastian</forename><surname>Leibe</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jiri</forename><surname>Matas</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Nicu</forename><surname>Sebe</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Max</forename><surname>Welling</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="630" to="645" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Machine Learning with a Reject Option: A survey</title>
+		<author>
+			<persName><forename type="first">Kilian</forename><surname>Hendrickx</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lorenzo</forename><surname>Perini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dries</forename><surname>Van Der Plas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wannes</forename><surname>Meert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><surname>Davis</surname></persName>
+		</author>
+		<idno type="DOI">10.48550/ARXIV.2107.11277</idno>
+		<ptr target="https://doi.org/10.48550/ARXIV.2107.11277" />
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">LayoutLMv3: Pre-training for document ai with unified text and image masking</title>
+		<author>
+			<persName><forename type="first">Yupan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengchao</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yutong</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<idno>4083-4091</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ACM MM</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">AckSeer: A Repository and Search Engine for Automatically Extracted Acknowledgments from Digital Libraries</title>
+		<author>
+			<persName><forename type="first">Madian</forename><surname>Khabsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pucktada</forename><surname>Treeratpituk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">Lee</forename><surname>Giles</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2232817.2232852</idno>
+		<ptr target="https://doi.org/10.1145/2232817.2232852" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th ACM/IEEE-CS Joint Conference on Digital Libraries</title>
+		<meeting>the 12th ACM/IEEE-CS Joint Conference on Digital Libraries<address><addrLine>Washington, DC, USA; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="185" to="194" />
+		</imprint>
+	</monogr>
+	<note>JCDL &apos;12)</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Backpropagation Applied to Handwritten Zip Code Recognition</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Boser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Denker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Henderson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Hubbard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Jackel</surname></persName>
+		</author>
+		<idno type="DOI">10.1162/neco.1989.1.4.541</idno>
+		<ptr target="https://doi.org/10.1162/neco.1989.1.4.541" />
+	</analytic>
+	<monogr>
+		<title level="j">Neural Comput</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="541" to="551" />
+			<date type="published" when="1989-12">1989. dec 1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A ConvNet for the 2020s</title>
+		<author>
+			<persName><forename type="first">Zhuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanzi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chao-Yuan</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph</forename><surname>Feichtenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Trevor</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/CVPR52688.2022.01167</idno>
+		<idno>. 11966-11976</idno>
+		<ptr target="https://doi.org/10.1109/CVPR52688.2022.01167" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<title level="m" type="main">GROBID: Combining Automatic Bibliographic Data Recognition and Term Extraction for Scholarship Publications</title>
+		<author>
+			<persName><forename type="first">Patrice</forename><surname>Lopez</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-642-04346-8_62</idno>
+		<ptr target="https://doi.org/10.1007/978-3-642-04346-8_62" />
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="volume">5714</biblScope>
+			<biblScope unit="page" from="473" to="474" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Towards Extraction of Theorems and Proofs in Scholarly Articles</title>
+		<author>
+			<persName><forename type="first">Shrey</forename><surname>Mishra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Pluvinage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3469096.3475059</idno>
+		<ptr target="https://doi.org/10.1145/3469096.3475059" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21st ACM Symposium on Document Engineering</title>
+		<meeting>the 21st ACM Symposium on Document Engineering<address><addrLine>Limerick, Ireland; New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page">4</biblScope>
+		</imprint>
+	</monogr>
+	<note>) (DocEng &apos;21). Article 25</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Machine Learning with Oversampling and Undersampling Techniques: Overview Study and Experimental Results</title>
+		<author>
+			<persName><forename type="first">Roweida</forename><surname>Mohammed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jumanah</forename><surname>Rawashdeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Malak</forename><surname>Abdullah</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICICS49469.2020.239556</idno>
+		<ptr target="https://doi.org/10.1109/ICICS49469.2020.239556" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="243" to="248" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Scikit-learn: Machine Learning in Python</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pedregosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Varoquaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gramfort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Thirion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Grisel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Prettenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dubourg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perrot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Duchesnay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="2825" to="2830" />
+			<date type="published" when="2011">2011. 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">TF-IDF</title>
+		<idno type="DOI">10.1007/978-0-387-30164-8_832</idno>
+		<ptr target="https://doi.org/10.1007/978-0-387-30164-8_832" />
+		<editor>Claude Sammut and Geoffrey I. Webb</editor>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>Springer US</publisher>
+			<biblScope unit="page" from="986" to="987" />
+			<pubPlace>Boston, MA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Improved bibliographic reference parsing based on repeated patterns</title>
+		<author>
+			<persName><forename type="first">Guido</forename><surname>Sautter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klemens</forename><surname>Böhm</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00799-014-0110-6</idno>
+		<ptr target="https://doi.org/10.1007/s00799-014-0110-6" />
+	</analytic>
+	<monogr>
+		<title level="j">International Journal on Digital Libraries</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="59" to="80" />
+			<date type="published" when="2014-04-01">2014. 01 Apr 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">EfficientNetV2: Smaller Models and Faster Training</title>
+		<author>
+			<persName><forename type="first">Mingxing</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quoc</forename><surname>Le</surname></persName>
+		</author>
+		<ptr target="https://proceedings.mlr.press/v139/tan21a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th International Conference on Machine Learning (Proceedings of Machine Learning Research</title>
+		<editor>
+			<persName><forename type="first">Marina</forename><surname>Meila</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</editor>
+		<meeting>the 38th International Conference on Machine Learning ( Machine Learning Research</meeting>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">139</biblScope>
+			<biblScope unit="page" from="10096" to="10106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">FLOPs as a Direct Optimization Objective for Learning Sparse Neural Networks</title>
+		<author>
+			<persName><forename type="first">Raphael</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashutosh</forename><surname>Adhikari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jimmy</forename><surname>Lin</surname></persName>
+		</author>
+		<ptr target="https://arxiv.org/abs/1811.03060" />
+	</analytic>
+	<monogr>
+		<title level="m">CDNNRIA</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">LayoutLM: Pre-training of text and layout for document image understanding</title>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minghao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaohan</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGKDD</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">LayoutLMv2: Multimodal pre-training for visually-rich document understanding</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiheng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tengchao</forename><surname>Lv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Furu</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guoxin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yijuan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dinei</forename><surname>Florencio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cha</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanxiang</forename><surname>Che</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL/IJCNLP</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Learning Transferable Architectures for Scalable Image Recognition</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Zoph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shlens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/CVPR.2018.00907</idno>
+		<ptr target="https://doi.org/10.1109/CVPR.2018.00907" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting><address><addrLine>Los Alamitos, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2018">2018. 2018</date>
+			<biblScope unit="page" from="8697" to="8710" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

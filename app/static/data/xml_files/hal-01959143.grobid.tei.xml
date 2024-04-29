@@ -1,0 +1,1025 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Containment of Shape Expression Schemas for RDF</title>
+				<funder>
+					<orgName type="full">EU DIACHRON</orgName>
+				</funder>
+				<funder ref="#_N2Tu4qs">
+					<orgName type="full">Polish National Science Center</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Staworko</forename><surname>Sławek</surname></persName>
+							<email>slawomir.staworko@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">INRIA LINKS</orgName>
+								<orgName type="institution" key="instit2">CNRS University of Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Cristal</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">INRIA LINKS</orgName>
+								<orgName type="institution" key="instit2">CNRS University of Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Piotr</forename><surname>Wieczorek</surname></persName>
+							<email>piotr.wieczorek@cs.uni.wroc.pl</email>
+							<affiliation key="aff1">
+								<orgName type="department">Institute of Computer Science</orgName>
+								<orgName type="institution">University of Wrocław</orgName>
+								<address>
+									<country key="PL">Poland</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Containment of Shape Expression Schemas for RDF</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5235EEF94E294832FF8145F6907BC5E5</idno>
+					<idno type="DOI">10.1145/3294052.3319687</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Information systems → Graph-based database models</term>
+					<term>Resource Description Framework (RDF)</term>
+					<term>• Theory of computation → Database theory</term>
+					<term>Database interoperability RDF, Schema, ShEx, containment, counter-example</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We study the problem of containment of shape expression schemas (ShEx) for RDF graphs. We identify a subclass of ShEx that has a natural graphical representation in the form of shape graphs and whose semantics is captured with a tractable notion of embedding of an RDF graph in a shape graph. When applied to pairs of shape graphs, an embedding is a sufficient condition for containment, and for a practical subclass of deterministic shape graphs, it is also a necessary one, thus yielding a subclass with tractable containment. Containment for general shape graphs is EXP-complete. Finally, we show that containment for arbitrary ShEx is decidable.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Although RDF has been originally introduced schema-free, it has since become a standalone database format and the need for a schema language has been identified, with the emergence of new RDF applications previously reserved to relational and semi-structured databases <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b36">37]</ref>. Recently introduced by W3C, and under continuous development, shape expression schema (ShEx) is a formalism for defining valid RDF graphs <ref type="bibr" target="#b20">[21]</ref><ref type="bibr" target="#b21">[22]</ref><ref type="bibr" target="#b22">[23]</ref><ref type="bibr" target="#b37">38]</ref>. ShEx allows to define a set of types, each type defined with a rule describing the admissible types of the outbound neighborhood of a node. Inspired by versatility of schema languages for XML <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b18">19]</ref>, the rules of ShEx are based on regular expressions.</p><p>An example of shape expression schema for RDF graphs storing bug reports is presented in Figure <ref type="figure">1</ref>. The schema requires a bug report to have a description and a user who reported it. Optionally, a bug report may have an employee who successfully reproduced the bug. Also, a bug report can have a number of related bug reports. A user has a name and an optional email address while an employee has a name and a mandatory email address.</p><p>In this paper, we investigate the classical problem of containment: given two schemas S and S ′ , is the set of instances satisfying S contained in the set of instances satisfying S ′ ? This problem has applications to a vast number of problems that perform non-trivial reasoning tasks such as data exchange, query optimization, and inference <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b39">40]</ref>. The task at hand is difficult for a number of reasons.</p><p>Because the neighborhood of a node in an RDF graph is unordered, regular expressions define bag languages, also known as commutative languages <ref type="bibr" target="#b17">[18]</ref>, where the relative order among symbols is irrelevant. This lack of order gives raise to a significant degree of nondeterminism when working with regular bag expressions (RBE). For instance, membership for RBE i.e., deciding whether a bag of symbols belongs to the language defined by an RBE, is NP-complete <ref type="bibr" target="#b19">[20]</ref>. Similarly, validation for ShEx i.e., deciding whether a RDF graph satisfies a ShEx, is NP-complete too <ref type="bibr" target="#b33">[34]</ref>. The need for nondeterminism can be limited by disallowing disjunction and permitting the Kleene closure on atomic symbols only. This yields the class RBE 0 with tractable membership and tractable validation for the corresponding class of shape expression schemas ShEx 0 . Similarly, single-occurrence regular bag expressions (SORBE) have tractable membership and give rise to deterministic shape expression schemas (DetShEx), where the same symbol can be used only once. Their validation is also tractable <ref type="bibr" target="#b33">[34]</ref>. Both restrictions offer enough room to "Boom!" "Kaboom!" "Kabang!" "Bang!" "John" "Mary" "m@h.org" "Steve" "stv@m.pl" n a m e n a m e 1 e m a i l 1</p><p>Bug → descr :: Literal, reportedBy :: User, reproducedBy :: Employee ? , related :: Bug * User → name :: Literal, email :: Literal ?</p><p>Employee → name :: Literal, email :: Literal Figure <ref type="figure">1</ref>: An RDF graph with bug reports (top right) together with a shape expression schema (bottom) and the corresponding shape graph (top left).</p><p>accommodate practical uses, and in particular, the schema in Figure <ref type="figure">1</ref> belongs to them both. Since ShEx is a schema language based on types, comparing two schemas requires the ability to compare types, and consequently, testing S ⊆ S ′ revolves around questions whether a type t of S is covered by the union of types s 1 , . . . , s k of S ′ . Indeed, suppose that in the schema in Figure <ref type="figure">1</ref> we replace the type User with two types depending on whether or not the user has an email address: Although no longer deterministic (the symbol related is used twice in the type definitions of Bug 1 and Bug 2 ), the modified schema is equivalent to the original one as the type Bug is covered by the union of the types Bug 1 and Bug 2 , and the type User by the union of User 1 and User 2 (the latter also being equivalent to Employee).</p><p>Naturally, the fact that a type might be covered by a union of types is a source of complexity of the containment problem, and it is an interesting question if there is a class of schemas for which comparison on pairs of types alone would suffice.</p><p>To answer this question, we use shape graphs, which are natural graphical representation of ShEx 0 (cf. Figure <ref type="figure">1</ref>), and propose a graph-theoretic notion of an embedding between pairs of shape graphs. In essence, an embedding identifies in a simulation-like manner when a type is covered by another type, and therefore, is a sufficient condition for containment. We also identify a class DetShEx - 0 for which embedding is a necessary condition for containment. DetShEx - 0 is the class of deterministic shape expressions schema using RBE 0 , which furthermore forbids the use of + and, intuitively, requires every ? to be referenced through *. In particular, the schema in Figure <ref type="figure">1</ref> belongs to DetShEx - 0 because the type User using email :: Literal ? is (indirectly) referenced by related :: Bug * in type Bug.</p><p>Because embeddings are carefully crafted to be tractable, we obtain a class with tractable containment. The additional restrictions of DetShEx - 0 are necessary as we show the containment problem for full DetShEx 0 to be intractable. Interestingly, for a schema S in DetShEx - 0 we construct a characterizing graph G such that G is satisfied by any schema S ′ in DetShEx - 0 if and only if S ⊆ S ′ .</p><p>Checking the containment S ⊆ S ′ involves implicit negation: checking whether there is no counter-example, an instance that satisfies S and does not satisfy S ′ . The implicit negation allows to encode disjunction even in classes of schemas that explicitly forbid using disjunction in type definitions, such as ShEx 0 . This renders ShEx 0 very powerful and allows for pairs of schemas for which the smallest counterexample is of exponential size. Not surprisingly, we observe a significant impact on complexity: testing containment for shape graphs is EXP-complete.</p><p>The picture of containment for arbitrary shape expression schemas is far from obvious. It is known that ∃MSO on graphs is alone insufficient to capture ShEx and needs to be enriched with Presburger arithmetic <ref type="bibr" target="#b33">[34]</ref>. However, monadic extensions of Presburger arithmetic quickly become undecidable <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b30">31]</ref>. The question whether containment for ShEx is decidable at all is non-trivial but we answer it positively and give an initial characterization of its complexity: coNEXP-hard and in co2NEXP NP . The precise complexity of containment for ShEx remains an open question.</p><p>Our study has a number of outcomes:</p><p>• a thorough characterization of complexity of containment for classes of shape expression schemas; • a set of bounds on the size of a minimal graph that satisfies one schema and violates another; • a tractable notion of embeddings that is a sufficient condition for containment, and a necessary one of a subclass of deterministic shape expression schemas.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Related work.</head><p>There is a large body of literature dealing with the containment problem for various database schema formalisms. The expressivity of ShEx has been studied in <ref type="bibr" target="#b33">[34]</ref>. ShEx is not comparable to neither FO logic on graphs, nor to ∃MSO on graphs. In order to capture the cardinality contraints e.g., (a || b) * , expressible by RBE, ∃MSO has to be extended with Presburger Arithmetic (PA). Such extensions, as we have already mentioned, can easily get to be undecidable <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b30">31]</ref>. It is, also, a classic result that MSO theory of N with addition is undecidable, it has been shown in <ref type="bibr" target="#b29">[30]</ref> that even MSO theory of naturals with the double function, ⟨N, +1, 2x, 0⟩, is undecidable. Schema languages for trees have been extensively studied in the context of XML. Most of the work, however, has been devoted to the case of ordered trees. Typically, schema languages for ordered trees (DTD, XML Schema) are captured by tree automata. A survey of basic decision problems for tree automata can be found in <ref type="bibr" target="#b35">[36]</ref>. In particular, containment for nondeterministic tree automata is EXPTIME-complete <ref type="bibr" target="#b32">[33]</ref> but becomes polynomial for deterministic tree automata. The containment of DTDs over the usual (ordered) nondeterministic regular expressions is PSPACE-complete and remains intractable even for very simple nondeterministic regular expressions <ref type="bibr" target="#b23">[24]</ref> but drops to PTIME <ref type="bibr" target="#b24">[25]</ref> if deterministic regular expressions are used as mandated by the XML standard <ref type="bibr" target="#b6">[7]</ref>. We point out that in our case, however, determinism alone is not sufficient, in order to obtain tractability of the containment we need to enforce additional structural conditions on the shape graphs.</p><p>Various forms of DTDs with regular expressions interpreted under the commutative closure <ref type="bibr" target="#b27">[28]</ref> have been studied. In the context of trees many formalisms have been introduced to express the numerical constrains on the occurrences of the different symbols among the children of some node, e.g., Presburger automata <ref type="bibr" target="#b30">[31,</ref><ref type="bibr" target="#b31">32]</ref>, sheaves automata <ref type="bibr" target="#b11">[12]</ref>, TQL logic <ref type="bibr" target="#b7">[8]</ref>. Unfortunately, the containment problem in all this settings is NP-hard <ref type="bibr" target="#b19">[20]</ref>.</p><p>The problem of containment of regular expressions with interleaving is EXPSPACE-complete <ref type="bibr" target="#b25">[26]</ref>. A number of expressive formalisms with interleaving have been shown in <ref type="bibr" target="#b14">[15]</ref> to have highly intractable inclusion.</p><p>Disjunctive multiplicity schemas (DMS) for unordered XML have been studied in <ref type="bibr" target="#b4">[5]</ref>. A DMS is a formalism that defines for each label the language of allowed children labels using disjunctive multiplicity expressions (DIME) that are similar to RBE 0 but allow a limited form of disjunction. DMS assume similar form of determinism as DTDs since types of nodes are identified with their labels. Additionaly, DIMEs require each of the alphabet symbols from Σ to appear at most once. Nevertheless, the containment for DMS is in PTIME.</p><p>Organization. The paper is organized as follows. In Section 2 we present basic notions and introduce embeddings of shape graphs. In Section 3 we investigate decidability of containment for the full fragment of ShEx by bounding the size of a counter-example. In Section 4 we analyze the complexity of containment for shape graphs (ShEx 0 ) and show a tight exponential bound on the size of a counter-example. In Section 5 we identify a tractable subclass of deterministic shape expression schemas and investigate the complexity of constructing embeddings. We summarize our work and outline directions of further study in Section 6.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">BASIC NOTIONS</head><p>Throughout this paper we employ elements of function notation to relations, and conversely, often view functions as relations. For instance, for a binary relation</p><formula xml:id="formula_0">R ⊆ A × B we set dom(R) = {a ∈ A | ∃b ∈ B. (a, b) ∈ R}, ran(B) = {b ∈ B | ∃a ∈ A. (a, b) ∈ R}, R(a) = {b ∈ B | (a, b) ∈ R} for a ∈ A, and R -1 (b) = {a ∈ A | (a, b) ∈ R} for b ∈ B.</formula><p>Intervals. We use pairs of numbers including the infinite constant ∞ to represent intervals: the pair [n; m], with n ≤ m ≤ ∞, represents the set {i | n ≤ i ≤ m}. We assume that both n and m are stored in binary. We use a number of operators on intervals: every interval I = [n; m] has its lower bound min(I ) = n and its upper bound max(I ) = m.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>The point-wise addition of two intervals</head><formula xml:id="formula_1">A ⊕ B = {a +b | a ∈ A, b ∈ B} has a natural interpretation: [n 1 ; m 1 ] ⊕ [n 2 ; m 2 ] = [n 1 + n 2 ; m 1 + m 2 ]</formula><p>. Note that [0; 0] is the neutral element of ⊕, and hence, for k = 0 the expression</p><formula xml:id="formula_2">I 1 ⊕ . . . ⊕ I k evaluates to [0; 0]. Also [n 1 ; m 1 ] ⊆ [n 2 ; m 2 ] iff n 2 ≤ n 1 ≤ m 1 ≤ m 2 .</formula><p>Four basic intervals are commonly employed in popular schema languages for semi-structured databases, listed here together with their shorthand notation: 1 stands for [1; 1], ? for [0; 1], + for [1; ∞], and * for [0; ∞]. We use I to denote the set of all intervals and M to denote the the set of basic intervals. Bags. Let ∆ be a finite set of symbols. Unordered words are represented with bags. Formally, a bag over ∆ is a function w : ∆ → N that maps a symbol to the number of its occurrences. The empty bag ε has 0 occurrences of every symbol i.e., ε(a) = 0 for every a ∈ ∆. Bags are often presented using the notation {|a, . . .| } with elements possibly being repeated. For example, when ∆ = {a, b, c}, w 0 = {|a, a, a, c, c | } represents the function w 0 (a) = 3, w 0 (b) = 0, and w 0 (c) = 2. A bag language is a set of bags.</p><p>The equivalent of concatenation for unordered words is the bag union w 1 ⊎w 2 of two bags w 1 and w 2 is [w 1 ⊎w 2 ](a) = w 1 (a) + w 2 (a) for all a ∈ ∆. We also extend this operator to bag languages:</p><formula xml:id="formula_3">L 1 ⊎ L 2 = {w 1 ⊎ w 2 | w 1 ∈ L 1 , w 2 ∈ L 2 }.</formula><p>Also, for a given bag language L, we define L 0 = {ε} and</p><formula xml:id="formula_4">L i = L ⊎ L i-1 for i &gt; 0.</formula><p>Regular bag expressions. Regular bag expressions (RBE) are analogues of regular expressions for defining bag languages and use disjunction "|, " unordered concatenation "||, " and unordered repetition. Formally, they are defined with the following grammar:</p><formula xml:id="formula_5">E ::= ϵ | a | (E|E) | (E || E) | E I ,</formula><p>where a ∈ ∆ and I is an interval. Their semantics is defined as follows:</p><formula xml:id="formula_6">L(ϵ) = {ε}, L(a) = {{|a| }}, L(E 1 | E 2 ) = L(E 1 ) ∪ L(E 2 ), L(E 1 || E 2 ) = L(E 1 ) ⊎ L(E 2 ),<label>and</label></formula><formula xml:id="formula_7">L(E I ) = i ∈I L(E) i . By RBE 0</formula><p>we denote the class of expressions of the form a M 1 1 || . . . || a M n n , where a i ∈ Σ and M i ∈ M for i ∈ {1, . . . , n}. We point out that occurrences of symbols need not be distinct e.g., a ||a + ||b * is RBE 0 . Graphs. We employ a general graph model that allows to capture RDF graphs as well as an important subclass of shape expression schemas (ShEx 0 ). Because shape expressions schemas do not constrain the predicates of the edges of an RDF graph, we assume a fixed set Σ of predicates names used to label edges of graphs. To represent (a subclass of) shape expression schemas as graphs, we additionally label each edge with an occurrence interval, which intuitively indicate the admissible number of edges of the given kind (cf. Definition 2.2). Also, the general graph model allows multiple edges connecting the same pair of nodes with the same predicate label, which is not allowed in standard RDF.</p><formula xml:id="formula_8">Definition 2.1. A graph is a tuple G = (N G , E G , source G , target G , lab G , occur G ),</formula><p>where N G is a finite set of nodes, E G is a finite set of edges, the functions source G : E G → N G and target G : E G → N G identify resp. the origin node and end point node of an edge, lab G : E G → Σ assigns a (predicate) label to an edge, and occur G : E G → I assigns an occurrence interval to an edge.</p><p>A graph is simple if it uses only the interval 1 and has no two edges with the same origin, the same end point, and the same label. By G 0 we denote the set of all simple graphs. A shape graph is a graph that uses only basic occurrence intervals (in M) and we denote the class of all shape graphs with ShEx 0 . □ For the purposes of studying containment of shape expression schemas the class of simple graph captures adequately RDF graphs. Although RDF nodes are labeled with URIs, literal values, and blank identifiers, and shape expression schemas can constraint node labels, in general these constraints can, to some extent, be "simulated. " For instance, if the schema imposes a type of admissible literal nodes (integer, date, etc.), literal nodes can be modified to include an outgoing edge labeled with the type name.</p><p>Shape expression schemas constrain the outbound neighborhood of a node, and for that purpose we identify the set of all outgoing edges of a node n ∈ N G with</p><formula xml:id="formula_9">out G (n) = {e ∈ E G | source G (e) = n}.</formula><p>Sometimes, if a node n has an outgoing edge leading to m, we shall call m a child of n (even if n and m are the same node). Also, we call an a-edge any edge labeled with a ∈ Σ, and analogously, an I -edge any edge with occurrence interval I . Shape Expression Schemas. Again, we assume a fixed set of predicate labels Σ. Given a set of type names Γ, a shape expression over Γ is an RBE over Σ × Γ and in the sequel we write (a, t) ∈ Σ × Γ simply as a :: t. A shape expression schema (ShEx) is a pair H = (Γ H , δ H ), where Γ H is a finite set of types, and δ H is a type definition function that maps elements of Γ H to shape expressions over Γ H . Typically, we present a ShEx H as a collection of rules of the form t → E to indicate that δ H (t) = E, where E is a shape expression. For a class of RBEs C, by ShEx(C) we denote the class of shape expression schemas using only shape expressions in C.</p><p>We recall the formal semantics of ShEx <ref type="bibr" target="#b33">[34]</ref> and illustrate it on the example of a simple graph G 0 and a schema H 0 in Figure <ref type="figure" target="#fig_2">2</ref>. A typing of a simple graph G w.r.t. H is a relation clarity, we employ functional notation)</p><formula xml:id="formula_10">T ⊆ N G × Γ H . For instance, a typing of G 0 w.r.t. H 0 is (for G 0 : n 0 n 1 n 2 a c b H 0 : t 0 → a :: t 1 t 1 → b :: t * 2 || c :: t 3 t 2 → b :: t 2 ? || c :: t 3 t 3 → ϵ</formula><formula xml:id="formula_11">T 1 (n 0 ) = {t 0 }, T 1 (n 1 ) = {t 1 , t 2 }, T 1 (n 2 ) = {t 3 }.</formula><p>Note that a node may have a number of types. The signature</p><formula xml:id="formula_12">of a node n ∈ N G w.r.t. T is an RBE expression sign T G (n) = e ∈out G (n) t ∈T (target G (e)) lab G (e) :: t For instance, the signature of n 1 in G 0 w.r.t. T 1 is sign T 1 G 0 (n 1 ) = (b :: t 1 | b :: t 2 ) || c :: t 3 .</formula><p>A node n satisfies a shape expression E w.r.t. a typing T iff</p><formula xml:id="formula_13">L(sign T G (n)) ∩ L(E) ∅. For instance, n 1 satisfies the type definition δ H 0 (t 2 ) of H 0 w.r.t.T 1 .</formula><p>The typing T is valid iff every node satisfies the type definition of every type assigned to the node i.e., L(sign T G (n))∩L(δ H (t)) ∅ for every (n, t) ∈ T . Valid typings of G w.r.t. H form a semi-lattice, with the union as the meet operation <ref type="bibr" target="#b33">[34]</ref>. Consequently, there exists a unique maximal typing, which we denote by Typing G:H , and in the sequel we say that a node n has type t if (n, t) ∈ Typing G:H . Now, G satisfies H if every node of G has at least one type i.e., dom(Typing G:H ) = N G . By L(H ) we denote the set of all simple graphs that satisfy H .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Containment.</head><p>In this paper, we investigate the containment problem for ShEx: given two shape expression schemas H and K we say that</p><formula xml:id="formula_14">H is contained in K, in symbols H ⊆ K, if L(H ) ⊆ L(K). A counter-example for H ⊆ K is any graph G ∈ L(H ) \ L(K).</formula><p>Embeddings. We define a natural notion of embedding that allows to treat shape graphs as an alternative representation of ShEx(RBE 0 ).</p><formula xml:id="formula_15">Definition 2.2. Given two graphs G and H , a binary re- lation R ⊆ N G × N H is a simulation of G in H iff for any (n, m) ∈ R there exists a witness of simulation of n by m w.r.t. R, i.e., a function λ n,m : out G (n) → out H (m) such that for every e ∈ out G (n) 1. lab G (e) = lab H (λ n,m (e)), 2. (target G (e), target H (λ n,m (e))) ∈ R, and for every f ∈ out H (m) 3. {occur G (e) | e ∈ E G , λ n,m (e) = f } ⊆ occur H (f ). An embedding of G in H is a simulation R of G in H such that dom(R) = N G , and we write G ≼ H if G there is an embedding of G in H . □ Figure 3</formula><p>presents an example of an embedding between the simple graph G 0 and the shape graph corresponding to the shape expression schema H 0 in Figure <ref type="figure" target="#fig_2">2</ref>.</p><formula xml:id="formula_16">G 0 : n 0 n 1 n 2 a c b H 0 : t 0 t 1 t 2 t 3 b ? c a b * c Figure 3: An embedding of G 0 in H 0 .</formula><p>The set of simulations of G in H is a semi-lattice (with the meet operation interpreted with the set union), and consequently, there exists exactly one maximal simulation of G in H . We use embeddings to treat graphs as schemas. The language of a graph H is the set of all simple graphs that can be embedded in H i.e., L(H</p><formula xml:id="formula_17">) = {G ∈ G 0 | G ≼ H }.</formula><p>There is a natural correspondence between shape expression schemas using RBE 0 only and shape graphs, and we show that the existence of a witness of a simulation is equivalent to type satisfaction. Proposition 2.3. ShEx 0 captures precisely ShEx(RBE 0 ), i.e., for every ShEx(RBE 0 ) schema there is a shape graph in ShEx 0 defining the same language and for every shape graph in ShEx 0 there is a ShEx(RBE 0 ) schema defining the same language.</p><p>Embeddings are closed under composition, which immediately gives the following. Lemma 2.4. For any G and H , G ≼ H implies G ⊆ H .</p><p>The converse does not hold as illustrated in Figure <ref type="figure">4</ref>, where two equivalent graphs are given but embedding holds only in one direction. This example basically illustrates that a shape</p><formula xml:id="formula_18">H 1 : a * b * K 1 : a * a * b a * b b * Figure 4:</formula><p>Containment does not imply an embedding:</p><formula xml:id="formula_19">H 1 ⊆ K 1 but H 1 K 1 . expression b :: t * is equivalent to ϵ | b :: t | b :: t + , a (disjoint)</formula><p>union that enumerates cases of the original expression. In Section 5 we identify a practical subclass of shape graphs for which embedding is also a necessary condition for containment and then, we analyze the complexity of constructing an embedding.</p><p>In this section, we address the question of decidability of containment for ShEx, which is far from obvious as ShEx caries some expressive power of ∃MSO on graphs combined with Presburger arithmetic <ref type="bibr" target="#b33">[34]</ref> and monadic extensions of Presburger arithmetic easily become undecidable <ref type="bibr" target="#b12">[13]</ref>. We show a triple-exponential upper bound on the size of a counterexample, which can be compressed to double-exponential size. The compression does not change the complexity of validation, which permits us to give a preliminary upper bound on the complexity of testing containment for ShEx</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Counter-example</head><p>To illustrate the analysis of the size of a counter-example we present in Figure <ref type="figure" target="#fig_3">5</ref> two shape expression schemas H 2 and K 2 and a counter-example G 2 for the containment</p><formula xml:id="formula_20">H 2 ⊆ K 2 .</formula><p>We associate with every node of G 2 its kind (T , S), the set of all types T of H 2 and the set of all types S of K 2 that the node satisfies. Our goal is to construct a graph that has at most one node of any possible kind. We point out that in any counterexample there is at least one node that does not satisfy any type of K 2 (while it satisfies some types of H 2 ). In G 2 there is a single such node and its kind is ({t 0 }, ∅). This node has two a-children of the kind ({t 1 }, {s 1 }) and one a-child of the kind ({t 1 }, {s 1 , s 2 }). Notice that none of the ({t 1 }, {s 1 })nodes can be removed or the ({t 0 }, ∅)-node would satisfy the type s 0 and the resulting graph would not longer be a counter-example. Instead, we fuse the ({t 1 }, {s We adapt the definition of validation of ShEx to compressed graphs by extending the definition of node signature. Given a shape expression schema H and a compressed graph</p><formula xml:id="formula_21">H 2 : t 0 → a :: t * 1 t 1 → b :: t ? 1 K 2 : s 0 → a :: s 1 | (a :: s 1 || a :: s 2 ) * s 1 → b :: s ? 2 s 2 → ϵ G 2 : ({t 0 }, ∅) ({t 1 }, {s 1 }) ({t 1 }, {s 1 }) ({t 1 }, {s 1 , s 2 }) a a a b b F 2 : ({t 0 }, ∅) ({t 1 }, {s 1 }) ({t 1 }, {s 1 , s 2 })</formula><formula xml:id="formula_22">F , the signature of a node n ∈ N F w.r.t. a typing T ⊆ N F ×Γ H is sign T G (n) = e ∈out F (n) t ∈T (target F (e)) lab F (e) :: t occur F (e) .</formula><p>Again, the typing</p><formula xml:id="formula_23">T is valid iff L(sign T G (n)) ∩ L(δ H (t)</formula><p>) ∅ for every (n, t) ∈ T , there exists a unique maximal valid typing Typing F:H of F w.r.t. H , and also F satisfies H if dom(Typing F:H ) = N F . Naturally, if F satisfies H , then its unpacking also satisfies H . Checking the satisfaction of ShEx for compressed graphs remains in NP and to prove it we employ known results on Presburger arithmetic that we present next.</p><p>Presburger Arithmetic. The Presburger arithmetic (PA) is the first-order logical theory of natural numbers with addition that has decidable satisfiability <ref type="bibr" target="#b28">[29]</ref>. We point out that any natural number n can be easily defined with an existentially quantified formula of length linear in log(n). Since we use PA formulas to define bags, we use a convenient notation. When the set of symbols ∆ = {a 1 , . . . , a k } is known from the context, a bag w over ∆ can be represented as a (Parikh) vector of k natural numbers ⟨w(a 1 ), . . . , w(a k )⟩ and if a vector of variables x is used to describe a bag over ∆, we use elements of ∆ to index elements of x: x a i designates w(a i ), for 1 ≤ i ≤ k. Also, we write φ(w) to say that φ is valid for w.</p><p>We extend RBE with intersection</p><formula xml:id="formula_24">L(E 1 ∩ E 2 ) = L(E 1 ) ∩ L(E 2 )</formula><p>because intersection is used to define satisfiability of a graph w.r.t. a schema and intersection is easily expressed in Presburger arithmetic. Now, for a regular bag expression E we recursively construct a formula ψ E ( x) = ψ ( x, 1) as follows.</p><formula xml:id="formula_25">ψ ϵ ( x, n) := a x a = 0 ψ a ( x, n) := x a = n ∧ b a x b = 0 ψ E [k ;ℓ] ( x, n) := (n = 0 ∧ a x a = 0) ∨ (n &gt; 0 ∧ ∃m. k ≤ m ∧ m ≤ ℓ ∧ ψ E ( x, m)) ψ E 1 |E 2 ( x, n) := ∃ x1 , x2 , n 1 , n 2 . n = n 1 + n 2 ∧ x = x1 + x2 ∧ ψ E 1 ( x1 , n 1 ) ∧ ψ E 2 ( x2 , n 2 ) ψ E 1 ||E 2 ( x, n) := ∃ x1 , x2 . x = x1 + x2 ∧ ψ E 1 ( x1 , n) ∧ ψ E 2 ( x2 , n) ψ E 1 ∩E 2 ( x, n) := ψ E 1 ( x, n) ∧ ψ E 2 ( x, n)</formula><p>The main claim, proven with a simple induction, is that ψ E (w, n) iff w ∈ L(E) n for any bag w over ∆ and any n ≥ 0. It follows that L(E)</p><p>∅ iff ∃ x .ψ E ( x) is valid. Validity of existentially quantified PA formulas is known to be in NP <ref type="bibr" target="#b16">[17]</ref>, and consequently, we obtain an upper bound on complexity of validation of compressed graphs. Proposition 3.2. Validation of compressed graphs w.r.t. ShEx is in NP.</p><p>The following result is instrumental in our analysis of upper bounds on the size of a counter-example for ShEx. Compressed counter-example. We take two schemas H and K such that H ⊈ K and fix a counter-example G ∈ L(H ) \ L(K). We know that there is at least one node of G that satisfies at least one type of H but no type of K. In general, for a node n of G we identify a pair (T , S) consisting of a set T of types of H and a set of types S of K that n satisfies. We say that the node n is of the (T , S)-kind and we identify the set C of all kinds present in G.</p><formula xml:id="formula_26">Proposition 3.3 ([39]). Let Φ = Q 1 x1 . . . Q k xk .φ</formula><formula xml:id="formula_27">kind(n) = (Typing G:H (n), Typing G:K (n)), C = {kind(n) | n ∈ N G }.</formula><p>Shape expression schemas may only inspect the labels of the outgoing edges of a node and the types of the nodes at the end points of the edges. Consequently, if we replace a node by a node of the same kind, or more precisely we redirect all incoming edges of the node to the other node, then the types of the nodes in the graph do not change, in particular, it remains a counter-example. Furthermore, we can fuse the set of all nodes of the same kind into a single node that belongs to the same kind, and still obtain a graph that is a counter-example. When fusing several nodes we gather the incoming edges into a fused node but for the outgoing edges we use only the outgoing edges of one (arbitrarily chosen) of the fused nodes, while discarding the outgoing edges of the remaining nodes. We point out that the obtained graph needs not longer to be simple, fusing a set of nodes may lead to several incoming edges with the same label originating from the same node. Such multiple edges can, however, be easily compressed to a single one.</p><p>We describe the construction of the compressed counterexample F more precisely. First for every kind κ ∈ C we pick an (arbitrarily chosen) representative node n κ ∈ G such that kind(n κ ) = κ. The set of nodes of F is the set of all kinds of G, N F = C. For every edge connecting two representative nodes F has a corresponding edge:</p><formula xml:id="formula_28">E F = {⟨κ, a, κ ′ ⟩ | ∃e ∈ E G . source G (e) = n κ , target G (e) = n κ ′ , lab G (e) = a} and for ⟨κ, a, κ ′ ⟩ ∈ E F source F (⟨κ, a, κ ′ ⟩) = κ, lab F (⟨κ, a, κ ′ ⟩) = a, target F (⟨κ, a, κ ′ ⟩) = κ ′ , occur F (⟨κ, a, κ ′ ⟩) = [k; k],</formula><p>where</p><formula xml:id="formula_29">k = |{e ∈ out G (n κ ) | lab G (e) = a, kind(target G (e)) = κ ′ }|.</formula><p>The main claim is that G and F satisfy precisely the same schemas. Furthermore, the number |C| of possible kinds is at most exponential in the number of types in H and K, and from the above construction, F has at most one node per kind.</p><p>Bounding the node degree. The remaining question is how big the cardinalities of the edges of F must be. We answer this question with the help of Proposition 3.3 by describing the outbound neighborhood of a node of F with Presburger arithmetic formula.</p><p>For the kind (T , S) ∈ C the formula Φ (T ,S ) examines the existence of an outbound neighborhood of a node of that kind that satisfies all types in T and all types in S. This neighborhood is captured as a bag x over ∆ C = {a :: (T ′ , S ′ ) | a ∈ Σ, (T ′ , S ′ ) ∈ C}, where an occurrence of the symbol a :: (T ′ , S ′ ) corresponds to one outgoing edge labeled with a and leading to a node of the kind (T ′ , S ′ ).</p><formula xml:id="formula_30">Φ (T ,S ) := ∃ x . t ∈T φ t ( x) ∧ t ∈Γ H \T ¬φ t ( x) ∧ s ∈S φ s ( x) ∧ s ∈Γ K \S ¬φ s ( x).</formula><p>The formulas φ t ( x) and φ s ( x) verify whether the types t of H and s of K are satisfied in this neighborhood. This is done in two phases and we present it only for φ t ( x); the formula φ s ( x) is defined analogously. The variable x a::(T ′ ,S ′ ) represents the number of outgoing edges with label a to nodes that satisfy all types in T ′ (and types in S ′ ). In the context of satisfying definition of the type t each outgoing edge is used with exactly one type. Consequently, the next formula partitions the number of outgoing edges x a::(T ′ ,S ′ ) into all types in T ′ . Here, we use a vector ȳ of variables over {a :: (T ′ , S ′ ) → a :: t ′ | a ∈ Σ, (T ′ , S ′ ) ∈ C, t ′ ∈ T ′ }, where y a::(T ′ ,S ′ )→a::t ′ represents the part of x a::(T ′ ,S ′ ) edges that is to be used with the type t ′ .</p><formula xml:id="formula_31">φ t ( x) := ∃ ȳ. a::(T ′ ,S ′ )∈∆ C x a::(T ′ ,S ′ ) = t ′ ∈T ′ y a::(T ′ ,S ′ )→a::t ′ ∧ φ ′ t ( ȳ).</formula><p>Finally, the edges with the same label and type of the end point are aggregated in the vector z representing a bag over The formula Φ (T ,S ) can be easily converted to prenex normal form, and then, it is of exponential length, uses an exponential number of quantified variables, and has only one alternation of quantifiers. Since Φ (T ,S ) is valid for any (T , S) ∈ C, by Proposition 3.3 the satisfying values for the variables x are bound by a triple exponential, and consequently, have a binary representation whose size is bounded by doubleexponential function in the size of H and K.</p><formula xml:id="formula_32">∆ H = Σ × Γ H ,</formula><p>Theorem 3.4. For any two ShEx H and K, if H ⊈ K, then there exists a compressed graph F that satisfies H , does not satisfy K, and whose size is at most double-exponential in the size of H and K.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Complexity</head><p>Very recently containment for RBE has been shown to be coNEXP-complete <ref type="bibr" target="#b17">[18]</ref>, and immediately, we obtain this lower bound. Proposition 3.5. Containment for ShEx is coNEXP-hard.</p><p>The upper bound follows from Theorem 3.4 and Proposition 3.2. A (universally) nondeterministic Turing machine for an input pair (H, K) guesses a compressed graph F and uses an NP oracle to verify that F satisfies the schema H and violates the schema K. The input pair is accepted if the test is passed on every computation path. Corollary 3.6. Containment for ShEx is in co2NEXP NP .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">SHAPE GRAPHS</head><p>In this section we consider shape graphs ShEx 0 , which correspond to the subclass ShEx(RBE 0 ) of shape expression schemas that use only RBE 0 expression for type definitions (cf. Proposition 2.3). First, we show that the size of a counterexample is at most exponential and that the bound is tight. Then, we show that the complexity of the containment problem for ShEx 0 is EXP-complete.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Counter-example</head><p>In Section 3 we have presented an argument showing that a smallest counter-example has at most exponential number of nodes, and next we show that for ShEx 0 this bound is in fact tight. Lemma 4.1. For any n, there exist two shape graphs H and K such that H ⊈ K and the smallest graph G ∈ L(H ) \ L(K) is of size exponential in n.</p><p>Proof. In our construction the counter-example i.e., G ∈ L(H ) \ L(K), is essentially a binary tree of depth n modeled with the rules (for i ∈ {1, . . . , n})</p><formula xml:id="formula_33">t (i) → L :: t (i+1) || R :: t (i+1)</formula><p>The leaves of this tree store each a subset of A = {a 1 , . . . , a n }, modeled with the two rules</p><formula xml:id="formula_34">t (n+1) → a 1 :: t ? o || . . . || a n :: t ? o t o → ϵ</formula><p>The schema H consists exactly of all the above rules while the schema K contains all but the rule defining type t (1) . Clearly, at this point a counter-example of H ⊈ K exists, one whose root node has type t (1) in H but no type in K, however, it may be small as it suffices to use a dag. To eliminate small counter-examples, by adding them to the language of K, we ensure that all leaves of the counter-example are labeled with distinct subsets of A. In essence, we require in the counter-example a node at level i to have all leaves of its left subtree labeled with subsets containing a i and all leaves of its right subtree labeled with subsets missing a i . For that purpose, we introduce types s (j) i,1,d (s (j) i,0,d ), which identify nodes at level j that are using (missing resp.) the symbol a i ; the additional parameter d ∈ {L, R} is used to handle disjunction and essentially indicates the subtree from which the usage information comes from. The rules for leaves are (for i ∈ {1, . . . , n}, M ∈ {0, 1}, and d ∈ {L, R}) The information of using a symbol a i in a branch is propagated upward but only to the level i + 1 with the rules (for i ∈ {1, . . . , n}, j ∈ {i + 1, . . . , n}, and M ∈ {0, 1})</p><formula xml:id="formula_35">s (n+1) i, M,d →</formula><formula xml:id="formula_36">s (j) i, M, L → L :: s (j+1) ? i, M, L || L :: s (j+1) ? i, M,R || R :: t (j) s (j) i, M, R → L :: t (j) || R :: s (j+1) ? i, M, L || R :: s (j+1) ? i, M, R</formula><p>Finally, a tree is invalid for our purposes if a node at depth i is missing the symbol a i in a leaf of its left subtree or is using the symbol a i in a leaf of its right subtree. This situation is identified and propagated to the root node with the rules (for i ∈ {1, . . . , n} and j ∈ {1, . . . , i -1}) p (i) i, L → L :: s (i+1) ? i,0, L || L :: s (i+1) ? i,0,R || R ::</p><formula xml:id="formula_37">t (i+1) p (i) i, R → L :: t (i+1) || R :: s (i+1) ? i,1, L || R :: s (i+1) ? i,1, R p (j) i, L → L :: p (j+1) ? i, L || L :: p (j+1) ? i, R || R :: t (j+1) p (j) i, R → L :: t (j+1) || R :: p (j+1) ? i, L || R :: p (j+1) ? i, R</formula><p>Now, the claim, proven with a simple induction, is that for any G ∈ L(H ) unless G contains an exponential tree, any node that has the type t (1) of H also has a type p (1)  i,d of K for some i ∈ {1, . . . , n}, M ∈ {0, 1}, and d ∈ {L, R}. □</p><p>The lower bound on the size of a minimal counter-example for ShEx 0 is tight. Theorem 4.2. For any H , K ∈ ShEx 0 such that H ⊈ K there exists a graph G ∈ L(H ) \ L(K) whose size is at most exponential in the size of H and K.</p><p>The proof consists of two parts. The first shows that there are at most exponentially many kinds of nodes, and we use the same argument in the proof of Theorem 3.4 in Section 3. The second part uses a pumping argument to show that the outbound degree of a minimal counter-example is polynomially bounded.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Complexity</head><p>The lower bound on the complexity of containment for ShEx 0 is obtained with a reduction from nondeterministic top-down tree automata known to be EXP-complete <ref type="bibr" target="#b10">[11]</ref>. The reduction is non-trivial because RBE 0 does not allow directly the disjunction necessary to express nondeterminism, and the proof needs to account for graphs that might have cycles and do not represent trees. Theorem 4.3. Containment for ShEx 0 is EXP-hard.</p><p>Since validation for ShEx 0 is polynomial <ref type="bibr" target="#b33">[34]</ref>, the bound on the size of a counter-example yields a coNEXP procedure for testing containment. We provide, however, a tight EXP bound with an exponential procedure for deciding containment of shape graphs. We outline the main ideas with the examples that follow. The first example gives a rough sketch of the framework, while the remaining examples present more challenging aspects of the problem at hand and how we address them.</p><p>Example 4.4. We consider the two shape graphs H 3 and K 3 in Figure <ref type="figure" target="#fig_5">6</ref>, that represent the two shape expression schemas presented in Section 1. First, we introduce the notion of type covering, which essentially for every type t of H 3 identifies sets of types of K 3 that capture t. For instance, the type U is covered by {U 1 , U 2 } and the type B is covered by the types {B 1 , B 2 }. Then, we prove an important property of support </p><formula xml:id="formula_38">which is equal to δ K 3 (U 1 ) | δ K 3 (U 2 ). This indeed shows that U is covered by {U 1 , U 2 }.</formula><p>Here, the types L and E are the same in both schemas and for simplicity use the same name.</p><p>Because shape expression schemas are recursive, the notion of support needs to be defined in a (co)inductive fashion. </p><formula xml:id="formula_39">E ? ) which is equal to δ K 3 (B 1 ) | δ K 3 (B 2 )</formula><p>. This shows that B is covered by {B 1 , B 2 } even though this very fact is assumed to hold when constructing the unfolding. □</p><p>While unfolding atoms a::t 1 and a::t ? is relatively straightforward, the next example shows that unfolding atoms a :: t * is more complicated than the previous example might suggest.</p><p>Example 4.5. Consider the following two schemas:</p><formula xml:id="formula_40">H 4 : t 0 → a :: t * K 4 : s 0 → a :: s * 1 s ′ 0 → a :: s + 2 || a :: s * 1 t → a :: t ∅ || a :: t ? ∅ s 1 → a :: s ∅ s 2 → a :: s ∅ || a :: s ∅ t ∅ → ϵ s ∅ → ϵ</formula><p>Clearly, t ∅ is covered by {s ∅ }, and consequently, t is covered by {s 1 , s 2 }. We also point out that s 1 and s 2 are incomparable and so are s 0 and s ′ 0 . Essentially, s 0 allows only outgoing edges that lead to nodes of type s 1 , while s ′ 0 requires at least one outgoing edge that leads to a node of type s 2 and an arbitrary number of edges that lead to nodes of type s 1 . Naturally, t 0 is covered by {s 0 , s ′ 0 }. When constructing the unfolding of δ H 4 (t) = a :: t * 0 we observe that since t is covered by {s ). □ The next example illustrates why we trace the lineage of atoms in unfolding and why we additionally consider the problem of testing emptiness of intersection. In this example we use arbitrary intervals for brevity, and for instance, a::t [1;2]  is short for a :: t || a :: t ? .</p><p>Example 4.6. Consider the following two schemas:</p><formula xml:id="formula_41">H 5 : t 0 → c :: t t → a :: t [1;2] ∅ || b :: t [1;2] ∅ t ∅ → ϵ K 5 : p 0 → c :: p 1 p ′ 0 → c :: p 2 s 0 → c :: s 1 p 1 → a :: t ∅ || b :: t ∅ s 1 → a :: t 2 ∅ || b :: t [1;2] ∅ p 2 → a :: t [1;2] ∅ || b :: t 2 ∅ s 2 → a :: t 3 ∅ || b :: t [1;2] ∅ p 3 → a :: t [2;3] ∅ || b :: t ∅ t ∅ → ϵ</formula><p>It is easy to see that t is covered by {p 1 , p 2 , p 3 } and p 3 is covered by {s 1 , s 2 }. We shall prove that t 0 is covered by {p 0 , p ′ 0 , s 0 } by constructing an unfolding of δ H 5 (t 0 ) = c ::t. We first use the fact that t is covered by {p 1 , p 2 , p 3 } and obtain the following disjunction c ::</p><formula xml:id="formula_42">p 1 | c :: p 2 | c :: p 3 = δ K 5 (p 0 ) | δ K 5 (p ′ 0 ) | c :: p 3</formula><p>To further unfold the atom c :: p 3 one use the fact that p 3 is covered by {s 1 , s 2 }, which yields</p><formula xml:id="formula_43">δ K 5 (p 0 ) | δ K 5 (p ′ 0 ) | δ K 5 (s 0 ) | c :: s 2</formula><p>The remaining atom c ::s 2 is in fact void and can be discarded. Indeed, if we inspect its lineage, we observe that the type t has been initially replaced by p 3 and then by s 2 . However, the intersection of the types t ∩ p 3 ∩ s 2 is empty i.e., there is no graph with a node having the three types. □</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.1">Emptiness of intersection.</head><p>To identify void atoms in derivations we present a method for identifying sets of types whose intersection is empty, a problem of independent interest. The method is based on techniques that are simpler versions of those central in proving Lemma 4.11, which are too complex to be presented in full detail. We introduce the notion of rooted graph, which is a simple graph with one distinguished root node. We fix a shape graph H and for a shape expression E by [[E]] we denote the set of rooted graphs whose root nodes satisfy E. We extend this notion to sets of shape expressions</p><formula xml:id="formula_44">[[E]] = {[[E]] | E ∈ E}.</formula><p>Since shape expressions use RBE 0 and the unordered concatenation operator is commutative, we view shape expressions as unordered collections (bags) of atoms of the form a :: t M without repetitions of atoms using *. We also use the empty atom ϵ that is the neutral element of the unordered concatenation operator i.e., E = E || ϵ. W.l.o.g. we assume that the interval + is not used: indeed a :: t + can be replaced by a :: t || a :: t * .</p><p>Our method is based on pumping and tagging shape expressions, which reduces the problem to (disjunctions) of single-occurrence expressions that use only the interval 1, denoted SORBE 0 <ref type="bibr" target="#b0">(1)</ref>.</p><formula xml:id="formula_45">Let m = max{|δ H (t 1 )|, . . . , |δ H (t k )|}+1,</formula><p>where |E| is the number of atoms in E and Γ H = {t 1 , . . . , t k }. Pumping removes ? and * by producing expressions with none or one occurrences of atoms using ? and up to m occurrences of atoms using *. Note that after pumping the obtained shape expression use only the interval 1. To obtain single-occurrence expressions we use tagging, which considers all permutations of atoms in an expression and numbers the symbols accordingly. For instance, the expression a :: Our procedure constructs the set X H of all subsets of types of H whose intersection is nonempty</p><formula xml:id="formula_46">t</formula><formula xml:id="formula_47">X H = {{t 1 , . . . , t k } ⊆ Γ H | [[δ H (t 1 )]] ∩ . . . ∩ [[δ H (t k )]] ∅}</formula><p>Initially, we begin X 0 = P(Γ H ) and we iteratively refine it as follows. Suppose, at an iteration we have a set X ⊆ P(Γ H ). Let E 1 , . . . , E k be SORBE 0 (1) expressions each having the same number n of atoms and using precisely the same labels a 1 , . . . , a n i.e., E i = a 1 ::t i,1 ||. . .||a n ::t i,n for i ∈ {1, . . . , k}. We say that E 1 , . . . , E k are supported by X if {t 1, j , . . . , t k, j } ∈ X for every j ∈ {1, . . . , n}. Take any {t 1 , . . . , t k } ∈ X and for i ∈ {1, . . . , k} let E i be the set of SORBE 0 (1) expressions obtained by pumping and tagging δ H (t i ). We say that {t 1 , . . . , t k } is supported by X if for every i ∈ {1, . . . , k} there is E i ∈ E i such that E 1 , . . . , E k are supported by X. The one-step refinement function is</p><formula xml:id="formula_48">Refine(X) = {T ∈ X | T is supported by X}.</formula><p>Naturally, the above function is monotone, and therefore, when iteratively applied to X 0 = P(Γ H ) it has a fix-point Refine * (X 0 ). We claim that this fix point is in fact X H . To prove that this procedure works in time exponential in the size of H it suffices to observe that each iteration of Refine removes from X at least one element, and therefore, the number of iteration is at most exponential in the number of types of H , and each iteration works in time exponential since the sets E i have a number of expressions exponential in m and each expression is of size at most m 2 . Lemma 4.7. Checking emptiness of intersection of a set of types of a shape graph is in EXP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.2">Type coverings.</head><p>We begin with a natural notion of coverage that captures the disjunction introduced by schemas. For technical reasons and in the interest of simplicity of presentation, the definitions in the reminder of this section are for a single shape graph H that is obtained by taking the disjoint union H ⊎ K of the two shape graphs H and K. Definition 4.8. Given a shape expression schema H , a type t ∈ N H is covered by a set of types S ⊆ N H iff in any simple graph G all nodes satisfying the type t also satisfy one of the types in S i.e.,</p><formula xml:id="formula_49">∀G ∈ G 0 . Typing -1 G:H (t) ⊆ s ∈S Typing -1 G:H (s).</formula><p>The type covering of H is the relation</p><formula xml:id="formula_50">Covering H = {(t, S) ∈ N H × P(N H ) | t is covered by S }. □</formula><p>Type covering allows us to decide containment in a straightforward fashion. Proposition 4.9. H ⊆ K if and only if for every t ∈ N H there is S ⊆ N K such that (t, S) ∈ Covering H ⊎K .</p><p>We now fix a shape graph H = H ⊎ K and propose an iterative algorithm for constructing the type covering of H using a local characterization of support for elements of type covering (Definition 4.10). The algorithm begins with the full relation R = N H × P(N H ) and iteratively removes any (t, S) from R that is not supported by R. It returns the maximal selfsupported relation R which is precisely the type covering (Lemma 4.11). We show that testing whether an element of R is supported can be done in exponential time (Lemma 4.12), and since R has an exponential number of elements and at most exponential number of iterations is performed, the algorithm works in exponential time (Theorem 4.13).</p><p>Unfolding. Again, we view shape expressions as unordered collections (bags) of atoms of the form a :: t M , without repetitions of atoms using *, and we assume that the interval + is not used. We propose a method that for a pair (t, S) ∈ R uses R and basic properties of RBE 0 to unfold the type definition of t into a disjunction of shape expressions. If t can be unfolded into a disjunction contained in S, then (t, S) is supported by R and there is no reason to believe that t is not covered by S, and consequently, no reason to remove (t, S) from R (at this iteration).</p><p>The unfolding is defined with a set of unfolding operations on RBE 0 atoms that return a disjunction of RBE 0 expressions. This set captures: the disjunction from RBE 0 a::t </p><formula xml:id="formula_51">(S) = {δ H (s) | s ∈ S }. R ⊆ N H × P(N H ) is self-supported if every (t, S) ∈ R is supported by R. □</formula><p>Because the union of two self-supported relations is also self-supported, there exists precisely one maximal self-supported relation. The support property is an alternative definition of the type covering, which is the base of our algorithm for constructing the type covering. Lemma 4.11. For any H ∈ ShEx 0 , the type covering of H is the maximal self-supported relation.</p><p>Proof. The proof is non-trivial, technically complex, and we outline only the main key ideas. We show that type covering is self-supported i.e., if t is covered by S then δ H (t) has an unfolding (w.r.t. the type uncovering) contained in δ H (S), using a series of complex arguments. We generalize the notion of covering to shape expressions in the natural fashion.</p><p>First, we use a pumping and tagging technique, similar to the one in Section 4.2.1. We obtain the set of SORBE 0 (1) expression E from δ H (t) and the set E ′ from δ H (S), and we show that every E ∈ E is covered by E ′ . We view a shape expression E = a 1 ::t 1 || . . . ||a n ::t n as defining a n-cube Q that is covered by a set {Q 1 , . . . , Q k } of n-cubes corresponding to expressions from E ′ . We then show that Q is covered by a single n-cube, which is captured with (3) operations or it can be decomposed into smaller n-cubes each covered by a proper subset of {Q 1 , . . . , Q k }, which is captured with (2a) operations. This yields an unfolding of E into E ′ that we use as a skeleton for constructing an unfolding of δ H (t) into δ H (S). Furthermore, we observe that the height of the constructed unfolding is polynomially-bounded.</p><p>To show that the type covering is the maximal self-supported relation, we first prove the following claim.</p><p>Claim. Let R be the maximal self-supported relation for H . For any (t, S) ∈ R that is supported by R with an unfolding using the facts (t 1 , S 1 ), . . . , (t k , S k ) ∈ R, for any graph G and any node n ∈ N G of type t, if for every child m of n the fact that m has a type t i also implies that m has a type in S i , then n has a type in S.</p><p>We use the above claim to show that for any (t, S) ∈ R, in any graph G, any node of type t has also a type in S, and consequently, (t, S) ∈ Covering H . □ Search graph. The polynomial bound on the depth of an unfolding allows to show that the number of relevant expressions derived from δ H (t) is bounded exponentially, even if we store the lineage information with every type. We construct an oriented hypergraph, whose nodes are all relevant expressions and oriented hyperedges represent one-step unfoldings with void atoms pruned with the help of Lemma 4.7.</p><p>We reduce the problem of checking the existence of an unfolding to the reachability problem in alternating graphs, known to be P-complete. This gives us an exponential upper bound on testing the existence of a relevant unfolding.</p><p>Lemma 4.12. For H ∈ ShEx 0 and R ⊆ N H × P(N H ), checking that (t, S) ∈ R is supported by R can be done in time exponential in the size of H . Lemmas 4.11 and 4.12 together with Proposition 4.9 give. Theorem 4.13. Containment for ShEx 0 is in EXP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">DETERMINISM</head><p>In this section we identify a tractable subclass of deterministic shape expression schemas that is arguably of practical use (recall that determinism forbids using the same edge label twice in type definition). We show that containment of deterministic shape expression schemas is intractable even if type definitions use RBE 0 only (Theorem 5.7). Interestingly, if the set of intervals is further restricted to 1 and *, containment is equivalent to the existence of embedding, which we show to be tractable (Theorem 5.4). Adding support for other basic intervals is tricky as unrestricted use of ? leads to intractability. Consequently, we employ the technique of characterizing example <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b34">35]</ref> to find a relatively rich and tractable subclass of deterministic shape graphs that allows unrestricted use of 1 and * and a restricted use of ?. We believe this subclass is of potential practical interest, and in particular it includes the schema in Figure <ref type="figure">1</ref>. While our technique does allow to include +, the further restriction this addition causes render the class impractical, and consequently, we forbid + altogether (in practice using * instead of + is often acceptable).</p><p>We first illustrate the method of characterizing example on the example in Figure <ref type="figure" target="#fig_9">7</ref>, where we generate a characterizing example G 6 for the schema H 6 (which is a representation of the schema in Figure <ref type="figure">1</ref>). The central property of G 6 is that any  schema K (in DetShEx - 0 ) that satisfies G 6 is satisfied by all graphs that satisfy H 6 . In other words, H 6 can be embedded in any K such that G 6 ∈ L(K) and hence for any G ′ ∈ L(H 6 ) we have G ′ ∈ L(K). The proof takes the embedding of G 6 in K and constructs an embedding of H 6 in K. Such a construction is feasible due to a key observation, which we illustrate on the schemaW 6 . Since the node b 1 has the type B 0 , by determinism of W 6 the nodes b 1 and b 2 have the same type B 0 . Transitively, the nodes u 1 and u 2 have the same type U 0 and similarly the nodes l 1 and l 2 have the same type L 0 . The characterizing example G 6 is constructed in such a manner as to make sure that every type of H 6 is described by a set of nodes of G 6 , all embedded into a corresponding type of W 6 , which ensures embedding of the type of H 6 in the corresponding type of W 6 . For instance, u 1 and u 2 are embedded into U 0 and since u 1 has an outgoing m-edge and u 2 does not, the definition of the corresponding type in W 6 must use m :: L ? 0 or m :: L * 0 . We now define formally the subclass of shape expression schemas in question. Given a shape graph H and a type t ∈ N H , a reference to t is any edge e ∈ E H that leads to t i.e. target H (e) = t. A reference e is *-closed if occur H (e) = * or all references to source H (e) are *-closed. Definition 5.1. A shape graph H is deterministic if for every node n ∈ N H and every label a ∈ Σ, n has at most one outgoing edge labeled with a. By DetShEx 0 we denote the class of all deterministic shape graphs. By DetShEx - 0 we denote the class of deterministic shape graphs that do not use + and any type using ? is referenced at least once and all references to it are *-closed. □</p><p>Intuitively, we require that any type using ? must be referenced and can only be referenced (directly or indirectly) through *. The schema in Figure <ref type="figure">1</ref> belongs to DetShEx - 0 since both uses of the ? operator are closed by the edge related with interval *.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Characterizing example</head><p>Interestingly, the class DetShEx - 0 allows construction of graphs that characterize any schema in DetShEx - 0 up to containment. Lemma 5.2. For any H ∈ DetShEx - 0 , there exists a simple graph G ∈ L(H ) of size polynomial in the size of H such that for any K ∈ DetShEx - 0 we have that G ≼ K implies H ≼ K. The precise construction of the graph G that characterizes H is in Appendix B. Here, we outline the main ideas and illustrate them on an example in Figure <ref type="figure" target="#fig_10">8</ref>. In essence, for every type t ∈ N H the graph G needs to contain a number of nodes of type t that serve the purpose of characterizing t. If t has an outgoing *-edge e labeled with a that leads to the type s, then at least one node n of G that characterizes t needs to have at least two outgoing edges labeled with a that lead to nodes A that characterize the type s. When n is mapped to a type t ′ of K that has an outgoing edge e ′ labeled with a and leading to s ′ , all a-children A must to be mapped to s ′ . This shows that e ′ is an *-edge. Interestingly, this observation propagates to descendants of A. If the type s has an outgoing edge with label b that leads to the type u, then any b-child of a node in A must have the type u, and furthermore, they are all mapped to a type u ′ that is reachable from s ′ with an edge labeled with b, etc. Now, for a type t with an outgoing ?-edge labeled with a we need two nodes in G that characterize t, which guarantee that the corresponding type in K uses the right occurrence interval: one node with one outgoing edge with label a and one node with no such outgoing edge. Naturally, we need to make sure that those two nodes are mapped to the same type in K and this is accomplished by making sure there is an ascending path from every ?-edge to every closest *-edge. In general, every type in H is characterized by a number of nodes that is at most 2 plus the number of ?-edges in H . Lemma 5.2 renders containment and embeddings equivalent. Corollary 5.3. For H, K ∈ DetShEx - 0 , H ⊆ K iff H ≼ K.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Complexity</head><p>To characterize the complexity of containment for DetShEx - 0 we study the complexity of testing embedding between two graphs. Interestingly, it turns out that constructing embeddings for shape graphs, which use only basic occurrence intervals, is tractable and becomes intractable if arbitrary intervals may be used. This rise in computational complexity does not come from binary encoding of intervals, in fact the results remain negative even if the arbitrary intervals are encoded in unary. We also point out that shape graphs using only basic intervals are as expressive as graphs using arbitrary intervals because RBE 0 with basic intervals and repetition are equivalent to RBE 0 with arbitrary intervals. The difference in complexity is not a contradiction but merely reflects the fact that containment does not necessarily imply embedding.</p><p>Theorem 5.4. Testing the existence of embeddings between shape graphs is in P.</p><p>The proof of the above theorem consisting of a polynomial algorithm constructing embeddings between two graphs can be found in Appendix A. As a result of Corollary 5.3 and Theorem 5.4, we obtain. Corollary 5.5. Containment for DetShEx - 0 is in P. Constructing an embedding becomes intractable if arbitrary intervals can be employed. Theorem 5.6. Testing the existence of embeddings between graphs with arbitrary intervals is NP-complete.</p><p>Finally, we observe that lifting the additional restrictions we impose on DetShEx - 0 leads to intractability. Theorem 5.7. Containment for DetShEx 0 is coNP-hard.</p><p>Proof (sketch). The proof is by reduction from tautology of DNF formulas, which we illustrate on the example of φ = (x 1 ∧ ¬x 2 ) ∨ (x 2 ∧ ¬x 3 ). We construct two deterministic schemas H 8 and K 8 presented in Figure <ref type="figure" target="#fig_11">9</ref>. The schema H 8 is satisfied by all graphs defining a valuation of the variables of φ: a node with the root type r has outgoing edges labeled with the name of the variable leading to a node of type v that represents the value of the variable t or f . Because DetShEx 0 does not allow disjunction, nodes of type v may also have both outgoing edges t and f , or neither of them. These cases are covered in K 8 by the types r 1 i 's and r 0 i 's respectively. The types r d j 's capture precisely the valuations that satisfy the clauses of φ. Hence, K 8 is not satisfied by the graphs that correctly define a valuation that does not satisfy φ. Naturally, H 8 ⊆ K 8 iff φ is a tautology. □</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">CONCLUSIONS AND FUTURE WORK</head><p>This work was prompted by our recent work on data exchange for RDF <ref type="bibr" target="#b5">[6]</ref> and ongoing work on schema inference for RDF, where not only do we ask the questions of type implication but are also interested in instances satisfying constraints expressed with the help of ShEx. In this paper, we have considered ShEx and its two practical subclasses ShEx 0 and DetShEx - 0 . While the precise complexity of containment for ShEx remains open, the complexity results we have obtained, summarized in Figure <ref type="figure" target="#fig_12">10</ref> promise in allowing reduction in complexity. For instance, containment for DetShEx is in co2NEXP since validation for DetShEx is in P. But its precise impact on complexity of containment needs to be studied further. It is an open question whether using arbitrary intervals in shape graphs has an impact on the complexity of testing containment; interestingly the answer to this question is negative for ShEx and positive for DetShEx - 0 . The class of regular bag expression DIME that permits restricted use of disjunction yet allows for tractable containment for schemas for unordered XML <ref type="bibr" target="#b4">[5]</ref> and it would also be interesting to see if there are any computational benefits that can be drawn for shape expression schemas using DIME.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: A simple graph G 0 and a schema H 0 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Two schemas H 2 ⊈ K 2 (top), a counterexample G 2 (bottom left), and its compression F 2 (bottom right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>be a closed formula of Presburger arithmetic in prenex normal form with k quantifier alternations over the variables x = x1 ∪. . .∪ xk (φ is quantifier-free). Then Φ is valid if and only if Φ is valid when restricting the first-order variables of Φ to be interpreted over elements of {0, . . . , B}, where log(B) = O(|φ| 3| x | k ).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Covering between two shape graphs.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head></head><label></label><figDesc>For instance, for the type definition of B δ H 3 (B) = r :: B * || u :: U || d :: L || e :: E ? since U is covered by {U 1 , U 2 } we get (r :: B * || u :: U 1 || d :: L || e :: E ? ) | (r :: B * || u :: U 2 || d :: L || e :: E ? ) and since B is covered by {B 1 , B 2 } (r :: B * 1 || r :: B * 2 || u :: U 1 || d :: L || e :: E ? ) | (r :: B * 1 || r :: B * 2 || u :: U 2 || d :: L || e ::</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head></head><label></label><figDesc>For instance, for m = 2 pumping a :: t ? || b :: s || c :: t * yields b :: s, a :: t || b :: s, b :: s || c :: t, a :: t || b :: s || c :: t, b :: s || c :: t || c :: t, a :: t || b :: s || c :: t || c :: t .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Constructing embedding of H 6 into W 6 from embedding of the characterizing example G 6 into W 6 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Characterizing example. Different colors denote different labels.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 9 :</head><label>9</label><figDesc>Figure 9: An example of reduction on φ = (x 1 ∧ ¬x 2 ) ∨ (x 2 ∧ ¬x 3 ).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: Summary of complexity results</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>User 1 → name :: Literal User 2 → name :: Literal, email :: Literal and adapt the rest of the schema by replacing Bug with</figDesc><table /><note><p>Bug 1 → descr :: Literal, reportedBy :: User 1 , reproducedBy :: Employee ? , related :: Bug * 1 , related :: Bug * 2 Bug 2 → descr :: Literal, reportedBy :: User 2 , reproducedBy :: Employee ? , related :: Bug * 1 , related :: Bug * 2</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>Simple graphs do not allow multiple edges with the same label between the same pair of nodes. We propose a model that allows it by attaching to every edge a cardinality indicating the number of such edges. More precisely, a singleton interval is an interval of the form [k; k] for any natural k, and a compressed graph is a graph that uses only singleton intervals on its edges and like simple graphs allows only one edge per label in Σ between a pair of nodes. Given a compressed graph F , its unpacking is a simple graph obtained by making a sufficient number of copies of each node, each copy has the same outbound neighborhood but receiving at most one incoming edge.Since intervals are stored in binary, the unpacking of a compressed graph F is of size at most exponential in the size of F . Proposition 3.1. The size of the unpacking of a compressed graph F is at most exponential in the size of F .</figDesc><table><row><cell>1 })-nodes into</cell></row><row><cell>a single one, and use a singleton interval 2 to indicate two</cell></row><row><cell>copies of the a-edge. Essentially, this allows to compress the</cell></row><row><cell>counter-example into a graph with at most exponentially</cell></row><row><cell>many nodes. We then use the existing results on solutions</cell></row><row><cell>to Presburger arithmetic formulas to characterize bounds</cell></row><row><cell>on the sizes of the intervals necessary in the compressed</cell></row><row><cell>counter-examples.</cell></row><row><cell>Compression.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>which is then is fed to the formula ψ δ H (t ) that defines the type definition of t (cf. proof of Proposition 3.2).</figDesc><table><row><cell>φ ′ t ( ȳ) := ∃z.</cell><cell cols="2">z a::t ′ =</cell><cell>y a::(T ′ ,S ′ )→a::t ′ ∧ ψ δ H (t ) (z).</cell></row><row><cell cols="2">a::t ′ ∈∆ H</cell><cell cols="2">a::(T ′ ,S ′ )∈∆ C s.t. t ′ ∈ T ′</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head></head><label></label><figDesc>1 , s 2 } the type definition a :: t * can be unfolded to a :: s * 1 | (a :: s 2 || a :: t * ) and then again to a :: s * 1 | (a :: s 2 || a :: s * 1 || a :: s * 2 ) which after a simple normalization yields δ K 4 (s 0 ) | δ K 4 (s ′ 0</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head></head><label></label><figDesc>k+1 || a::t * ) | . . . | (a::s m || a::t * ) An unfolding tree w.r.t. R is a unranked tree whose nodes are labeled with RBE 0 expressions and if a non-leaf node is labeled with an expression E || e, then there is an unfolding operation (w.r.t. R) e → e 1 | . . . | e m and the children of the node are labeled with the expressions E || e 1 ,. . . , E || e m .Furthermore, with a type t in a node we associate its lineage: the set of types {t, t 1 , . . .} of its ancestors that have led to the type. A type used at a node is void if the intersection of its lineage is empty. A type t that is void at a node n of an unfolding tree is pruned as follows: if t is used in an atom a :: t, then the node and all its descendants are removed; if t is used in an atom a :: t ? or a :: t * , then the atom is removed from that the expression at that node and so is any derived atom in the descendants of the node. Now, an unfolding of an RBE 0 E w.r.t. R is a unfolding tree w.r.t. R whose root is labeled with all types pruned. Given a shape graph H and R ⊆ N H × P(N H ), a pair (t, S) ∈ N H × P(N H ) is supported by R if δ H (t) has an unfolding w.r.t. R contained in δ H</figDesc><table><row><cell cols="2">? → ϵ | a::t</cell><cell cols="2">a::t * → ϵ | (a::t || a::t * )</cell><cell>(1)</cell></row><row><cell cols="5">from every (t, {s 1 , . . . , s m }) ∈ R the straightforward disjunc-</cell></row><row><cell>tion</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="3">a::t 1 → a::s 1 1 | . . . | a::s 1 m</cell><cell cols="2">(2a)</cell></row><row><cell cols="3">a::t ? → a::s ? 1 | . . . | a::s ? m</cell><cell cols="2">(2b)</cell></row><row><cell cols="4">as well as disjunction from a :: t * atoms (for 0 ≤ k ≤ m)</cell></row><row><cell cols="5">a::t * → (a::s * 1 || . . . || a::s * k ) | (a::s (2c)</cell></row><row><cell cols="4">and finally, the containment of RBE 0</cell></row><row><cell>ϵ → a::t ?</cell><cell cols="2">a::t → a::t ?</cell><cell>a::t ? → a::t *</cell><cell>(3)</cell></row><row><cell cols="5">Support. We use unfolding to identify a defining property</cell></row><row><cell cols="2">of the type covering.</cell><cell></cell><cell></cell></row><row><cell cols="2">Definition 4.10.</cell><cell></cell><cell></cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>We would like to thank the referees for many useful comments. This work has been supported by <rs type="funder">Polish National Science Center</rs> grant <rs type="grantNumber">UMO-2014/15/D/ST6/00719</rs>. Part of this work has been done when one of authors was a fellow at the <rs type="institution">University of Edinburgh</rs>, funded by the <rs type="funder">EU DIACHRON</rs> project.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_N2Tu4qs">
+					<idno type="grant-number">UMO-2014/15/D/ST6/00719</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>A CONSTRUCTING EMBEDDINGS <ref type="bibr">Theorem 5.4</ref>. Testing the existence of embeddings between shape graphs is in P.</p><p>Proof. We fix shape graphs G and H and present a iterative procedure for constructing an embedding of G in H . The procedure begins with R 0 = N G × N H and iteratively refines it R i = Refine(R i-1 ) by removing any pair of nodes with no simulation witness Refine(R) = {(n, m) ∈ R | there exists a witness λ of simulation of n by m w.r.t. R}.</p><p>This process terminates at the earliest iteration k when a fixpoint is reached Refine * (R 0 ) = R k = Refine(R k ). The fix-point is in fact the maximal simulation of G in H and naturally, it is an embedding if its domain contains all nodes of G. The core difficulty is in testing the existence of a witness of simulation.</p><p>We fix a relation R ⊆ N G × N H and a pair of nodes (n, m) ∈ R. We abstract the problem of existence of a witness of simulation of n by m w.r.t. R as a flow routing problem, where we are given a set of sources V = out G (n), a set of sinks U = out H (m), and a source-to-sink connection table</p><p>every source v ∈ V outputs a volume of water between v.min = min(occur G (v)) and v.max = max(occur G (v)), and every sink u ∈ U requires an input of at least u.min = min(occur H (u)) but no more than u.max = max(occur H (u)).</p><p>The flow routing problem is to find a valid routing λ : V → U i.e., a routing such that (v, f (v)) ∈ E for every source v ∈ V and there are no deficits or overflows at any source. Formally, given a routing λ we estimate the inflow at a sink u with min-inflow</p><p>Observe that the conditions 1 and 2 in Definition 2.2 are ensured by the definition of E while the condition 3 follows from lack of deficits and overflows. Also, w.l.o.g. we can assume that in E every source is paired with at least one sink. In essence, the algorithm for constructing a valid routing (1) starts with an empty routing, (2) assigns it assigns a sink to every source while distributing any overflow by pushing it forth to other sinks, and (3) solves any deficit at a sink by pulling back the input from sources assigned to other sinks.</p><p>The main reason why this approach is successful is the use of basic occurrence intervals in shape graphs, which implies that the lower bounds are only 0 and 1 while the upper bounds are 1 and ∞. When constructing the routing λ we need to pay attention to saturated sinks that are unable to accept any additional inflow. However, saturated sinks are exactly those u's with u.max = 1 and max-inflow λ (u) = 1. Furthermore, w.l.o.g. we can assume that v.max ≤ u.max for (v, u) ∈ E, and in particular a source with ∞ upper bound can only be routed to a sink with upper bound ∞. Consequently, any overflow created by the algorithm at a sink u is singular i.e., max-inflow λ (u) = 2 and u.max = 1.</p><p>Given a (partial) routing λ and a source v with no assigned sink, the algorithm assigns to v any admissible sink u 0 i.e., such that (v, u 0 ) ∈ E. If an overflow is created at u 0 , the algorithm attempts to find an acyclic path π from u 0 to fin in the push-forth graph G → λ = (N , A), where the nodes are N = V ∪ U ∪ {fin} and the oriented edges A are (for v ∈ V and u ∈ U ):</p><p>• u → v if λ(v) = u and u is saturated; an additional inflow of 1 at sink u must be redirected further and this can be done by redirecting the output of v to another sink.</p><p>routed to u and any additional inflow at u is at most 1. • u → fin if u is not saturated; the sink can accept an additional inflow of 1.</p><p>Rerouting λ in accordance with a path from u to fin gives us a overflow-free routing. When a total overflow-free routing λ is constructed, the algorithm identifies any sink u 0 with a deficit and tries to solve it by finding an acyclic path π from u 0 to fin in the pull-back graph G ← λ = (N , A), where the nodes are N = V ∪ U ∪ {fin}, and oriented edges A are (for v ∈ V and u ∈ U ):</p><p>• u → v if λ(v) u and v.min = 1; rerouting v to u will solve a deficit of 1 at u and may create a overflow at u but only if u = u 0 and then the overflow is singular.</p><p>and v is the only source such that λ(v) = u and v.min = 1; rerouting v away from u will create a deficit of 1 at u.</p><p>and v ′ .min = 1; rerouting the source v from the sink λ(v) will not create a deficit at λ(v).</p><p>Rerouting λ in accordance with π renders λ deficit-free at u 0 . If the rerouting creates a singular overflow at u 0 , the algorithm uses the push-forth graph G → λ to find an acyclic path π ′ from u 0 to fin that is deficit-free i.e., with no edge u → v such that u.min = v.min = 1, which guarantees that further rerouting λ in accordance with π ′ yields a overflowfree routing with one sink node u 0 less in deficit.</p><p>Naturally, the algorithm is polynomial because the sizes of the push-forth and pull-back graphs are bounded by the size of E, and all constructed paths are acyclic. □</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B CHARACTERIZING EXAMPLES FOR DETERMINISTIC SHAPE GRAPHS</head><p>Lemma 5.2. For any H ∈ DetShEx - 0 , there exists a simple graph G ∈ L(H ) of size polynomial in the size of H such that for any K ∈ DetShEx - 0 we have that G ≼ K implies H ≼ K.</p><p>Proof. Let E ? = (e 1 , . . . , e m ) be all edges in H with occurrence interval ?, in an arbitrary but fixed order. The graph G is constructed as follows. The graph has m + 2 nodes per type of H : N G = N H × {0, 1, . . . , m + 1}, and for simplicity we shall write t i for (t, i) ∈ N G . The nodes are used to characterize the occurrence intervals used on the outgoing edges of the type. For an edge e ∈ E H such that t = source H (e), s = target H (e), and a = lab H (e), we construct the following edges:</p><p>(1) if occur H (e) = 1, then t i has one outgoing edge with label a that leads to s i for i ∈ {0, . . . , m + 1}; (2) if occur H (e) = ? and e = e ℓ i.e., ℓ is the position of e on the list E ? , then t i has one outgoing edge with label a that leads to s i for i ∈ {0, . . . , m + 1} \ {ℓ} and t ℓ has no outgoing edges with label a; (3) if occur H (e) = *, then for i ∈ {0, . . . , m} the node t i has no outgoing edge with label a and the node t m+1 has an outgoing edge with label a that leads to t j for every j ∈ {0, . . . , m + 1}.</p><p>We now assume that G ∈ L(K) and construct the following embedding of H in K:</p><p>where in H (t) = {e ∈ E H | tarдet H (e) = t }. Essentially, R uses types of the nodes t m+1 but only essential ones: all types for root nodes (with no incoming edges) and for nodes with incoming edges only those types that are needed to ensure satisfaction of their predecessors. It is easy to see that dom(R) = N H . To prove that it is indeed an embedding we make several observations. First, we point out that for deterministic shape graphs the concept of witness is redundant since an edge with a given label can be mapped only to an edge with the same label. Consequently, we only need to make sure that R maps nodes in a manner consistent with the labels of the connecting edges and in quantities within the bounds of the occurrence interval. Now we take any edge e ∈ E H and let t = source H (e), s = target H (e), and a = lab H (e). We take any u ∈ R(t), which implies that t m+1 of G has the type u. Since t m+1 has an edge labeled a and leading to s m+1 , there is an edge f ∈ E K with label a from u to some v ∈ R(s). We can make the following observations about the occurrence interval on f :</p><p>• In general occur G (f ) ∈ {1, ?, *}, which is adequate if occur H (e) = 1; • If occur H (e) = *, then we observe that t m+1 has m+2 ≥ 2 outgoing edges labeled with a, all of witch must be embedded in f , and therefore, occur K (f ) = *. Otherwise, from construction of R there is a type of u ′ that is a parent of u i with an edge with label a ′ as well as a type t ′ ∈ N H connected to t i with an edge e ′ ∈ E H such that (t ′ , u ′ ) ∈ R. We set t i+1 = t and u i+1 = u ′ , and e i+1 = e ′ . This process terminates thanks to the definition of DetShEx - 0 . Now, let the edge e be the ℓ-th element in the ordering E ? . we take two corresponding paths in G: t m+1 k+1 , t m+1 k . . . , t m+1 1 and t m+1 k +1 , t ℓ k . . . , t ℓ 1 ; both following the edges e k , . . . , e 1 . With a simple inductive proof we show that both t ℓ 1 and t m+1 1 have the same type u 1 , and since t ℓ 1 does not have any outgoing edge labeled with a, the interval occur K (f ) must be either ? or *. This concludes the proof. □</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Optimising SPARQL query evaluation in the presence of shex constraints</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abbas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Genevès</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Roisin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Layaïda</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">BDA 2017</title>
+		<meeting><address><addrLine>Nancy, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-11">November 2017</date>
+			<biblScope unit="page" from="1" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Foundations of RDF databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pérez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Reasoning Web, International Summer School on Semantic Technologies for Information Systems</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="158" to="204" />
+		</imprint>
+	</monogr>
+	<note>Invited Tutorial</note>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Data exchange in the relational and RDF worlds</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Reutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Riveros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sequeda</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Workshop on Semantic Web Information Management (SWIM)</title>
+		<imprint>
+			<date type="published" when="2011-06">June 2011</date>
+		</imprint>
+	</monogr>
+	<note>Invited talk</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">DTDs versus XML Schema: A practical study</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Bex</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Van Den Bussche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WebDB</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="79" to="84" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Schemas for unordered XML on a DIME</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ciucanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science (TCS)</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="337" to="376" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Relational to RDF data exchange in presence of a shape expression schema</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lozano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Alberto Mendelzon International Workshop on Foundations of Data Management</title>
+		<imprint>
+			<date type="published" when="2018-05">May 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">One-unambiguous regular languages</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brüggemann-Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wood</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">142</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="182" to="206" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">TQL: a query language for semistructured data based on the ambient logic</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cardelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ghelli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematical Structures in Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="285" to="327" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Compact Summaries of Rich Heterogeneous Graphs</title>
+		<author>
+			<persName><forename type="first">Š</forename><surname>Čebirić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Guzewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<idno>RR-8920</idno>
+		<imprint>
+			<date type="published" when="2018-07-01">1. July 2018</date>
+		</imprint>
+		<respStmt>
+			<orgName>INRIA Saclay ; Université Rennes</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Research Report</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">A Framework for Efficient Representative Summarization of RDF Graphs</title>
+		<author>
+			<persName><forename type="first">Š</forename><surname>Čebirić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Manolescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Semantic Web Conference (ISWC)</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-10">October 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Tree automata techniques and applications</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Comon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dauchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gilleron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Löding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Jacquemard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lugiez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+	<note>Release 2007</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">XML schema, tree logic and sheaves automata</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dal-Zilio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lugiez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Rewriting Techniques and Applications</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="246" to="263" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Decidability and undecidability of extensions of second (first) order theory of (generalized) successor</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Elgot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">O</forename><surname>Rabin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Symbolic Logic</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="169" to="181" />
+			<date type="published" when="1966">1966</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Optimizing regular path expressions using graph schemas</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Data Engineering (ICDE)</title>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="page" from="14" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Optimizing schema languages for XML: Numerical constraints and interleaving</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gelade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM Journal on Computing</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="2021" to="2043" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Incremental structural summarization of RDF graphs</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Guzewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Extending Database Technology (EDBT)</title>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-03">March 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">The complexity of subclasses of logical theories</title>
+		<author>
+			<persName><forename type="first">Erich</forename><surname>Grädel</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1987">1987</date>
+		</imprint>
+		<respStmt>
+			<orgName>Universität Basel</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Tightening the complexity of equivalence problems for commutative grammars</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Haase</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hofman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Symposium on Theoretical Aspects of Computer Science (STACS)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="page" from="1" to="41" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">XML: Model, schemas, types, logics and queries</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Klarlund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Logics for Emerging Applications of Databases</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Van Der Meyden</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Saake</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer-Verlag</publisher>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Parikh images of grammars: Complexity and applications</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kopczynski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>To</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Logic in Computer Science (LICS)</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="80" to="89" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Validating RDF data</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Labra Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Prud'hommeaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kontokostas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Synthesis Lectures on the Semantic Web: Theory and Technology</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="328" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Towards an RDF validation language based on regular expression derivatives</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Labra Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Prud'hommeaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">R</forename><surname>Solbrig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hym</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EDBT/ICDT Workshops (GraphQ &amp; LWDM)</title>
+		<imprint>
+			<date type="published" when="2015-03">March 2015</date>
+			<biblScope unit="page" from="197" to="204" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Validating and describing linked data portals using RDF Shape Expressions</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Labra Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Prud'hommeaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Solbrig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Alvarez Rodriguez</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Linked Data Quality</title>
+		<imprint>
+			<date type="published" when="2015-09">September 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Complexity of decision problems for XML schemas and chain regular expressions</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM Journal on Computing</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1486" to="1530" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Expressiveness and complexity of XML schema</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Bex</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Database Systems (TODS)</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="770" to="813" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">The complexity of word problems -this time with interleaving</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Stockmeyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">115</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="293" to="311" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Containment and equivalence for a fragment of XPath</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Miklau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="2" to="45" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">XML schemas without order</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Neven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A 2 2 2 pn upper bound on the complexity of Presburger arithmetic</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">C</forename><surname>Oppen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer and System Sciences</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="323" to="332" />
+			<date type="published" when="1978">1978</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Restricted set-theoretical definitions in arithmetic</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Robinson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the American Mathematical Society</title>
+		<meeting>the American Mathematical Society</meeting>
+		<imprint>
+			<date type="published" when="1958">1958</date>
+			<biblScope unit="page" from="238" to="242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Numerical document queries</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Seidl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Muscholl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM Symposium on Principles of Database Systems (PODS)</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="155" to="166" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Counting in trees</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Seidl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Muscholl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Logic and Automata: History and Perspectives</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="575" to="612" />
+		</imprint>
+	</monogr>
+	<note>Honor of Wolfgang Thomas</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Haskell overloading is dexptime-complete</title>
+		<author>
+			<persName><forename type="first">Helmut</forename><surname>Seidl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">formation Processing Letters</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="57" to="60" />
+			<date type="published" when="1994-10">October 1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Complexity and expressiveness of ShEx for RDF</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Labra Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hym</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">G</forename><surname>Prud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Solbrig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Database Theory (ICDT)</title>
+		<imprint>
+			<date type="published" when="2015-03">March 2015</date>
+			<biblScope unit="page" from="195" to="211" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Characterizing XML twig queries with examples</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wieczorek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Database Theory (ICDT)</title>
+		<imprint>
+			<date type="published" when="2015-03">March 2015</date>
+			<biblScope unit="page" from="144" to="160" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title level="m" type="main">On computational complexity of basic problems of finite tree automata</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veanes</surname></persName>
+		</author>
+		<idno>133</idno>
+		<imprint>
+			<date type="published" when="1997-01">January 1997</date>
+		</imprint>
+		<respStmt>
+			<orgName>UPMAIL</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical Report</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<monogr>
+		<title level="m" type="main">RDF validation workshop report: Practical assurances for quality RDF data</title>
+		<author>
+			<persName><surname>W3c</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013-09">September 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Shape expressions language 2</title>
+		<author>
+			<persName><surname>W3c</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">The complexity of almost linear diophantine problems</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Weispfenning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Symbolic Computation</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="395" to="404" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">ASSG: adaptive structural summary for RDF graph data</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Semantic Web Conference (ISWC)</title>
+		<imprint>
+			<date type="published" when="2014-10">October 2014</date>
+			<biblScope unit="page" from="233" to="236" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

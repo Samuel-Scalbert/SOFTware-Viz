@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Host and Plugins : Parameter Automation Without Crossing the Audio Thread Barrier</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Dylann</forename><surname>Batisse</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Antoine</forename><surname>Cousson</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Antoine</forename><forename type="middle">Vidal</forename><surname>Mazuy</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jean-Philippe</forename><surname>Carlens</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Host and Plugins : Parameter Automation Without Crossing the Audio Thread Barrier</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6691E0D93A4FDFCDDCA568E84F8C59B0</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>WebAudio Modules 2.0 (aka WAM) is a standard for developing interoperable host and plugins that can be written using different development approaches (JavaScript, build systems, TypeScript, FAUST, Csound, front-end frameworks, etc.). The WAM standard has been designed with high performance host-plugin communication in mind when both the host and plugins are running in the audio thread. This is the case when the host is written as an Audio Worklet (AW) and when plugins are also AW based. We have developed for the WAM standard an example of such a host: a very simple DAW using Audio Worklets to manage the audio buffers for each track. In a typical way, each track is associated to a chain of plugins, to bring for example real time effects on the signal. This DAW is an interesting example to study for developers who would like to write this type of program: not only does it show how to manage audio buffers with sample accuracy (in order to have very precise loops), but it also shows how, thanks to the tools offered by the WAM standard, you can automate a large number of plugin parameters at the sample rate in a very efficient way (using Shared Array Buffers and Ring Buffers), much more than what is possible with the management of the parameters offered by the WebAudio API.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>In 2015 Jari Kleimola and Oliver Larkin created Web Audio Modules (WAM) <ref type="bibr" target="#b1">[2]</ref>, a standard for creating reusable and interoperable plugins implemented as WebComponents, the core of which was written in C/C++. This initiative was aimed primarily at developers of native plugins (i.e. VST plugins). Since then, this standard has evolved in a new "Web Audio Modules 2.0" version <ref type="bibr" target="#b0">[1]</ref>, taking into account feedback from developers of the first version and the evolution of web standards (with WebAssembly, WebComponents, WebMidi etc.). The WAM distribution is open source and distributed as four GitHub repositories and as npm modules (MIT License) 1. One of these repository, the wam-example github repository, contains different plugins and hosts that cover a variety of programming languages and approaches. WAM v2.0 creators asked us to develop some host examples written as AudioWorklets (AW), with and without the use of WebAssembly modules, to show some features of the standard, in particular how WAM events can be used to automate a large amount of plugin parameters without leaving the audio thread (this is the case when both the host and plugins are written as AW running in the audio thread).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">WebAudio API limitations for parameter handling</head><p>Since the WAM standard aims to allow maximum flexibility for developers, WAM authors have decided that WebAudio API's AudioParams should not appear explicitly in the WAM API. Some WAM design patterns do not make use of any stock WebAudio API nodes, and while it is possible to define custom parameters for AudioWorklet, in many cases it would be too heavy / cumbersome to expose the potentially hundreds of parameters residing in WebAssembly code via that API. Furthermore, the parts of the WebAudio API having to do with parameters were conceived before developers had any direct access to the audio thread, forcing parameter updates to be scheduled asynchronously from the main thread far enough in advance to account for crossing the thread barrier. This aspect of the WebAudio API is not compatible with the goal to support synchronous, 'just in time' interaction between hosts and plugins on the audio thread as in native plugin environments. To get around these limitations the WAM standard has its own WamParameter API to handle parameter updates, designed to facilitate many different WAM design patterns and interaction between hosts and plugins on either thread.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Plugin parameters and host-plugin communication</head><p>Sample-accurate event scheduling is a critical requirement for professional audio applications. The WebAudio API does allow for sample-accurate scheduling of AudioParams, and this capability is leveraged in the WAM SDK to facilitate WAMs that incorporate one or more stock Web Audio nodes. However, as mentioned before the automation API for AudioParams is not useful for many WAM design patterns, and we wanted to show how WAM supports sample-accurate processing of other kinds of events such as MIDI messages or parameter automation messages. The WAM API facilitates event scheduling through a unified interface that is mirrored on both the main thread and audio thread. Hosts operating entirely on the main thread will still be required to schedule events with some lookahead to ensure that they are processed at the intended time, as these messages must still cross the thread barrier. However, hosts with a presence on the audio thread can schedule events at the beginning of the rendering block in which the events should occur. This is the case of the DAW we will demo.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Related works</head><p>At the time of writing (April 2022) the most advanced DAWS available on the Web platform are commercial. The oldest one, oundtrap.com belongs to Spotify, and is mainly based on high level WebAudio API nodes, and is not open to third-party plugins. The same code base seems to be used for a mobile version. Bandlab.com belongs to an Asian company that sells music gear on the Web, and is also available on mobile devices. The technology used is not public, but it seems that the mobile version and the Web version do not share the same code base. AmpedStudio.com uses AudioWorklet and C++ cross compiled plugins a lot, and does not have yet a specific version for mobile devices…It supports different sorts of plugins, including the WAM standard. We have been working with a developer's version of AmpedStudio and managed to load successfully some WAM 2.0 plugins in it. All these DAWs support audio and MIDI tracks, plugin chains for instruments and effects, automation, and some of them are collaborative.</p><p>Sequencer.party is a mix between Ableton Live and Google Docs, it's a sequencer 100% collaborative. The sequencer itself is a WAM host and most modules are WAM2 plugins, also available on GitHub.</p><p>Gridsound is a more traditional open source DAW, that has been developed since 2015. It supports audio and MIDI, but does not yet supports an interoperable plugin format. It is based on "components" whose format is specific to Gridsound.</p><p>There are also popular JS librairies for developing a multitrack player/recorder, such as wavesurfer.js<ref type="foot" target="#foot_1">2</ref> or waveform-playlist 3 , and some audacity like audio buffer editors such as AudioMass 4 .</p><p>None of the open source DAWs have their core audio player based on AudioWorklet, and only AmpedStudio.com takes care about the audio thread isolation optimization for host-plugins communications. This is why our prototype can be a good way to see how to implement such features.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Settings for the demo</head><p>Our host can record/play/edit different tracks with a customizable plugin chain associated to each track. We propose to show some audio projects we prepared, that use a large number of plugins and parameters with automation. During the demo, attendees will also be able create projects from scratch and / or edit existing projects.</p><p>We also propose to show some source code extracts and explain how this DAW uses the features of the WAM2 standard for hostplugins interaction (discovering/managing plugins and automation curves, etc.).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>6.</head></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A multi-track DAW prototype with a pedalboard WAM plugin in the plugin chain associated to the selected track.</figDesc><graphic coords="1,88.45,188.06,435.10,244.79" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://github.com/webaudiomodules and https://www.npmjs.com/settings/webaudiomodules/packages</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://wavesurfer-js.org/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Web Audio Modules 2.0, an open Web Audio plugin standard</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings (Developer&apos;s track) of the The Web Conference 2022</title>
+		<meeting><address><addrLine>Lyon, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-04">April 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+		<title level="m">Web audio modules. 12th Sound and Music Computing Conference (SMC15)</title>
+		<meeting><address><addrLine>Maynooth, Ireland</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Parallel Streaming Implementation of Online Time Series Correlation Discovery on Sliding Windows with Regression Capabilities</title>
+				<funder ref="#_jMFWPCv">
+					<orgName type="full">European Union</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Boyan</forename><surname>Kolev</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Inria and LIRMM</orgName>
+								<address>
+									<settlement>Montpellier</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Reza</forename><surname>Akbarinia</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Inria and LIRMM</orgName>
+								<address>
+									<settlement>Montpellier</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ricardo</forename><surname>Jimenez-Peris</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">LeanXcale</orgName>
+								<address>
+									<settlement>Madrid</settlement>
+									<country key="ES">Spain</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Oleksandra</forename><surname>Levchenko</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Inria and LIRMM</orgName>
+								<address>
+									<settlement>Montpellier</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Florent</forename><surname>Masseglia</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Inria and LIRMM</orgName>
+								<address>
+									<settlement>Montpellier</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author role="corresp">
+							<persName><forename type="first">Marta</forename><surname>Patino</surname></persName>
+							<email>mpatino@fi.upm.es</email>
+							<affiliation key="aff2">
+								<orgName type="institution">Universidad Politecnica de Madrid (UPM)</orgName>
+								<address>
+									<settlement>Madrid</settlement>
+									<country key="ES">Spain</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Patrick</forename><surname>Valduriez</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Inria and LIRMM</orgName>
+								<address>
+									<settlement>Montpellier</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Parallel Streaming Implementation of Online Time Series Correlation Discovery on Sliding Windows with Regression Capabilities</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">DDDE346E547BE51BC84B6875D54035FE</idno>
+					<idno type="DOI">10.5220/0007843806810687</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Time Series Correlation and Regression</term>
+					<term>Data Stream Processing</term>
+					<term>Distributed Computing</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>This paper addresses the problem of continuously finding highly correlated pairs of time series over the most recent time window and possibly use the discovered correlations to select features for training a regression model for prediction. The implementation builds upon the ParCorr parallel method for online correlation discovery and is designed to run continuously on top of the UPM-CEP data streaming engine through efficient streaming operators.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Consider a big number of streams of time series data (e.g. stock trading quotes), where we need to find highly correlated pairs for the latest window of time (say, one hour), and then continuously slide this window to repeat the same search (say, every minute). Doing this efficiently and in parallel could help gather important insights from the data in real time (Figure <ref type="figure">1</ref>). This has been recently addressed by the ParCorr parallel incremental sketching approach <ref type="bibr" target="#b5">(Yagoubi et al., 2018)</ref>, which scales to 100s of millions of parallel time series, and achieves 95% recall and 100% precision. An interesting aspect of the method is the discovery of time series that are highly correlated to a certain subset of the time series, which we call targets (Figure <ref type="figure" target="#fig_0">2</ref>). This concept has many applications in different domains (finance, Figure <ref type="figure">1</ref>: Example of a pair of time series that the method found to be highly correlated over the first several sliding windows of 500 time points, but not thereafter. retail, etc.), where we would like to use the correlates of a target as predictors to forecast the value of the target for the next time window.</p><p>Such challenges have been identified by use case scenarios, defined in the scope of the CloudDBAppliance project <ref type="bibr" target="#b1">(CDBA, 2019)</ref>, which aims to provide a database-as-a-service appliance integrating several data management technologies, designed to scale vertically on many-core architectures. These include an operational database, an analytical database, a data lake, and a data streaming engine. To face these requirements, the ParCorr method was implemented as a continuous query for the highly scalable streaming engine and enhanced with regression capabilities to provide for per-window prediction of target values. In this paper, we present the details of this implementation, following a brief overview of the streaming engine and the ParCorr method. Stream Processing (SP) is a novel paradigm for analyzing in real-time data captured from heterogeneous data sources. Instead of storing the data and then processing it, the data is processed on the fly, as soon as it is received, or at most a window of data is stored in memory. SP queries are continuous queries run on a (infinite) stream of events. Continuous queries are modeled as graphs where nodes are SP operators and arrows are streams of events. SP operators are computational boxes that process events received over the incoming stream and produce output events on the outgoing streams. SP operators can be either stateless (such as projection, filter) or stateful, depending on whether they operate on the current event (tuple) or on a set of events (time window or number of events window). Several implementations went out to the consumer market from both academy and industry, such as Borealis <ref type="bibr" target="#b0">(Ahmad et al., 2005)</ref>, Infosphere <ref type="bibr" target="#b4">(Pu et al., 2001)</ref>, Storm<ref type="foot" target="#foot_0">1</ref> , Flink<ref type="foot" target="#foot_1">2</ref> and StreamCloud <ref type="bibr" target="#b3">(Gulisano et al., 2012)</ref>. Storm and Flink followed a similar approach to the one of StreamCloud in which a continuous query runs in a distributed and parallel way over several machines, which in turn increases the system throughput in terms of number of tuples processed per second. The streaming engine UPM-CEP (Complex Event Processing) adds efficiency to this paralleldistributed processing being able to reach higher throughput using less resources. It improves the network management, reduces the inefficiency of the garbage collection by implementing techniques such as object reutilization and takes advantage of the novel Non Uniform Memory Access (NUMA) multicore architectures by minimizing the time spent in context switching of SP threads/processes.</p><p>The UPM-CEP JCEPC (Java CEP Connectivity) driver hides from the applications the complexity of the underlying cluster. Applications can create and deploy continuous queries using the JCEPC driver as well as register to the source streams and subscribe to output streams of these queries. During the deployment the JCEPC driver takes care of splitting a query into sub-queries and deploys them in the CEP cluster. Some of those sub-queries can be parallelized.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">METHOD OVERVIEW</head><p>The ParCorr time series correlation discovery algorithm <ref type="bibr" target="#b5">(Yagoubi et al., 2018)</ref> is based on a work on fast window correlations over time series of numerical data <ref type="bibr" target="#b2">(Cole et al., 2005)</ref>, and concentrates on adapting the approach for the context of a big number of parallel data streams. The analysis is done on sliding windows of time series data, so that recent correlations are being continuously discovered in nearly real-time. At each move of the sliding window, the latest elements of the time series are taken as multi-dimensional vectors. As a similarity measure between such vectors, we take the Euclidean distance, since it is related to the Pearson correlation coefficient if applied to normalized vectors. Since the sliding window can result in a very high number of dimensions of time series vectors, which makes them very expensive to be compared to each other, a major challenge the algorithm addresses is the reduction of the dimensionality in a way that nearly preserves the Euclidean distances. For this purpose, random projection approach is adopted, where each highdimensional vector is transformed into a lowdimensional one (called "sketch" of the vector), by applying a product with a specific transformation matrix, the elements of which are randomly selected from the values of either -1 or 1. This approach guarantees with high probability that the distance between any pair of original vectors correspond to the distance between their sketches. Furthermore, to simplify the comparing across sketches, each sketch vector is partitioned into subvectors (e.g. twodimensional), so that for example a 30-dimensional sketch vector is broken into 15 two-dimensional subvectors. Then, discrete grid structures (in the example, 15 two-dimensional grids) are built and subvectors are assigned to grid cells, so that close subvectors are grouped in the same grid cells. This process essentially performs a locality-sensitive hashing of high-dimensional time series vectors, where close vectors are discovered by searching for pairs of vectors, which are represented together in a high number of grid cells. Since this can output false positives, the candidate pairs are explicitly verified by computing the actual distance between them.</p><p>This outlines four main steps of the algorithm:  Sketching: computation and partitioning of sketches;  Collocation: grouping together all time series assigned to the same grid cell;  Correlation: finding frequently collocated pairs as candidates for correlation;  Verification: computing the actual correlation of each candidate pair to filter out false positives. To provide prediction capabilities, an additional step trains a regression model that takes into account the correlates of time series that are considered of interest for prediction and called "targets". Only correlated pairs that involve at least one target time series are considered for discovery. All correlates of a target are considered as predictors and passed to a linear regression model, which approximates the target as a linear function of its correlates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">IMPLEMENTATION</head><p>The implementation involves four stateful streaming operators (Figure <ref type="figure" target="#fig_1">3</ref>), each processing incoming tuples in the context of the current window, taking into account the current state of the window. Thanks to the flexible API of the streaming engine that provides low level primitives for implementing custom operators, each operator can process incoming tuples on-the-fly and hence emit resulting tuples as early as possible. This guarantees a real pipelined flow of data that allows for outputting early results. For input data tuples, timestamp identifies the point in time, for which the value of a particular time series (tsId) is taken. Examples can be product price at a given moment, volume of sales for a given time unit (say 1 minute), etc. For the method to work correctly, each time series must have value at each timestamp. If such is not provided, the sketching operator will assume repetition of the last value. Normally, time units should be aligned to data update frequencies.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Data Input and Output</head><p>Basic output tuples show pairs of identifiers of the time series (tsId1 and tsId2), which were found to be highly correlated at the window, represented by the provided timestamp, together with the Pearson correlation coefficient.</p><p>For the regression extensions, each of the extended output tuples shows the approximation of a specific target, as a list of its predictors and the corresponding coeficients for each predictor in the linear model. Thus, the next value of target can be predicted as function of predictors, using the formula:</p><formula xml:id="formula_0">𝑇 = 𝐶 0 + ∑ 𝐶 𝑖 * 𝑃 𝑖 𝑛 𝑖=1 (1)</formula><p>where n is the number of predictors, Pi is the next value of the time series whose identifier is stored in predictors The arrays predictors and coefs are actually output as pipe-separated list of values. For example, the following output tuple: target:</p><formula xml:id="formula_1">[i-1], Ci is the regression coefficient of Pi stored in coefs[i],</formula><p>"Demand", predictors: "Price|Discount|Precip", </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Model Parameters</head><p>The model can be configured by a number of parameters, which can be roughly divided in two groups: functional parameters and method parameters.</p><p>Functional parameters are determined by the application requirements. Sliding windows are defined in terms of size of the window (windowSize) and size of a basic window (windowSlide, the step at which a sliding window advances). For example, if we consider a time unit of one minute, a basic window of size 5 and a window of size 60, this means that method execution will be triggered every 5 minutes and will run on time series data for the last 60 minutes. Other functional parameters are the desired correlation threshold minCorr (e.g., the application needs all pairs with Pearson correlation above 0.9) and the searchInverse flag that indicates whether highly negative correlations (e.g., less than -0.9) are to be also discovered. The optional targets parameter is a regular expression that specifies the identifiers of target time series; the simplest form is a pipe-separated list of time series identifiers that will be considered as targets.</p><p>Method parameters can control the tradeoff between efficiency (the time to response at each window slide) and accuracy (what percentage of all highly correlated pairs will be discovered). That is mostly determined by the grid cell size and the candidate threshold, i.e. the minimum number of grids, in which two time series should be collocated in order to be considered as candidates for correlation. Larger grid cells (i.e. more time series assigned to the same cell) and lower candidate threshold lead to higher number of candidate pairs to process (slower execution), but lower probability to miss a true positive (higher accuracy). Another important parameter is the sketch size, which determines the reduced dimensionality and can also control the same tradeoff (lower dimensional sketch vectors lead to faster execution, but also to lower probability of preserving the distances). If linearSearch is set to true, an exhaustive search through all possible pairs will be done, instead of running the sketching method, hence all other method parameters will be ignored. Linear search is also parallelized, but much slower, as it naively explores the full search space. However, it guarantees to discover 100% of the correlations, so might be the preferred method for applications with a smaller number of time series that need exact responses. This parameter has also been used for comparing and evaluating the performance benefits of the sketching method and its accuracy tradeoff.</p><p>The  streaming operators. The parallelization of the algorithm is quite straightforwardsketches of time series vectors on parallel data streams are computed in parallel, which is followed by an additional shuffle step that groups together the identifiers of time series that fit in the same grid cell; then groups are explored for discovering frequent pairs. Since the streaming engine operates in a distributed environment, operators have multiple instances, handling different partitions of data in parallel. This requires shuffles of intermediate data across operator instances and the partitioning is based on a key from the schema of the intermediate dataset. In figures, we use the Key=&gt;Value notation to show which fields are used as partition keys.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Streaming Operators</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.1">Sketching</head><p>The first operator consumes the incoming data, represented as a stream of (timestamp, tsId, value) tuples. Its incoming data partitioning ensures that all values of the same time series id (tsId) are routed to the same operator instance.</p><p>First, the operator identifies sliding windows and at each window computes the sketch of each time series. This computation is done incrementally, i.e. at each slide of the window, the sketches are simply incrementally updated (instead of recomputed), taking into account only the difference compared to the previous position of the sliding window. Since the method requires that sketches be computed on normalized vectors, means and standard deviations are computed (also incrementally) for each sliding window. Then, they are applied directly in the formula for computing the sketches, which results in sketch values as if computed on a normalized window.</p><p>As a running example, let us consider seven time series with sketches as shown on Figure <ref type="figure" target="#fig_4">4a</ref>. Each sketch vector is partitioned into three pairs (subvectors). The i th pair of the sketch vector for each time series s goes to a grid i. The values of the i th pair determine where in that grid the identifier s is placed. Thus, each time series id is associated to exactly 3 grid cellsone at each grid (Figure <ref type="figure" target="#fig_4">4b</ref>). Each cell is identified by cellId, composed by the grid index and the two dimensions of the grid cell. After this processing, the sketching operator emits these associations as (cellId, tsId) pair tuples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.2">Collocation</head><p>The second operator uses cellId as key and groups in partitions all time series identifiers that belong to the same cell (Figure <ref type="figure">5a</ref>). Then, for each identifier in a partition, the operator emits a key-value pair that maps the time series identifier to its relevant part of the partition (Figure <ref type="figure">5b</ref>). The relevant part of a partition with respect to a time series t consists of t itself and the time series with identifiers higher than t. We call that a "candidate cluster of time series". Clusters with just one element are ignored, because pairs cannot be derived out of them. If the targets parameter is specified, a filter is applied so that only those key-value tuples that correspond to targets be emitted at this step.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.3">Correlation</head><p>The third operator uses tsId as key and for each time  series identifier t explores its associated candidate clusters to find those time series ids that are frequently collocated with t. In the example on Figure <ref type="figure">5b</ref>, three pairs satisfy the given candidate threshold f (i.e. they are seen together in the same cell in 2 out of 3 grids) and are hence considered as candidates for correlation.</p><p>To facilitate the next step, the Correlation operator keeps a copy of the current window of time series raw data (Figure <ref type="figure" target="#fig_6">6</ref>), partitioned by identifier. This assures that every candidate pair (tsi, tsj) will be collocated with the raw time series (datai) of tsi at the same operator instance, since the candidate pair is keyed by tsi. Thus, each instance of the Correlation operator performs a join between its candidate pairs and the local partition of the raw time series table and emits the triplet (tsj, tsi, datai).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.4">Verification</head><p>Each candidate (tsj, tsi) emitted by the Correlation operator must be now explicitly verified by computing the actual Pearson correlation between the two time series to check whether it satisfies the desired correlation threshold. This requires another lookup into the original time series window, in order to get the raw time series (dataj), this time of tsj. For this reason, the Verification operator also keeps a copy of the current window of time series raw data, this time having tsj as key (Figure <ref type="figure" target="#fig_6">6</ref>). Finally, the correlation of (datai, dataj) is computed and, if higher than the threshold, the candidate is emitted to the correlations output.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.5">Regression</head><p>The Verification operator makes sure that the data processed by it is already partitioned by target time series id, i.e. all the predictors of a particular target, together with their data for the last window, are collocated at the same instance with the target. This avoids additional shuffles of intermediate data and makes it easy for Regression to train a linear regression model for each of the target time series, consuming immediately the output of the Verification operator. So, Regression is stateless and is simply implemented as a class that operates within the Verification operator (R box of Figure <ref type="figure" target="#fig_6">6</ref>). The implementation uses the Statistics package of the Apache Commons Math library<ref type="foot" target="#foot_2">3</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">CONCLUSIONS</head><p>We presented a parallel streaming implementation of the ParCorr method for window correlation discovery on time series data, enhanced with regression capabilities, in the context of the CloudDBAppliance project. The implementation leverages the development of custom streaming operators that boosts the performance and minimizes the response time by optimizing intra-operator communication and utilizing pipelining of intermediate data. As a subject to further work, we will study experimentally the performance benefits of this implementation, compared to other streaming architectures, with respect to latency of the first results and response time of the entire output at each time window.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Example of a target time series (red) and its top correlates (green) discovered by the method.</figDesc><graphic coords="2,312.90,604.03,204.68,83.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The four main steps of the time series correlation discovery algorithm, implemented as parallel stateful streaming operators, with intermediate shuffles of data.</figDesc><graphic coords="4,121.17,93.55,352.95,116.83" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>All tuples processed by the streaming engine must contain associated timestamps. The schemas of the input stream and the two output streams are as follows:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head></head><label></label><figDesc>and C0 is the intercept of the linear regression model stored in coefs[0].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: The sketching operator computes sketches at each sliding window and assigns time series (identifiers) to grid cells. coefs: "1.3|3.9|2.5|-0.7" says that the next value of demand can be approximated once the values of price, discount, and precip are known, with the following expression: Demand ~= 1.3 + 3.9*Price + 2.5*Discount -0.7*Precip</figDesc><graphic coords="5,127.42,93.55,354.60,131.90" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 3</head><label>3</label><figDesc>Figure 3 depicts the algorithm workflow across the</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: The architecture of the streaming operators, with all intermediate streams. The correlation and verification operators keep copies of the current window of raw time series data, needed for computing the actual correlations.</figDesc><graphic coords="7,85.08,93.55,425.09,85.05" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>http://storm.apache.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://flink.apache.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>http://commons.apache.org/proper/commons-math/ userguide/stat.html</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENTS</head><p>This work has been partially funded by the <rs type="funder">European Union</rs>'s <rs type="programName">Horizon 2020 Programme</rs>, project <rs type="projectName">CloudDBAppliance</rs>, grant <rs type="grantNumber">732051</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_jMFWPCv">
+					<idno type="grant-number">732051</idno>
+					<orgName type="project" subtype="full">CloudDBAppliance</orgName>
+					<orgName type="program" subtype="full">Horizon 2020 Programme</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Distributed Operation in the Borealis Stream Processing Engine</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ahmad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Cetintemel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Humphrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jhingran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maskey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Papaemmanouil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rasin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tatbul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zdonik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGMOD International Conference on Management of Data</title>
+		<imprint>
+			<date type="published" when="2005">2005. 2005</date>
+			<biblScope unit="page" from="882" to="884" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<author>
+			<persName><surname>Cdba</surname></persName>
+		</author>
+		<ptr target="http://clouddb.eu" />
+		<title level="m">The CloudDBAppliance Project</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Fast Window Correlations over Uncooperative Time Series</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cole</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shasha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Knowledge Discovery and Data Mining (SIGKDD)</title>
+		<meeting>the International Conference on Knowledge Discovery and Data Mining (SIGKDD)</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="743" to="749" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Streamcloud: An Elastic and Scalable Data Streaming System</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Gulisano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jimenez-Peris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Patino-Martinez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Soriente</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Valduriez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Parallel Distrib. Syst</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2351" to="2365" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Infosphere Project: System Support for Information Flow Applications</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Schwan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Walpole</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGMOD Record</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="25" to="34" />
+			<date type="published" when="2001">2001. 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">ParCorr: Efficient Parallel Methods to Identify Similar Time Series Pairs across Sliding Windows</title>
+		<author>
+			<persName><forename type="first">D.-E</forename><surname>Yagoubi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Akbarinia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kolev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levchenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Masseglia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Valduriez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shasha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1481" to="1507" />
+			<date type="published" when="2018">2018</date>
+			<publisher>Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

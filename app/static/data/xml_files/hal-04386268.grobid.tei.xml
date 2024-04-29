@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Visualizing How-Provenance Explanations for SPARQL Queries</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Luis</forename><surname>Galárraga</surname></persName>
+							<email>luis.galarraga@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Daniel</forename><surname>Hernández</surname></persName>
+							<email>daniel.hernandez@ipvs.uni-stuttgart.de</email>
+							<affiliation key="aff1">
+								<orgName type="institution">University of Stuttgart</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anas</forename><surname>Katim</surname></persName>
+							<email>anas.katim@insa-rouen.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution">INSA Rouen</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Katja</forename><surname>Hose</surname></persName>
+							<email>khose@cs.aau.dk</email>
+							<affiliation key="aff3">
+								<orgName type="institution">Aalborg University</orgName>
+								<address>
+									<country key="DK">Denmark</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Visualizing How-Provenance Explanations for SPARQL Queries</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">48CE4384BC70B24B23822260157DE48E</idno>
+					<idno type="DOI">10.1145/3543873.3587350</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>SPARQL</term>
+					<term>RDF</term>
+					<term>how-provenance</term>
+					<term>query provenance</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Knowledge graphs (KGs) are vast collections of machine-readable information, usually modeled in RDF and queried with SPARQL. KGs have opened the door to a plethora of applications such as Web search or smart assistants that query and process the knowledge contained in those KGs. An important, but often disregarded, aspect of querying KGs is query provenance: explanations of the data sources and transformations that made a query result possible. In this article we demonstrate, through a Web application, the capabilities of SPARQLprov, an engine-agnostic method that annotates query results with how-provenance annotations. To this end, SPARQLprov resorts to query rewriting techniques, which make it applicable to already deployed SPARQL endpoints. We describe the principles behind SPARQLprov and discuss perspectives on visualizing how-provenance explanations for SPARQL queries.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>Thanks to the continuous advances in Web information extraction (IE) and knowledge base construction, the Web counts nowadays on more machine-readable data than ever. This data is modeled in RDF <ref type="foot" target="#foot_0">1</ref> and structured in large knowledge graphs (KGs) that can often be queried through public interfaces known as SPARQL endpoints <ref type="foot" target="#foot_1">2</ref> . RDF models knowledge as facts ⟨s, p, o ⟩, where predicate 𝑝 is also a directed edge from subject 𝑠 to object 𝑜. KGs allow computers to "understand" the real world and find applications in question answering, Web search, smart assistants, among other scenarios.</p><p>A central aspect of querying KGs is query provenance. This is metadata that traces the result of a data transformation back to the records required to obtain this result. We call these records sources. For RDF KGs, these sources are triples, i.e., edges. Query provenance is valuable for KG providers as it makes maintenance tasks such as source selection or view maintenance more efficient <ref type="bibr" target="#b1">[2]</ref>. For data consumers, query provenance provides explanations for answers, which users can use to decide, e.g., whether or not to trust a particular output. Formalisms for query provenance include lineage, why-provenance, and how-provenance <ref type="bibr" target="#b3">[4]</ref> -the latter being the most expressive. How-provenance structures the sources 𝑒 ∈ E responsible for a query answer into polynomial expressions that form a commutative semiring with natural coefficients S = (N[E], ⊗, ⊕, 0, 1). Those polynomials define class equivalences and explain how a particular query answer could be derived from the KG. Consider the KG in Figure <ref type="figure" target="#fig_1">1</ref> and the SPARQL query: SELECT ?𝑢 WHERE {?𝑢 :occupation ?z . ?𝑢 :nationality :Germany.}</p><p>The answer to this query is the binding 𝜇 = {?𝑢 → A. Merkel}, explained by the polynomial (𝑒 2 ⊕ 𝑒 4 ) ⊗ 𝑒 3 . This tells us that A. Merkel is reported due to the simultaneous presence of the source triple 𝑒 3 and a second source triple that can be either 𝑒 2 or 𝑒 4 . Due to the distributivity of ⊗ over ⊕, the polynomial (𝑒 2 ⊕𝑒 3 ) ⊕ (𝑒 4 ⊗𝑒 3 ) is also a valid explanation.</p><p>Approaches to annotate query answers with how-provenance comprise customized engines <ref type="bibr" target="#b6">[7]</ref>, engine extensions <ref type="bibr" target="#b5">[6]</ref>, and methods based on query rewriting layers <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b4">5]</ref>. The latter approach is particularly appealing for KGs already deployed as SPARQL endpoints. In this demo we illustrate the capabilities of SPARQLprov <ref type="bibr" target="#b4">[5]</ref>, a query-rewriting method to annotate SPARQL query answers with how-provenance explanations. Unlike state-of-the-art approaches <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b5">6,</ref><ref type="bibr" target="#b6">7]</ref>, SPARQLprov is natively designed for SPARQL and supports non-monotonic queries, e.g., queries including some notion of set difference. Our demo is a Web application that demonstrates SPARQLprov's capabilities by visualizing provenance expressions and the subgraphs involved in the generation of answers.</p><p>The paper is structured as follows. In Section 2 we elaborate on the background concepts around SPARQLprov. Section 3 guides the user through the functionalities of our demo and elaborates on the technical details behind its implementation. Finally, Section 4 concludes the paper by discussing some perspectives.  2.1.2 SPARQL. We can query RDF datasets using the SPARQL query language. The building blocks of SPARQL queries are triple patterns. A triple pattern t The evaluation of a graph pattern 𝐺 on an RDF graph G is defined as a function ⟦𝐺⟧ G that returns a multiset of mappings M that match G according to the SPARQL multiset semantics <ref type="bibr" target="#b2">[3]</ref>. If G is our example graph pattern ⟦𝐺⟧ G = M = {{?𝑢 → :A. Merkel, ?𝑧 → :Germany}, {?𝑢 → :E. Macron}}. Graph patterns can be annotated with the GRAPH keyword to restrict the evaluation to a particular RDF graph -otherwise the evaluation is carried out against the default graph. The SPARQL 1.1 specification defines four types of queries on RDF datasets: SELECT , CONSTRUCT , DESCRIBE , and ASK . Our demo computes how-provenance explanations for SELECT queries, which allow the projection of variables from the mappings returned by the graph evaluation. </p><formula xml:id="formula_0">∈ (I ∪ B ∪ V) × (I ∪ V) × (E ∪ V)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.2">Reification. N[E]</head><p>-relations assume that the sources, i.e., KG edges, occurring in the polynomial annotations are identifiable. However, classical RDF triples do not have identifiers, which means that data maintainers must find a mechanism to identify the triples in an RDF graph to provide provenance traces for query answers. This process is called reification and can be implemented in several ways as illustrated in Figure <ref type="figure" target="#fig_3">3</ref>. For example, the named graphs reification creates an RDF graph with label 𝑒 𝑡 for each triple 𝑡 in the original graph. Conversely, the Wikidata reification defines a surrogate entity 𝑒 𝑡 ∈ I that identifies the triple, and two surrogate predicates derived from the original predicate. Those predicates are used to link 𝑒 𝑡 to the subject and object of the original triple.  ?𝑥 ?⊖ ?⊖1Σ ?⊖1Σ⊙ ?⊖2Σ ?⊖2Σ⊙</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">SPARQLprov</head><formula xml:id="formula_1">A. Merkel 𝐵(𝐴𝑀) 𝐵(𝐴𝑀) 𝑒1 - - E. Macron 𝐵(𝐸𝑀) 𝐵(𝐸𝑀) 𝑒2 𝐵(𝐸𝑀) 𝑒3        =        ?𝑥 ?provenance A. Merkel 𝑢1 ⊖ 0 E. Macron 𝑢2 ⊖ 𝑢3       </formula><p>Figure <ref type="figure">4</ref>: Result of annotating the results of the query from Figure <ref type="figure" target="#fig_1">1</ref> using SPARQLprov. The SPARQL engine returns the table on the left, which is decoded into the table on the right.</p><p>the provenance annotations. A decoding phase translates those extended mappings into an N[E]-relation. The whole process is depicted in Figure <ref type="figure" target="#fig_2">2</ref>.</p><p>We illustrate SPARQLprov with the example query in Figure <ref type="figure" target="#fig_1">1</ref>. The approach rewrites the query into SELECT ?𝑥 ?⊖ ?⊖1Σ ?⊖1Σ⊙ ?⊖2Σ ?⊖2Σ⊙ WHERE { {Reify( tpol , ?⊖1Σ⊙) } OPTIONAL {Reify( tsci , ?⊖2Σ⊙) } BIND (𝐵 (?𝑥 ) AS ?⊖1Σ) BIND (𝐵 (?𝑥 ) AS ?⊖2Σ) BIND (𝐵 (?𝑥 ) AS ?⊖)</p><formula xml:id="formula_2">},</formula><p>where the function Reify rewrites a SPARQL pattern according to the reification scheme used in the target graph G'. For instance, if G' uses the Wikidata reification scheme -illustrated in Figure <ref type="figure" target="#fig_3">3 (d)</ref> -Reify( tpol , ?⊖1Σ⊙) becomes :politician p:occupation ?⊖1Σ⊙ . ?⊖1Σ⊙ ps:occupation :politician i.e., the variable ?⊖1Σ⊙ binds to the identifiers that reify the triples matched by the triple pattern tpol . The results of running this query are shown in Figure <ref type="figure">4</ref>. Provenance polynomials are tree operators whose structure is encoded in the values and names of the provenance variables. For instance the symbol ⊙ in a variable name tells us that the variable will be bound to actual sources, whereas ⊖1 tells us the source will be the first operand of a MINUS operation. The function 𝐵(•) receives a set of values as input and generates surrogate IRIs that guide the decoding phase towards the construction of the polynomials. We remark that for non-monotonic queries, such as our example, SPARQLprov may return explanations for bindings that are not actual query solutions. This is the case of E. Macron in Figure <ref type="figure">4</ref>, which matches the first triple pattern but is removed because it matches the second -as explained by 𝑢 2 ⊖ 𝑢 3 . For details about the rewriting rules as well as the decoding of the variable names into polynomials, we refer the reader to <ref type="bibr" target="#b4">[5]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">DEMO</head><p>In the following we elaborate on our application built to demonstrate SPARQLprov's capabilities. We describe the application's architecture, followed by its interface components explained through a demonstration scenario on the Wikidata SPARQL endpoint.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Architecture</head><p>The demo is implemented as a classical client-server web application. The server, written in Javascript with Nodejs, stands as a middleware in between the client UI, SPARQLprov, and the target SPARQL engine. SPARQLprov is a standalone application with two modules. The rewriting module takes a standard SPARQL query as input and rewrites it into a new query that, when executed on the target engine, returns query solutions with provenance annotations. These annotations are encoded as classical relations as illustrated in Figure <ref type="figure">4</ref>. These relations are converted into query solutions annotated with how-provenance polynomials through the SPARQLprov's decoder module. The server orchestrates the communication between the different components, i.e., it rewrites the queries written by the user using SPARQLprov, sends the rewritten queries to the SPARQL endpoint, and invokes the SPARQLprov decoder to compute the final annotations, which are sent back to the client. The client of our Web application is a lightweight user interface written in HTML, CSS, and the Javascript library D3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Demonstration Scenario</head><p>We demonstrate the capabilities of SPARQLprov on the Wikidata public SPARQL endpoint (https://query.wikidata.org/) with our graphical web application, depicted in Figure <ref type="figure" target="#fig_4">5</ref>. Wikidata is a popular general knowledge graph that provides reified and non-reified versions of the data.</p><p>Query Editor. Users can write SPARQL queries in the query editor at the top left of the interface, i.e., section (a) in Fig. <ref type="figure" target="#fig_4">5</ref>. In our example we show a query that asks for countries that are not sovereign states. The editor provides a few pre-defined example queries. Query execution is triggered by clicking the button "Run".</p><p>Queries Panel. Next to the query editor, i.e., section (b) in Fig. <ref type="figure" target="#fig_4">5</ref>, our demo shows two tabs. The Original Query tab shows the query sent to SPARQLprov. This query is identical to the query provided by the user, except that it adds a configurable limit clause designed to avoid timeouts in the SPARQL endpoint. Query rewriting complexifies the actual queries sent to the SPARQL engine, which can lead to timeouts in public endpoints. The Rewritten Query tab displays the result of SPARQLprov's rewriting.</p><p>Results. At the bottom right, i.e., Fig. <ref type="figure" target="#fig_4">5</ref> section (c), the demo shows the query solutions annotated with their how-provenance. For queries where the main operation is MINUS, this set also includes the bindings that would have been removed from the actual result set because they match the second operand. Those non-solutions are highlighted in gray, whereas actual solutions are explained by polynomials of the form 𝑃 (U) ⊖ 0, where the 0 suggests that they did not match the second operand of MINUS. Neighborhood. When the user clicks the button next to the provenance of a solution in the results panel, our application shows a subgraph with the source triples referenced in the provenance polynomial -section (d) in Fig 5 . That way, the user can visualize the actual RDF statements that explain the presence (and in specific cases the absence) of the solution in the results set. These are highlighted in light blue. The graph view also includes additional "neighbor" edges, which we generate via a CONSTRUCT query.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>𝑄 : SELECT ?x WHERE { tpol MINUS tsci } tpol : {?x :occupation :politician}, tsci : {?x :occupation :scientist }</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: An example knowledge graph and a query 𝑄 asking for politicians who are not scientists. The 𝑒 𝑖 labels identify the triples stored in the graph.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Schema of SPARQLprov's architecture.</figDesc><graphic coords="3,317.96,83.69,240.24,131.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Illustration of different reification schemes for RDF.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: SPARQLprov demo' user interface. (a) is the query editor, (b) shows the original and rewritten queries, (c) shows the query answers annotated with how-provenance, (d) is the graph neighborhood of the source triples associated to a solution.</figDesc><graphic coords="5,73.98,83.68,464.05,363.06" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>https://www.w3.org/RDF/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://www.w3.org/TR/2013/REC-sparql11-overview-20130321/</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="4">CONCLUSION</head><p>We have presented a visual application that demonstrates the process of annotating query solutions with how-provenance explanations using the SPARQLprov approach. Thanks to its architecture based on query rewriting, SPARQLprov can be used on top of already deployed engines, and as illustrated in this demo, provide live visual explanations for the results of queries in public SPARQL endpoints. Those explanations hold great potential for visual data exploration in different settings. With this in mind, we envision to develop and study novel approaches for visual provenance in KGs applied to specific tasks such as source verification and query debugging. Our demo is publicly available at http://sparqlprov.cs.aau.dk, and its source code and documentation can be found at https://gitlab.inria.fr/akatim/sparlqprov-demo.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">GProM -A Swiss Army Knife for Your Provenance Needs</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">S</forename><surname>Arab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Su Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Glavic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Niu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zeng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Data Eng. Bull</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="51" to="62" />
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">How and Why is An Answer (Still) Correct? Maintaining Provenance in Dynamic Knowledge Graphs</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gaur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bedathur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Algebraic Structures for Capturing the Provenance of SPARQL Queries</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Geerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Unger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Karvounarakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Fundulaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Christophides</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="7" />
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Data Provenance: Origins, Apps, Algorithms and Models</title>
+		<author>
+			<persName><forename type="first">Boris</forename><surname>Glavic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Now Foundations &amp; Trends</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Computing How-Provenance for SPARQL Queries via Query Rewriting</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Hernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Galárraga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Hose</surname></persName>
+		</author>
+		<idno type="DOI">10.14778/3484224.3484235</idno>
+		<ptr target="https://doi.org/10.14778/3484224.3484235" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="3389" to="3401" />
+			<date type="published" when="2021-09">2021. sep 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">ProvSQL: Provenance and Probability Management in PostgreSQL</title>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Jachiet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Maniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Ramusat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2034" to="2037" />
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">TripleProv: Efficient Processing of Lineage Queries in a Native RDF Store</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wylot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cudré-Mauroux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">T</forename><surname>Groth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">WWW</title>
+		<imprint>
+			<biblScope unit="page" from="455" to="466" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

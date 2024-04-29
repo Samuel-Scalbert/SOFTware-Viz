@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Construction de Graphes de Connaissances à partir de Textes avec une I.A. Centrée-Utilisateur</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Hugo</forename><surname>Ayats</surname></persName>
+							<email>prenom.nom@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Univ Rennes</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">IRISA Campus de Beaulieu</orgName>
+								<address>
+									<postCode>35042</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">FRANCE</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Construction de Graphes de Connaissances à partir de Textes avec une I.A. Centrée-Utilisateur</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">F4E6FD99F5BD6932A6E26077BB4C90C5</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Web sémantique</term>
+					<term>Graphe de Connaissances</term>
+					<term>I.A. centrée-utilisateur</term>
+					<term>explicabilité</term>
+					<term>Graph-FCA Semantic Web</term>
+					<term>Knowledge Graph</term>
+					<term>user-centric A.I.</term>
+					<term>explainability</term>
+					<term>Graph-FCA</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Avec l'essor du Web sémantique au cours des deux dernières décennies est apparu un besoin en outils permettant de construire des graphes de connaissances de bonne qualité. Cet article présente mon travail de thèse, qui est la conception d'une méthode explicable et centrée-utilisateur pour la production semi-automatisée de graphes de connaissances à partir de textes spécifiques à un domaine. Ce système se présente initialement comme une interface d'édition guidée de RDF. Puis, se basant sur les actions de l'utilisateur, un système de suggestion de triplets se met en place. Enfin, à travers des interactions avec l'utilisateur, le système automatise progressivement le processus. Après avoir présenté le workflow du système et détaillé les unités qui le compose -une unité de prétraitement, une unité interactive et une unité automatisée -cet article documente les aspects de ce workflow déjà implémentés, ainsi que les résultats de leur évaluation.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Durant les deux dernières décennies, le domaine du Web Sémantique est devenu partie intégrante du World Wide Web, avec à la fois un champ de recherche académique actif et de nombreuses applications industrielles. Aujourd'hui, le Linked Open Data Cloud regroupe plus de 1200 graphes de connaissances (KGs). Des KGs tels que YAGO <ref type="bibr" target="#b14">(Pellissier Tanon et al., 2020)</ref> ou Wikidata <ref type="bibr">(Vrandečić &amp; Krötzsch, 2014)</ref> regroupent plusieurs dizaines de millions de faits, et de nombreux travaux présentent comment requêter, éditer, unifier ou compléter ces KGs <ref type="bibr" target="#b6">(Hitzler, 2021)</ref>. Différentes approches sont utilisées pour construire ces KGs. YAGO découle d'une collecte automatique de faits depuis des pages Web structurées, alors que Wikidata est mis à jour et complété à la main par sa communauté.</p><p>On pourrait penser que les récents progrès en IA, induits par l'explosion du deep learning, auraient profité au domaine de la construction automatique de KGs. En effet, ces progrès ont touché le domaine du Traitement Automatique des Langues (TAL) et de l'extraction d'information, notamment par exemple avec l'apparition de modèles de langue préentrainés tels que BERT <ref type="bibr" target="#b2">(Devlin et al., 2019)</ref> et ses dérivés. Cependant, les scores obtenus par ces systèmes sont encore trop bas pour permettre une automatisation totale de la construction de KGs à partir de textes. L'idée de ma thèse est que des approches centrées-utilisateur, mettant en avant l'interactivité et l'explicabilité, et rendant ainsi les systèmes plus intelligibles et plus fiables, pourrait être une solution.</p><p>Cet article présente mon sujet de thèse, dont l'objectif est le développement d'une IA centréeutilisateur pour la construction de KGs à partir de textes. Ce système, à travers des interactions avec l'utilisateur, automatise progressivement le processus, en proposant initialement une interface pour la création manuelle de KG, puis en formulant des suggestions couplées avec des explications en se basant sur les actions précédentes de l'utilisateur, pour enfin peupler le graphe de façon de plus en plus automatisée.</p><p>Afin de réduire la taille du vocabulaire et d'avoir des cas d'usage pratiques, nous visons en priorité une utilisation sur des textes spécifiques à un domaine, par exemple, un juriste traitant et archivant des rapports de procès. Dans cet exemple, l'utilisateur se constituerait progressivement un graphe de connaissances récapitulant les acteurs des différents procès et leurs rôles, et ceci à faible coût, la plus grosse part du travail se faisant automatiquement après un certain temps. Le KG ainsi obtenu pourra être exploité afin de retrouver l'historique d'un individu particulier ou à des fins statistiques.</p><p>Dans la suite de cet article, la section 2 présente l'état de l'art. La section 3 détaille la conception du système et de ses sous-systèmes. Pour finir, la section 4 présente les premiers résultats obtenus avec les éléments du système déjà implémentés.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">État de l'art</head><p>Au cours de ces vingt-cinq dernières années, de nombreuses méthodes ont été mises en oeuvre pour la construction et l'édition de graphes de connaissances (KGs). L'approche la plus évidente est l'approche manuelle, consistant à éditer à la main le graphe cible. L'outil d'édition manuelle de KG le plus célèbre est Protégé <ref type="bibr" target="#b12">(Musen, 2015)</ref>, logiciel développé par l'Université de Stanford depuis les années 1990 et spécialisé pour la création et l'édition d'ontologies. Aujourd'hui, certains KGs massifs tel que Wikidata <ref type="bibr">(Vrandečić &amp; Krötzsch, 2014)</ref> reposent toujours sur l'édition manuelle par ses utilisateurs, à travers une interface prenant la forme d'un formulaire. D'autres KGs, tels que YAGO <ref type="bibr" target="#b17">(Steiner et al., 2012)</ref> ou le Google Knowledge Graph <ref type="bibr" target="#b14">(Pellissier Tanon et al., 2020)</ref>, reposent sur l'extraction massive de faits à partir de pages Web structurées, telles que les infobox de Wikipedia ou les sites de e-commerce. Parmi les outils plus expérimentaux, on peut citer <ref type="bibr" target="#b8">(Maillot et al., 2017)</ref> qui propose une interface d'édition interactive de KG se basant sur un moteur de recommandation.</p><p>Une tâche centrale pour la contruction automatique de KGs à partir de textes est la tâche d'extraction de relations. Cette tâche consiste, pour une phrase donnée dans laquelle sont identifiés deux entités, à prédire quelle relation lie ces deux entités. En pratique, cela permet d'extraire automatiquement des faits pouvant servir à peupler des KGs. Si historiquement, des approches symboliques se sont attelées à cette tâche, notamment par des approches à base de règles validées manuellement, aujourd'hui l'état de l'art est constitué d'approches deep learning. Initialement, des approches utilisant des réseaux convolutionnels <ref type="bibr" target="#b13">(Nguyen &amp; Grishman, 2015)</ref>, des réseaux récurents de type LSTM <ref type="bibr" target="#b18">(Tai et al., 2015)</ref> ou de la convolution de graphe <ref type="bibr" target="#b22">(Zhang et al., 2018)</ref> ont été utilisées. Cependant, elles sont aujourd'hui largement dominées par les approches utilisant des modèles de langue pré-entrainés, basés sur la technologie des transformers <ref type="bibr" target="#b19">(Vaswani et al., 2017)</ref>, tel que BERT <ref type="bibr" target="#b2">(Devlin et al., 2019)</ref> et ses dérivés <ref type="bibr" target="#b21">(Yamada et al., 2020;</ref><ref type="bibr" target="#b7">Lyu &amp; Chen, 2021)</ref>. Cependant, ces approches sont toujours trop peu performantes (F-scores de l'ordre de 0.75 sur le benchmark TACRED <ref type="bibr" target="#b23">(Zhang et al., 2017)</ref>) pour permettre une utilisation sans curation manuelle. On peut aussi citer <ref type="bibr" target="#b10">(Martinez-Rodriguez et al., 2018)</ref> qui détaille une méthode visant à construire automatiquement un KG à partir de textes en utilisant des techniques issues du domaine de l'Open Information Extraction, méthode qui retourne en pratique un KG difficilement exploitable. Concernant les I.A. centrées-utilisateur, ce domaine relativemment récent a fait l'objet de bien moins de travaux. On peut cependant citer <ref type="bibr" target="#b16">(Shneiderman, 2020)</ref>, qui théorise la possibilité d'avoir des systèmes à la fois hautement automatisés et fortement contrôlés par l'humain, avec pour objectif qu'ils soient fiables, sûrs et dignes de confiance. En parallèle, les travaux présentés dans <ref type="bibr" target="#b4">(Ferré &amp; Ridoux, 2002)</ref> proposent un classifieur pour e-mails basé sur une extension logique de l'analyse des concepts formels (FCA) <ref type="bibr" target="#b5">(Ganter &amp; Wille, 1996)</ref> qui fonctionne selon un cycle similaire à celui présenté dans cet article : annotation manuelle, puis suggestions du système, et enfin automatisation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Approche proposée</head><p>L'objectif global de cette thèse est la création d'un système centré utilisateur pour la production semiautomatique de KGs à partir de textes en langue naturelle. Plus précisément, ce système aura pour objectif de produire des graphes RDF de haute qualité à partir de textes sans aucune connaissance ni aucun vocabulaire préalable en automatisant progressivement les actions de l'utilisateur. Initialement, le système proposera une interface pour l'édition de graphes RDF. Puis, se basant sur les actions de l'utilisateur, le système recommandera des triplets à ajouter au graphe. Finalement, le système automatisera la validation des suggestions les plus fiables, afin d'obtenir un processus de génération de graphes en grande partie automatisé, l'utilisateur n'étant sollicité que pour les cas ambigus ou inédits.</p><p>Cette section présente en détail le workflow d'un tel système. Premièrement, une vue globale du système est donnée, avant de détailler les rôles et possibles implémentations de ses sous-systèmes. On peut constater que ce workflow contient deux bases : la première est une base d'apprentissage composée d'exemples annotés pour la classification de relations, utilisée par le module de classification de relations, alors que la seconde est constituée de règles d'inférence dérivées des explications issues du module de classification de relations et utilisées par le module d'inférence pour produire des triplets. Afin d'avoir un système indépendant de tout vocabulaire, ces deux bases devront être initiallement vides. Cela a pour conséquence que ce système est incrémental : initialement, le module d'extraction de relation n'est pas capable de produire des prédictions. Le système se comporte donc comme une interface pour l'edition guidée de graphes RDF le temps de venir alimenter cette base. Puis, alors que cette base grossit, le module d'extraction de relations devient capable de produire des prédictions de plus en plus fiables venant aider l'utiliateur. Enfin, la validation de certaines suggestions et explications par l'utilisateur produit des règles d'inférence venant nourrir la base utilisée par l'unité automatisée, automatisant ainsi progressivement le processus.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Présentation générale</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Unité de pré-traitement</head><p>Comme évoqué précédemment, le rôle principal de ce sous-système est de transformer le texte en langue naturelle d'entrée en un modèle utilisable par les deux autres unités. Cette modélisation doit avoir deux propriétés. Tout d'abord, elle doit regrouper toutes les informations linguistiques contenues dans le texte (entités nommées, catégories morphosyntaxiques, dépendances grammaticales. . .) qui pourront être utilisées pour l'extraction de triplets. De plus, cette modélisation doit spécifier entre quelles entités il pourrait y avoir une relation traduisible en triplet. Ce second aspect est nécessaire pour deux raisons. Premièrement, cela permet au système de suggérer à l'utilisateur des couples d'entités à transformer en triplets avant que le module d'extraction de relations ait assez d'exemples </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Unité interactive</head><p>Ce sous-système a deux rôles principaux. Tout d'abord, il doit contenir un module explicable de classification de relations capable de travailler sur la modélisation produite par l'unité de prétraitement. Comme la base d'apprentissage de ce module évolue en s'enrichissant au cours de l'utilisation du système, ce module devra reposer sur une approche paresseuse (dite aussi lazy learning), i.e. une méthode faisant un apprentissage pour chaque instance, et n'apprenant pas un modèle une fois pour toutes. De plus, ce module d'extraction de relation doit produire des explications facilement compréhensibles par l'utilisateur, et pouvant être transformées en règles d'inférence pour être utilisé par le dernier sous-système.</p><p>Le second rôle de ce sous-système sera de fournir une interface complète pour l'édition de graphe RDF, prenant en compte la modélisation et les paires d'entités retournées par l'unité de pré-traitement, mais permettant aussi l'édition et le typage manuel d'entités ou de relations dans le but de rendre l'utilisateur capable de corriger les erreurs et omissions faites par l'unité de pré-traitement. Cette interface permettra de peupler à la fois le graphe RDF et la base d'apprentissage du module d'extraction de relations. Cette interface devra aussi prendre en compte les suggestions faites par le module d'extraction de relations, ainsi que leurs explications, pour les soumettre pour validation à l'utilisateur. La figure 2 détaille le processus interactif pour les suggestions : d'abord, l'interface suggère un triplet à ajouter au graphe de connaissances, que l'utilisateur peut accepter ou rejeter. Si le triplet est accepté, il est ajouté au graphe de connaissances et à la base d'apprentissage, et l'explication de cette suggestion est proposée à l'utilisateur. Si cette explication satisfait l'utilisateur, elle est transformée en règle d'inférence et transmise à l'unité automatisée.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Unité automatisée</head><p>Ce sous-système, plus simple que les deux autres, est constitué d'uniquement deux éléments : un module d'inférence et sa base de règles d'inférence. Comme expliqué plus tôt, cette base de règles est initialement vide, et par conséquent le module d'inférence est inactif. Au fur et à mesure que l'utilisateur valide des explications fournies par le module d'extraction de relations, ces explications sont transformées en règles d'inférence et ajoutées à la base de règles. Le module d'inférence applique alors ces règles sur la modélisation du texte dans le but d'en extraire automatiquement des triplets à ajouter au graphe de connaissances. L'objectif globale du système est alors de peupler suffisament cette base de règles afin que la plupart des triplets soient extraits automatiquement, ne laissant à l'utilisateur que les cas ambigus ou inédits.</p><p>Cela a pour conséquence que les règles produites, et par extension les explications retournées par le module d'extraction de relations, doivent nécessairement être directement appliquables sur la modélisation du texte. Ainsi, ces règles doivent être de la forme T (x, y) ← P(x, y), avec x et y deux variables, T (x, y) un triplet RDF et P(x, y) un motif qui peut être directement appliqué sur la modélisation du texte.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Premiers résultats</head><p>Dans cette section, je présente les premiers résultats obtenus. La section 4.1 présente comment le texte est modélisé sous forme de graphe, et introduit le module deep learning de détection de relations utilisé par cette modélisation. La section 4.2 introduit une approche lazy-learning et explicable de classification de relations s'appuyant sur une méthode symbolique. Enfin, la section 4.3 présente les résultats préliminaires obtenus avec ces modules. Le travail présenté dans cette section a déjà fait l'objet de deux publications : <ref type="bibr" target="#b0">(Ayats et al., 2021</ref><ref type="bibr" target="#b1">(Ayats et al., , 2022))</ref>  De plus, afin d'enrichir la modélisation en permettant la relaxation de types RDF sur certains aspects, nous avons construit une ontologie RDFS par dessus celle-ci. Tout d'abord, quelques catégories morphosyntaxiques ont été hiérarchisées. Par exemple, un nom propre pluriel (NNPS) étant un nom propre (NNP), le triplet subClassOf(POS :NNPS, POS :NNP) a été ajouté à l'ontologie. Ensuite, afin d'enrichir sémantiquement cette modélisation, nous avons utilisé la base de données lexicale Wordnet <ref type="bibr" target="#b11">(Miller, 1998)</ref> pour construire une hiérachie au dessus des lemmes des noms et verbes. Ainsi chaque ensemble de synonymes d'un lemme est utilisé comme superclasse de ce lemme, et chaque hyperonyme de chaque ensemble de synonymes est considéré comme étant une superclasse de cet ensemble de synonymes.</p><p>Enfin, afin de compléter cette modélisation, en accord avec le workflow présenté, nous avons besoin d'un module de détection de relations, chargé d'indiquer entre quelles paires d'entités de la modélisation il existe une relation susceptible d'être transformée en triplet. Commme évoqué pécédemment, pour ce module nous cherchons la performance brute et n'avons pas besoin d'explicabilité. C'est pourquoi nous nous sommes tournés vers un modèle de langue pré-entrainé.</p><p>1. Dans notre cas, nous avons utilisé Stanford CoreNLP <ref type="bibr" target="#b9">(Manning et al., 2014)</ref> LUKE <ref type="bibr" target="#b21">(Yamada et al., 2020)</ref> est un modèle de langue pré-entrainé de la famille de BERT <ref type="bibr" target="#b2">(Devlin et al., 2019)</ref> qui a la particularité de prendre en compte, en plus de chaque token séparément, la présence d'entités pouvant s'étendre sur plusieurs mots. Cette particularité lui a permis d'établir un nouvel état de l'art sur plusieurs tâches de TAL, dont l'extraction de relations. C'est donc le modèle que nous avons choisi d'adapter pour la détection de relations.</p><p>Nous présentons deux configurations de LUKE pour la détection de relations. La première, appellée luke-base consiste simplement à réutiliser le modèle entrainé pour l'extraction de relation et modifier la sortie en post-processing afin de fusionner toutes les prédictions prédisant la présence d'une relation en une seule classe. La seconde configuration, appellée luke-detect consiste à spécialiser LUKE pour la détection de relations en modifiant les couches de sortie et en faisant un nouveau fine-tuning. On peut s'attendre à ce que luke-detect, étant plus spécialisé, ait des meilleurs scores que luke-base en détection de relations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Classification de relations avec les Concepts de Voisins</head><p>Comme mis en évidence dans le workflow, cette modélisation est utilisée afin de faire de l'extraction de relations. Le principe de cette tâche est de prédire, pour une phrase donnée dans laquelle sont identifiées deux entités (un sujet et un objet) ainsi que le type de ces entités, quelle est la relation liant le sujet et l'objet parmi un jeu de relations donné. Si historiquement cette tâche a été abordée selon diverses approches, aussi bien symboliques que statistiques, aujourd'hui l'état de l'art est dominé, comme dans beaucoup de tâches de TAL, par des méthodes utilisant des modèles de langue pré-entraînés tels que BERT et ses dérivés <ref type="bibr" target="#b15">(Shi &amp; Lin, 2019;</ref><ref type="bibr" target="#b21">Yamada et al., 2020)</ref>. Ces méthodes sont très performantes, toutefois, leur manque d'interprétabilité les rend inutilisables dans notre contexte.</p><p>L'idée derrière la méthode présentée dans cette section est la suivante : pour une phrase donnée, la modélisation présentée précédemment regroupant les informations sémantiques et linguistiques utiles pour comprendre la sémantique de la phrase, la représentation d'un sujet et d'un objet au sein de cette modélisation devrait permettre de déduire la nature de la relation entre ce sujet et cet objet. Plus exactement, pour une phrase de test donnée, si les entités sujet et objet sont liées par une relation donnée, alors la position de cette paire d'entités (sujet, objet) dans la modélisation doit avoir des similarités avec la position des paires d'entités (sujet ′ , objet ′ ) de phrases exprimant la même relation. Pour exploiter cette hypothèse, nous utilisons la méthode des Concepts de Voisins.</p><p>Le calcul de Concepts de Voisins <ref type="bibr" target="#b3">(Ferré, 2017)</ref> est une méthode basée sur Graph-FCA, une extention de l'Analyse de Concepts Formels (Formal Concept Analysis, FCA) aux graphes qui est utilisée pour la découverte de similarités dans un graphe. Pour un n-uplet de noeuds du graphe donné, cette méthode calcule les n-uplets les plus similaires parmi un ensemble de n-uplets donnés. Pour ce faire, l'algorithme fait du clustering hiérarchique sur cet ensemble de n-uplets au sein de concepts. Chaque concept est défini par son extension, l'ensemble des n-uplets qu'il contient, et par son intension, qui est le motif de graphe que matchent tous les n-uplets de l'extension. La figure 4 montre comme exemple le résultat du calcul des Concepts de Voisins de Charlotte en partant du graphe de l'arbre généalogique de la famille royale anglaise. On peut y lire que le plus petit concept a pour intention le fait d'être Charlotte et comme extension Charlotte. On retrouve aussi un concept plus large, regroupant tous les enfants de William et Kate (c'est-à-dire Louis et George), ou encore un concept regroupant toutes les femmes (contenant Diana et Kate en plus de Charlotte). Finalement, le concept le plus large a une intension vide et regroupe dans son extension toutes les entités du graphe. On peut voir qu'à chaque concept une distance numérique est associée. Cette distance, aussi appellée distance extensionnelle, Un algorithme anytime a été proposé pour le calcul de Concepts de Voisins. Cet algorithme part d'un concept généraliste et, par partitionnements successifs, le raffine en concepts plus spécifiques, pour aboutir finalement à l'ensemble des Concepts de Voisins. Ainsi, dans le cas où les calculs sont interrompus avant la fin, l'algorithme est capable de retourner un ensemble de concepts qui est une approximation des Concepts de Voisins.</p><p>La méthode proposée est donc la suivante : une fois un texte modélisé selon la modélisation présentée précédemment, pour un exemple de test donné, on calcule les Concepts de Voisins de son couple (sujet, objet) parmi les couples (sujet, objet) de l'ensemble d'entraînement. Puis on applique une méthode de scoring sur les Concepts de Voisins ainsi obtenus, et en regroupant ces scores par relation prédite, on obtient finalement un classement des relations prédites. On peut ainsi prédire que l'exemple de test a pour relation entre son sujet et son objet la relation la mieux classée dans ce classement, ou alors proposer à l'utilisateur les k relations les mieux classées. On constate que cette méthode est bien du lazy-learning, différant le calcul des Concepts de Voisins au moment où un exemple est à classer.</p><p>De plus, on constate que cette méthode est bien explicable : pour une prédiction donnée, on peut remonter au score de cette prédiction, puis aux Concepts de Voisins à partir desquels a été calculé ce score. L'intension de ces concepts forme alors une explication de pourquoi la relation a été prédite, et l'extension renvoie aux exemples d'entraînement se conformant à cette explication.</p><p>Enfin, cette méthode se basant sur la similarité entre exemples, et des exemples ne présentant aucune relation n'ayant aucune raison de se ressembler, elle ne permet pas de trancher si une relation existe ou pas pour un exemple donné, et se contente donc de faire de la classification de relations sur des exemples dont on sait qu'ils traduisent une relation.    <ref type="bibr" target="#b21">(Yamada et al., 2020)</ref> 72.7 BERT-LSTM-Base <ref type="bibr" target="#b15">(Shi &amp; Lin, 2019)</ref> 67.8 Notre approche 66.9 C-GCN <ref type="bibr" target="#b22">(Zhang et al., 2018)</ref> 66.4 GCN <ref type="bibr" target="#b22">(Zhang et al., 2018)</ref> 64. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion et perspectives</head><p>Dans cet article, j'ai pu présenter le sujet de ma thèse, qui porte sur la conception d'un système centré-utilisateur pour la construction semi-automatisée de graphes de connaissances à partir de textes. Divisé en trois unités, ce système commence par pré-traiter le texte en entrée afin d'en tirer une modélisation sytaxique et sémantique sous forme de graphe. Cette modélisation est alors utilisée par deux unités. La première unité est une unité interactive qui se base sur un module lazy-learning et explicable de classification de relations pour venir faire des suggestions de qualité croissante à l'utilisateur à travers une interface homme-machine. Enfin, les explications générées par ce module et validées par l'utilisateur viennent nourrir l'unité automatisée, qui les transforme en règles d'inférence et les applique sur la modélisation pour en extraire automatiquement des triplets à ajouter au graphe de connaissances, automatisant ainsi progressivement le processus.</p><p>De plus, cet article détaille les éléments de ce workflow qui ont déjà été mis en oevre : une modélisation du texte se basant sur la structure syntaxique des phrases et la sémantique des mots la composant, un module d'apprentissage profond pour la détection de relation, et un module basé sur une technologie d'analyse de concepts formels (Formal Concept Analysis, FCA) pour la classification de relations. Ces différents modules ont été évalués sur la tâche d'extraction de relations sur le benchmark TACRED, et ont montré des résultats intéressants, aussi bien quantitatifs que qualitatifs.</p><p>Enfin, en ce qui concerne les perspectives, des travaux sont en cours sur la transformation d'explications issues du module de classification de relations en règles d'inférence. Une fois cet aspect traité, il restera le développement d'une interface homme-machine remplissant les conditions spécifiées afin d'avoir un système complet, qui pourra alors être évalué via des tests utilisateur.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>FIGURE 1 -</head><label>1</label><figDesc>FIGURE 1 -Vue globale du workflow</figDesc><graphic coords="5,65.13,14.17,294.94,176.30" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>FIGURE 2 -</head><label>2</label><figDesc>FIGURE 2 -Schéma d'interaction</figDesc><graphic coords="6,46.40,14.17,332.40,172.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>4. 1</head><label>1</label><figDesc>FIGURE 3 -Exemple de modélisation d'une phrase</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>FIGURE 4 -</head><label>4</label><figDesc>FIGURE 4 -Exemple de Concepts de Voisins</figDesc><graphic coords="10,27.32,14.18,370.56,148.56" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>TABLE 1 -</head><label>1</label><figDesc>Précision, rappel et F-score pour la détection de relations Ces différents modules ont été évalués en trois temps. Tout d'abord, nous avons évalué le module de détection de relations seul, et avons choisi la configuration la plus adaptée. Ensuite, nous avons évalué conjointement la modélisation et le module basé sur les Concepts de Voisins sur la tâche de classification de relations. Enfin, nous avons superposé ces trois modules afin d'obtenir un système capable de faire de l'extraction de relations à proprement parler.Ces évaluations se sont faites sur TACRED<ref type="bibr" target="#b23">(Zhang et al., 2017)</ref>, un benchmark très utilisé en extraction de relations 2 . Ce benchmark est composé de 106 264 exemples (68 124 exemples d'entraînement, 22 631 de validation et 15 509 de test), chaque exemple étant annoté avec une relation parmi 41 possibles ou avec la classe négative no_relation. Afin d'être plus proche de la réalité terrain, les concepteurs de TACRED ont fait le choix de laisser 79.5% d'exemples négatifs.Détection de relations Comme présenté à la section précédente, plusieurs configurations de LUKE pour la détection de relations sont proposées. En plus de luke-base et luke-detect, nous proposons une troisième variante, luke-reprod. Théoriquement équivalente à luke-base, elle consiste à reprendre la même configuration, mais à réexécuter l'étape de fine-tuning, plutôt que de réutiliser le modèle entièrement entrainé. Cela nous permet de voir si nous rencontrons des problèmes de reproductibilité et, le cas échéant, d'avoir un point de comparaison supplémentaire. Le code utilisé est librement accessible 3 .La table 1 présente les précisions, rappels et F-scores pour ces trois configurations. On peut observer que, bien que théoriquement équivalent, luke-reprod ne reproduit pas les résultats de luke-base, ce second présentant un F-score supérieur de 1.3 points. LUKE étant implémenté en Python et utilisant CUDA, on peut présumer que cela est dû à un problème de version dans les bibliothèques utilisées ou de CUDA, ou bien que l'entrainement dépend du matériel utilisé. L'entrainement a été réitéré à plusieurs reprises, et a toujours abouti à des résultats similaires. Cependant, on peut constater que luke-detect obtient un meilleur F-score que luke-reprod. On peut donc supposer que la configuration de luke-detect est plus à même de faire de la détection de relations, comme on pouvait s'y attendre, mais que les problèmes de reproductibilité empêchent une comparaison équitable avec luke-base.On peut aussi constater que, bien que luke-base ait le meilleur F-score, luke-reprod le surpasse en précision et luke-detect en rappel. Cependant, privilégier une mesure autre que le F-score implique soit d'avoir un plus grand nombre de faux positifs, soit d'avoir plus d'exemples positifs non détectés, ce qui pose problème lorsqu'on cherche la performance. C'est pourquoi nous adoptons luke-base comme module de détection de relations pour la suite.</figDesc><table><row><cell>Configuration</cell><cell>P</cell><cell>R</cell><cell>F1</cell></row><row><cell>luke-base</cell><cell cols="3">74.8 79.9 77.3</cell></row><row><cell>luke-reprod</cell><cell cols="3">76.8 75.2 76.0</cell></row><row><cell>luke-detect</cell><cell cols="3">73.1 80.1 76.4</cell></row><row><cell>4.3 Résultats préliminaires</cell><cell></cell><cell></cell><cell></cell></row></table><note><p><p>2. Ce jeu de données n'étant pas libre, nous ne pouvons le partager. Pour plus d'informations, veuillez consulter https: //nlp.stanford.edu/projects/tacred.</p>3. Voir https://gitlab.inria.fr/hayats/luke-redect</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE 2 -</head><label>2</label><figDesc>Taux de bonne classification pour la classification de relations, comparé à la baseline.Classification de relations Le code utilisé pour ces expériences est libre et disponible4 . Il se base sur CONNOR, une implémentation Java de la méthode des Concepts de Voisins 5 .Ces expériences ont été faites sur les exemples positifs de TACRED, c'est-à-dire les exemples annotés avec une relation autre que no_relation. De plus, notre système n'ayant pas besoin de jeu de données de validation, le choix a été fait de fusionner les jeux de données de validation et d'entraînement. On obtient au final des jeux de données composés de 18 446 exemples d'entraînement et 3 325 exemples de test.</figDesc><table><row><cell>Timeout (s)</cell><cell>10</cell><cell>20</cell><cell>30</cell><cell>60</cell><cell>120 300 600 1200</cell></row><row><cell cols="6">Notre approche 82.0 82.1 82.7 82.9 83.4 83.6 83.6 83.6</cell></row><row><cell>Baseline</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>80.4</cell></row></table><note><p>Extraction de relations Nous avons ensuite évalué la combinaison des deux approches précédentes sur la tâche d'extraction de relations. Pour ce faire, chaque exemple de test est d'abord traité par luke-base, qui le classifie soit dans la classe relation, soit dans la classe no_relation. Ensuite, si l'exemple est classifié comme ayant une relation, il est modélisé par le module de modélisation et transmis au module de classification de relations qui se charge de lui attribuer une relation. Les expériences ont cette fois-ci été faites sur l'ensemble du jeu de données TACRED.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>TABLE 3 -</head><label>3</label><figDesc>F-score pour plusieurs systèmes d'extraction de relations sur TACRED</figDesc><table><row><cell>Approche</cell><cell>F1 score</cell></row><row><cell>LUKE</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head></head><label></label><figDesc>, le gain principal de notre approche n'est pas quantitatif, mais qualitatif, et repose sur son explicabilité : pour chaque prédiction positive, nous sommes capable de fournir comme explication l'ensemble des Concepts de Voisins ayant été utilisés pour établir cette prédiction. Prenons par exemple la phrase « Sollecito has said he was at his own apartment in Perugia, working at his computer. » Cette phrase est classifiée par luke-base comme ayant une relation entre son sujet his et son objet Perugia, et le calcul des Concepts de Voisins sur la modélisation de cette phrase abouti à la prédiction de la relation per :city_of_residence, avec six Concepts de Voisins ayant l'ensemble de leur extension annoté avec cette relation. La figure 5 présente l'intension de l'un de ces concepts. On y voit que ce concept regroupe les exemples ayant comme sujet une entité de lemme he qui possède un appartement, et comme objet une ville dans laquelle il y a quelque chose. On peut donc voir que, une fois ce fragment d'explication fourni, la probabilité que la relation soit per :city_of_residence est effectivement élevée.</figDesc><table><row><cell>Cependant</cell></row></table><note><p><p>0 FIGURE 5 -Exemple d'explication</p>La table 3 présente le F-score micro-moyenné des classes positives de plusieurs systèmes d'extraction de relations, dont le nôtre, sur le dataset TACRED. On peut y lire que notre approche obtient des scores comparables aux approches deep learning, se situant entre les approches à base de convolution de graphes (GCN et C-GCN) et les approches utilisant des modèles de langue pré-entrainés (LUKE et BERT-LSTM-Base).</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Tel qu'on peut le voir sur la figure1, le système peut être divisé en trois unités. La première a un rôle de pré-traitement. Elle prend en entrée le texte brut et, après des traitements TAL et une phase de détection de relations, le traduit dans un modèle syntaxico-sémantique. Ce modèle est alors utilisé par deux unités parallèles. La première, l'unité interactive, est composée d'une IA explicable pour la classification de relations qui vient produire des triplets candidats ainsi que des explications pour ces prédictions. Candidats et explications sont alors fournis à l'utilisateur pour validation. Les triplets</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_1"><p>Comme nous travaillons sur un sous-ensemble de TACRED, il est par conséquent impossible de se comparer directement aux autres approches existantes. Par conséquent, nous nous comparons à une baseline. Cette baseline consiste simplement à prédire, pour un exemple donnée, la relation la plus fréquente dans la base d'apprentissage étant donné le type de son sujet et de son objet. De plus, un score de précision, rappel ou F1 n'ayant aucun sens dans le cadre d'une tâche de classification sans classe négative, nous utilisons le taux de bonne classification.L'algorithme utilisé étant un algorithme anytime, il reste le choix du timeout à faire. Afin de voir l'influence de ce timeout sur les résultats, une gamme de timeouts allant de 10 secondes à 1200 secondes a été testé.La table 2 présente le taux de bonne classification pour notre approche et la baseline. On peut tout d'abord constater que la baseline atteint un score de 80.4% de bonnes classifications, ce qui est très élevé et montre que le dataset laisse peu de place pour l'amélioration. Ensuite, on peut voir que, quelque soit le timeout, notre approche surpasse la baseline, culminant à un score de 83.6% pour un timeout supérieur à 300 secondes, soit 3.2 points de plus que la baseline. Enfin, on peut observer un phénomène de saturation : on observe un gain de 1.4 points entre 10 secondes et 120 secondes, contre un gain d'uniquement 0.2 entre 120 secondes et 1200 secondes. On peut en déduire que la plupart des concepts sont calculés en moins de 120 secondes, et que le temps supplémentaire sers uniquement à raffiner quelques rares concepts. Cela est confirmé par les chiffres : on observe que, pour un timeout de 10 secondes, seulement 30% des Concepts de Voisins sont totalement calculés, alors que ce chiffre monte à plus de 80% pour un timeout de 120 secondes, et à plus de 99% pour un timeout de plus de 600 secondes. Cela montre qu'en dépit de l'usage d'un algorithme anytime, on raisonne en pratique principalement sur les Concepts de Voisins exacts, et non une approximation.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>Voir https://gitlab.inria.fr/hayats/conceptualknn-relex.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>Voir https://gitlab.inria.fr/hayats/CONNOR.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Remerciements</head><p>Ce travail de thèse est fait sous la supervision de <rs type="person">Peggy Cellier</rs> (<rs type="affiliation">INSA</rs>, <rs type="institution">CNRS, IRISA</rs>) et <rs type="person">Sébastien Ferré</rs> (<rs type="institution">Univ Rennes, CNRS, IRISA)</rs>.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Extracting Relations in Texts with Concepts of Neighbours</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ayats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Formal Concept Analysis</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A Two-Step Approach for Explainable Relation Extraction</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ayats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-031-01333-1_2</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Intelligent Data Analysis XX</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Bouadi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Fromont</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Hüllermeier</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="14" to="25" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">BERT : Pre-training of Deep Bidirectional Transformers for Language Understanding</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang M.-W</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL-HLT 2019</title>
+		<meeting>NAACL-HLT 2019</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4171" to="4186" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Concepts de plus proches voisins dans des graphes de connaissances</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Actes IC 2017 28es Journées francophones d&apos;Ingénierie des Connaissances</title>
+		<meeting>s IC 2017 28es Journées francophones d&apos;Ingénierie des Connaissances</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="163" to="174" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The Use of Associative Concepts in the Incremental Building of a Logical Context</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ridoux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conceptual Structures : Integration and Interfaces</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="299" to="313" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Formal Concept Analysis -Mathematic Foundations</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ganter</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wille R</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+			<publisher>Springer International Publishing</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A Review of the Semantic Web Field</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hitzler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="76" to="83" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Relation Classification with Entity Type Restriction</title>
+		<author>
+			<persName><forename type="first">Lyu</forename><forename type="middle">S</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.findings-acl.34</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Findings of the Association for Computational Linguistics : ACL-IJCNLP 2021</title>
+		<title level="s">Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="390" to="395" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Nested Forms with Dynamic Suggestions for Quality RDF Authoring</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Maillot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ducassé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Partouche</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2021.findings-acl.34</idno>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Database and Expert Systems Applications (DEXA)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">The Stanford CoreNLP Natural Language Processing Toolkit</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Surdeanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Finkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Bethard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcclosky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics : System Demonstrations</title>
+		<meeting>the 52nd Annual Meeting of the Association for Computational Linguistics : System Demonstrations</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="55" to="60" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">OpenIEbased approach for Knowledge Graph construction from text</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Martinez-Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lopez-Arevalo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename><surname>Rios-Alvarado</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Expert Systems with Applications</title>
+		<imprint>
+			<biblScope unit="volume">113</biblScope>
+			<biblScope unit="page" from="339" to="355" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">WordNet : An Electronic Lexical Database</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Miller</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT Press</publisher>
+			<pubPlace>Cambridge, MA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">The protégé project : a look back and a look forward</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Musen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2757001.2757003</idno>
+	</analytic>
+	<monogr>
+		<title level="j">AI Matters</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="4" to="12" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Relation Extraction : Perspective from Convolutional Neural Networks</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grishman R</surname></persName>
+		</author>
+		<idno type="DOI">10.3115/v1/W15-1506</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st Workshop on Vector Space Modeling for Natural Language Processing</title>
+		<meeting>the 1st Workshop on Vector Space Modeling for Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="39" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">YAGO 4 : A Reason-able Knowledge Base</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pellissier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Weikum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Suchanek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web</title>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="583" to="596" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Simple BERT Models for Relation Extraction and Semantic Role Labeling</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.05255</idno>
+		<idno>arXiv : 1904.05255</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Human-Centered Artificial Intelligence : Reliable, Safe &amp; Trustworthy</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Shneiderman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Human-Computer Interaction</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="495" to="504" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Adding Realtime Coverage to the Google Knowledge Graph</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Verborgh R</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Troncy R</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gabarro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="middle">V</forename><surname>De Walle R</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">ISWC</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Improved Semantic Representations From Tree-Structured Long Short-Term Memory Networks</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Tai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1503.00075</idno>
+		<idno>arXiv : 1503.00075</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">\</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="5998" to="6008" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Wikidata : a free collaborative knowledgebase</title>
+		<author>
+			<persName><forename type="first">Ć</forename><forename type="middle">D</forename><surname>Vrande Či</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Krötzsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="78" to="85" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">LUKE : Deep Contextualized Entity Representations with Entity-aware Self-attention</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Yamada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shindo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Takeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsumoto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) : Association for Computational Linguistics</title>
+		<meeting>the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) : Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Graph Convolution over Pruned Dependency Trees Improves Relation Extraction</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D18-1244</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2018 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2205" to="2215" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Position-aware Attention and Supervised Data Improve Slot Filling</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Angeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D17-1004</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2017 Conference on Empirical Methods in Natural Language Processing</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="35" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">What Musical Knowledge Does Self-Attention Learn ?</title>
+				<funder>
+					<orgName type="full">CRIStAL laboratory</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Mikaela</forename><surname>Keller</surname></persName>
+							<email>mikaela.keller@univ-lille.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory">UMR 9189 CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Centrale Lille</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Gabriel</forename><surname>Loiseau</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">UMR 9189 CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Centrale Lille</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Louis</forename><surname>Bigo</surname></persName>
+							<email>louis.bigo@univ-lille.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">UMR 9189 CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Centrale Lille</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">What Musical Knowledge Does Self-Attention Learn ?</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">3DF7FEBB6CCB6E27AC93FF966B84D608</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Since their conception for NLP tasks in 2017, Transformer neural networks have been increasingly used with compelling results for a variety of symbolic MIR tasks including music analysis, classification and generation. Although the concept of self-attention between words in text can intuitively be transposed as a relation between musical objects such as notes or chords in a score, it remains relatively unknown what kind of musical relations precisely tend to be captured by self attention mechanisms when applied to musical data. Moreover, the principle of self-attention has been elaborated in NLP to help model the "meaning" of a sentence while in the musical domain this concept appears to be more subjective. In this explorative work, we open the music transformer black box looking to identify which aspects of music are actually learnt by the self-attention mechanism. We apply this approach to two MIR probing tasks : composer classification and cadence identification.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The Transformer <ref type="bibr" target="#b12">(Vaswani et al., 2017)</ref> is a neural network architecture based on the self-attention mechanism that was designed for sequence prediction tasks (machine translation, syntactic parsing, etc.) in NLP. Subsequently, the self-attention principle has also been applied with success to improve MIR tasks including harmony analysis <ref type="bibr" target="#b2">(Chen and Su, 2021)</ref> and generation with long-term coherence as demonstrated with Music Transformer <ref type="bibr">(Huang et al., 2018b)</ref>. The Music Transformer model has then inspired various researches including the generation of pop music <ref type="bibr" target="#b9">(Huang and Yang, 2020)</ref> and guitar tablature <ref type="bibr" target="#b3">(Chen et al., 2020)</ref>.</p><p>Despite its increasing use in MIR tasks, the nature of the musical knowledge learned by Transformers is rarely studied. <ref type="bibr">(Huang et al., 2018a)</ref> proposes a tool to visualise self-attention weights associated to a musical extract but without any systematic analysis. Inspired by NLP literature <ref type="bibr" target="#b5">(Conneau et al., 2018;</ref><ref type="bibr" target="#b4">Coenen et al., 2019;</ref><ref type="bibr" target="#b11">Tenney et al., 2019;</ref><ref type="bibr" target="#b10">Manning et al., 2020)</ref> our work aims at opening the Music Transformer black box in order to extract its abstract representation of musical sequences and submit those representations to two selected MIR "probing" tasks : composer classification and cadence detection.</p><p>The self-attention mechanism is encoded within a transformer through matrices of coefficients, produced by attention heads, which are distributed in the subsequent layers of the network. Given a sequence of tokens x 1 , . . . , x T an attention head produces an attention matrix A = (a ij ) 1≤i,j≤T where a ij encodes "the attention that token x i gives to token x j " or the weight that x j is going to play in in the next layer representation of x i . The goal of our study<ref type="foot" target="#foot_0">1</ref> consists in identifying the musical knowledge that is encoded within these matrices in a trained Transformer. For this purpose we designed two "probing" datasets of musical sequences labeled with informations that were not explicitly available to the Transformer during training. The first dataset is labeled by the composer of the sequence. In the second dataset the sequences are characterized as containing a cadence (musical phrase ending) or not.</p><p>In the following we show, that a simple linear classifier fed with isolated attention matrices is able to discriminate between two composers when their styles are different enough. In contrast, an analogous experiment shows that marks of structural phenomena such as cadences appear more challenging to detect in attention matrices.</p><p>In the second part of our study, we examine attention values in order to gain insights into the classification results. Our observations reveal various orientations (past or future) of attention spans among composers, as well as prominent attention values on theoretic cadence preparation points.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Attention Based Sequence Representation</head><p>In this work, the Music Transformer is used as a representation tool, to compute self-attention relations for any arbitrary musical sequence.</p><p>The MAESTRO dataset is used in this study to train the Music Transformer. This dataset gathers 1276 piano performances of pieces composed by 54 major composers of different styles, including Bach, Mozart, Beethoven or Debussy. In order to be compatible with the Transformer input format, the MAESTRO dataset is converted into sequences of tokens following the syntax proposed by <ref type="bibr">(Huang et al., 2018b)</ref>. This token representation includes NOTE ON, NOTE OFF, TIME SHIFT, and VELOCITY types. In this study, we trained 2 a Music Transformer neural network on this corpus as explained in <ref type="bibr">(Huang et al., 2018b)</ref>.</p><p>The Transformer architecture trained for this study includes 6 layers, each composed of 4 attention heads. Given an input sequence of T elements an attention head produces a square real-valued attention matrix X = (x ij ) of dimension T × T . The value x ij is usually interpreted as the attention that the elements at position i has for the element at position j. Once the transformer is trained, it has the ability to systematically abstract any musical sequence of size T by a set of 6 × 4 = 24 attention matrices of size T × T . Through probing tasks NLP literature <ref type="bibr" target="#b11">(Tenney et al., 2019;</ref><ref type="bibr" target="#b10">Manning et al., 2020)</ref> has reported that lower attention heads seem to attend to lower level abstractions, such as syntactic parsing, while deeper layers attend to higher level abstract such as coreference resolution. Assuming that some of this knowledge is transferable to the musical domain we have chosen to focus on the deeper layer of the network for representing the sequences in our MIR inspired probing tasks. We have chosen to collapse the 4 attention matrices produced by the last layer into an average matrice, and to use these T × T coefficients as the input to the classification tasks that we define in the next section 3 . Figure <ref type="figure" target="#fig_0">1 illustrates</ref> 2 Using the implementation in https://github.com/jason9693/ MusicTransformer-tensorflow2.0</p><p>3 Although probing tasks are often performed on other out-this pipeline.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Agnostic Probing Tasks</head><p>In this section, we describe two probing tasks that aim at highlighting the musical knowledge encoded in attention values computed by the Music Transformer. The first task is a composer classification and the second one is cadence detection. Both tasks are formulated as supervised binary classification performed on the attention matrices described in section 2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Composer Identification</head><p>We evaluate the ability of learned attention representations to model musical style through a composer identification task.</p><p>We used a subset of the MAESTRO dataset that contains unique composer performances to create several binary classification tasks composer1 vs composer2. To better highlight the ability of attention values to capture stylistic information, we deliberately selected composers that are known to be close in term of style, such as Haydn and Mozart, and far apart, such as Bach and Chopin.</p><p>For each couple, a set of training musical sequences of fixed size are abstractly represented as attention matrices (see Section 2). The training sets are balanced and contain 2648 sequences from each of the composers. The corresponding abstract representations are then given as input to a logistic regression classifier with l2-regularization that is trained to assign composer authorship to any input attention matrix. The experiment is repeated 5 times, sampling various training sets for every couple of composers and for various sizes of sequences. Figure <ref type="figure" target="#fig_1">2</ref> displays the average performance of the classifiers over a separate and fixed test set 4 of 426*2 sequences. A random classifier is here expected to have a 50% accuracy.</p><p>Low standard deviations, illustrated by vertical lines on each experiment, show that given a couple of composers the accuracy is quite stable with respect to the various training sets. Figure 2 also shows that the accuracy generally tends to increase with the size of the sequences (which was not obvious since when increasing the size of the sequence we increase quadratically the search space number of dimensions without increasing puts of the transformer, limiting the transformation of attention values facilitates their musical interpretation in this work. 4 We used MAESTRO train/test split to insure that a same piece could not appear both in the train and the test set  the number of examples). The difficulty of the classification task of a pair of composers certainly relates to how they differ in style. Interestingly, by using birth date gaps as rough proxy for style differences, the accuracies appears to match the difficulty of the tasks 5 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Cadence Detection</head><p>Cadences are structural breaks widely used in the classical repertoire to emphasize the end of a musical phrase. Cadence are often associated with a closure feeling that resolves a tension region <ref type="bibr" target="#b1">(Blombach, 1987)</ref>. This concept therefore appears as a promising candidate to validate the principle of self-attention in music as the short past that precedes a cadence is supposed to be organized in close relation with the upcoming cadence. This short past is sometime referred to as the preparation of the cadence.</p><p>The present task consists in evaluating how 5 Birth date gaps (in years) : Chopin-Bach: 125, Debussy-Mozart: 106, Debussy-Chopin: 52, Mozart-Haydn: 24 and Chopin-Schubert: 13 much the attention values encode the presence of a cadence. Our hypothesis is that cadential points and preparation points should have important mutual attention one for each other if they appear concomitantly within the training set. Attention matrices are computed as explained in section 2 through a Transformer which is trained on the MAESTRO corpus. Given the pieces of music present in the MAESTRO dataset, it can reasonably be hypothesized that cadences, that are typical of the classical era, are sufficiently represented in the training set to be modeled by the Transformer. Similarly to the composer identification task, a set of attention matrices, that represent musical sequences with and without cadences, are used to train a logistic regression classifier. For this purpose, we use a dataset of 24 fugues from J.-S. Bach with cadence annotation <ref type="bibr" target="#b6">(Giraud et al., 2015)</ref>. A set of 3864 sequences of 64 tokens is sampled from the fugue dataset, a third of which include a cadence<ref type="foot" target="#foot_1">6</ref> while the remaining do not include any cadence. We use a leave-one-piece-out strategy to evaluate the performance of the cadence classification and compare it to a random classification on each fold of the cross-validation. The micro-averaged F1 score of the cadence classifiers is 0.458 as compared to 0.315 for the random classifier. This results seems to suggest that attention values learned by the Transformer do encode some information about the notion of cadence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Discussion</head><p>Cadences belong to high level elements of tonal musical language. Despite their unified closure meaning, they can be realized through a large vari- ety of musical surfaces, which makes their modeling particularly complex <ref type="bibr" target="#b0">(Bigo et al., 2018)</ref>. Musical style, on the other hand, can refer to lower level relationships between musical objects, like pitch intervals. It is therefore interesting to observe that our attention based classification approach give results better than chance both on style modelling and on cadence detection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Musical Interpretation of Self-Attention Relations</head><p>In this section, we provide a few exploratory analysis to gain musical insights on the data that was given in input to the probing classifiers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">How Do Transformers Learn About Composers ?</head><p>As explained in section 2, the composer discrimination probing task was performed using an average attention matrix A x computed from each sequence x. We averaged A x for each composer over a subset of 1000 sequences used for training the linear classifiers. The sequence are of fixed size (T = 64). The result is a matrix M = (m ij ) 1≤i,j≤T where m ij is the average attention that the i th token gives to the j th token in the sequences of a given composer. We consider that a token at position i "looks at" a token in position j, ie it has an attention span of at least i -j, if the coefficient m ij is greater than a certain threshold.</p><p>In Figure <ref type="figure" target="#fig_2">3</ref> we report the distribution of attention spans for a threshold of 0.04 (≈ 7% -10% of coefficients) for several composers.</p><p>The figure shows that the learned attention span rarely exceeds five tokens in the past or in the future. Interestingly, the attention learned on early composers such as Bach, Haydn, Mozart, and Schubert seem to focus towards tokens in the short past. In contrast, Chopin and Debussy attention is turned towards tokens in the short future, which might be partly related to a stylistic rupture of the composers with the classical era. Confirming this hypothesis would require a deeper study.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">How Do Transformers Learn About</head><p>Cadences ?</p><p>In this experiment we observe the information within the attention matrix A x of a sequence containing a cadence. The sequence can be divided into TIME SHIFT events that can be aligned with the beat pulse of the piece extract. Figure <ref type="figure" target="#fig_3">4</ref> shows the cumulated attention between TIME SHIFT events in regard with the sheet music.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusions and Perspectives</head><p>We proposed in this work an original approach to improve our understanding of the musical knowledge that the self-attention mechanism can learn.</p><p>In spite of instructive results, these experiments highlight the difficulty to interpret neural values within a multi layer model but also confirm the necessity to pursue our efforts in that quest of comprehension of music deep learning models. Futur works include experimenting with other probing tasks, such as harmony and tonality analysis, in order to better understand how Transformer architectures learn these high level concepts. It could also be interesting to test those tasks on different layers of the network to see if there is a gradation in the information levels of abstraction.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Pipeline used for the two probing tasks. The left part illustrates the systematic representation of a midi sequence into a set of self-attention values thanks to the Music Transformer. The right part illustrates how a probing task is formulated as a classification problem on attention values.</figDesc><graphic coords="4,94.68,62.81,408.17,99.71" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Mean accuracy of composer identification on attention matrices computed from sequences of various lengths.</figDesc><graphic coords="4,72.00,233.26,196.44,148.65" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Distribution of the attention spans. The horizontal axis shows the length of attention spans (in tokens).</figDesc><graphic coords="5,329.10,62.81,174.62,190.43" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Cumulated attention on successive offsets of bar 29 of Fugue 2 of the Well-Tempered Clavier from Bach. A perfect authentic cadence is annotated on beat 3 (blue frame). Other points of prominent attention (red and green) correspond to important preparation points of the cadence.</figDesc></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Code avaliable at https://github.com/ Music-NLP/MusicalSelfAttention</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_1"><p>A same cadence can appear several time in our dataset but at different positions and necessarily in the 2nd half of the sequence in order to favor the inclusion of the preparation of the cadence within the sequence.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>The authors are grateful to the <rs type="institution">Algomus and Magnet</rs> teams and to <rs type="person">Kamil Akesbi</rs> for fruitful discussions. This work is supported by a special interdisciplinary funding (AIT) from the <rs type="funder">CRIStAL laboratory</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Relevance of musical features for cadence detection</title>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Bigo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Feisthauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giraud</forename><surname>Mathieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florence</forename><surname>Levé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Society for Music Information Retrieval Conference (ISMIR 2018)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Phrase and cadence: A study of terminology and definition</title>
+		<author>
+			<persName><forename type="first">Ann</forename><surname>Blombach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Music Theory Pedagogy</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="225" to="251" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Attend to chords: Improving harmonic analysis of symbolic music using transformer-based models</title>
+		<author>
+			<persName><forename type="first">Tsung-Ping</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Su</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the International Society for Music Information Retrieval</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Automatic composition of guitar tabs by transformers and groove modeling</title>
+		<author>
+			<persName><forename type="first">Yu-Hua</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Hsiang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Yi</forename><surname>Hsiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsuan</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2008.01431</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Coenen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Reif</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ann</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Been</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Pearce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fernanda</forename><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Wattenberg</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1906.02715</idno>
+		<title level="m">Visualizing and measuring the geometry of bert</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">What you can cram into a single $&amp;!#* vector: Probing sentence embeddings for linguistic properties</title>
+		<author>
+			<persName><forename type="first">Alexis</forename><surname>Conneau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">German</forename><surname>Kruszewski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Loïc</forename><surname>Barrault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Baroni</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P18-1198</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)</title>
+		<meeting>the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)<address><addrLine>Melbourne, Australia</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2126" to="2136" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Computational fugue analysis</title>
+		<author>
+			<persName><forename type="first">Giraud</forename><surname>Mathieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Groult</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emmanuel</forename><surname>Leguy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Florence</forename><surname>Levé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Music Journal</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="77" to="96" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<title level="m" type="main">Visualizing music selfattention</title>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Dinculescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">Cheng-Zhi Anna</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Curtis</forename><surname>Hawthorne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">M</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matthew</forename><forename type="middle">D</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Monica</forename><surname>Dinculescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Douglas</forename><surname>Eck</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.04281</idno>
+		<title level="m">Music transformer</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Pop music transformer: Beat-based modeling and generation of expressive pop piano compositions</title>
+		<author>
+			<persName><forename type="first">Yu-Siang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsuan</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th ACM International Conference on Multimedia</title>
+		<meeting>the 28th ACM International Conference on Multimedia</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1180" to="1188" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Emergent linguistic structure in artificial neural networks trained by self-supervision</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Christopher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Hewitt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Levy</surname></persName>
+		</author>
+		<idno type="DOI">10.1073/pnas.1907367117</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the National Academy of Sciences</title>
+		<imprint>
+			<biblScope unit="volume">117</biblScope>
+			<biblScope unit="issue">48</biblScope>
+			<biblScope unit="page" from="30046" to="30054" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">BERT rediscovers the classical NLP pipeline</title>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Tenney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dipanjan</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellie</forename><surname>Pavlick</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1452</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4593" to="4601" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niki</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jakob</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Llion</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aidan</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Łukasz</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Illia</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="5998" to="6008" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,860 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main"></title>
+				<funder ref="#_6P7xqf9">
+					<orgName type="full">European Commission</orgName>
+				</funder>
+				<funder ref="#_Pqwub9D">
+					<orgName type="full">UK Engineering and Physical Sciences Research Council</orgName>
+				</funder>
+				<funder ref="#_Ubj49fw">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">French State agency</orgName>
+				</funder>
+				<funder ref="#_7G4fJ4p">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AEC846F9A9527A64F2ED227B74BFEAC6</idno>
+					<idno type="DOI">10.1109/MSP.2018.2874719</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract/>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Many people listen to recorded music as part of their everyday lives, for example from radio or TV programmes, CDs, downloads or increasingly from online streaming services. Sometimes we might want to remix the balance within the music, perhaps to make the vocals louder or to suppress an unwanted sound, or we might want to upmix a 2-channel stereo recording to a 5.1channel surround sound system. We might also want to change the spatial location of a musical instrument within the mix. All of these applications are relatively straightforward, provided we have access to separate sound channels (stems) for each musical audio object.</p><p>However, if we only have access to the final recording mix, which is usually the case, this is much more challenging. To estimate the original musical sources, which would allow us to remix, suppress or upmix the sources, we need to perform musical source separation (MSS).</p><p>In the general source separation problem, we are given one or more mixture signals that contain different mixtures of some original source signals. This is illustrated in Figure <ref type="figure" target="#fig_0">1</ref> where four sources, namely vocals, drums, bass and guitar, are all present in the mixture. The task is to recover one or more of the source signals given the mixtures. In some cases, this is relatively straightforward, for example, if there are at least as many mixtures as there are sources, and if the mixing process is fixed, with no delays, filters or non-linear mastering <ref type="bibr" target="#b0">[1]</ref>.</p><p>However, MSS is normally more challenging. Typically, there may be many musical instruments and voices in a 2-channel recording, and the sources have often been processed with the addition of filters and reverberation (sometimes nonlinear) in the recording and mixing process. In some cases, the sources may move, or the production parameters may change, meaning that the mixture is time-varying. All of these issues make MSS a very challenging problem.</p><p>Nevertheless, musical sound sources have particular properties and structures that can help us. For example, musical source signals often have a regular harmonic structure of frequencies at regular intervals, and can have frequency contours characteristic of each musical instrument.</p><p>They may also repeat in particular temporal patterns based on the musical structure.</p><p>In this paper we will explore the MSS problem and introduce approaches to tackle it. We will begin by introducing characteristics of music signals, we will then give an introduction to MSS, and finally consider a range of MSS models. We will also discuss how to evaluate MSS approaches, and discuss limitations and directions for future research 1 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. CHARACTERISTICS OF MUSIC SIGNALS</head><p>Music signals have distinct characteristics that clearly differentiate them from other types of audio signals such as speech or environmental sounds. These unique properties are often exploited when designing MSS methods, and so an understanding of these characteristics is crucial.</p><p>All music separation problems start with the definition of the desired musical source to be separated, often referred to as the target source. In principle, a musical source refers to a particular musical instrument, such as a saxophone or a guitar, that we wish to extract from the audio 1 A dedicated website with complementary information about MSS including sound examples, an extended bibliography, dataset information, and accompanying code can be reached on the following link: https://soundseparation. songquito.com/ mixture. In practice, the definition of musical source is often more relaxed, and can refer to a group of musical instruments with similar characteristics that we want to separate. This is the case, for example, in singing voice separation, where the goal often includes the separation of both the main and background vocals from the mixture. In some cases, the definition of musical source can be even looser, as is the case in harmonic-percussion separation, where the aim is to separate the pitched instruments from the percussive ones.</p><p>In a general sense, musical sources are often categorized as either predominantly harmonic, predominantly percussive, or as singing voice. Harmonic music sources mainly contain tonal components, and as such, they are characterized by the pitch or pitches they produce over time. Harmonic signals exhibit a clear structure composed of a fundamental frequency F0 and a harmonic series. For most instruments, the harmonics appear at multiple integers of the fundamental frequency: for a given F0 at 300 Hz, a harmonic component can be expected close to 600 Hz, the next harmonic around 900 Hz, and so on. Nonetheless, a certain degree of inharmonicity, i.e., deviation of harmonics from multiple integers of F0, should be expected and accounted for. Harmonic sources exhibit a relatively stable behavior over time, and can typically be identified in the spectrogram as horizontal components. This can be observed in Figure <ref type="figure" target="#fig_1">2</ref> where a series of notes played by an acoustic guitar are displayed. Additionally, the trajectories in time of the F0 and the harmonics are usually very similar, a phenomenon referred to as common fate <ref type="bibr" target="#b1">[2]</ref>. This can be clearly seen in the spectrogram of the vocals in Figure <ref type="figure" target="#fig_1">2</ref>, where it can be observed that the vocal harmonics have common trajectories over time. The relative strengths of the harmonics, and the way that the harmonics evolve over time, contribute to the characteristic sound, or timbre, which allows the listener to differentiate one instrument from another. Furthermore, and particularly in Western music, the sources often play in harmony, where the ratios of the F0s of the notes are close to integer ratios. While harmony can result in homogeneous and pleasing sounds, it most often also implies a large degree of overlap in the frequency content of the sources, which makes separation more challenging.</p><p>In contrast to harmonic signals, which contain only a selected number of harmonic components, percussive signals contain energy in a wide range of frequencies. Percussive signals exhibit a much flatter spectrum, and are highly localized in time with transient-like characteristics. This can be observed in the drums spectrogram in Figure <ref type="figure" target="#fig_1">2</ref>, where clear vertical structures produced by the drums signal can be observed. Percussive instruments play a very important role of conveying rhythmic information in music, giving a sense of speed or tempo in a musical piece.</p><p>In reality, most music signals contain both harmonic and percussive elements. For example, a note produced by a piano is considered predominantly harmonic, but it also contains a percussive attack produced by the hammer hitting the strings. Similarly, singing voice is an intricate combination of harmonic (voiced) components, produced by the vibrations of the vocal chords, and percussive-like (plosive) components including consonant sounds such as 'k' or 'p' where no vocal fold vibration occurs. These components are in turn filtered by the vocal cavity, with different formant frequencies created by changing the shape of the vocal cavity. As seen in Figure <ref type="figure" target="#fig_1">2</ref>, singing voice typically exhibits a higher rate of pitch fluctuation compared to other musical instruments.</p><p>A notable property of musical sources is that they are typically sparse in the sense that for the majority of points in time and frequency, the sources have very little energy present. This is commonly exploited in MSS, and can be clearly seen for each of the sources in Figure <ref type="figure" target="#fig_1">2</ref>.</p><p>Another characteristic of music signals is the fact that music signals typically exhibit repeating structures over different time-scales, for example, a repeating percussion pattern over a couple of seconds, to larger structures such as the verse-chorus structures found in pop songs. As will be explained in Section IV-B, these repetitions can be leveraged when performing MSS.</p><p>The bulk of research on MSS to-date has focused on Western pop music as the main genre to be separated. It should be noted that other types of music present their own unique problems for MSS, for example, many instruments playing in unison in some types of traditional/folk music. These cases are typically not covered by existing MSS techniques.</p><p>Once the target source has been defined, the characteristics of the audio mixture should be carefully considered when developing MSS methods. Modern music production techniques offer innumerable possibilities for transforming and shaping an audio mix. Most music signals nowadays are created using audio content from a great diversity of origins, usually combined and mixed using a Digital Audio Workstation (DAW), a software system for transforming and manipulating audio tracks. As depicted in Figure <ref type="figure" target="#fig_2">3</ref> for the trumpet, some musical sources can be recorded in a traditional manner using a microphone or a set of microphones. Very often, hardware devices that shape and color the sound are introduced into the signal chain; these may include, for example, guitar tube amplifiers or distortion pedals which can impart very particular sound qualities to the signal. In other cases, musical sources are not captured using a microphone.</p><p>Instead, the digital signal they produce is directly fed into the DAW, or alternatively created within the system itself, using, for example, a keyboard as an interface as shown in Figure <ref type="figure" target="#fig_2">3</ref> Most frequently, an audio interface is used to facilitate the process of capturing input signals from different origins, and delivering them to the DAW. The DAW itself offers many additional possibilities to further enhance and modify the signal. Once all the audio content is in the DAW, the final step is the creation of the audio mixture. Most commercial music today is in stereo format (2 channels). Other multi-channel formats such as 5.1 (5 main channels plus a low frequency channel) are available but less common. The number of channels available to perform music separation is a key factor that can be exploited when designing MSS models. Multichannel mixtures allow spatial positioning of the music sources in the sound field. This means that a certain source can be perceived as coming from the left, the center, the right or somewhere in between. The spatial positioning of the sources is usually achieved with a pan pot that regulates the contribution of each musical source in each of the available channels. This artificial creation of spatial positioning ignores delay as a spatial cue, and so inter-channel delay is much less important in MSS than in speech source separation. In contrast, monophonic (single channel) recordings offer no information about spatial positioning, and are often the most challenging separation problem.</p><p>A final but fundamental aspect to be considered when designing MSS systems is the fact that music quality, and audio quality in general, is inherently defined and measured by human perception. This sets an additional challenge to MSS methods: regardless of the mathematical soundness of the model, all systems are expected to result in perceptually pleasing music signals.</p><p>Aside from the task of truthfully capturing the target source, we must also minimize the impact on perceptual quality of the distortions introduced in the separation process.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. A TYPICAL MUSICAL SOURCE SEPARATION WORK FLOW</head><p>A high-level overview of the steps involved in most MSS systems is illustrated in be explained in Section IV, source models and spatial models are the most common approaches used for MSS. In Figure <ref type="figure">4</ref>, an example is presented where starting with the mixture X, estimates of the magnitude spectrograms of the sources Ŝj are obtained.</p><p>Filtering: The goal at this stage is to estimate the separated music source signals given the source models. This is typically done using a soft-masking approach, the most common form of which is the Generalized Wiener Filter (GWF) <ref type="bibr" target="#b2">[3]</ref>, though other soft-masking approaches have been used <ref type="bibr" target="#b3">[4]</ref>. Given X and Ŝj , this allows recovery of the separated sources provided their characteristics are well estimated. The STFT of source j = 1 can be estimated elementwise using the GWF as</p><formula xml:id="formula_0">Ŷ1 (k, n) = X(k, n) Ŝ1 (k, n)/ j Ŝj (k, n).</formula><p>The same procedure is applied for all sources in the mix. Essentially, each time-frequency point in the original mixture is weighted with the ratio of the source magnitude to the sum of the magnitudes of all sources. This can be understood as a multi-band equalizer of hundreds of bands, changed dynamically every few milliseconds to attenuate or let pass the required frequencies for the desired source. A special case of the Generalized Wiener Filter is the process of binary masking, where it is assumed that only one source has energy at a given time-frequency bin, so that masks values are either 0 or 1.</p><p>Estimating source parameters from the mixture is not trivial, and it can be difficult to obtain good source parameters to enable successful filtering at the first try. For this reason, it is common to proceed iteratively: First, separation is achieved with the current estimated source models.</p><p>These models are then updated from the separated signals, and the process repeated as necessary.</p><p>This approach is illustrated in Figure <ref type="figure">4</ref> and rooted in the Expectation-Maximization algorithm.</p><p>Most of the models presented in Section IV may be used in this iterative methodology.</p><p>Inverse Transform: The final stage in the MSS work flow is to obtain the time domain source waveforms y j using the inverse transform of the chosen time frequency representation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. MUSICAL SOURCE SEPARATION MODELS</head><p>Having described the necessary steps for MSS, we now focus on how the unique characteristics of musical signals are used to perform MSS. While numerous categorizations of MSS algorithms are possible, such as categorization by source type, here we take the approach of dividing the algorithms into two broad categories: algorithms which model the musical sources, and those which model the position of the sources in multichannel or stereo audio signals. The key distinction between these two categories is that algorithms in the first category model aspects of the mixture intrinsic to the sources, while those in the second category model aspects intrinsic to the recording/mixing process. Models in the two categories exploit distinct but complementary information which can readily be combined to yield more powerful MSS models.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Musical Source Position Models</head><p>In the case of multichannel music signals, the spatial position of the sources has often been exploited to perform music source separation. In this section, we assume that we are dealing with a stereo (2-channel) mixture signal, and that the spatial positioning of source j has been achieved using a constant power panning law, defined by a single parameter, the panning angle</p><formula xml:id="formula_1">φ j ∈ [0, π/2].</formula><p>For a given source q j , its stereo representation (or stereo image) is given by y 1j = q j cosθ j and y 2j = q j sinθ j , with the subscripts 1 and 2 explicitly denoting the first and second channels, respectively. Figure <ref type="figure" target="#fig_4">5</ref> illustrates the spatial positioning of three sources. The singing voice, for example, is positioned in the center and hence, its stereo image is obtained with an angle of π/4. Component Analysis (ICA) <ref type="bibr" target="#b0">[1]</ref>, which estimates an unmixing matrix for the mixture signals based on statistical independence of the sources. However, ICA requires mixtures that contain the same number of channels as musical sources in the mix. This is not typically the case for music signals, where there are usually more sources than channels.</p><p>As a result of the shortcomings of ICA, algorithms which worked when there were more sources than channels were developed. Several techniques utilizing spatial position for separation, such as DUET <ref type="bibr" target="#b4">[5]</ref>, ADRess <ref type="bibr" target="#b5">[6]</ref>, and PROJET <ref type="bibr" target="#b6">[7]</ref>, assume that the time-frequency representations of the sources have very little overlap. This assumption, which holds to a surprising degree for speech, does not hold entirely for music, where the use of harmony and percussion instruments ensures there is overlap. Nonetheless, this assumption has proved to be useful in many circumstances, and often results in fast algorithms capable of real-time separation. The degree of overlap between sources can be seen, for example, in the spectrogram shown in Figure <ref type="figure" target="#fig_0">1</ref> which only shows the dominant musical source in each time-frequency bin of the mixture.</p><p>To illustrate the usefulness of assuming very little overlap between sources, consider the element-wise ratio of the individual mixture channels in the time-frequency domain PROJET estimates individual source position histograms, the superposition of which results in the mixture spatial position histogram (as shown in Figure <ref type="figure" target="#fig_4">5</ref>). Further, PROJET utilizes the GWF for masking. It should also be noted that both DUET and PROJET can also incorporate and deal with inter-channel delays, extending their range of applicability.</p><formula xml:id="formula_2">R(k, n) = |X 1 (k, n)/X 2 (k, n)|,</formula><p>The aforementioned separation methods directly model sound engineering techniques such as panning and delay for creating multichannel mixtures. Another line of research models the spatial configuration of a source directly through inter-channel correlations: At each frequency k, the correlation between the STFT coefficients of the different channels is calculated and encoded in a matrix called the spatial covariance matrix. The core idea of such methods is to leverage the correlations between channels to design better filters than those obtained by considering each channel in isolation. This approach is termed Local Gaussian Modeling (LGM) <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b7">[8]</ref>. It can give good separation whenever the spatial covariance matrices are well estimated for all sources.</p><p>It is also able to handle highly reverberated signals, for which no single direction of arrival may be identifiable. This strength of covariance-based methods in dealing with reverberated signals comes at the price of difficult parameter inference.</p><p>LGM algorithms are often very sensitive to initialization, and the estimated spatial covariance matrices alone are often not sufficient to allow separation. Successful LGM methods need to incorporate musical source models to further guide the separation to obtain acceptable solutions. Musical source models are discussed in the following section.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Musical Source Models</head><p>While spatial positioning can give good results if each source occupies a unique stereo position, it is common for multiple sources to be located in the same stereo position, or for the mixture signal to consist of a single channel. In these cases, model-based approaches that attempt to capture the spectral characteristics of the target source can be used. In the following sections, a range of MSS model-based approaches are described.</p><p>Kernel Models: Similarly to the idea that the definition of the target sources can be relatively loose in a MSS scenario (see Section II), source models can also incorporate different degrees of specificity when it comes to describing the sources in the mix. Consider for example the harmonicpercussive separation task: harmonic sources are characterized as horizontal components in the spectrogram, while percussive sources are characterized as time-localized vertical ones. These particularities of the sources can also be understood as harmonic sources exhibiting continuity over time, and percussive sources exhibiting continuity over frequency. Music separation models such as Kernel Additive Models (KAM) particularly exploit local features observable in music spectrograms such as continuity, repetition (at both short time scales and longer scales such as repeating verses and choruses) and common fate <ref type="bibr" target="#b8">[9]</ref>. In order to estimate a music source at a given time-frequency point, KAM involves selecting a set of time-frequency bins, which, given the nature of the target source, e.g., percussive, harmonic or vocals, are likely to be similar in value.</p><p>This set of time-frequency bins is termed a proximity kernel. An example of a vertical proximity kernel used to extract percussive sounds is shown in Figure <ref type="figure" target="#fig_6">6a</ref>. Here, a set of adjacent frequency bins are chosen since percussion instruments tend to exhibit stable ridges across frequency. The vertical kernel is also positioned on a percussive hit seen in the spectrogram of the mixture in Figure <ref type="figure" target="#fig_6">6</ref>, where the middle time-frequency bin (k, n) is the one to be estimated. In the case of sustained pitched sounds which tend to have similar values in adjacent time frames, a suitable proximity kernel consists of adjacent time-frames across a single frequency (see the horizontal kernel in Figure <ref type="figure" target="#fig_6">6a</ref>). KAM approaches assume that interference due to other sources than the target source is sparse, so time-frequency bins with interference are regarded as outliers. To remove these outliers and to obtain an estimate of the target source, the median amplitude of the bins in the proximity kernel is taken as an estimate of the target source at a given timefrequency bin. The median acts as a statistical estimator robust to outliers in energy. Once the proximity kernels have been chosen for each of the sources to be separated, separation proceeds iteratively in the manner described in Section III. KAM is a generalization of previous work on vocal separation and harmonic-percussive separation <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b9">[10]</ref>, and has demonstrated considerable utility for these purposes <ref type="bibr" target="#b8">[9]</ref>.</p><p>Spectrogram Factorization Models: Another group of musical source models are based on spectrogram factorization techniques. The most common of those is Non-Negative Matrix Factorization (NMF). NMF attempts to factorize a given non-negative matrix into two nonnegative matrices <ref type="bibr" target="#b10">[11]</ref>. For the purpose of musical source separation, NMF can be applied to the non-negative magnitude spectrogram of the mix M . The goal is to factorize M into a product M ≈ W H of a matrix of basis vectors W , which is a dictionary of spectral templates modeling spectral characteristics of the sources, and a matrix of time activations H. Figure <ref type="figure" target="#fig_6">6b</ref> shows an example of a series of spectral templates and their corresponding time activations. One of the spectral templates W 1 , and its corresponding time activations H 1 , are also displayed next to the mixture spectrogram. Peaks in the time activations represent the time instances where a given spectral template has been identified within the mix. Note, for example, that the peaks in the time activation H 1 coincide with the percussive hits (vertical structures) in the spectrogram. The factorization task is solved as an optimization problem where the divergence (or reconstruction error) between M and W H is minimized using common divergence measures D such Kullback-Leibler, or Itakura-Saito: min W,H≥0 D(M W H). Many variants of NMF algorithms have been proposed for the purpose of musical source separation, including methods with temporal continuity constraints <ref type="bibr" target="#b11">[12]</ref>, multichannel separation models <ref type="bibr" target="#b7">[8]</ref>, score-informed separation <ref type="bibr" target="#b12">[13]</ref>, among others <ref type="bibr" target="#b13">[14]</ref>.</p><p>The NMF-based methods presented above typically assume that the spectrogram for all sources may be well approximated through low-rank assumptions, i.e. as the combination of only a few spectral templates. While this assumption is often sufficient for instrumental sounds, it generally falls short on modeling vocals, which typically exhibit great complexity and require more sophisticated models. In this respect, an NMF variant that has been particularly successful in separating the singing voice uses a source-filter model to represent the target vocals <ref type="bibr" target="#b14">[15]</ref>. The idea behind such models is that the voice signal is produced by an excitation that depends on a fundamental frequency (the source), while the excitation is then filtered by the vocal tract or by spectral shapes related to timbre (the filter). A dictionary of source spectral templates and a matrix of filter spectral shapes are used in this model within an Expectation-Maximization framework.</p><p>Some models for the singing voice are based on the observation that spectrograms of vocals are usually sparse, composed of strong and well-defined harmonics, and mostly zero elsewhere (as seen in Figure <ref type="figure" target="#fig_1">2</ref>). In this setting, the observed mixture is assumed to be equal to the accompaniment for a large portion of the mixture spectrogram entries. This is the case of Robust Principal Component Analysis (RPCA) <ref type="bibr" target="#b15">[16]</ref> which does not rely on over-constraining low-rank assumptions on the vocals, and in turn, uses the factorization only for the accompaniment, leaving the vocals unconstrained. Many elaborations on this technique have been proposed. For instance, <ref type="bibr" target="#b16">[17]</ref> incorporates voice activity detection in the separation process, allowing the vocals to be inactive in segments of the signal and thus, strongly boosting performance.</p><p>Sinusoidal Models: Another strand of research for MSS models focuses on sinusoidal modeling. This method works under the premise that any music signal can be approximated by a number of sinusoids with time-varying frequencies and amplitudes <ref type="bibr" target="#b17">[18]</ref>. Intuitively, sinusoidal modeling offers a clear representation of music signals, which in most cases is composed of a set of fundamental frequencies and their associated harmonic series. If the pitches present in the target source, as well as the spectral characteristics of the associated harmonics of each pitch, are known or can be estimated, sinusoidal modeling techniques can be very effective for separation of harmonic sources. However, given the complexity of the model and the very detailed knowledge of the target source required to successfully create a realistic representation, the use of sinusoidal modeling techniques for MSS has been limited. Sinusoidal modeling techniques have been proposed for harmonic sound separation <ref type="bibr" target="#b18">[19]</ref> and harmonic-percussive separation <ref type="bibr" target="#b19">[20]</ref>.</p><p>Deep Neural Network Models: Historically, MSS research has focused heavily on the use of model-based estimation that enforced desired properties on the source spectrograms. However, if the properties required by the models are not present, separation quality can rapidly degrade.</p><p>More recently, the use of Deep Neural Networks (DNNs) in MSS has rapidly increased.</p><p>In contrast to the above approaches which require explicit models of the source for processing, methods based on DNNs take advantage of optimization techniques to train source models in a supervised manner <ref type="bibr" target="#b20">[21]</ref>, <ref type="bibr" target="#b21">[22]</ref>, <ref type="bibr" target="#b22">[23]</ref>, i.e. using datasets where both the mix and the isolated sources are available. As depicted in Figure <ref type="figure" target="#fig_8">7</ref>, most supervised DNN-based methods take magnitude spectrograms of the audio mix as inputs, optionally also incorporating some further context cues.</p><p>The targets are set either as the magnitude spectrograms S j of the desired sources (also shown in Figure <ref type="figure" target="#fig_8">7</ref>), or as their separating masks (either soft masks or binary masks as described in  of the musical sources: they are directly inferred by the network. Secondly, the DNN topology is of great significance, both for the training capabilities of the network and as a means of incorporating prior knowledge in the system. The earliest DNN-based approaches for MSS consisted of taking a given frame of the spectrogram, as well as additional context frames as input, and outputting the corresponding frame for each of the targets. These systems mostly consisted of fully-connected networks (FCN).</p><p>However, given the large size of music spectrograms, the resulting FCNs contained a large number of parameters. This restricted the use of temporal context in such networks to less than one second <ref type="bibr" target="#b21">[22]</ref>. Therefore, these networks were typically applied on sliding windows of the mixture spectrogram. To overcome this limitation, both recurrent neural networks (RNNs) and convolutional neural networks were investigated as they offered a principled way to learn dynamic models. RNNs are similar to FCNs, except that they apply their weights recursively over an input sequence, and can process sequential data of arbitrary length. This makes such dynamical models ideally suited for the processing of spectrograms of different tracks with different durations, while still modeling long term temporal dependencies. The most commonly used setting for DNN-based separation today is to fix the number and the nature of the sources to separate beforehand. For example, we may learn a network able to separate drums, vocals and bass from a mixture. However, having MSS systems which can dynamically detect and separate an arbitrary number of sources is an open challenge, and deep clustering <ref type="bibr" target="#b23">[24]</ref> methods represent a possible approach to designing such systems.</p><p>A limitation of many DNN models is that they often use Mean Squared Error (MSE) as a cost function. While MSE results in a well-behaved stochastic gradient optimization problem, it also poorly correlates with perceived audio quality. This is the reason why the design of more appropriate cost functions is also an active research topic in MSS <ref type="bibr" target="#b22">[23]</ref>.</p><p>Finally, a crucial limitation of current research for DNN-based MSS is the need for large amounts of training data. The largest MSS multi-track public dataset today is MUSDB 2 , which comprises 10 h of data 3 . However, this is still small compared to existing speech corpora comprising hundreds or thousands of hours. The main difficulty in creating realistic multi-track data sets for MSS, comes from the fact that individual recordings for each instrument in a mixture 2 MUSDB: https://doi.org/10.5281/zenodo.1117372 3 Refer to the accompanying website for more information about available data sets: https://soundseparation.songquito. com/evaluationOf.htm are rarely available. Conversely, if individual recordings of instruments are available, the process of creating a realistic music mixture with them is time-consuming and very costly (as outlined in Section II). As a result, designing DNN architectures for MSS still requires fundamental knowledge about the sources to be separated, their input and output representations, as well as the use of suitable signal processing techniques and post-processing operations to further improve the recovered sources.</p><p>V. EVALUATION OF MUSICAL SOURCE SEPARATION MODELS Once an MSS system has been developed, its performance needs to be evaluated. All MSS approaches invariably introduce unwanted artifacts in the separated sources. These artifacts can be caused by mismatches between the models and the sources, musical noise that appears whenever rapid phase or spectral changes are introduced in the estimates (for example, when using binary masking), reconstruction errors in re-synthesis, as well as phase errors in the estimates. Quality evaluation in MSS systems is however non-trivial. As musical signals are intended to be heard by human listeners, it is therefore reasonable that evaluation should be based on subjective listening tests such as the Multiple Stimulus with Hidden Reference and Anchors (MUSHRA) test <ref type="bibr" target="#b24">[25]</ref>. However, listening tests are time-consuming and costly, requiring human volunteers to undertake the tests, and need certain expertise to be conducted properly. This has made them an infrequent choice for separation quality evaluation.</p><p>In an attempt to reduce the efforts of evaluating MSS systems, objective quality metrics have been proposed in the literature. These include the Blind Source Separation Evaluation (BSS Eval) Toolbox <ref type="bibr" target="#b25">[26]</ref>, based on non-perceptual energy ratios, and the Perceptual Evaluation methods for Audio Source Separation (PEASS) toolkit <ref type="bibr" target="#b26">[27]</ref>, which aimed to map results obtained via listening tests to create metrics. However, the validity of these metrics has been questioned in recent years, as the values obtained with them do not seem to correlate with perceptual measures obtained via listening tests <ref type="bibr" target="#b27">[28]</ref>.</p><p>As of today, given the lack of an unified and perceptually valid strategy for MSS quality evaluation, most algorithm development is still conducted using BSS Eval; however, it is highly recommended to conduct a final listening test to verify the validity of separation results. As a final note, the source separation community runs a regular Signal Separation Evaluation Campaign (SiSEC) <ref type="bibr" target="#b28">[29]</ref> including musical audio source separation tasks. SiSEC raises the visibility and importance of evaluation, and acts as a focus for discussions on evaluation methodologies.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>MusicalFigure 1 :</head><label>1</label><figDesc>Figure 1: Representation of a music mixture in the time-frequency domain. The dominant musical source in each time-frequency bin is displayed with a different color.</figDesc><graphic coords="2,169.04,269.88,305.54,203.99" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Magnitude spectrogram of four example music signals: vocals (left), drums (mid-left), bass (mid-right) and acoustic guitar (right). The horizontal axis represents time in seconds, and the vertical axis frequency in Hz.</figDesc><graphic coords="4,128.26,402.80,82.55,209.10" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Common music recording and mixing setup. In most cases, musical content is combined and mixed into a stereo signal using a Digital Audio Workstation (DAW).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .Figure 4 :</head><label>44</label><figDesc>Figure 4: Common MSS work flow: source models are obtained from the spectrogram of the audio mix. This is often done in an iterative manner where iter represents the total number of iterations and i the iteration index.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Illustration of standard Pan Law. The position of the source j = 1 (keyboard), source j = 2 (voice), and source j = 3 (guitar) is defined by the angle φ j which is always measured with respect to the first channel. Also shown are individual (colored) source position histograms and the mixture spatial histogram (black)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head></head><label></label><figDesc>where the subscript indicates channel number. If there is little time-frequency overlap between the sources, then a single source j will contribute most of the energy at a single point in the time-frequency representations, and so R(k, n) ≈ cos φ j / sin φ j . Given that R(k, n) only depends on φ j under this assumption, it can therefore be used to estimate a panning angle for each time-frequency point. By plotting an energy-weighted histogram of these angle estimates, a mixture spatial histogram as the one shown in Figure5can be obtained. A peak in this histogram then provides an estimate of the panning angle φ j of a given source. All time-frequency points with an angle close to that of the jth peak are assigned to source j. Then, recovery of an estimate of source j can be done by means of binary masking. DUET, ADRess and PROJET all estimate histograms of energy vs angle. The main difference between the techniques lies in how these histograms are generated and used, and in the type of masking used. Both DUET and ADRess require peak picking from a mixture spatial histogram and use binary masking.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Example of different models used in MSS: (a) Proximity kernels used for harmonic-percussive separation within a Kernel Additive Modeling (KAM) approach, (b) Spectral templates W and time activations H within a Non-Negative Matrix Factorization approach.</figDesc><graphic coords="13,161.04,84.46,90.21,148.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head></head><label></label><figDesc>Section III). Regardless of the inputs and targets used, DNN methods work by training the parameters of non-linear functions to minimize the reconstruction error of the chosen outputs (spectrograms or masks) based on the inputs (audio mixes).The models obtained from a neural network depend on two core aspects. Firstly, the type and quantity of the data used for training is of primary importance. To a large extent, representative training data overcomes the need for explicitly modeling the underlying spectral characteristics</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: DNN architecture for MSS: Mixture magnitude spectrograms are set as inputs, and source magnitude spectrogram of the desired source S j are set as the targets.</figDesc><graphic coords="15,103.69,584.62,104.54,58.45" type="bitmap" /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>from previous approaches with data-driven DNN approaches will allow future researchers to overcome current limitations and challenges in musical source separation. VII. <rs type="person">ACKNOWLEDGMENTS Mark D. Plumbley</rs> is partly supported by grants <rs type="grantNumber">EP/L027119/2</rs> and <rs type="grantNumber">EP/N014111/1</rs> from the <rs type="funder">UK Engineering and Physical Sciences Research Council</rs>, and <rs type="funder">European Commission</rs> <rs type="programName">H2020 "AudioCommons" research</rs> and innovation grant <rs type="grantNumber">688382</rs>. A. Liutkus and <rs type="person">F. Stöter</rs> are partly supported by the research programme "<rs type="projectName">KAMoulox</rs>" (<rs type="grantNumber">ANR-15-CE38-0003-01</rs>) funded by <rs type="funder">ANR</rs>, the <rs type="funder">French State agency</rs> for research.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Ubj49fw">
+					<idno type="grant-number">EP/L027119/2</idno>
+				</org>
+				<org type="funding" xml:id="_Pqwub9D">
+					<idno type="grant-number">EP/N014111/1</idno>
+				</org>
+				<org type="funded-project" xml:id="_6P7xqf9">
+					<idno type="grant-number">688382</idno>
+					<orgName type="project" subtype="full">KAMoulox</orgName>
+					<orgName type="program" subtype="full">H2020 &quot;AudioCommons&quot; research</orgName>
+				</org>
+				<org type="funding" xml:id="_7G4fJ4p">
+					<idno type="grant-number">ANR-15-CE38-0003-01</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. FUTURE RESEARCH DIRECTIONS</head><p>Musical Source Separation is a challenging research area with numerous real-world applications. Due to both the nature of the musical sources and the very particular processes used to create music recordings, MSS has many unique features and problems which make it distinct from other types of source separation problems. This is further complicated by the need to achieve separations which sound good in a perceptual sense.</p><p>While the quality of MSS has greatly improved in the last decade, several critical challenges remain. Firstly, audible artifacts are still produced by most algorithms. Possible research directions to reduce artifacts include the use of phase retrieval techniques to estimate the phase of the target source, the use of feature representations that better match human perception, allowing models to concentrate on the parts of the sounds that are most relevant for human listeners, and the exploration of MSS systems that model the signal directly in time domain as waveforms.</p><p>Many remaining issues in MSS come from the fact that systems are often not flexible enough to deal with the richness of musical data. For example, it is typically assumed that the actual number of musical sources in a given recording is known. However, this assumption can lead to problems when the number of sources changes over the course of the training procedure. Another issue comes with the separation of sources from the same or similar instrument families, such as the separation of multiple singing voices or violin ensembles.</p><p>As previously mentioned, a unified, robust and perceptually valid MSS quality evaluation procedure does not yet exist. Even while new alternatives for evaluation have been explored in recent years <ref type="bibr" target="#b29">[30]</ref>, listening tests remain the only reliable quality evaluation method to date. The design of new MSS quality evaluation procedures that are applicable for a wide range of algorithms and musical content, will require large research efforts including large-scale listening experiments, common datasets, and the availability of a wide range of MSS algorithms for use in development.</p><p>Additionally, a better understanding of how DNN-based techniques can be exploited for music separation is still needed. In particular, we need better training schemes to avoid over-fitting, and architectures suitable for music separation. The inclusion of perceptually-based optimization schemes and availability of training data are also current challenges in the field.</p><p>Recent developments in the area of DNNs have introduced a paradigm shift in MSS research, with an increasing focus on data-driven models. Nonetheless, previous techniques have achieved considerable success in tackling MSS problems. We believe that combining the insights gained</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m">Independent Component Analysis</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Hyvärinen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Karhunen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Oja</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Wiley and Sons</publisher>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Auditory Scene Analysis: The Perceptual Organization of Sound</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Bregman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1990">1990</date>
+			<publisher>MIT Press/Bradford Books</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Under-determined reverberant audio source separation using a full-rank spatial covariance model</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">Q K</forename><surname>Duong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gribonval</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1830" to="1840" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">REpeating Pattern Extraction Technique (REPET): A simple method for music / voice separation</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Rafii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pardo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="73" to="84" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">The DUET blind source separation algorithm</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rickard</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>Springer</publisher>
+			<biblScope unit="page" from="217" to="241" />
+			<pubPlace>Netherlands; Dordrecht</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Real-time sound source separation using azimuth discrimination and resynthesis</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Barry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lawlor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Coyle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">117th Audio Engineering Society (AES) Convention</title>
+		<meeting><address><addrLine>San Francisco, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Projection-based demixing of spatial audio</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fitzgerald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liutkus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Badeau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1560" to="1572" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Multichannel nonnegative matrix factorization in convolutive mixtures for audio source separation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ozerov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="550" to="563" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Kernel additive models for source separation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liutkus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fitzgerald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Rafii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Daudet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Signal Processing</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">16</biblScope>
+			<biblScope unit="page" from="4298" to="4310" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Harmonic/percusssive separation using median filtering</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fitzgerald</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Conference on Digital Audio Effects (DAFx)</title>
+		<meeting>the 13th International Conference on Digital Audio Effects (DAFx)<address><addrLine>Graz, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Algorithms for non-negative matrix factorization</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Seung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<publisher>The MIT Press</publisher>
+			<date type="published" when="2001-04">Apr. 2001</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="556" to="562" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Monaural sound source separation by nonnegative matrix factorization with temporal continuity and sparseness criteria</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Virtanen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1066" to="1074" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Score-informed source separation for musical audio recordings: An overview</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ewert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mueller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Plumbley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Signal Processing Magazine</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="116" to="124" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Static and dynamic source separation using nonnegative factorizations: A unified view</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Smaragdis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fevotte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">J</forename><surname>Mysore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mohammadiha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hoffman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Signal Processing Magazine</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="66" to="75" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Source/filter model for unsupervised main melody extraction from polyphonic audio signals</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Durrieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fevotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="564" to="575" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Singing-voice separation from monaural recordings using robust principal component analysis</title>
+		<author>
+			<persName><forename type="first">P.-S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Smaragdis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hasegawa-Johnson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting><address><addrLine>Kyoto, Japan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2012-03">Mar. 2012</date>
+			<biblScope unit="page" from="57" to="60" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Vocal activity informed singing voice separation with the ikala dataset</title>
+		<author>
+			<persName><forename type="first">T.-S</forename><surname>Chan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Yeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z.-C</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H.-W</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-H</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting><address><addrLine>Brisbane, Australia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="718" to="722" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Musical Sound Modeling with Sinusoids plus Noise</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Serra</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+			<publisher>Swets &amp; Zeitlinger</publisher>
+			<biblScope unit="page" from="91" to="122" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Separation of harmonic sound sources using sinusoidal modeling</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Virtanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Klapuri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech, and Signal Processing. Proceedings (ICASSP)</title>
+		<meeting><address><addrLine>Budapest, Hungary</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="I765" to="I768" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Phase-based harmonic/percussive separation</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plumbley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dittmar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">15th Annual Conference of the International Speech Communication Association</title>
+		<meeting><address><addrLine>Singapore</addrLine></address></meeting>
+		<imprint>
+			<publisher>Interspeech</publisher>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Joint optimization of masks and deep recurrent neural networks for monaural source separation</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hasegawa-Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Smaragdis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2136" to="2147" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Deep neural network based instrument extraction from music</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Uhlich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Mitsufuji</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting><address><addrLine>Brisbane, Australia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2135" to="2139" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Multichannel audio source separation with deep neural networks</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Nugraha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liutkus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1652" to="1664" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Deep clustering: Discriminative embeddings for segmentation and separation</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Hershey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Le</forename><surname>Roux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Watanabe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting><address><addrLine>Shanghai, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="31" to="35" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename></persName>
+		</author>
+		<idno>10/</idno>
+		<title level="m">Recommendation BS.1534-3: Method for the subjective assessment of indermediate quality levels of coding systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+		<respStmt>
+			<orgName>ITU-</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Performance measurement in blind audio source separation</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gribonval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Fevotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio Speech Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1462" to="1469" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Subjective and Objective Quality Assessment of Audio Source Separation</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Emiya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Harlander</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hohmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Audio, Speech, and Language Processing</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="2046" to="2057" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Evaluation of quality of sound source separation algorithms: Human perception vs quantitative metrics</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fitzgerald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Brandenburg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Signal Processing Conference (EUSIPCO)</title>
+		<meeting><address><addrLine>Budapest, Hungary</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1758" to="1762" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">The 2016 signal separation evaluation campaign</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liutkus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F.-R</forename><surname>Stöter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Rafii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kitamura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Rivet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Ono</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fontecave</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Latent Variable Analysis and Signal Separation</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="323" to="332" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">BSS Eval or PEASS? Predicting the perception of singing-voice separation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ward</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wierstorf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">D</forename><surname>Mason</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Grais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Plumbley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting><address><addrLine>Calgary, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Her research interests include sound source separation, analysis and modeling of musical instrument sounds and</title>
+		<author>
+			<persName><forename type="first">Estefanía</forename><surname>Cano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">the M.Sc. degree in acoustics, computer science and signal processing applied to music (ATIAM) from the Université Pierre et Marie Curie (Paris VI)</title>
+		<editor>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename></persName>
+		</editor>
+		<meeting><address><addrLine>France; Paris</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2005">2009. 2018. 2005. 2005</date>
+		</imprint>
+		<respStmt>
+			<orgName>Music-Saxophone Performance ; Music Engineering (M.Sc), and Media Technology (PhD ; Fraunhofer Institute for Digital Media Technology IDMT as a research scientist ; Group at the Agency for Science, Technology and Research A*STAR in Singapore ; ), Music Technology (M.A) and Digital Signal Processing (PhD)</orgName>
+		</respStmt>
+	</monogr>
+	<note>Electronic Engineering. He worked as a research engineer on source separation at Audionamix from 2007 to 2010 and obtained his PhD in electrical engineering at Telecom ParisTech in 2012. He is currently researcher at Inria Nancy Grand Est in the speech processing team. His research interests include audio source separation and machine learning</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">was awarded the PhD degree in neural networks from Cambridge University Engineering Department in</title>
+		<author>
+			<persName><forename type="first">Mark</forename><forename type="middle">D</forename><surname>Prof</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Plumbley</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+	<note>then becoming a Lecturer at King&apos;s College London. He moved to Queen Mary University of London in 2002, later becoming Professor of Machine Learning and Signal Processing, and Director of the Centre for Digital Music. He then joined the University of Surrey in January 2015 to become Professor of Signal Processing in the Centre for Vision, Speech and Signal Processing (CVSSP). His research concerns the analysis and processing of audio and music, using a wide range of signal processing techniques, including independent component analysis (ICA) and sparse representations</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Fabian-Robert</forename><surname>Stöter</surname></persName>
+		</author>
+		<imprint>
+			<publisher>Inria/LIRMM Montpellier, France</publisher>
+			<pubPlace>Erlangen, Germany</pubPlace>
+		</imprint>
+	</monogr>
+	<note>received the diploma degree in electrical engineering in 2012 from the Leibniz Universität Hannover and worked towards his Ph.D. degree in audio signal processing in the research group of B. Edler at the International Audio Laboratories. He is currently a researcher at. His research interests include supervised and unsupervised methods for audio source separation and signal analysis of highly overlapped sources</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

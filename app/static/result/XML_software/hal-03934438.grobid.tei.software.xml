@@ -1,0 +1,314 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Persistence-Based Discretization for Learning Discrete Event Systems from Time Series</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Lénaïg</forename><surname>Cornanguer</surname></persName>
+							<email>lenaig.cornanguer@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">IRISA</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Univ Rennes</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Christine</forename><surname>Largouët</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="department">Institut Agro</orgName>
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Laurence</forename><surname>Rozé</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">INSA Rennes</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">Inria</orgName>
+								<orgName type="institution" key="instit5">IRISA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexandre</forename><surname>Termier</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Persistence-Based Discretization for Learning Discrete Event Systems from Time Series</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">C262AD7C94BB6F2413C20307E9A4D782</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>To get a good understanding of a dynamical system, it is convenient to have an interpretable and versatile model of it. Timed discrete event systems are a kind of model that respond to these requirements. However, such models can be inferred from timestamped event sequences but not directly from numerical data. To solve this problem, a discretization step must be done to identify events or symbols in the time series. <software>Persist</software> is a discretization method that intends to create persisting symbols by using a score called persistence score. This allows to mitigate the risk of undesirable symbol changes that would lead to a too complex model. After the study of the persistence score, we point out that it tends to favor excessive cases making it miss interesting persisting symbols. To correct this behavior, we replace the metric used in the persistence score, the Kullback-Leibler divergence, with the Wasserstein distance. Experiments show that the improved persistence score enhances <software ContextAttributes="created">Persist</software>'s ability to capture the information of the original time series and that it makes it better suited for discrete event systems learning.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head>Introduction</head><p>With the ever-growing type and variety of available sensors, more and more systems can be monitored in real-time. This monitoring results in the collection of multiple time series, i.e. sequences of numerical values captured by the sensors. For example, in a smart city, streets can be monitored through pedestrian counting as well as pluviometers, to study the effect of weather conditions and the time of the day on the number of people walking.</p><p>The classical use of the sensor time series is to feed them to machine learning models for tasks such as classification or anomaly detection. However, one may also be interested to understand better the dynamical system being monitored by the sensors. For such goal, an interpretable model is required. A good solution is to produce a model in the form of a timed Discrete Event System from the sensor data. A first difficulty is that there are globally very few approaches learning timed Discrete Event Systems from data. The learning of one of these Discrete Event Systems formalisms, Timed Automata (TA), has been well studied with algorithms like RTI+ and TAG <ref type="bibr" target="#b8">(Verwer, de Weerdt, and Witteveen 2010;</ref><ref type="bibr" target="#b2">Cornanguer et al. 2022)</ref>. However these algorithms take as input sequences of timestamped events, and not time series.</p><p>In order to use these approaches with sensor data, a solution is to discretize the time series before using the automata learning algorithm. There is a large literature on time series discretization. However, the proposed discretization methods are not designed for automata learning: they may exhibit too frequent consecutive changes of symbols, which would lead to needlessly large and complex automata. With the idea of minimizing the number of symbol changes, Mörchen at Ultsch <ref type="bibr" target="#b6">(Mörchen and Ultsch 2005)</ref> proposed the <software ContextAttributes="created">Persist</software> approach. <software ContextAttributes="created">Persist</software> is based on the assumption that the time series reflect the dynamics of an underlying system composed of recurring persisting states and aims at recovering these states in the form of a sequence of symbols issued from the time series discretization.</p><p>While the idea of <software>Persist</software> is great, using it in practice for automata learning reveals that <software ContextAttributes="created">Persist</software> may often "go too far" by focusing on extreme values leading to a discretized sequence with hardly any symbol changes. In this paper, through a thorough analysis of the decision criterion of <software ContextAttributes="created">Persist</software>, the persistence score, we identify the source of this behavior leading to a more balanced distribution of the symbols. Our experiments on numerous real and synthetic datasets demonstrate that the improved persistence score allows to better capture the information of the original time series, and can help in producing interpretable timed automata.</p></div>
+<div><head>Motivation and State-of-the-Art</head><p>We consider the problem of converting a numerical time series, a sequence of values measured at regular time intervals <ref type="bibr" target="#b5">(Lin et al. 2003)</ref>, into a symbolic representation, a sequence of symbols from a finite alphabet. Given a time series, x = {x i |x i ∈ R, i = 1, ..., n}, the purpose is to provide its discretized version y = {y i |y i ∈ Σ, i = 1, ..., n} where each symbol y i is an element of a finite alphabet Σ. Symbolic representation is an efficient way to deal with the inherent dimensionality of time series so that they can be used in a low-dimensional space with data-mining and machine-learning algorithms. To address this problem, many approaches have been proposed. The simplest discretization methods are equal-width (EW) and equal-frequency (EF) interval binning which subdivide continuous ranges into intervals through user specification of width or frequency. <software ContextAttributes="created">SAX</software> (Symbolic Aggregate approXimation) <ref type="bibr" target="#b5">(Lin et al. 2003</ref>) is another simple and widely implemented method based on the piecewise aggregate approximation (PAA) technique. The time series is divided into equal-size time intervals for which only the mean value is kept. Given the assumption that time series follow a normal distribution, the Gaussian curve is then divided through breakpoints producing equiprobable symbols. <software ContextAttributes="created">SAX</software> requires two parameters, the number of time intervals and the number of symbols. <software ContextAttributes="created">SAX</software> suffers from limitations such as the normal distribution assumption and user parameters which impact the quality of the results. Several variants have been proposed to attempt to overcome these limitations. Some other approaches like ABBA and fABBA <ref type="bibr" target="#b1">(Chen and Güttel 2022)</ref> have been developed to capture the shape and the trend of the time series. These methods are motivated by different purposes and appear to be best suited for applications dedicated to the analysis of time series such as trend prediction or anomaly detection. Yet, no discretization method has been specifically proposed with the end goal of analyzing or learning behaviors of dynamical systems. However, Mörchen and Ultsch <ref type="bibr" target="#b6">(Mörchen and Ultsch 2005)</ref> have proposed a discretization algorithm, <software ContextAttributes="created">Persist</software>, based on an interesting property over time series, called persistence. <software ContextAttributes="created">Persist</software> attempts to produce discretized time series with persisting symbols, which would be an advantage for the learning of a timed discrete event system. Our motivation in this paper is to improve <software ContextAttributes="created">Persist</software> to obtain a more accurate symbolic representation suited for the description of dynamical systems.</p></div>
+<div><head>Persist</head><p><software ContextAttributes="created">Persist</software> <ref type="bibr" target="#b6">(Mörchen and Ultsch 2005)</ref> is a method for unsupervised discretization of univariate time series proposed by Mörchen and Ultsch. It was employed as preprocessing step to find patterns in time series in a language called Time Series Knowledge Representation (TSKR) <ref type="bibr" target="#b7">(Mörchen and Ultsch 2007)</ref>. <software ContextAttributes="created">Persist</software> is based on the assumption that the time series are the reflection of an underlying process that consists of recurring persisting states and it aims to restore these states in the form of symbols in a discretized version of the time series. Mörchen and Ultsch state that "if there is no temporal structure in the time series, the symbols [in its discretized version] can be interpreted as independent observations of a random variable according to the marginal distribution of symbols". Thus, the idea is to look for states showing a persisting behavior by creating symbols whose probability of repetition will be much higher than their probability of appearance.</p><p>To create these symbols, <software>Persist</software> produces a set of breakpoints creating intervals in the value space. Each interval is associated with a symbol s that will replace the numerical values falling within it in the discretized time series.</p><p>The breakpoints are iteratively chosen in a set of candidate breakpoints (candidates in Algorithm 1) according to a score called persistence score (described in the next section). The set of candidates is initialized by an equal frequency binning (with a number of bins fixed to 100 by default). At each iteration, the function best bp individually tests every candidate breakpoint added to the already selected breakpoints (bps). The candidate increasing persistence score the most is returned with its score. <software>Persist</software> stops </p><formula xml:id="formula_0">= (p, 1 -p) and Q = (q, 1 -q).</formula><p>when no more candidate breakpoint increases the persistence score, finding thereby automatically an adequate number of symbols. </p></div>
+<div><head>Persistence score</head><p>The persistence score measures the persisting behavior of the symbols created by the discretization. It is based on the Kullback-Leibler (KL) divergence. The KL divergence <ref type="bibr" target="#b4">(Kullback and Leibler 1951)</ref> measures how a probability distribution P is different from another probability distribution Q. For discrete probability distributions defined on X , the KL divergence is defined as follows:</p><formula xml:id="formula_1">D KL (P ||Q) = x∈X P (x) log( P (x) Q(x) )</formula><p>This divergence is not symmetric (D KL (P ||Q) = D KL (Q||P )). This is why Mörchen and Ultsch use a symmetric version obtained as follows: Table 1: Two candidate breakpoints, each creating two symbols (s1 and s2). The KL divergence will give a better score to breakpoint 1 while the Wasserstein distance will give a better score to breakpoint 2.</p><formula xml:id="formula_2">SKL(P, Q) = 1 2 (D KL (P ||Q) + D KL (Q||P ))</formula><p>In <software>Persist</software>, the probability distributions P and Q are based on the probability of appearance of the symbols (P (s)) and their probability of repetition (P r (s)): P = (P (s), 1-P (s)) and Q = (P r (s), 1 -P r (s)). The persistence score is computed as follows:</p><p>Persistence(s) = sgn(P r (s) -P (s))SKL(P, Q)</p><p>The first element of the equation (sgn(P r (s)-P (s))) allows to favor only the cases when the probability of repetition is superior to the probability of appearance, otherwise, it contributes negatively to the persistence score.</p><p>The symmetric KL divergence between two probability distributions with two possible outcomes as in our case is represented in Figure <ref type="figure" target="#fig_0">1</ref>. One of the properties of the KL divergence is that it has no upper bound, a property inherited by the persistence score. The shape of the surface produced by this divergence is also particular. The symmetric KL divergence is null when the probability distributions are equal and increases non-linearly as the difference between the distribution grows. To achieve a high value of symmetric KL, p or q (i. e. P r (s) or P (s)) have to be close to 0 or 1. The direct consequence of these observations is that the persistence score based on the KL divergence will focus on extreme cases. Table <ref type="table">1</ref> and Figure <ref type="figure" target="#fig_3">3</ref> illustrate this phenomenon. In this example, at the beginning of the algorithm, the first breakpoint will be selected to create two symbols. Two candidate breakpoints are examined. The first breakpoint (Table <ref type="table">1a</ref>) will create a first symbol that covers almost the entire discretized time series and thus has a probability of appearance and repetition close to 1, and a second symbol that almost never appears and doesn't show a particularly recurring behavior. The second breakpoint (Table 1b) will create two symbols about equally probable and with very high probabilities of repetition (greater than 0.90).</p><p><software ContextAttributes="created">Persist</software> based on the KL divergence will choose breakpoint 1. The discretized version of the time series in Figure <ref type="figure" target="#fig_3">3</ref> will consist of the succession of about 90 "s1", then a few "s2" and again "s1" until the end, while it would have consisted of an alternation of persistent "s1" and "s2" if breakpoint 2 had been chosen.</p></div>
+<div><head>Improving Persist</head><p>The Wasserstein distance <ref type="bibr" target="#b3">(Kantorovich 1939)</ref>, also called Kantorovitch distance, Kantorovitch -Rubinstein distance, or earth mover's distance, is another measure of difference between probability distributions. It corresponds to the minimal cost to transform a distribution P in another distribution Q in the same space. The Wasserstein p-distance between two probability distributions P and Q is defined by the following equation where Γ(P, Q) are all the possible joint distributions for (X, Y ) with marginal probability distributions P and Q:</p><formula xml:id="formula_3">W p (P, Q) = inf γ∈Γ(P,Q) (E (x,y)∼γ d(x, y) p ) 1/p</formula><p>In the case of discrete probability distributions with only two possible outcomes, the Wasserstein distance becomes a simple subtraction and is defined as follows:</p><formula xml:id="formula_4">W (P, Q) = |P (x 1 ) -Q(y 1 )|</formula><p>This distance is symmetric, bounded, easier to compute than the KL divergence, and it increases linearly as the difference between the distributions grows (Figure <ref type="figure" target="#fig_2">2</ref>). Therefore, we use the Wasserstein distance to measure how the probability of appearance of the symbols and their probability of repetition are different in the score of persistence in place of the KL divergence: Persistence W (s) = sgn(P r (s) -P (s))W(P, Q)</p><p>In front of the choice presented in table 1, the persistence score computed with the KL divergence will be higher for  breakpoint 1 while the persistence score computed with the Wasserstein distance will be higher for breakpoint 2. The Wasserstein distance leads here to a discretized time series with more persisting symbols, better respecting the initial intuition of the persistence score.</p><p>Finally, the initialization of the candidate breakpoints based on an equal frequency (EF) binning allows to have more possible breakpoints in high-density regions. However, some time series such as electrocardiograms have a structure that could be missed with this kind of binning. In such cases, an equal-width (EW) binning can be preferable. It is then important to let the user choose in function of the structure of its data.</p><p>We re-implemented <software ContextAttributes="created">Persist</software> (originally coded for MAT-LAB) in Python with the possibility to choose between the KL divergence and the Wasserstein distance, and between an equal-frequency or equal-width binning. It is available online<ref type="foot" target="#foot_0">1</ref> .</p></div>
+<div><head>Experiments</head><p>The experiment is in two parts. First, we want to evaluate the raw discretization quality provided by <software>Persist</software>. Then, we look at its qualities to discretize time series for dynamical systems modeling in the form of discrete event models.</p></div>
+<div><head>Experimental setups</head><p>We first want to measure the information retained in the data after the discretization. To allow a quantitative evaluation, we choose to evaluate the discretization through a classification task. If a good part of information is retained in the discretized time series, the classification performance should be high. We performed this evaluation on 111 datasets of the Time Series Classification Repository<ref type="foot" target="#foot_1">2</ref> (univariate datasets only). For each dataset, <software ContextAttributes="created">Persist</software> has produced a set of breakpoints from the train subset, used for the discretization. We trained a Random Forest classifier with 100 trees with the discretized train subset. The classification was then performed on the discretized test subset. We measured the classification performance using the accuracy, i.e. the rate of good classification. We tested <software ContextAttributes="created">Persist</software> using either the KL divergence or the Wasserstein distance, and either an equal frequency binning or an equal width binning for the candidate breakpoints initialization. We also performed the experiment using <software ContextAttributes="created">SAX</software> to have a performance reference. Unlike <software ContextAttributes="created">Persist</software>, a number of symbol must be given for <software ContextAttributes="created">SAX</software>. We used a number of symbols ranging from 2 to 10 and a time interval width of 2 and we report all these results.</p><p>We are interested in <software ContextAttributes="created">Persist</software> to obtain a discrete event model of the dynamical system at the origin of the time series. Hence, to evaluate its improvement, we need to measure how good the models are. As discrete event model, we choose timed automata <ref type="bibr" target="#b0">(Alur and Dill 1994)</ref> which is a common and well-studied formalism for dynamical systems. Timed automata (TA) are used to model systems in which time influences the behavior. A timed automaton defines states connected by transitions and the transitions from one state to another are conditioned by events and timing constraints. The model can then be used for many purposes such as to check properties of the system (e.g. safety properties), or to perform anomaly detection in new data. The modeling of a system by a timed automaton can be realized thanks to expert knowledge or automatically from execution data of the system. If the execution data takes the form of logs, a learning process can be applied to produce a timed automaton where the transitions labels correspond to the events present in the logs. However, if the execution takes the form of time series (e.g. sensor data), a preprocessing step is needed to identify events in the numerical data, the discretization. Figure <ref type="figure" target="#fig_5">4</ref> illustrates the experimental setup. As in the first experiment, <software ContextAttributes="created">Persist</software> and <software ContextAttributes="created">SAX</software> were used to obtain the discretized time series. However, instead of using the discretized data to train a classifier, it was here used to learn one discrete event model per class. For each class, the corresponding discretized train time series were given to a timed automata learner called TAG <ref type="bibr" target="#b2">(Cornanguer et al. 2022)</ref>, which produced a timed automaton accepting all the input sequences (i.e. there exists a path in the automaton for the sequence). Then the discretized test time series were injected in the timed automata. Each automaton received the discretized test time series of its class and as many discretized test time series of other classes. An automaton should accept the data of its own class and reject the others. The accuracy corresponds to the good acceptance rate for the automaton. The Time Series Classification repository gathers time series of various types (motion, sensor, traffic, image, spectrographs...). The image type, as spectrographs, differs from the others as it consists of shapes converted into pseudo time series. As it doesn't belong to the problem of modeling dynamical systems, these datasets were excluded from the experiment. </p></div>
+<div><head>Results</head><p>We first present the results for the classification task using Random Forest. Figure <ref type="figure">5</ref> displays the accuracy achieved according to the discretization method. The classification performance is increased by the replacement of the Kullback-Leibler divergence by the Wasserstein distance. The initialization of the candidate breakpoints by an equal frequency binning leads generally to a better performance, however, it depends on the dataset which confirms our hypothesis. Thanks to the Wasserstein distance, using <software ContextAttributes="created">Persist</software> globally leads to better results than using <software ContextAttributes="created">SAX</software> in this setup. This indicates that <software ContextAttributes="created">Persist</software> using the Wasserstein distance allows a good information retention in the discretized data. We now move on to the results of the second experiment. Using automata to perform a classification task is unusual and not optimal. Indeed, each automaton is meant to rep-   For this reason, we cannot expect as good performances as while using a real classifier. Nevertheless, it is interesting to compare the classification performance according to the discretization method. If the discretization method is pertinent for discrete event modeling, a good part of the information contained in the time series would be retained in the models and therefore leading to good classification performance. Figure <ref type="figure">6</ref> displays the classification accuracy using timed automata. When using <software ContextAttributes="created">SAX</software>, the classification performance suffers the most from the use of timed automata. <software ContextAttributes="created">Persist</software>, in particular while using the Wasserstein distance and an equal-width binning, preserves a better classification accuracy. This confirms the interest in using an improved version of <software ContextAttributes="created">Persist</software> to preprocess time series in order to obtain a discrete event model of a dynamical system.  method, we show the discretization and the discrete event models obtained for one dataset (Chinatown dataset). It consists of the pedestrian traffic along the day in a street of Melbourne. The goal is to classify the days between weekend and weekday. Figure <ref type="figure" target="#fig_7">7</ref> shows instances of time series from this dataset. The best accuracy using timed automata for the classification was obtained using the breakpoints from <software ContextAttributes="created">Persist</software> with the Wasserstein distance and an equal-width binning (accuracy results in Table <ref type="table">2</ref>). These breakpoints are shown in Figure <ref type="figure" target="#fig_7">7</ref> and the intervals they create can be associated with a symbol (very low to very high). Figure <ref type="figure" target="#fig_8">8</ref> displays the timed discrete event models obtained with the timed automata learner for each class. A circle represents a state and the transitions from one state to another are labeled with a symbol, an interval of accepted delay since the last event, and a probability. One can note that the activity in the street in generally higher during the night (until 3 or 4 a.m.) on weekends than on weekdays. The street also shows a more pronounced affluence during the weekend than in the weekdays afternoons. On weekdays, the end of the day is either calm, or more animated than during weekend days (with a lower probability, so probably one specific day of the week).</p></div>
+<div><head>Conclusion</head><p>This work studies <software>Persist</software>, a state-of-the-art discretization algorithm originally conceived as pre-processing step for pattern mining in time series. <software ContextAttributes="created">Persist</software> is based on the notion of persistence which is interesting for the modeling of dynamical systems in the form of discrete event models. We replaced the metric used to compute the score of persistence, originally the Kullback-Leibler divergence, with the Wasserstein distance, to avoid an undesirable over-emphasis on the extreme cases. We also suggested a different initialization strategy for the algorithm. Our experiments based on a classification task have shown that the metric substitution enables a better information retention in the discretized time series, and that <software ContextAttributes="created">Persist</software> is better suited than the state-of-theart symbolic data representation <software ContextAttributes="created">SAX</software> when the purpose of the discretization is to learn a model formalized as discrete event systems. Classification is not the most common use of discrete event systems and future work will thus focus on applications for which discrete event systems are usually used such as anomaly detection or model-checking. Finding a criterion to determine automatically the best binning for the data would also be convenient. Another perspective could be to associate the persistence score with other quality scores such as the reconstruction error.</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Symmetric KL divergence between two probability distributions with two possible outcomes P = (p, 1 -p) and Q = (q, 1 -q).</figDesc></figure>
+<figure xml:id="fig_1"><head /><label /><figDesc>Algorithm 1: Persist Require: univariate time series ts Return: a set of breakpoints bps bps = ∅ candidates = equal frequency binning(ts, 100) score = 0 new score = 0 (new bp, new score) = best bp(ts, bps, candidates) while new score &lt; score do score = new score bps = bps ∪ new bp candidates = candidates -new bp (new bp, new score) = best bp(ts, bps, candidates) end while return bps</figDesc></figure>
+<figure xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure2: Wasserstein distance between two probability distributions with two possible outcomes P = (p, 1 -p) and Q = (q, 1 -q). s P(s) Pr(s) s1 0. 97 0.99 s2 0.03 0.62 (a) Breakpoint 1</figDesc></figure>
+<figure xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Two candidate breakpoints, each creating two symbols (s1 and s2).</figDesc></figure>
+<figure xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Time series classification using timed automata learned after a discretization step.</figDesc></figure>
+<figure xml:id="fig_7"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Instances of time series from the Chinatown dataset and breakpoints selected by Persist (on the whole train set) with the Wasserstein distance and an equal-width binning.</figDesc></figure>
+<figure xml:id="fig_8"><head>Figure 8 :</head><label>8</label><figDesc>Figure 8: Discrete event model learned for each class of the Chinatown dataset.</figDesc></figure>
+<figure type="table" xml:id="tab_2"><head /><label /><figDesc>To provide an insight into what can be obtained with this</figDesc><table><row><cell>Weekend</cell><cell>Weekday</cell><cell /></row><row><cell cols="2">low [0, 0]</cell><cell>low [0, 0] p=0.4</cell><cell>very low</cell></row><row><cell /><cell /><cell /><cell>[0, 0]</cell></row><row><cell cols="2">very low [3, 4]</cell><cell>very low [1, 2]</cell><cell>p=0.6</cell></row><row><cell cols="2">low</cell><cell>low</cell></row><row><cell cols="2">[4, 6]</cell><cell>[6, 8]</cell></row><row><cell>high [1, 9]</cell><cell>very high p=0.58 [1, 7]</cell><cell>high [3, 5]</cell></row><row><cell cols="2">low</cell><cell>low</cell><cell>very high</cell></row><row><cell cols="2">[8, 11]</cell><cell>[9, 11]</cell><cell>[6, 7]</cell></row><row><cell cols="2">p=0.42</cell><cell>p=0.8</cell><cell>p=0.2</cell></row><row><cell /><cell /><cell /><cell>high</cell></row><row><cell /><cell /><cell /><cell>[2, 3]</cell></row></table></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>Link to the repository of <software>Persist</software> re-implementation in Python: https://gitlab.inria.fr/lcornang/persist discretization</p></note>
+			<note place="foot" n="2" xml:id="foot_1"><p>Anthony Bagnall, Jason Lines, William Vickers and Eamonn Keogh, The UEA &amp; UCR Time Series Classification Repository, www.timeseriesclassification.com</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">A theory of timed automata</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">L</forename><surname>Dill</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">126</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="183" to="235" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">An Efficient Aggregation Method for the Symbolic Representation of Temporal Data</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Güttel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Knowl. Discov. Data</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">TAG: Learning Timed Automata from Logs</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cornanguer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Largouët</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Rozé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Termier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the AAAI Conference on Artificial Intelligence</title>
+		<meeting>the AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="3949" to="3958" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Mathematical Methods of Organizing and Planning Production</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V</forename><surname>Kantorovich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Management Science</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="366" to="422" />
+			<date type="published" when="1939">1939</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">On Information and Sufficiency</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kullback</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">A</forename><surname>Leibler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Mathematical Statistics</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="79" to="86" />
+			<date type="published" when="1951">1951</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">A symbolic representation of time series, with implications for streaming algorithms</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lonardi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chiu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 8th SIGMOD DMKD workshop</title>
+		<meeting>the 8th SIGMOD DMKD workshop</meeting>
+		<imprint>
+			<publisher>ACM Press</publisher>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Optimizing time series discretization for knowledge discovery</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mörchen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ultsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eleventh ACM SIGKDD Conference</title>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Grossman</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Bayardo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">P</forename><surname>Bennett</surname></persName>
+		</editor>
+		<meeting>the Eleventh ACM SIGKDD Conference<address><addrLine>USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="660" to="665" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Efficient mining of understandable patterns from multivariate interval time series</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mörchen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ultsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="181" to="215" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A likelihood-ratio test for identifying probabilistic deterministic real-time automata from positive data</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Verwer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>De Weerdt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Witteveen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Colloquium on Grammatical Inference</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="203" to="216" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

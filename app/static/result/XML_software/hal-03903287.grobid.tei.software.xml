@@ -1,0 +1,351 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Scalable Analytics on Multi-Streams Dynamic Graphs</title>
+				<funder ref="#_FbZwSU7">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Muhammad</forename><surname>Ghufran Khan</surname></persName>
+							<email>muhammad.khan@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Institut Polytechnique de Paris</orgName>
+								<address>
+									<settlement>Palaiseau</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Scalable Analytics on Multi-Streams Dynamic Graphs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">6DBFE6DA8FE5BA650B8BE94B215A3AD0</idno>
+					<idno type="DOI">10.1145/nnnnnnn.nnnnnnn</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>, multistream graph processing</keywords>
+			</textClass>
+			<abstract>
+<div><p>Several real-time applications rely on dynamic graphs to model and store data arriving from multiple streams. In addition to the high ingestion rate, the storage and query execution challenges are amplified in contexts where consistency should be considered when storing and querying the data. This Ph.D. thesis addresses the challenges associated with multi-stream dynamic graph analytics. We propose a database design that can provide scalable storage and indexing, to support consistent read-only analytical queries (present and historical), in the presence of real-time dynamic graph updates that arrive continuously from multiple streams.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">INTRODUCTION</head><p>Dynamic graphs are omnipresent in the context of real-time applications that generate massive amounts of events. These events can be seen as high-velocity data stream, whose timely analysis is critical for applications such as monitoring of cyber attacks in system security applications <ref type="bibr" target="#b9">[10]</ref>, fraud detection in financial institutions <ref type="bibr" target="#b9">[10]</ref>, anomaly detection in computer networks <ref type="bibr" target="#b2">[3]</ref> and many more.</p><p>This PhD thesis considers the above-mentioned real-time use cases. We consider a database modeled as a labeled property graph (LPG), that is continuously updated. Updates may arrive from multiple streams, creating a need for appropriate transaction support, in order to avoid inconsistencies; on such graph, we must be able to answer analytical queries about the current graph, as well as historical queries. In this short paper, we present the challenges (Section 2), outline the approach we investigate (Section 3) and finally related work (Section 4) before concluding (Section 5).</p></div>
+<div><head n="2">CHALLENGES</head><p>In our problem setting, we focus on systems that can continuously ingest temporal labeled property graph (LPG) updates from multiple streams while at the same time supporting a diverse set graph analytic queries with clear consistency guarantees. We consider complex scenarios where graph updates are generated from multiple streams; updates from a given stream may arrive later due to any kind of transmission delay, leading to out-of-order <ref type="bibr" target="#b0">[1]</ref> updates, which may lead to consistency issues. Figure <ref type="figure" target="#fig_1">1</ref> exemplifies a sequence of updates labeled A to E, considering the update generation time (the time when the update is generated from the source machine) 𝑉 𝑇 , with update B arriving out of order (after D). After  Example scenario for out-of-order update the first three received updates have been ingested, that is, reflected on the database state, query Q arrives and requires two iterations on the updates ingested up to that time. In the first iteration, the query 𝑄 𝑖 computes on the updates (A, C, and D), and before starting the second iteration 𝑄 (𝑖+1) , the delayed update B arrives and may thus be reflected in the computed query results. This may lead to an inconsistency, since B was not reflected in the first part of Q's evaluation.</p><p>There are several challenges associated with multi-stream dynamic graph analytics listed below:</p><p>• C1: How to enable data ingestion from multiple streams and diverse set of consistent graph analytics in parallel? • C2: How to efficiently query the present and historical graph updates of the system? • C3: How to store both topological and properties updates of the graph? • C4: How to provide consistency guarantee in presence of out-of-order <ref type="bibr" target="#b0">[1]</ref> updates?</p><p>Several works <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b9">10]</ref> have been published in the past to address partially the challenges described above; we discuss them in detail in Section 4.</p></div>
+<div><head n="3">APPROACH</head><p>The objective of this PhD thesis is to devise a scalable system that can answer analytical queries (present, historical) over dynamic graphs, updated multiple streams, whose updates may arrive outof-order.</p><p>The strategy we take in my PhD project to address the challenges listed in Section 2 is as follows:</p><p>• We maintain a write data store, which is the recipient of all write operations. It supports a multi-version concurrency control (MVCC) <ref type="bibr" target="#b8">[9]</ref> protocol, in which temporal graph updates from multiple streams are considered write-only transactions, and analytical queries (present and historical) are executed as read-only transactions. This ensures consistent graph analytic even in the presence of out-of-order updates, addressing challenges C1 and C4. • We explore time-based indexing techniques <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b5">6]</ref>  read-only transactions, on top of the write store. The read store allows efficient processing of analytical point and interval queries (both present and historical), thus addressing challenge C2. Data brought by updates in the write-store is periodically moved to the read-store to make it available for queries. • To address challenge C3, we design the system in such a way that the storage of the topological graph updates is decoupled from the storage of graph properties updates. Keeping them separate allows us to optimize data access paths separately for these two largely orthogonal components of the property graph.</p><p>Currently, we are in a design phase, considering the data structures that can best fit our system requirements.</p></div>
+<div><head n="4">RELATED WORK</head><p>Existing systems that support multi-stream dynamic graph analytics are classified into two main categories: a) the systems that compute continuous results of pre-registered, fixed queries, such as path queries, over dynamic graphs; an example is <ref type="bibr" target="#b7">[8]</ref>; b) systems that enable the evaluation of ad-hoc analytic queries on top of dynamic graphs; these include Llama <ref type="bibr" target="#b6">[7]</ref>, Teseo <ref type="bibr" target="#b4">[5]</ref>, <software ContextAttributes="used">LiveGraph</software> <ref type="bibr" target="#b9">[10]</ref>, Tegra <ref type="bibr" target="#b1">[2]</ref>. <software ContextAttributes="used">GraphOne</software> <ref type="bibr" target="#b2">[3]</ref> appears as a hybrid between the two, as it provides a hybrid store that supports both real-time and batch analytic queries.</p><p>Our work is closely related to the group b), and Table <ref type="table" target="#tab_0">1</ref> summarizes the challenges associated with these systems. Llama <ref type="bibr" target="#b6">[7]</ref> is a graph analytics system using multi-version arrays that support snapshot isolation. Other systems that provide snapshot isolation are <software ContextAttributes="created">GraphOne</software> <ref type="bibr" target="#b2">[3]</ref> and Tegra <ref type="bibr" target="#b1">[2]</ref>. <software ContextAttributes="created">GraphOne</software> utilizes a multi-version degree array and Tegra uses persistent adaptive radix trees (PART) to maintain different snapshot versions. Mission critical applications, such as banking applications, need transactional guarantees while ingesting updates in dynamic graph; Teseo <ref type="bibr" target="#b4">[5]</ref> and <software ContextAttributes="created">LiveGraph</software> <ref type="bibr" target="#b9">[10]</ref> were designed to address such requirements. The fat tree (B+ tree together with a sparse array) data structure is used in Teseo to ingest structural updates to the graph; <software ContextAttributes="created">LiveGraph</software> <ref type="bibr" target="#b9">[10]</ref> uses a transaction edge log and vertex blocks to support updates to labeled properties graph. Both systems use multi-version concurrency control (MVCC) <ref type="bibr" target="#b8">[9]</ref> protocol to maintain data consistency.</p><p>All the systems mentioned in Table <ref type="table" target="#tab_0">1</ref>, as well as the one we aim for, support queries based on the current state of the dynamic graph. Except for Tegra <ref type="bibr" target="#b1">[2]</ref> and this thesis, no other system supports historical state queries. This thesis, <software ContextAttributes="used">LiveGraph</software> <ref type="bibr" target="#b9">[10]</ref>, Llama <ref type="bibr" target="#b6">[7]</ref>, and Tegra <ref type="bibr" target="#b1">[2]</ref>, support both topological and attribute updates. Existing systems do not provide consistency guarantees in the presence of out-of-order updates, while we aim to attain this goal as explained above. A position paper appeared <ref type="bibr" target="#b0">[1]</ref> on the topic of bitemporal dynamic graph analytics, that addresses all the challenges that are described in Table <ref type="table" target="#tab_0">1</ref>, as we do. However, there is no follow-up published.</p></div>
+<div><head n="5">CONCLUSION AND PERSPECTIVES</head><p>This PHD thesis aims to provide a scalable storage and indexing solution that can ingest real-time graph updates from multiple streams and, on top of that, provide consistent graph analytics (read-only present and historical queries) even in the presence of out-of-order updates. In the near future, we should finalize the choice of data structures for our system design, and implement it to provide a comprehensive proof-of-concept system.</p></div>
+<div><head>Thesis context</head><p>My PhD started in October 2021, and my PhD advisers are Ioana Manolescu and Angelos Anadiotis.</p></div><figure xml:id="fig_0"><head>BDA 2022 ,</head><label>2022</label><figDesc>October 24-27, 2022, Clermont-Ferrand, France 2022. ACM ISBN 978-x-xxxx-xxxx-x/YY/MM. . . $15.00 https://doi.org/10.1145/nnnnnnn.nnnnnnn</figDesc></figure>
+<figure xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure1: Example scenario for out-of-order update the first three received updates have been ingested, that is, reflected on the database state, query Q arrives and requires two iterations on the updates ingested up to that time. In the first iteration, the query 𝑄 𝑖 computes on the updates (A, C, and D), and before starting the second iteration 𝑄 (𝑖+1) , the delayed update B arrives and may thus be reflected in the computed query results. This may lead to an inconsistency, since B was not reflected in the first part of Q's evaluation.There are several challenges associated with multi-stream dynamic graph analytics listed below:• C1: How to enable data ingestion from multiple streams and diverse set of consistent graph analytics in parallel? • C2: How to efficiently query the present and historical graph updates of the system? • C3: How to store both topological and properties updates of the graph? • C4: How to provide consistency guarantee in presence of out-of-order<ref type="bibr" target="#b0">[1]</ref> updates?</figDesc><graphic coords="2,317.96,164.47,252.20,83.08" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>in order to design an effcient read store, the default recipient of all State-of-the-art Present/History query Topological/Attribute Out-of-order update Comparison of state-of-the-art systems in the context of our dynamic graph challenges.</figDesc><table><row><cell>Llama</cell><cell>YES/NO</cell><cell>YES/YES</cell><cell>NO</cell></row><row><cell>GraphOne</cell><cell>YES/NO</cell><cell>YES/NO</cell><cell>NO</cell></row><row><cell>LiveGraph</cell><cell>YES/NO</cell><cell>YES/YES</cell><cell>NO</cell></row><row><cell>Teseo</cell><cell>YES/NO</cell><cell>YES/NO</cell><cell>NO</cell></row><row><cell>Tegra</cell><cell>YES/YES</cell><cell>YES/YES</cell><cell>NO</cell></row><row><cell>This Thesis</cell><cell>YES/YES</cell><cell>YES/YES</cell><cell>YES</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgments. This work is funded by <rs type="projectName">AI Chair SourcesSay</rs> project (<rs type="grantNumber">ANR-20-CHIA-0015</rs>) grants.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_FbZwSU7">
+					<idno type="grant-number">ANR-20-CHIA-0015</idno>
+					<orgName type="project" subtype="full">AI Chair SourcesSay</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Position Paper: Bitemporal Dynamic Graph Analytics</title>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Halawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matei</forename><surname>Ripeanu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">GRADES-NDA '21</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">TEGRA: Efficient Ad-Hoc Analytics on Evolving Graphs</title>
+		<author>
+			<persName><forename type="first">Anand Padmanabha</forename><surname>Iyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qifan</forename><surname>Pu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kishan</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">E</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">18th USENIX Symposium on Networked Systems Design and Implementation (NSDI 21)</title>
+		<imprint>
+			<publisher>USENIX Association</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="337" to="355" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">GraphOne: A Data Store for Realtime Analytics on Evolving Graphs</title>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Howie</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">17th USENIX Conference on File and Storage Technologies (FAST 19)</title>
+		<meeting><address><addrLine>Boston, MA</addrLine></address></meeting>
+		<imprint>
+			<publisher>USENIX Association</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="249" to="263" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">The adaptive radix tree: ARTful indexing for main-memory databases</title>
+		<author>
+			<persName><forename type="first">Viktor</forename><surname>Leis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alfons</forename><surname>Kemper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Neumann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDE</title>
+		<imprint>
+			<date type="published" when="2013">2013. 2013</date>
+			<biblScope unit="page" from="38" to="49" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Teseo and the Analysis of Structural Dynamic Graphs</title>
+		<author>
+			<persName><forename type="first">Dean</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leo</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">A</forename><surname>Boncz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="1053" to="1066" />
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Rosetta: A Robust Space-Time Optimized Range Filter for Key-Value Stores</title>
+		<author>
+			<persName><forename type="first">Siqiang</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Subarna</forename><surname>Chatterjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rafael</forename><surname>Ketsetsidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Niv</forename><surname>Dayan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wilson</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stratos</forename><surname>Idreos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data</title>
+		<meeting>the 2020 ACM SIGMOD International Conference on Management of Data</meeting>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">LLAMA: Efficient graph analytics using Large Multiversioned Arrays</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Macko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Virendra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><forename type="middle">W</forename><surname>Marathe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Margo</forename><forename type="middle">I</forename><surname>Margo</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Seltzer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE 31st International Conference on Data Engineering</title>
+		<imprint>
+			<date type="published" when="2015">2015. 2015</date>
+			<biblScope unit="page" from="363" to="374" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Evaluating Complex Queries on Streaming Graphs</title>
+		<author>
+			<persName><forename type="first">Anil</forename><surname>Pacaci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Tamer</forename><surname>Özsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th IEEE International Conference on Data Engineering (ICDE)</title>
+		<meeting>the 38th IEEE International Conference on Data Engineering (ICDE)</meeting>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">An empirical evaluation of in-memory multi-version concurrency control</title>
+		<author>
+			<persName><forename type="first">Yingjun</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joy</forename><surname>Arulraj</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiexi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ran</forename><surname>Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Pavlo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the VLDB Endowment</title>
+		<meeting>the VLDB Endowment</meeting>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="781" to="792" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">LiveGraph: a transactional graph storage system with purely sequential adjacency list scans</title>
+		<author>
+			<persName><forename type="first">Xiaowei</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanyu</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Serafini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaosong</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiping</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lei</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashraf</forename><surname>Aboulnaga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenguang</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the VLDB Endowment</title>
+		<meeting>the VLDB Endowment</meeting>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="1020" to="1034" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

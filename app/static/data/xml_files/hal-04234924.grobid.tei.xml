@@ -1,0 +1,913 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Federated Learning on Personal Data Management Systems: Decentralized and Reliable Secure Aggregation Protocols</title>
+				<funder ref="#_Yt9hCCH #_UrxDkP2 #_qSMCpRP">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Julien</forename><surname>Mirval</surname></persName>
+							<email>julien.mirval@cozycloud.cc</email>
+						</author>
+						<author>
+							<persName><forename type="first">Iulian</forename><surname>Sandu-Popa</surname></persName>
+							<email>iulian.sandu-popa@uvsq.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department" key="dep1">Cozy Cloud</orgName>
+								<orgName type="department" key="dep2">Inria-Saclay UVSQ</orgName>
+								<orgName type="institution">Université Paris-Saclay</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="department">Inria-Saclay UVSQ</orgName>
+								<orgName type="institution">Université Paris-Saclay</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">UVSQ</orgName>
+								<orgName type="institution" key="instit2">Université Paris-Saclay Inria</orgName>
+								<address>
+									<settlement>Saclay</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Federated Learning on Personal Data Management Systems: Decentralized and Reliable Secure Aggregation Protocols</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">5D5E06122016DB2B2554A7DA32F55A06</idno>
+					<idno type="DOI">10.1145/3603719.3603730</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Computer systems organization Secure aggregation</term>
+					<term>peer-to-peer</term>
+					<term>reliability</term>
+					<term>federated learning</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The development and adoption of personal data management systems (PDMS) has been fueled by legal and technical means such as smart disclosure, data portability and data altruism. By using a PDMS, individuals can effortlessly gather and share data, generated directly by their devices or as a result of their interactions with companies or institutions. In this context, federated learning appears to be a very promising technology, but it requires secure, reliable, and scalable aggregation protocols to preserve user privacy and account for potential PDMS dropouts. Despite recent significant progress in secure aggregation for federated learning, we still lack a solution suitable for the fully decentralized PDMS context. This paper proposes a family of fully decentralized protocols that are scalable and reliable with respect to dropouts. We focus in particular on the reliability property which is key in a peer-to-peer system wherein aggregators are system nodes and are subject to dropouts in the same way as contributor nodes. We show that in a decentralized setting, reliability raises a tension between the potential completeness of the result and the aggregation cost. We then propose a set of strategies that deal with dropouts and offer different trade-offs between completeness and cost. We extensively evaluate the proposed protocols and show that they cover the design space allowing to favor completeness or cost in all settings.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">INTRODUCTION</head><p>New privacy-protection regulations (e.g., GDPR) and smart disclosure initiatives in the last decade have boosted the development and adoption of Personal Data Management Systems (PDMSs) <ref type="bibr" target="#b2">[3]</ref>. A PDMS (e.g., Cozy Cloud <ref type="bibr" target="#b12">[13]</ref>, Nextcloud, Solid) is a data platform that allows users to easily collect, store, and manage into a single place data directly generated by the user's devices (e.g., quantified-self data, smart home data, photos) and data resulting from the user's interactions (e.g., social interaction data, health, bank, telecom). Users can then leverage the power of their PDMS to benefit from their personal data for their own good and for the benefit of the community <ref type="bibr" target="#b9">[10]</ref>.</p><p>As a result, the PDMS paradigm leads to a shift in the personal data ecosystem since data becomes massively distributed, on the user side. It also holds the promise of unlocking innovative usages. An individual can now cross her data from different data silos, e.g., health records and physical activity data. In addition, individuals can leverage their PDMSs by forming large communities of users sharing their data. This allows, for example, to compute statistics for epidemiological studies or to train a Machine Learning (ML) model for recommendation systems. In this context, it is natural to rely on a fully decentralized PDMS architecture (as opposed to central servers that raise several important issues such as cost, availability and scalability with the number of users), but this also poses new challenges.</p><p>Aggregation primitives are essential to compute basic statistics on user data and are also a fundamental building block for ML algorithms. In particular, Secure Aggregation (SA) is a central component of Federated Learning (FL), introduced in <ref type="bibr" target="#b20">[21]</ref>, as evidenced by the large body of recent work in this area <ref type="bibr" target="#b19">[20]</ref>. However, to enable such new usages in the PDMS context, we need new solutions adapted to its specificity. First, PDMS users rely on large peer-to-peer systems for data sharing and computations <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b8">9]</ref> thus requiring fully decentralized and scalable aggregation protocols, discarding data centralization on servers. Also, these protocols need to protect user privacy and adapt to varying selectivity (i.e., the consent of relevant participants). Ideally, the proposed protocol should provide an accurate result that takes advantage of the highquality data available in PDMSs. Efficiency (i.e., protocol latency and total load of the system) is of prime importance given the potentially limited communication speed or computation power of PDMSs. Finally, given the scale of such decentralized aggregation, protocols must also be robust to node dropouts. To summarize, our goal is to design protocols that fulfill the following properties: fully decentralized and highly scalable, with the number of participants; privacy-preserving, i.e., protecting the confidentiality of the contributed user data; accurate, i.e., no trade-off between accuracy and privacy (e.g., like in the data anonymization or differential privacy approaches); adaptable, i.e., adapting to a large spectrum of computation selectivity values (reflecting the subset of contributor nodes) and system configurations (network and cryptographic latency); and reliable, i.e., handling node dropouts (e.g., failures, voluntary disconnections or unexpected communication delays).</p><p>Ensuring these properties altogether is challenging and to the best of our knowledge, the existing distributed Secure Aggregation (SA) protocols fail to achieve this objective. On the one hand, approaches such as local differential privacy are based on adding noise to protect privacy. This affects accuracy <ref type="bibr" target="#b6">[7]</ref> or reliability to dropouts <ref type="bibr" target="#b24">[25]</ref> and requires a very large number of participants to reduce the impact of noise which contradicts an adaptive node selectivity (see <ref type="bibr">Section 2)</ref>. On the other hand, despite leveraging different cryptographic schemes in SA for FL <ref type="bibr" target="#b19">[20]</ref> (e.g., encryptionbased <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b13">14]</ref> or secret sharing-based <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b17">18]</ref>), existing solutions employ a similar hybrid architecture wherein one or several highly available and powerful servers aggregate the data supplied by many user devices. Although some solutions consider the case of node dropouts, this applies to client devices and never to aggregation servers <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b11">12]</ref>. In a Peer-to-Peer (P2P) PDMS system, all computations are performed by internal PDMS nodes (i.e., user devices). Hence, the data aggregators and data contributor nodes have the same constraints, i.e., limited computing power and availability. Such nodes cannot be expected to carry out heavy cryptographic operations <ref type="bibr" target="#b7">[8]</ref> and can drop out during the computation. Fortunately, the P2P approach allows involving many nodes to perform a computation thus reducing the load on individual aggregators.</p><p>A first effort towards SA adapted to P2P systems was made in <ref type="bibr" target="#b21">[22]</ref>, where we designed a protocol that fulfill the above properties in an ideal setting, i.e., without considering the reliability issue. This work brings two major novelties. First, we focus on the reliability property, which is difficult to guarantee in a fully-decentralized setting and deserves a detailed study. Second, although our protocols apply to SA in general, we chose to study the more general case of FL, given its particular interest in the PDMS paradigm. The study of FL is also more challenging due to the potentially large size of the model, which increases the scalability problem. In our experiments, we consider model sizes from very small to very large, thus covering a wide range of use cases (including classical SA).</p><p>Our contributions are as follows. We analyze the impact of dropouts, be it contributor or aggregator nodes, on the other properties of an SA protocol designed for a P2P PDMS system. Node dropouts have a direct impact on accuracy (i.e., a single failure can make the final computation result useless) and on efficiency (i.e., it can introduce large latency). From this analysis, we derive the precise requirements of a reliable protocol and show that in a fullydecentralized context, reliability also introduces a tension between result completeness (i.e., the percentage of initial contribution in the final result, despite dropouts) and computation cost. We introduce the necessary building blocks to deal with these requirements. Then, we propose a variety of execution strategies offering different trade-offs between completeness and cost and allowing to cover a wide spectrum of dropout rates, contributor selectivity or trained model sizes. Our extensive experimental evaluation shows that the proposed strategies cover well the design space allowing to favor completeness or cost in all settings.</p><p>The rest of this paper is organized as follows. We discuss the related works w.r.t. the required properties in Section 2. We introduce, in Section 3, the considered architecture and threat model. Section 4 reminds the main design principles proposed in <ref type="bibr" target="#b21">[22]</ref> and then introduces, as a starting point, a straw-man SA protocol which efficiently computes the required aggregation assuming an ideal world (i.e., there are no node dropouts). This allows to highlight the challenges induced by reliability issues. Section 5 presents the necessary building blocks to addresses the reliability related challenges. In Section 6, we propose four SA strategies that leverage those building blocks and allow for different trade-off between result completeness and aggregation cost. We extensively evaluate the proposed strategies in Section 7 and conclude in Section 8.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">RELATED WORKS</head><p>Secure aggregation (SA) is an intense research area since many years leading to several approaches: SA based on cryptography, SA based on (local) differential privacy and gossip-based protocols and SA based on Trusted Execution Environments (TEE). However, these solutions are not adapted to the decentralized context and fail to cover all the required properties listed above. SA based on cryptography. Cryptographic solutions for SA have been proposed since nearly three decades. The initial solutions were designed for wireless sensor networks <ref type="bibr" target="#b26">[27]</ref>, but the field has recently taken off again to meet the needs of FL. A recent survey <ref type="bibr" target="#b19">[20]</ref> discusses about forty works for FL, grouped in four classes: SA using masking, SA using additively homomorphic encryption, SA using functional encryption and SA based on MPC (or secret shares). The proposed scheme may differ on the offered trade-off between the computation and the communication cost, or the tolerance to client dropouts. Regardless of the employed cryptographic scheme, all the existing solutions (e.g., <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b7">8]</ref>, Prio <ref type="bibr" target="#b11">[12]</ref> and Drynx <ref type="bibr" target="#b15">[16]</ref>) rely on a similar architecture wherein one or a handful of powerful and highly reliable servers collect encrypted user data and then apply costly aggregation algorithms based on masking (e.g., <ref type="bibr" target="#b29">[30]</ref>), garbled circuits (e.g., <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b13">14]</ref>) or secret sharing (e.g., <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b17">18]</ref>). SA based on cryptography with dropout support. Typical FL scenarios can involve a large number of (mobile) clients and hence, client dropouts are common during the aggregation process. Some of the above mentioned works support client dropouts, in particular, the methods based on masking <ref type="bibr" target="#b7">[8]</ref> and MPC <ref type="bibr" target="#b19">[20]</ref> but none considers that the aggregation servers can fail.</p><p>The existing methods cannot be applied in a fully-decentralized PDMS setting for two reasons: (i) scalability -a PDMS is not a high-end server that could deal with thousands of connections and related crypto operations, making the existing solutions not scalable with a large number of participants (e.g., the execution latency is linear <ref type="bibr" target="#b11">[12]</ref>, super linear <ref type="bibr" target="#b28">[29]</ref> or quadratic <ref type="bibr" target="#b7">[8]</ref> with the number of participants); and (ii) reliability -similar to the client devices (i.e., the data contributors), the aggregator nodes can drop out making the existing solutions inoperative in our context. Our protocols are also based on cryptography (i.e., using a basic secret share mechanism) but adapt to the architectural specificity and the related constraints of the PDMS context. SA based on differential privacy and gossip protocols. Local differential privacy (LDP) has gained significant momentum in recent years due to its major advantage compared with classical DP, i.e., it does not require a trusted third party. Existing works address problems such as ML <ref type="bibr" target="#b6">[7]</ref> , FL <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b32">33,</ref><ref type="bibr" target="#b33">34]</ref>, marginal statistics <ref type="bibr" target="#b34">[35]</ref> or basic statistics based on range queries <ref type="bibr" target="#b10">[11]</ref>. However, LDP accentuates the tension between utility and privacy protection since it requires more noise for the same level of protection as with classical DP <ref type="bibr" target="#b1">[2]</ref>. Hence, this can either affect utility or require a very large number of participants to reduce the impact of noise which contradicts adaptability to selective participation.</p><p>Gossip-based protocols are scalable, fully decentralized, reliable and have an adjustable accuracy. Unfortunately, classical gossipbased protocols do not protect the user privacy. In <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b27">28]</ref>, participants collectively learn a machine learning model in a privacy preserving way by gossiping differentially private models, impacting accuracy. In <ref type="bibr" target="#b22">[23]</ref>, participants introduce noise in the first iterations and gradually remove it in subsequent iterations. This approach makes such solutions unreliable w.r.t. node failures. Finally, we are not aware of gossip protocols tolerating selective participation and basic adaptations produce inaccurate results. SA based on TEE. To overcome some of the limitations of cryptographic schemes or DP, several works propose using secure hardware at the user-side to address, e.g., SQL aggregation <ref type="bibr" target="#b31">[32]</ref> or spatiotemporal aggregation <ref type="bibr" target="#b25">[26]</ref>. This approach is generic w.r.t. the computation function but the existing solutions use a hybrid architecture (i.e., employ a supporting server), do not address the node selection problem and generally consider a tamper-proof attack model or a very small number of corrupted nodes.</p><p>In conclusion, none of the above classes of solutions can satisfy all the requirements of SA in a PDMS setting wherein the fullydecentralized nature of the system has to cope with unavoidable aggregator dropouts and the need for accuracy of FL.</p><p>3 SYSTEM OVERVIEW AND THREAT MODEL 3.1 System Architecture P2P network. We envision a fully distributed P2P system relying only on PDMSs, thus requiring an efficient communication overlay. Distributed Hash Tables (DHT) are structured overlays which enable a logarithmic scalability with the number of nodes. Our protocol is currently built on top of the Chord DHT <ref type="bibr" target="#b30">[31]</ref>. Each node has an Id obtained by hashing a static property of the node and stores a fingertable (FT) to route Chord messages. FT is a table with a number of entries equal to the size of the Id space in bits. If 𝑋 is a node Id, the 𝑖 𝑡ℎ entry of the FT contains the IP address of the node whose Id is closest but lower than 𝑋 + 2 𝑖 . Routing is done by searching in the FT the closest entry to the target address and transmitting recursively the message until it reaches its target, with a worse case of O (𝑙𝑜𝑔(𝑁 )) message complexity, where 𝑁 is the number of DHT nodes. Computation model. A model computation can be triggered by any node, i.e., querier. The querier broadcasts the computation and each node consents or not to contribute, and in the positive case is called contributor. The ratio between the number of contributors and total number of nodes defines the selectivity 𝜎 ∈ [0, 1]. Each node (contributor or not) may be a data processor and is then called aggregator. Each contributor trains the model locally for several epochs as described in <ref type="bibr" target="#b20">[21]</ref> and sends it to the aggregators. Aggregators produce a new model based on the received contributions. The process can potentially repeat for several iterations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Threat Model</head><p>As in the majority of SA works <ref type="bibr" target="#b19">[20]</ref>, we consider the classical honestbut-curious threat model, i.e., an attacker can access, but cannot alter, the data manipulated by the attacked nodes (called leaking nodes). A PDMS can hold the entire digital life of her owner and thus needs to be highly protected against privacy threats as indicated by recent works <ref type="bibr" target="#b3">[4]</ref>. However, we consider that some PDMS owners have succeeded in tampering their PDMS since no security measure is unbreakable. Since attackers may collude and thus, de facto, control more than one PDMS, the worst-case attack is represented by the maximum number of colluding nodes controlled by a single "attacker", i.e., 𝐶 leaking nodes. Additionally, each PDMS is equipped with a trustworthy certificate supplied by an offline PKI. Thus, any node can verify the authenticity of other participants by checking their certificate. This prevents Sybil attacks (i.e., forging nodes to master a large portion of the system). Finally, secure communication channels (e.g., TLS) are required since attackers can observe the communications between the nodes.</p><p>Our protocols should fully protect the confidentiality of the contributors' data and all the intermediary results, with high and tunable probability (see also <ref type="bibr" target="#b8">[9]</ref>), the final result not being confidential. Also, we consider that being a contributor for a given computation is not a sensitive information. Out-of-scope attacks. We do not consider the case of an attacker manipulating fully corrupted PDMSs. In a P2P system, such an attacker could perform poisoning attacks of the contributed data <ref type="bibr" target="#b11">[12]</ref> or forge false aggregation results <ref type="bibr" target="#b16">[17]</ref> with the objective to compromise contributors' input confidentiality by bypassing the SA protocol. A few recent works (e.g., Prio <ref type="bibr" target="#b11">[12]</ref>, VeriFL <ref type="bibr" target="#b16">[17]</ref>) deal with these problems but existing solutions are still limited especially in our context because of their limited scalability or lack of genericity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">STRAW-MAN PROTOCOL</head><p>This section summarizes the main design principles proposed in <ref type="bibr" target="#b21">[22]</ref> to fulfill the privacy, accuracy, adaptability and scalability properties. It then describes, as a starting point, a straw-man protocol in an ideal world, i.e., assuming there are no dropouts. Finally, it highlights the reliability issue by considering node dropouts and formulates precisely the problem at hand.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Background</head><p>Achieving a scalable aggregation process requires multiple aggregators, naturally arranged in a tree structure (see Fig. <ref type="figure" target="#fig_1">1</ref>.a) wherein the intermediary nodes are aggregators and the leaves are contributors. The querier obtains the result from the tree root. Privacy and accuracy: We use a secret sharing scheme without threshold for data confidentiality. Each contributor splits its private value into 𝑠 shares, making it impossible to reconstruct the secret unless someone collects all 𝑠 shares. Considering 𝑠 shares for each contributor and partial aggregate results leads to build 𝑠 separate (parallel) aggregation trees with exactly the same structure. This  . Each 𝑖 𝑡ℎ share has the value 𝑥 𝑖 = 𝑥/𝑠 + 𝜖 𝑖 such that 𝑛 𝑖=1 𝜖 𝑖 = 0, where 𝑥 is the private value. Thus, shares from different contributors are aggregated separately and if no share is missing (reliability is discussed in Section 5), the final result equals the exact sum of all private values and is computed by the querier; hence, our protocol provides, by construction, accurate results.</p><p>The number of shares, 𝑠, is computed such that the probability to obtain 𝑠 shares for an attacker, controlling 𝐶 nodes, is inferior to 𝛼, a security threshold (e.g., 𝛼 = 10 -6 ). An attacker could cleverly locate her controlled nodes in the DHT to obtain the 𝑠 shares of a group. We avoid this attack by reusing the concept of imposed location proposed in <ref type="bibr" target="#b18">[19]</ref>: the node Id in the DHT is computed by hashing the public key from the PDMS certificate (see Section 3.2). The nodes are then uniformly distributed in the DHT space and the PDMS owner (here the attacker) cannot influence this placement. Consequently, the uniform distribution also applies to leaking nodes and the probability that an attacker controls an entire group is given by (𝐶/𝑁 ) 𝑠 &lt; 𝛼. Then 𝑠 is minimal when 𝑠 = ⌈log(𝛼)/log( 𝐶 𝑁 )⌉. Obviously, communications between nodes must use secured channels, to protect the integrity and confidentiality of the exchanged data and to ensure the provenance of that data. Adaptability: The number of aggregators and their arrangement (i.e., the tree fan-out and its height) is tuned as a function of the number of contributors, the communication costs and the processing costs as discussed in <ref type="bibr" target="#b21">[22]</ref>. This allows the protocol to always offer near-optimal performance (i.e., aggregation latency) and achieve adaptability w.r.t. the computation selectivity and PDMSs characteristics. Furthermore, our protocol can be configured to offer the desired trade-off between the latency and the total cost of the aggregation, which are conflicting objectives. At one extreme (see Fig. <ref type="figure" target="#fig_1">1</ref>.c left), a binary tree (𝑓 = 2) distributes the query load on a maximum number of aggregator groups but increases the communications costs. At the other extreme (see Fig. <ref type="figure" target="#fig_1">1</ref>.c right), a tree limited to a unique aggregator group (𝑓 = 𝜎 × 𝑁 ) minimizes the communications costs, the total system load but concentrates most of that load on this unique aggregator group that becomes overloaded. Thus, in an "ideal" setting, the height of the tree is chosen to optimize the query latency without impacting too much the total load. Scalability: The DHT realizes a de facto fully decentralized and efficient architecture for communication between nodes. Building and broadcasting 𝑠 aggregation trees can be very costly since the trees can be large. We thus employ a divide-and-conquer approach to parallelize the construction and diffusion of the trees and use the finger table structure to minimize communications. Finally, we reduce the knowledge and the diffusion of the trees to the part required to perform the aggregation: a node of an aggregation tree only knows its parent and its children.</p><p>To simplify the description of the tree construction, we consider below that each node of the tree is a group of 𝑠 nodes (see Fig. <ref type="figure" target="#fig_1">1</ref>.d with 𝑠 = 3). Assuming the querier knows the height ℎ and the fanout 𝑓 of the aggregation tree (see above), it starts the tree creation by assigning the whole DHT to its successors. Recursively, each aggregator group in the tree (i.e., parent nodes) is assigned to a DHT region that it will subdivide and delegate to other aggregator groups in that region. When an aggregator oversees a DHT region, it looks for 𝑓 nodes that are (almost) evenly spaced across the region. The node responsible for finding peers is a parent aggregator, while the selected nodes are child aggregators. Each child then becomes the parent of the region between itself and the next sibling. This process goes on until the height ℎ is reached. At each step, 𝑠 nodes are selected instead of one. To make this selection efficient, each node in the DHT maintains a cache with the addresses and certificates of the 𝑠 -1 successor nodes that will form the aggregator group. At the last tree level, the tree leaves (i.e., the contributors) are found by using a localized DHT broadcast in the respective region. Fig. <ref type="figure" target="#fig_1">1</ref>.d illustrates this process with three nodes per group (blue, red and green) by using letters to represent a group. The fan-out is 4 and the height is 3 (excluding the querier Q).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Straw-man Protocol in an Ideal World</head><p>This section details a straw-man aggregation protocol, assuming an ideal world in which there are no dropouts, in order to illustrate the reliability problem. For the sake of simplicity, the presented protocol considers that the aggregation trees were built up to the leaves, but without including the contributors.</p><p>Straw-man is detailed in Algorithm 1 by type of nodes considering the computation of the average of a private vector owned by each contributor. Contributors willing to participate establish a secure channel with each aggregator parent and then send shares of their private vector. The aggregators aggregate the received shares and send their results to their parents up to the root. The querier then performs the final aggregation to obtain the result. There are only two types of messages: (i) Query() messages containing (1) the query itself (line 25); (2) the sender certificate (line 26), and (3) the receiver parents to whom the shares must be sent (line 28). (ii) Intermediate results under the format ( --→ sum, nbContrib) sent either by contributors (line 28, with nbContrib = 1) or (Leaf) Aggregators (lines 12 and 23).</p><p>After having broadcasted the query, the leaf aggregators set a contribution timeout, computed such that it allows to receive all contributions (line 16). The timeout is computed by considering the time to reach a contributor plus the time to prepare and send a contribution since we consider an ideal world with no delays. While sent in parallel, the contributions are decrypted sequentially by the leaf aggregators, which wait for the processing of any message (line 20) before sending the partial result (line 23). If a node selected as aggregator (leaf or not) in the tree wishes to contribute, it can simply add its private data to the partial aggregate it computes add 𝑠 to the count of share contributions before sending it to its parent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Analysis and Problem Formulation</head><p>Although the straw-man protocol is simple and efficient in an ideal world, it can deliver an incorrect result or simply block in the presence of node dropouts. Indeed, one share of a contributor may not be received because the contributor drops out after sending some shares or because the corresponding message was delayed. In both cases, the result is incorrect. Furthermore, if an aggregator fails before sending its intermediate result, the condition in line 9 will never be true, thus blocking the protocol. A single aggregator dropout is indeed sufficient to thwart a graceful protocol termination since all the ancestors of the dropout node will hang on indefinitely waiting for the data to arrive.</p><p>The problem addressed in this paper is to devise protocols robust to dropouts, i.e., ensure the reliability property with three complementary goals despite failures and delays:</p><p>(1) validity: the protocol must deliver a correct result;</p><p>(2) termination: the protocol must not block;</p><p>(3) completeness: the protocol should maximize completeness defined as the percentage of the initial contributors actually accounted for in the final result.</p><p>Termination and validity are mandatory while maximizing completeness is a desirable objective, but may incur a significant overhead. An ideal protocol should minimize this overhead and maximize the completeness of the result, which are unfortunately conflicting goals. Indeed, maximizing completeness requires synchronization between the parallel aggregation trees and the ability to redo the work done by a dropped out aggregator. In addition, this overhead increases the latency of the protocol which can lead to increased dropouts, with, potentially, a snowball effect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">HANDLING DROPOUTS</head><p>This section proposes solutions to handle dropouts during the aggregation protocol. We first introduce the dropout model and detection. Then, we discuss possible approaches to react to dropouts, guarantee validity and termination.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Dropout Model and Detection</head><p>We consider the most difficult failure model wherein any node can dropout at any moment (i.e., we cannot benefit from graceful disconnections). For simplicity, in all cases, we consider that dropout nodes cannot reintegrate the ongoing computation after a dropout. When a dropout node recovers, it reintegrate the DHT or can participate in new queries. We consider that the dropout probability is the same for any contributor or aggregator node. That is, at each time instant (e.g., every second) during the protocol execution, every node can dropout with some fixed probability, thus, the longer the protocol duration, the higher the risk of a dropout and hence the observed dropouts. In this model, there is no way to detect a dropout with certainty; a dropout can only be assumed after a timeout, i.e., node 𝐴 may presume node 𝐵's dropout because 𝐴 was expecting a message from 𝐵 and did not receive it after a given timeout.</p><p>Let us note that the aggregation trees form a temporary additional overlay on top of the DHT overlay. Hence, to detect dropouts, we use a common DHT mechanism to maintain its consistency, i.e., health check (HC) messages. Specifically, any aggregator is periodically monitored by its parent using HC messages. HC are sent over the secure channels already required to secure the communications in the aggregation tree. HC are equivalent to ping messages so they imply a low network overhead.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Replacing (or not) a Dropped Out Node</head><p>The natural reaction to the dropout of an aggregator 𝐴 is to trigger a node replacement as follow: the parent 𝑃 detecting the dropout of node 𝐴 randomly selects a free node, say 𝑅, from its DHT fingertable (i.e., a node that has not been previously selected as aggregator in the current tree) and supplies 𝑅 the necessary information (e.g., 𝐴's children, the members of 𝐴's group, 𝐴's status, etc.) allowing the node to take the place of 𝐴. This information can be easily kept up-to-date by 𝑃 when 𝐴 answers 𝑃's health check requests. If the dropout occurs before 𝐴 has received any data from its children, the replacement is cheap, entailing only the creation of secure communication channels between 𝑅 and 𝑃, 𝐴's children and the members of 𝐴's group. In the other cases (i.e., 𝐴 has done part or all of its assigned work), the replacement induces a significant overhead (𝑅 must require 𝐴's children to re-send their data, potentially redo the aggregation and re-send the aggregated data to 𝑃). Thus, all the strategies described in Section 6 replace any node dropping out before receiving any data while the replacement policy in the other cases depends on the strategy, with an impact on the overhead/completeness trade-off. Obviously, contributors that drop out cannot be replaced. Thus, a synchronization between the parallel aggregation trees must take place to ensure validity if some contributors or some -not replaced-aggregators dropped out.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Ensuring Validity</head><p>This section introduces two complementary mechanisms for ensuring result validity. The first is based on recording and checking the contributors' footprints in each of the parallel aggregation trees. The second uses inter-tree synchronization between aggregators in the same group allowing for contributors' convergence between the parallel aggregation trees.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.1">Check Contributors Footprint ( CCF).</head><p>Validity is ensured as long as the 𝑠 last IntRes messages (see Algorithm 1), computed by the 𝑠 parallel aggregation trees and received by 𝑄, contain the secret share contributions of the exact same list of contributors. To this end, we employ a hashing scheme similar to a Merkle Hash Tree , i.e., computing incrementally a hash of the identifier lists of the contributors whose shares are aggregated. We add a new field, CF, to IntRes messages which contains, for leaf aggregators, a hash of all contributors IPs that are included in that intermediate result. Contributors thus send IntRes(MyShare, 1, hash(MyIP)). Then aggregators, leaf or not, sort the incoming CFs, hash that sorted list to produce their own CF and send it with their intermediate result.</p><p>The process repeats to all intermediate levels up to the querier 𝑄. Therefore, 𝑄 can ensure the production of a valid result iff all the CFs received together with the 𝑠 intermediate results are equal. Thus CF can be considered as a version identifier of a given IntRes.</p><p>CCF allows for efficient detection of inconsistent shares but not for a convergence of those shares. Hence, the lack of even a single share leads to invalidating the entire aggregation, i.e., 𝑐𝑜𝑚𝑝𝑙𝑒𝑡𝑒𝑛𝑒𝑠𝑠 = 0%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5.3.2</head><p>Inter-tree Synchronization ( sync). To correct inconsistencies between the parallel aggregation trees, we need a synchronization mechanism to eliminate from the IntRes message the contributions of any contributor that provided less than 𝑠 secret shares. Note that this can arrive either because of a contributor dropout but also as a result of an aggregator dropout which is not replaced. This synchronization called sync can be applied in a blocking or non-blocking manner as described below. Blocking sync. A blocking sync is performed between the aggregators in a same group (e.g., the blue, red and green nodes of any group in Fig. <ref type="figure" target="#fig_1">1</ref>.d), which synchronize their contributing children list to produce an IntRes containing only the data from children nodes in the intersection of those lists. If the children data was synchronized before aggregation, the resulting IntRes is then consistent (i.e., will have the same 𝐶𝐹 ). Each aggregator in a group waits for all its children data and then broadcasts the list of contributing children to the other aggregators in its group. After receiving 𝑠 -1 lists, each aggregator produces through intersection the final list, aggregates the corresponding shares and sends the result to its parent. Non-blocking sync. The idea is to allow aggregators to send the aggregated shares up the tree without synchronization with the other 𝑠 -1 leaf aggregators in the group, but just informing them of the actual Children List (CL) used to compute the IntRes. A leaf aggregator who receives a CL must react in different ways, depending on its own status: (a) if it has not sent any IntRes message, it must ignore the data from children that are not in the received CL; (b) if it has already sent an IntRes with its own CL (𝐶𝐿 𝑙𝑎𝑠𝑡 ), it computes 𝐶𝐿 𝑛𝑒𝑤 = 𝐶𝐿 𝑙𝑎𝑠𝑡 𝐶𝐿. If 𝐶𝐿 𝑛𝑒𝑤 ≠ 𝐶𝐿 𝑙𝑎𝑠𝑡 , the aggregator sends a new IntRes message based on 𝐶𝐿 𝑛𝑒𝑤 data and informs the other aggregators of its group, sending 𝐶𝐿 𝑛𝑒𝑤 . Thus, if the querier receives inconsistent IntRes messages, it detects it through the CF inconsistency and just has to wait for new IntRes messages that will eventually become consistent.</p><p>For a leaf aggregator group (e.g., the 𝑓 group in Fig. <ref type="figure" target="#fig_1">1</ref>.d), the sync eliminates the contributors that provided only a part of the 𝑠 shares. In the upper tree levels, the sync eliminates entire tree branches and therefore, possibly a significant number of contributors (e.g., if 𝑐-blue drops out and is not replaced, the sync at the 𝑎 group in Fig. <ref type="figure" target="#fig_1">1</ref>.d leads to prune the whole 𝑐 sub-tree since there are no means to retrieve the blue shares in this sub-tree). Thus, sync operations may hurt completeness. A blocking sync guarantees that all the group aggregators send consistent IntRes up the tree and thus potentially entails a lower cost (i.e., both bandwidth and computation cost) than a non-blocking sync wherein aggregators may send several IntRes messages (i.e., eventual consistency). However, in strategies that replace dropped out aggregators, a replaced aggregator may require another sync with the members of its group, thus reducing the interest of a blocking sync. Moreover, blocking syncs may increase query latency since any slowdown in one of the parallel aggregation tree will impact the others. Finally, we should underline that a blocking sync does not require CCF if applied in all groups, whereas this is required for non-blocking sync.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">Ensuring Termination</head><p>Ensuring query termination is straightforward insofar as dropouts are detected (see Section 5.1). The protocol can gracefully terminate if the querier receives a consistent set of 𝑠 IntRes. In this case, the querier 'broadcasts' a termination message (i.e., which is propagated recursively down the 𝑠 aggregation trees). Depending on the aggregation strategy (see Section 6) a dropout can also trigger termination. For instance, in a straw-man-like protocol a single dropout can invalidate the entire result. Hence, on detecting a dropout, an aggregator informs the querier which sends termination to all nodes. Finally, nodes within sub-trees can receive an early termination message (i.e., before the protocol end) following a sync at the sub-tree root group requiring pruning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">PROPOSED AGGREGATION STRATEGIES</head><p>Several strategies can be envisioned around the building blocks introduced above leading to different trade-offs between aggregation cost (i.e., the latency, total work and bandwidth of the protocol) and result completeness. In this section we first present two extreme strategies called 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 and 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 trying each to push in one direction of the conflicting overhead/completeness objectives. Then, we introduce two more strategies called 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑦𝑏𝑟𝑖𝑑 which target interesting trade-offs between completeness and cost. For each strategy, we describe its overall objective, its design principles, then describe the protocol through the choice of the adequate building blocks, concluding with a short discussion which is completed by experimental results in Section 7.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Low-Cost Protocol</head><p>Objective. 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 bets on an "almost ideal" world and is thus really optimistic in terms of dropouts. It leverages the straw-man protocol, correcting its main issues (validity and termination) with low-cost mechanisms to make it reliable. Design principles. We observe that the straw-man protocol is near-optimal since (i) the data is sent up the tree only once by each node, and (ii) there is no sync between the parallel aggregation trees. The idea is to keep these good properties while still ensuring the protocol validity and termination. Protocol. Recall that contributors transmit their 𝑠 shares simultaneously to the 𝑠 leaf aggregators. In case of contributor dropout, it is unlikely, but not impossible, that the shares are transmitted completely to, e.g., 𝑠-1 aggregators and incompletely to the last one. Node replacement policy. An aggregator is replaced only if its dropout occurs before the node receives any data from any of its children. For instance, node 𝑐 in Fig. <ref type="figure" target="#fig_1">1</ref>.d can be replaced only if it drops out before receiving any data from 𝑖, 𝑓 , ℎ or 𝑔. Replacing 𝑐 after this would violate the 'send-only-once' principle since one or several of its children would need to re-send data. Validity. It is ensured by leveraging the low cost CCF mechanism which does not require any inter-tree communication. Termination. 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 terminates either (i) gracefully after the querier receives all 𝑠 shares from its children or (ii) abruptly if any aggregator dropout is detected. Note also that due to the 'sendonly-once' principle, any node can safely leave the protocol after it has sent its IntRes to its parent (i.e., a progressive termination from the leaves to the root).</p><p>Discussion. This basic protocol minimizes cost and is reliable. However, it has a binary behavior w.r.t. completeness. That is, completeness drops to 0% if (i) a single fatal aggregator dropout occurs or (ii) a single contributor drops out after sending only a sub-set of its 𝑠 shares (thus leading to different versions in the parallel subtrees). This makes the completeness of 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 extremely sensitive to dropouts. The reason is that there is no inter-tree sync mechanism allowing a convergence between the 𝑠 parallel aggregates.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">High-Completeness Protocol</head><p>Objective. To have a complete view of the design space, we also need a strategy that eagerly searches to maximize completeness regardless of cost. We call this strategy 𝐻𝑖𝑔ℎ𝐶𝑝𝑙. Design principles. To achieve this objective 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 adopts the opposite behavior compared with 𝐿𝑜𝑤𝐶𝑜𝑠𝑡: (i) any tree node (contributor or aggregator) can re-send its data whenever required (e.g., following a node replacement) and (ii) 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 propagates the data upward in the tree as fast as possible to maximize the chances of diffusion and then uses non-blocking sync for convergence between trees with eventual consistency thanks to CCF. Protocol. Node replacement policy. In 𝐻𝑖𝑔ℎ𝐶𝑝𝑙, any dropped out aggregator is replaced as soon as the dropout is detected by its parent node regardless if the dropout node has already sent one or several times its data up the tree. The replacement node asks IntRes from its children after replacement and sends the aggregate to its parent if that aggregate has a different version (𝐶𝐹 ) compared with the last sent aggregate (recorded by the parent). This may happen, for instance with the replacement of a leaf aggregator with some dropped out contributors. Validity. Non-blocking sync is required at the leaf aggregator level to ensure validity despite contributor dropouts (and a leaf aggregator replacement requires a new synchronization anyway).For the other levels, no sync is required since aggregators are replaced in case of dropouts and any new version sent at the leaf aggregator level triggers new computations up to the tree root. Termination. 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 can terminate after the querier receives 𝑠 consistent shares from its children. Discussion. 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 searches to maximizes completeness through systematic dropout replacements, subsequent data re-sends, and minimalist non-blocking sync. The consequence is obviously an increased overhead since the same data can be transmitted and aggregated multiple times.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Sync-and-Prune Protocol</head><p>Objective. The extreme behavior of 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 and 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 may make them impractical to use in real case scenarios. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 offers an adapted trade-off between completeness and cost, trying to minimize overhead but without completely hurting completeness Design principles. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 leverages the same 'send-onlyonce' principle to minimize cost like in 𝐿𝑜𝑤𝐶𝑜𝑠𝑡. However, different from 𝐿𝑜𝑤𝐶𝑜𝑠𝑡, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 allows for convergence between the parallel trees by using sync. Protocol. Node replacement policy. Same as 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 given the 'send-only-once' principle. Validity. Non-blocking sync is not compatible with the 'send-onlyonce' principle. Thus 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 employs blocking sync to ensure validity at all tree levels. Indeed, since dropout aggregators are not replaced, synchronization is required at all levels to ensure a consistent result between the parallel trees. Syncing at each tree level allows 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 to progressively prune the tree branches corresponding to dropped out aggregators from leaves to the root.</p><p>Termination. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 terminates when the querier receives 𝑠 shares from its child group or if it detects a dropout in the root group. Lower level nodes progressively terminate, from leaves to the root, after sending their IntRes to their parents. Discussion. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 is expected to have a low cost due to the 'send-only-once' strategy. Syncing also adds an overhead but we expect it to be low compared with the data transmission and the message decryption/encryption cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">Hybrid Protocol</head><p>Objective. 𝐻𝑦𝑏𝑟𝑖𝑑 is a second, less extreme strategy attempting to maximize completeness and maintain a reasonable cost. Design principles. The idea is to have a hybrid approach combining principles from 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 and 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒. In 𝐻𝑦𝑏𝑟𝑖𝑑, the contributors employ a 'send-only-once' strategy like in 𝑆𝑦𝑛𝑐&amp; 𝑃𝑟𝑢𝑛𝑒, while the aggregators re-send data whenever necessary like in 𝐻𝑖𝑔ℎ𝐶𝑝𝑙. The rationale is: (i) a significant part of the query cost comes from the data transmission at the contributors' level given the large number of contributors; and (ii) in the upper part of the tree, replacement induces less costs and provides comparatively more benefits, in terms of completeness.</p><p>Protocol. Node replacement policy. In 𝐻𝑦𝑏𝑟𝑖𝑑, a leaf aggregator that drops out is replaced only if the dropout occurs before the node receives any data from its contributors to comply with the 'send-only-once' principle for contributors. On the other hand, any dropout aggregator in the upper levels is systematically replaced and require their children to re-send their IntRes. Validity. To minimize overhead, 𝐻𝑦𝑏𝑟𝑖𝑑 uses a blocking sync strategy at the leaf aggregators. Thus, leaf aggregators send a single version of IntRes to their parent. Moreover, since leaf aggregators are not replaced in case of dropout, the sync at the leaf aggregator parent level induces pruning as in 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒. However, the aggregator replacements in the upper levels avoid pruning a large number of contributors and thus favors completeness. Also, replacements in the upper levels can generate multiple versions.</p><p>Termination. As in 𝐻𝑖𝑔ℎ𝐶𝑝𝑙, 𝐻𝑦𝑏𝑟𝑖𝑑 can terminate after the querier receives 𝑠 consistent IntRes from its child group. The contributor nodes and leaf aggregators nodes terminate after sending all the 𝑠 shares to their parent(s). Discussion. This hybrid strategy inherits the best of the two worlds: maximized completeness through replacement in the upper levels and limited cost due to 'send-only-once' at the contributors' level. However, it also inherits, but at a smaller scale, the limitations of the two approaches: some loss in completeness because of the nonreplacement of leaf aggregators as well as some overhead generated by data re-sends in the upper levels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.5">Summary</head><p>Table <ref type="table" target="#tab_0">1</ref> and Fig. <ref type="figure" target="#fig_2">2</ref> summarize the design and the behavior of each strategy (with only 2 shares for readability). By eagerly replacing nodes, 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 favors completeness to the expense of cost while 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 does not make any significant effort to favor completeness. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 still favors low overhead but avoids the binary behavior of 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 by pruning subtrees. Finally 𝐻𝑦𝑏𝑟𝑖𝑑 leverages the best of both 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑖𝑔ℎ𝐶𝑝𝑙.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">PERFORMANCE EVALUATION</head><p>We present the evaluation platform and used metrics in Section 7.1, then describe in Section 7.2 the experimental parameters and the system security configuration. We present and analyze the experimental results varying the dropout rate and the other parameters in Sections 7.3 and 7.4, then conclude with an analysis on the best fitted strategy depending on the context in Section 7.5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.1">Experimental Platform and Metrics</head><p>Our main goal is to evaluate the four proposed protocols in a large P2P PDMS system wherein the nodes are structured leveraging a Chord DHT overlay <ref type="bibr" target="#b30">[31]</ref>. To this end, we follow the same general approach as in the related works on P2P systems [? ? ? ], i.e., our results are based on a simulator which creates a logical DHT between simulated nodes <ref type="foot" target="#foot_0">1</ref> . Besides, we cannot quantitatively compare our protocols to other SA strategies (see Section 2) given the lack of similar secure aggregation solutions in P2P.</p><p>Our experimental evaluation is focused on the tension between cost and completeness in the proposed protocols for different parameters impacting security and/or performance. With respect to cost, our simulator captures the typical metrics for evaluating distributed protocols. At the the network level, we measure the required bandwidth (or bytes per query) at the node or system levels. The consumed bandwidth is of particular interest especially in the FL context wherein transmitted model parameters can have a significant size (see Table <ref type="table" target="#tab_2">2</ref>). The required amount of work (or CPU time per query) at the node or system levels is equally important. Finally, we also need to estimate the latency to process a query. For the network, we consider network links with latency and bandwidth based on average values of domestic Internet in France <ref type="bibr" target="#b23">[24]</ref> and add random noise to these values to be more representative of PDMSs heterogeneous connections. For the local work on each PDMS impacting the total work and the latency, we consider the most costly operations during the protocols, i.e., the cryptographic operations. To calibrate the simulator (see Table <ref type="table" target="#tab_2">2</ref>), we measured on a standard laptop computer equipped with Intel i5-9400H CPU @ 2.50GHz the cost of classical asymmetric encryption for signing and verifying messages, which is required to open the secure channels between communicating nodes. We also measured the time required by contributors/aggregators to process their data (e.g., encryption/decryption of a model of different sizes using AES256).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.2">Experimental and Security Parameters</head><p>System setup and security. We consider a large P2P system of 𝑁 = 10 6 nodes. We consider that the most powerful attacker can control up to 𝐶 nodes. Our goal is to avoid data leakage with a very high probability (e.g., a value of the security threshold 𝛼 &lt; 10 -6 ).</p><p>To determine the number of shares 𝑠, we use a revised version of the formula given in Section 4.1 to account for the node replacements, i.e., 1 𝑖=0 𝑠+1 𝑠+1-𝑖 ( 𝐶 𝑁 ) 𝑠+1-𝑖 (1 -𝐶 𝑁 ) 𝑖 &lt; 𝛼. For simplicity, we set 𝑠 and deduce, depending on 𝛼 and 𝑁 , the maximum number of controlled nodes 𝐶. With 𝛼 = 10 -6 , the group size of 4, 5 or 6 allows to tolerate up to, respectively, 21K, 44K or 72K colluding nodes. Dropout rate and simulation of dropouts. We vary the dropout rate from none up to extreme values, considering the most interesting, medium range values. The no dropout case allows providing a lower bound for the cost metrics. The extreme dropout rates are not representative of a real system setup (e.g., 1% dropout rate means that all the nodes drop out -for that query-after 100 seconds!) but allows observing trends and limitations of each strategy. Note also that dropouts during a query are only related to that query (i.e., nodes may be still working correctly, e.g., for the DHT overlay). Finally, we should stress that nodes dropout are pre-computed before the query execution and independently of the strategy to produce the exact same dropouts at the same moment and allow a fair comparison of the different strategies. System scalability. We use a fan-out of 8 for the aggregation trees since this value offers the best trade-off between latency and total work in our setting (see <ref type="bibr" target="#b21">[22]</ref> for the fan-out tuning detail). To measure the system scalability, we consider different values for selectivity and model size. The selectivity determines the number of contributors for a query and consequently, the aggregation tree height (the tree height of 3, 4 and 5 corresponds, with a fan-out of 8, to a selectivity of respectively 0.05%, 0.4% and 3.2%). For the model size, we considered very small (1KB) to large (16 MB) models to cover a wide range of FL applications. For instance, <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b28">29]</ref> consider the size of 1MB.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Description (notation)</head><p>Values (default) Network latency <ref type="bibr" target="#b23">[24]</ref> 30ms Network bandwidth <ref type="bibr" target="#b23">[24]</ref> 6MB  LowCost cannot handle even a few dropouts: As soon as some nodes drop out, 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 fails to obtain any result. The strategy uses an abrupt termination (see Section 6.1), sometimes even before contributors have a chance to contribute data. Fig. <ref type="figure">5</ref> shows that despite early termination, some contributors do manage to send their shares, which consumes some bandwidth even though these data are never used. In the rest of the study, 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 is often ignored because we focus on settings where dropouts prevent it from succeeding. HighCpl has the best completeness but it degrades rapidly with large dropout rates: 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 degrades rapidly when 𝐷 ≥ 0.4 with a variability between runs that explodes. Indeed, the overhead induced by dropout handling increases significantly with the dropout rate (see Fig. <ref type="figure">4</ref> and<ref type="figure">5</ref>). 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 gives up replacing nodes after having exhausted the maximum number of replacement nodes. On the one hand, this allows maintaining a path between the remaining contributors and the root of the tree, which in turn allows for aggregates to move faster up the aggregation path. On the other hand, because data are eagerly sent along the parallel trees without explicit synchronization mechanisms, it can generate a lot of aggregate re-sends before the final CCF convergence, impacting work, latency and bandwidth. Hence, 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 is subject to a snowball effect making it unsuitable for large dropout rates. Sync&amp;Prune has stable cost but lower completeness: Opposite to 𝐻𝑖𝑔ℎ𝐶𝑝𝑙, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 starts out with a lower completeness and  The rationale is that for 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒, completeness is determined by the location of dropouts in the tree, with dropouts higher in the tree severely affecting it. Also, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 has a more stable performance on all metrics as the dropout rate increases. Since the strategy ensures that any node works at most once, dropouts reduce the load of their parents. Thus, this strategy is beneficial for cost, but has a negative impact on completeness.</p><p>Hybrid combines the best of the two previous strategies: 𝐻𝑦𝑏𝑟𝑖𝑑 has a stable completeness, work and bandwidth throughout the dropout rate spectrum. Compared with 𝐻𝑖𝑔ℎ𝐶𝑝𝑙, the completeness is lower for low dropout rates because contributors never resend their data, but a lot better for high dropout rates because leaf aggregators are never replaced, preventing the snowball effect.</p><p>To our surprise, 𝐻𝑦𝑏𝑟𝑖𝑑 has only about 0.8 -1.7% larger communication cost than 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 but up to 20% higher latency. The rationale is that at the leaf aggregators level, where the vast majority of the protocol bandwidth is consumed, both protocols behave the same. In upper levels, 𝐻𝑦𝑏𝑟𝑖𝑑 can resend data, but this has also a limited impact due to blocking sync. HighCpl suffers from too many aggregate versions: Fig. <ref type="figure">6</ref> shows the distribution of the work across the tree layers, i.e., the average work per node in each tree level, for each strategy. We observe first that the work per aggregator in all levels is similar when the dropout rate is low. Thanks to our tree structure, the load is effectively and fairly distributed across system nodes. Contributors have less work to do in this setting since they transmit 𝑠 = 5 shares while aggregators receive and process 𝑓 = 8 shares and send one more to their parent. We also observe that the snowball effect in 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 mainly affects the aggregators closer to the root since those nodes receive a large number of different aggregate versions. 𝐻𝑦𝑏𝑟𝑖𝑑 also concentrates the load on higher level aggregators but manages to keep this overhead in a reasonable range thanks to the synchronization at the leaf aggregators. Hybrid and Sync&amp;Prune tolerate extreme dropout rates: Fig. <ref type="figure">7</ref> presents the behavior of our strategies with extreme dropout rates (𝐷 ≥ 0.5). With dropout rates 𝐷 &gt; 0.7, 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 fails to obtain any result for most of its executions, but 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑦𝑏𝑟𝑖𝑑 only have a small reduction in completeness because they are pruning the nodes and branches that prevent the execution from finishing. We note that despite wider boxes for 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒, 𝐻𝑦𝑏𝑟𝑖𝑑 has some outlying executions (even with no results) that fail to complete. Indeed with extreme dropout rates, the maximum number of replacements can be reached leading to pruning entire sub-trees and thus, reducing drastically completeness. HighCpl and Hybrid work well with small models: Fig. <ref type="figure">8</ref> shows the obtained completeness with a small model of only 1KB. Small models change the protocol bottlenecks since the model transmission becomes less impacting. Moreover, since the overall latency is much smaller (not shown given to the space limitation), there are less dropouts and thus better completeness for all strategies. 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 and 𝐻𝑦𝑏𝑟𝑖𝑑 obtain almost 100% completeness with low overhead (not shown). Fig. <ref type="figure">8</ref> shows also something interesting: we can observe a set of outlier executions for 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 with a completeness of about 87% (i.e., missing a fraction of 1/8 of the results). This is explained by the dropout of an aggregator in the second level group happening after its children have sent some data and is generally the reason for the higher variability of completeness in the executions of 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.4">Scalability and Security</head><p>Very large models require less dropouts: For a model size of 16 MB, none of the strategies reaches a completeness above 50%   as shown in Fig. <ref type="figure">9</ref>. We can see that 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 starts outperforming 𝐻𝑦𝑏𝑟𝑖𝑑, which only manages to finish a few low completeness (10%) executions. This is linked to the snowball effect caused by aggregator replacements: even if most nodes are not replaced (i.e., the leaf aggregators), the replacements upper in the tree are enough to create conflicts in the aggregate versions, which cannot be resolved since models transmission takes time, thereby leading to more dropouts. 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 is outperforming here because it only sends once the data that has been explicitly agreed upon by all group members, and prunes branches that fail to come to an agreement. More generally, we can conclude that very long queries (due to the transmission of 16 MB model) are not compatible with the default dropout rate (with too many dropouts) while 4 MB models are correctly supported.</p><p>Hybrid and Sync&amp;Prune support large aggregation trees: Another important aspect of scalability is the number of participants contributing to the query, which is characterized by the selectivity 𝜎 in our system (appearing as the tree height). 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 is once again failing when the height is greater than 4, taken down by the snowball effect of 8 times more nodes constantly resending new aggregate versions and never converging to a stable version.</p><p>𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑦𝑏𝑟𝑖𝑑 on the other hand are scalable with increasing number of contributors showing that they are able to fully benefit from the distributed nature of the execution. Larger groups (better security) are well supported: Finally, we study the impact of the security parameter on all strategies. We can see in Fig. <ref type="figure" target="#fig_1">11</ref> that increasing the security only has a mild impact on completeness for 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑦𝑏𝑟𝑖𝑑 while 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 remains mostly unaffected. The opposite is however happening in terms of work per node. Increasing the group size makes synchronization harder for 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 and 𝐻𝑦𝑏𝑟𝑖𝑑, resulting in more frequent pruning. The security parameter also impacts 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 by requiring more work to make the parallel trees come to an agreement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.5">Best Fit Strategy</head><p>In this last section, we first choose some typical parameters settings that best exemplify realistic scenarios, then define different objectives that guide us in our comparisons of the strategies. Finally, we report in Fig. <ref type="figure" target="#fig_2">12</ref>, 13 and 14 the region of the parameter space where each strategy performs best. We study two heights for the trees, corresponding to aggregating data from 500 and 4000 contributors. It includes the default height as well as a smaller height since they are representative for the context of federated learning (i.e., it is pertinent to aggregate from less contributors more frequently). We choose three model sizes: one for tiny models (e.g., for training simple models or computing aggregate statistics), and the default value of 1MB and then 4MB (which correspond to models used in a wider range of applications, ranging from image classification to natural language processing). The last parameter that we vary is the dropout rate in order to observe the robustness of each strategy. Our first objective is simply the highest completeness. Since a marginal increase in completeness can be costly, and unfairly advantage a strategy, we select, for the second and third objective, the strategy that incurs the least work after a pre-selection of strategies reaching a completeness of 80% and 95% of the strategy with the best completeness. We present the results in Fig. <ref type="figure" target="#fig_2">12</ref>, 13 and 14 in the form of a table where rows correspond to a couple of height and model size and columns to a dropout rate. The color of each cell corresponds to the strategy that best fits the given objective while the value is the averaged completeness of 50 executions. LowCost best fits with very few or no dropouts: Without dropouts, 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 always wins. All strategies have 100% completeness in this case but 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 has the lowest cost since parallel trees are not synchronized. The same happens with very few dropouts and small models.</p><p>HighCpl maximizes completeness but is costly: In Fig. <ref type="figure" target="#fig_2">12</ref>, 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 is the strategy that offers the best completeness in a majority of cases, i.e., except for bigger models or extreme dropout rates. It is also the best strategy in few settings on Fig. <ref type="figure" target="#fig_7">14</ref>. Sync&amp;Prune is efficient and reaches 80% best completeness: When being more tolerant about completeness, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 often becomes preferable because of its lower cost. With 80%, it even outperforms in almost all cases. 𝐻𝑦𝑏𝑟𝑖𝑑 performs better for extreme dropout rates because maintaining the tree prevents pruning the most impacting aggregators. With 95%, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 can still outperform in some cases (Fig. <ref type="figure" target="#fig_7">14</ref>), although in those cases, all strategies perform well anyway or oppositely, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 is the only strategy that gets a result. Hybrid is efficient and reaches 95% best completeness: 𝐻𝑦𝑏𝑟𝑖𝑑 fulfills its role as a trade-off strategy for every objective. It mostly outperforms in settings where 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 suffers from the snowball effect and 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 already has degraded performances. Moreover, for high completeness (i.e., the 95% objective), 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 has smaller overhead compared with 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8">CONCLUSION</head><p>Personal Data Management Systems arrive at a rapid pace allowing users to share their personal data within large P2P communities, which opens exciting perspectives. Federated learning is a prime example that could benefit from this abundant, diverse and complete source of personal data to train high quality ML models. However, this requires new protocols that protect the users' privacy and are adapted to the fully-decentralized nature of the PDMS ecosystem. To this end, we proposed a set of secure aggregation protocols for federated learning which are fully-decentralized, scalable, accurate and reliable. We analyzed the secure aggregation problem in the P2P PDMS context and showed that reliability is a key aspect raising a tension between the potential completeness of the result and the aggregation cost. We then proposed four protocols having different trade-offs between completeness and cost. We extensively evaluated these protocols for a wide range of settings of the dropout rates, security setting, trained model size, or contributors' selectivity. Our results showed that these protocols can offer high completeness results at reasonable cost in a wide range of settings.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>…..……. ……..…….………..…….…..</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Building the aggregation tree based on DHT precludes inferences from an attacker on any of the intermediate results (see Fig. 1.b). Each 𝑖 𝑡ℎ share has the value 𝑥 𝑖 = 𝑥/𝑠 + 𝜖 𝑖 such that 𝑛𝑖=1 𝜖 𝑖 = 0, where 𝑥 is the private value. Thus, shares from different contributors are aggregated separately and if no share is missing (reliability is discussed in Section 5), the final result equals the exact sum of all private values and is computed by the querier; hence, our protocol provides, by construction, accurate results.The number of shares, 𝑠, is computed such that the probability to obtain 𝑠 shares for an attacker, controlling 𝐶 nodes, is inferior to 𝛼, a security threshold (e.g., 𝛼 = 10 -6 ). An attacker could cleverly locate her controlled nodes in the DHT to obtain the 𝑠 shares of a group. We avoid this attack by reusing the concept of imposed location proposed in<ref type="bibr" target="#b18">[19]</ref>: the node Id in the DHT is computed by hashing the public key from the PDMS certificate (see Section 3.2). The nodes are then uniformly distributed in the DHT space and the PDMS owner (here the attacker) cannot influence this placement. Consequently, the uniform distribution also applies to leaking nodes and the probability that an attacker controls an entire group is given by (𝐶/𝑁 ) 𝑠 &lt; 𝛼. Then 𝑠 is minimal when 𝑠 = ⌈log(𝛼)/log( 𝐶 𝑁 )⌉. Obviously, communications between nodes must use secured channels, to protect the integrity and confidentiality of the exchanged data and to ensure the provenance of that data. Adaptability: The number of aggregators and their arrangement (i.e., the tree fan-out and its height) is tuned as a function of the number of contributors, the communication costs and the processing costs as discussed in<ref type="bibr" target="#b21">[22]</ref>. This allows the protocol to always offer near-optimal performance (i.e., aggregation latency) and achieve adaptability w.r.t. the computation selectivity and PDMSs characteristics. Furthermore, our protocol can be configured to offer the desired trade-off between the latency and the total cost of the aggregation, which are conflicting objectives. At one extreme (see Fig.1.c left), a binary tree (𝑓 = 2) distributes the query load on a maximum number of aggregator groups but increases the communications costs. At the other extreme (see Fig.1.c right), a tree limited to a unique aggregator group (𝑓 = 𝜎 × 𝑁 ) minimizes the communications costs, the total system load but concentrates most of that load on this unique aggregator group that becomes overloaded. Thus, in an "ideal" setting, the height of the tree is chosen to optimize the query latency without impacting too much the total load. Scalability: The DHT realizes a de facto fully decentralized and efficient architecture for communication between nodes. Building and broadcasting 𝑠 aggregation trees can be very costly since the trees can be large. We thus employ a divide-and-conquer approach</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Envisioned strategies</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 ,</head><label>3</label><figDesc>Fig.3, 4, 5 and 6 depict respectively the completeness, latency, bandwidth and work by node, varying the dropout rate 𝐷 All strategies perform identically when there are no dropouts since the overhead of advanced strategies (e.g., blocking sync) is negligible compared to the transmission cost of the 1MB model. LowCost cannot handle even a few dropouts: As soon as some nodes drop out, 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 fails to obtain any result. The strategy uses an abrupt termination (see Section 6.1), sometimes even before contributors have a chance to contribute data. Fig.5shows that despite early termination, some contributors do manage to send their shares, which consumes some bandwidth even though these data are never used. In the rest of the study, 𝐿𝑜𝑤𝐶𝑜𝑠𝑡 is often ignored because we focus on settings where dropouts prevent it from succeeding. HighCpl has the best completeness but it degrades rapidly with large dropout rates: 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 degrades rapidly when 𝐷 ≥ 0.4 with a variability between runs that explodes. Indeed, the overhead induced by dropout handling increases significantly with the dropout rate (see Fig.4 and 5). 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 gives up replacing nodes after having exhausted the maximum number of replacement nodes. On the one hand, this allows maintaining a path between the remaining contributors and the root of the tree, which in turn allows for aggregates to move faster up the aggregation path. On the other hand, because data are eagerly sent along the parallel trees without explicit synchronization mechanisms, it can generate a lot of aggregate re-sends before the final CCF convergence, impacting work, latency and bandwidth. Hence, 𝐻𝑖𝑔ℎ𝐶𝑝𝑙 is subject to a snowball effect making it unsuitable for large dropout rates. Sync&amp;Prune has stable cost but lower completeness: Opposite to 𝐻𝑖𝑔ℎ𝐶𝑝𝑙, 𝑆𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒 starts out with a lower completeness and</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>Figure 3: Completeness, 1 MB model</figDesc><graphic coords="11,60.76,220.32,149.92,106.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 :Figure 8 :</head><label>68</label><figDesc>Figure 6: Work by node, 1 MB model</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 10 :Figure 11 :</head><label>1011</label><figDesc>Figure 9: Varying model size</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 14 :</head><label>14</label><figDesc>Figure 14: Strategy / 95% Completeness</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Algorithm 1 :</head><label>1</label><figDesc>Straw-Man protocol (average computation) IntRes 𝑖 (Sum, NbContrib): intermediate result of child 𝑖. • Query(): ask contributors for their potential contributions.</figDesc><table><row><cell></cell><cell>Message definition:</cell><cell></cell></row><row><cell></cell><cell cols="2">• Input: 𝑠: number of shares; 𝑓 : tree fan-out</cell></row><row><cell>1</cell><cell>Querier Node : on initialization do --→ sum ←</cell><cell>-→ 0 ; nbContrib ← 0</cell></row><row><cell>2 3</cell><cell cols="2">on IntRes 𝑖 (), 𝑖 ∈ [1..𝑠 ] do --→ sum += msg. --→ 𝑠𝑢𝑚; nbContrib += msg. nbContrib</cell></row><row><cell>4 5</cell><cell cols="2">if I received 𝑠 intermediate results then ----→ 𝑟𝑒𝑠𝑢𝑙𝑡 = --→ sum/(nbContrib/𝑠 ) /* average */</cell></row><row><cell>6</cell><cell>Aggregator Nodes : on initialization do --→ sum ←</cell><cell>-→ 0 ; nbContrib ← 0</cell></row><row><cell>7 8</cell><cell cols="2">on IntRes 𝑖 (), 𝑖 ∈ [1..𝑓 ] do --→ sum += msg. --→ 𝑠𝑢𝑚; nbContrib += msg. nbContrib</cell></row><row><cell>9</cell><cell cols="2">if I received 𝑓 intermediate results then</cell></row><row><cell>10 11</cell><cell cols="2">if I want to contribute then --→ sum += ------→ 𝑚𝑦𝐷𝑎𝑡𝑎; nbContrib += 𝑠</cell></row><row><cell>12</cell><cell cols="2">Send IntRes ( --→ sum, nbContrib) to my parent</cell></row><row><cell></cell><cell>Leaf Aggregator Nodes :</cell><cell></cell></row><row><cell>13 14</cell><cell cols="2">on initialization do --→ sum ← -→ 0 ; nbContrib ← 0</cell></row><row><cell>19</cell><cell cols="2">after Contribution Timeout expiration do</cell></row><row><cell>20</cell><cell cols="2">if there is no more pending messages then</cell></row><row><cell>21 22</cell><cell cols="2">if I want to contribute then --→ sum += ------→ 𝑚𝑦𝐷𝑎𝑡𝑎; nbContrib+=𝑠</cell></row></table><note><p><p>15</p>Broadcast the query to the assigned part of the DHT 16 Set a Contribution Timeout (to receive all contributions) 17 on IntRes 𝑖 (), 𝑖 ∈ [1..𝑓 ] do 18 --→ sum += msg. --→ 𝑠𝑢𝑚; nbContrib += msg. nbContrib 23 Send IntRes ( --→ sum, nbContrib) to my parent Potential Contributor Nodes : 24 on Query() do 25 if I want to contribute then 26 if msg. sender is a PDMS (check certificate) then 27 for 𝑖 ∈ [1..𝑠 ] do 28 Send IntRes ( ----→ 𝑠ℎ𝑎𝑟𝑒 𝑖 , 1) to msg. parents[𝑖 ]</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Design and building blocks</figDesc><table><row><cell>Strategy</cell><cell>send</cell><cell>use</cell><cell>blocking</cell><cell>use</cell><cell>replace</cell></row><row><cell></cell><cell>once</cell><cell>sync</cell><cell>sync</cell><cell>CCF</cell><cell>agg.</cell></row><row><cell>𝐿𝑜𝑤𝐶𝑜𝑠𝑡</cell><cell>yes</cell><cell>no</cell><cell>n/a</cell><cell>yes</cell><cell>no</cell></row><row><cell>𝐻𝑖𝑔ℎ𝐶𝑝𝑙</cell><cell>no</cell><cell>leaf agg.</cell><cell>no</cell><cell>yes</cell><cell>yes</cell></row><row><cell>𝑆 𝑦𝑛𝑐&amp;𝑃𝑟𝑢𝑛𝑒</cell><cell>yes</cell><cell>all levels</cell><cell>yes</cell><cell>no</cell><cell>no</cell></row><row><cell>𝐻 𝑦𝑏𝑟𝑖𝑑</cell><cell cols="2">contrib. leaf agg.</cell><cell>yes</cell><cell>yes</cell><cell>yes</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Simulation parametersNumber of runs and box plots. We aggregate the results of 50 runs to obtain statistically representative results. In addition, we use box plots which helps visualizing this variability and the distribution of runs. In the figures, the lower and upper whiskers of the box respectively represent the min and the max for the plotted metric, and the lower and upper edges of the box represent first and third quartile respectively. To make the boxes easier to read, we exclude outliers (i.e., points that are further away than 1.5 the interquartile range) which are directly represented as points. Finally, the line connecting the mean values is also represented.</figDesc><table><row><cell>/s</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head></head><label></label><figDesc>Least total work, at least 80% of best completeness</figDesc><table><row><cell></cell><cell>LowCost</cell><cell>HighCpl</cell><cell></cell><cell>Sync&amp;Prune</cell><cell></cell><cell>Hybrid</cell><cell></cell><cell>LowCost</cell><cell>HighCpl</cell><cell></cell><cell>Sync&amp;Prune</cell><cell></cell><cell>Hybrid</cell><cell></cell><cell>LowCost</cell><cell>HighCpl</cell><cell></cell><cell>Sync&amp;Prune</cell><cell>Hybrid</cell></row><row><cell cols="2">Height Size</cell><cell>0</cell><cell>0.01</cell><cell>0.25</cell><cell>0.5</cell><cell>1</cell><cell cols="2">Height Size</cell><cell>0</cell><cell>0.01</cell><cell>0.25</cell><cell>0.5</cell><cell>1</cell><cell cols="2">Height Size</cell><cell>0</cell><cell>0.01</cell><cell>0.25</cell><cell>0.5</cell><cell>1</cell></row><row><cell>3</cell><cell>1 K</cell><cell cols="5">100% 100% 100% 100% 100%</cell><cell>3</cell><cell>1 K</cell><cell cols="4">100% 100% 100% 99%</cell><cell>97%</cell><cell>3</cell><cell>1 K</cell><cell cols="3">100% 100% 100% 99%</cell><cell>97%</cell></row><row><cell>4</cell><cell>1 K</cell><cell cols="5">100% 100% 100% 100% 99%</cell><cell>4</cell><cell>1 K</cell><cell cols="2">100% 95%</cell><cell>99%</cell><cell>98%</cell><cell>91%</cell><cell>4</cell><cell>1 K</cell><cell cols="2">100% 95%</cell><cell>99%</cell><cell>98%</cell><cell>99%</cell></row><row><cell>3</cell><cell cols="4">1 M 100% 100% 99%</cell><cell>99%</cell><cell>96%</cell><cell>3</cell><cell cols="3">1 M 100% 80%</cell><cell>89%</cell><cell>90%</cell><cell>87%</cell><cell>3</cell><cell cols="4">1 M 100% 100% 97%</cell><cell>99%</cell><cell>96%</cell></row><row><cell>4</cell><cell cols="4">1 M 100% 100% 99%</cell><cell>93%</cell><cell>84%</cell><cell>4</cell><cell cols="4">1 M 100% 100% 93%</cell><cell>83%</cell><cell>84%</cell><cell>4</cell><cell cols="4">1 M 100% 100% 97%</cell><cell>93%</cell><cell>84%</cell></row><row><cell>3</cell><cell cols="4">4 M 100% 100% 97%</cell><cell>78%</cell><cell>59%</cell><cell>3</cell><cell cols="4">4 M 100% 100% 81%</cell><cell>60%</cell><cell>59%</cell><cell>3</cell><cell cols="4">4 M 100% 100% 97%</cell><cell>76%</cell><cell>59%</cell></row><row><cell>4</cell><cell cols="4">4 M 100% 100% 87%</cell><cell>68%</cell><cell>28%</cell><cell>4</cell><cell cols="4">4 M 100% 100% 78%</cell><cell>51%</cell><cell>28%</cell><cell>4</cell><cell cols="4">4 M 100% 100% 87%</cell><cell>68%</cell><cell>28%</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="5">CRITERIA: Least total work, at least 95% of best completeness</cell></row><row><cell cols="7">Figure 12: Strategy / Completeness</cell><cell cols="7">Figure 13: Strategy / 80% Completeness</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table><note><p><p>CRITERIA: Best completeness</p>CRITERIA:</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The simulator is available on https://github.com/JulienMirval/dissec_cozy/tree/ master/simulation</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENT</head><p>This work has been supported by the <rs type="grantNumber">ANR 22-PECY-0002</rs> <rs type="projectName">IPOP</rs> (<rs type="projectName">Interdisciplinary Project on Privacy)</rs> project of the <rs type="projectName">Cybersecurity PEPR</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_Yt9hCCH">
+					<idno type="grant-number">ANR 22-PECY-0002</idno>
+					<orgName type="project" subtype="full">IPOP</orgName>
+				</org>
+				<org type="funded-project" xml:id="_UrxDkP2">
+					<orgName type="project" subtype="full">Interdisciplinary Project on Privacy)</orgName>
+				</org>
+				<org type="funded-project" xml:id="_qSMCpRP">
+					<orgName type="project" subtype="full">Cybersecurity PEPR</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">cpSGD: Communication-Efficient and Differentially-Private Distributed SGD</title>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ananda</forename><forename type="middle">Theertha</forename><surname>Suresh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjiv</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Local Differential Privacy on Metric Spaces: Optimizing the Trade-Off with Utility</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mário</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Konstantinos</forename><surname>Alvim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catuscia</forename><surname>Chatzikokolakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Palamidessi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Pazii</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE CSF</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Personal Data Management Systems: The Security and Functionality Standpoint</title>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Anciaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Nguyen</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+			<publisher>Information Systems</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Personal Database Security and Trusted Execution Environments: A Tutorial at the Crossroads</title>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Anciaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Pucheral</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iulian</forename><surname>Sandu Popa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Privacy-Preserving Deep Learning via Additively Homomorphic Encryption</title>
+		<author>
+			<persName><forename type="first">Yoshinori</forename><surname>Aono</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Takuya</forename><surname>Hayashi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lihua</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shiho</forename><surname>Moriai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Inf. Forensics Secur</title>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">SMCQL: Secure Query Processing for Private Data Networks</title>
+		<author>
+			<persName><forename type="first">Johes</forename><surname>Bater</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gregory</forename><surname>Elliott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Craig</forename><surname>Eggen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satyender</forename><surname>Goel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Personalized and Private Peer-to-Peer Machine Learning</title>
+		<author>
+			<persName><forename type="first">Aurélien</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachid</forename><surname>Guerraoui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mahsa</forename><surname>Taziki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marc</forename><surname>Tommasi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AIStat</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Practical Secure Aggregation for Privacy-Preserving Machine Learning</title>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Ivanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Kreuter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><surname>Marcedone</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM CCS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Highly Distributed and Privacy-Preserving Queries on Personal Data Management Systems</title>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Loudet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iulian Sandu</forename><surname>Popa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The VLDB Journal</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<idno>COM/2020/767</idno>
+		<title level="m">Proposal for a Regulation on European Data Governance (Data Governance Act)</title>
+		<imprint>
+			<publisher>EU Commission</publisher>
+			<date type="published" when="2020-10-25">25 October 2020</date>
+		</imprint>
+	</monogr>
+	<note>eur-lex</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Answering Range Queries Under Local Differential Privacy</title>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Cormode</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tejas</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Divesh</forename><surname>Srivastava</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Prio: Private, Robust, and Scalable Computation of Aggregate Statistics</title>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Corrigan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-</forename><surname>Gibbs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Boneh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NSDI</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<ptr target="https://cozy.io/fr/)" />
+		<title level="m">Cozy Cloud</title>
+		<imprint>
+			<publisher>Cozy Cloud</publisher>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">FLOD: Oblivious Defender for Private Byzantine-Robust Federated Learning with Dishonest-Majority</title>
+		<author>
+			<persName><forename type="first">Ye</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaojun</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiyun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dakui</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESORICS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">SAFELearn: Secure Aggregation for Private Federated Learning</title>
+		<author>
+			<persName><forename type="first">Hossein</forename><surname>Fereidooni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Marchal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Miettinen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Azalia</forename><surname>Mirhoseini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE SPW</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Drynx: Decentralized, Secure, Verifiable System for Statistical Queries and Machine Learning on Distributed Datasets</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Froelicher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Juan</forename><surname>Ramón Troncoso-Pastoriza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joao</forename><forename type="middle">Sa</forename><surname>Sousa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jean-Pierre</forename><surname>Hubaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Inf. Forensics Secur</title>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">VeriFL: Communication-Efficient and Fast Verifiable Aggregation for Federated Learning</title>
+		<author>
+			<persName><forename type="first">Xiaojie</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheli</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiqiang</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Inf. Forensics Secur</title>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Obscure: Information-Theoretic Oblivious and Verifiable Aggregation Queries</title>
+		<author>
+			<persName><forename type="first">Peeyush</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharad</forename><surname>Mehrotra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nisha</forename><surname>Panwar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">SEP2P: Secure and Efficient P2P Personal Data Processing</title>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Loudet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iulian</forename><surname>Sandu Popa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Bouganim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EDBT</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">SoK: Secure Aggregation Based on Cryptographic Schemes for Federated Learning</title>
+		<author>
+			<persName><forename type="first">Mohamad</forename><surname>Mansouri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melek</forename><surname>Önen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wafa</forename><surname>Ben Jaballah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mauro</forename><surname>Conti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PETS</title>
+		<imprint>
+			<date type="published" when="2023">2023. 2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Communication-Efficient Learning of Deep Networks from Decentralized Data</title>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eider</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><surname>Hampson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>PMLR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Practical Fully-Decentralized Secure Aggregation for Personal Data Management Systems</title>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Mirval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iulian</forename><surname>Sandu-Popa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SSDBM</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Privacy Preserving Average Consensus</title>
+		<author>
+			<persName><forename type="first">Yilin</forename><surname>Mo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">M</forename><surname>Murray</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE TACON</title>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Baromètre des Connexions Internet Fixes en France Métropolitaine</title>
+		<author>
+			<persName><surname>Nperf</surname></persName>
+		</author>
+		<ptr target="https://perma.cc/DP8V-5ABT" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Robust Privacy-Preserving Gossip Averaging</title>
+		<author>
+			<persName><forename type="first">Amaury</forename><surname>Bouchra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pilet</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Davide</forename><surname>Frey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Taïani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SSS</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Mobile Participatory Sensing with Strong Privacy Guarantees using Secure Probes</title>
+		<author>
+			<persName><forename type="first">Iulian Sandu</forename><surname>Popa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dai</forename><surname>Hai Ton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Karine</forename><surname>That</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian</forename><surname>Zeitouni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Borcea</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<publisher>GeoInformatica</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">SIA: Secure Information Aggregation in Sensor Networks</title>
+		<author>
+			<persName><forename type="first">Bartosz</forename><surname>Przydatek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dawn</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adrian</forename><surname>Perrig</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SenSys</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">An Accurate, Scalable and Verifiable Protocol for Federated Differentially Private Averaging</title>
+		<author>
+			<persName><forename type="first">César</forename><surname>Sabater</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélien</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Ramon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mach. Learn</title>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Turbo-Aggregate: Breaking the Quadratic Aggregation Barrier in Secure Federated Learning</title>
+		<author>
+			<persName><forename type="first">Jinhyun</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Başak</forename><surname>Güler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Salman</forename><surname>Avestimehr</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021. 2021</date>
+			<publisher>IEEE JSAIT</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Lightsecagg: A Lightweight and Versatile Design for Secure Aggregation in Federated Learning</title>
+		<author>
+			<persName><forename type="first">Jinhyun</forename><surname>So</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chaoyang</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chien-Sheng</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Songze</forename><surname>Li</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022. 2022</date>
+			<publisher>MLSys</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Chord: A Scalable Peer-to-Peer Lookup Service for Internet Applications</title>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Morris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Karger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Frans Kaashoek</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2001">2001. 2001</date>
+			<publisher>ACM SIGCOMM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Private and Scalable Execution of SQL Aggregates on a Secure Decentralized Architecture</title>
+		<author>
+			<persName><forename type="first">Quoc-Cuong</forename><surname>To</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benjamin</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Pucheral</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TODS</title>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Federated Learning with Bayesian Differential Privacy</title>
+		<author>
+			<persName><forename type="first">Aleksei</forename><surname>Triastcyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Boi</forename><surname>Faltings</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE BigData</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Federated Learning with Personalized Local Differential Privacy</title>
+		<author>
+			<persName><forename type="first">Ge</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaowei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haijie</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE ICCCS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">CALM: Consistent Adaptive Local Marginal for Marginal Release under Local Differential Privacy</title>
+		<author>
+			<persName><forename type="first">Zhikun</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianhao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ninghui</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shibo</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM CCS</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

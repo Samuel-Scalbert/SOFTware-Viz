@@ -1,0 +1,772 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Nested Regular Expressions can be Compiled to Small Deterministic Nested Word Automata</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Iovka</forename><surname>Boneva</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université de Lille</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Joachim</forename><surname>Niehren</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Inria Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Momar</forename><surname>Sakho</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université de Lille</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Inria Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Nested Regular Expressions can be Compiled to Small Deterministic Nested Word Automata</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">DEEDED18544E2F0FFF38C35A82EB3634</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Automata</term>
+					<term>Regular Expressions</term>
+					<term>Nested Words</term>
+					<term>XPath 0 = {1, 3, 5, 6} 1 = {8, 10, 14, 16, 18, 19} 2 = {2, 5, 6} 3 = {4, 5, 6} 4 = {5, 6} 5 = {9, 10, 15, 18, 19} 6 = {9, 10, 17, 18, 19} 7 = {10, 18, 19} , x } 10 = {9, 10, 18, 19, 20} 11 = {5, 6, 12}</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>We study the problem of whether regular expressions for nested words can be compiled to small deterministic nested word automata (NWAs). In theory, we obtain a positive answer for small deterministic regular expressions for nested words. In practice of navigational path queries, nondeterministic NWAs are obtained for which NWA determinization explodes. We show that practical good solutions can be obtained by using stepwise hedge automata as intermediates.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>Nested words are nested structures omnipresent in computer science. They were used in particular to represent data trees or <software>Xml</software> documents, or to analyze the call structure of recursive programs. The idea of nested words is to generalize words and unranked trees at the same time. Nested words can be obtained by enriching Dyck words with internal letters, besides opening and closing parentheses. Nested words can also be defined recursively as the elements of the least set that contains internal letters from a given alphabet, triples consisting of an opening parenthesis, a nested word, and a closing parenthesis, and all sequences of nested words. Alternatively, nested words can be specified as finite sequences of internal letters, opening parentheses and closing parentheses. Only well-nested sequences are permitted in which every opening parenthesis is properly closed and every closing parenthesis is properly opened. Or else, nested words can be identified with sequences of unranked trees, which are often called hedges.</p><p>From the viewpoint of formal language theory, the natural question is how to lift and relate the notions of finite automata and regular expressions for words and trees to the case of nested words. Automata for nested words (NWAs) are well studied <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b22">23]</ref> and also known as visibly pushdown automata. While having the same expressiveness as hedge automata <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b9">10]</ref>, which generalize tree automata from ranked to unranked trees, they are often defined as pushdown automata with visible stacks, meaning that exactly one symbol is pushed when reading an opening parenthesis, and exactly one symbol is popped when reading a closing parenthesis, while the stack is not used otherwise. Their main advantage is a powerful notion of determinism, generalizing both over bottom-up and topdown determinism of tree automata for ranked trees <ref type="bibr" target="#b0">[1]</ref>. In contrast to more general pushdown automata, NWAs permit determinization, basically since they are so closely related to tree automata.</p><p>Regular expressions for nested words were first introduced under the name of regular expression types by Hosoya et al. in the context of the <software ContextAttributes="created">Xml</software> programming language <software ContextAttributes="created">XDuce</software> <ref type="bibr" target="#b18">[19]</ref>. We will call them nested regular expressions (NREs) instead. Independently, more complex notions of regular expressions were proposed <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b24">25]</ref> that can also deal to some extent with generalizations of nested words, in which dangling opening and closing parentheses are permitted. It was already claimed in <ref type="bibr" target="#b18">[19]</ref>, that NREs have the same expressiveness as hedge automata <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b9">10]</ref>, which in turn have the same expressiveness as NWAs <ref type="bibr" target="#b0">[1]</ref>. However, the question under which conditions nested words can be compiled to small deterministic NWAs has not been studied. Whenever possible, one can decide language inclusion or equivalence in P. Otherwise, these problems may not be feasible since EXP-complete for general NWAs or NREs.</p><p>Our concrete interest in the universality of deterministic NWAs is motivated by <software ContextAttributes="created">Xml</software> stream processing: we want to compute the certain answers of a <software ContextAttributes="created">CoreXPath</software> query on an <software ContextAttributes="created">Xml</software> stream <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b14">15]</ref>, i.e., those elements that are selected in all possible futures of the stream. Whether an answer is certain is computationally hard for tiny syntactic fragments of <software ContextAttributes="created">CoreXPath</software> <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b14">15]</ref>, but can be done in polynomial time for queries defined by deterministic NWAs <ref type="bibr" target="#b15">[16]</ref>. A natural question is therefore, whether it is possible to compile <software ContextAttributes="created">CoreXPath</software> queries as in the usual benchmark <ref type="bibr" target="#b13">[14]</ref> to deterministic NWAs of reasonable size. Unfortunately, the existing compilers fail to do so <ref type="bibr" target="#b11">[12]</ref>, since they are based on NWA determinization for dealing with disjunction, negation, and recursive steps. Thereby they produce huge deterministic automata even for very simple <software ContextAttributes="created">CoreXPath</software> queries from the benchmark, or do not terminate after some hours.</p><p>In this paper, we consider NREs for defining queries on nested words, since there exist compilers that can map the <software ContextAttributes="used">CoreXPath</software> queries from the usual benchmark to NREs of reasonable size, under the condition that the path query contains only forwards steps. We then distinguish a subclass of "deterministic" NREs that can be complied in polynomial time to deterministic NWAs by generalizing on Glushkov's construction of deterministic finite-state automata (Dfas) from "deterministic" regular expressions <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref>. However, the NREs obtained by compilation from <software ContextAttributes="used">CoreXPath</software> queries are rarely deterministic, so neither are the NWAs obtained from them by direct compilation. Neither can we apply NWA determinization to them as argued above. We show that deterministic NWAs can be obtained nevertheless based on stepwise hedge automata (SHAs), that we introduce. SHAs combine stepwise tree automata <ref type="bibr" target="#b7">[8]</ref> for unranked trees with finite state automata on words (Nfas). They can be determinized in a bottom-up and left-to-right manner, simply by combining the determinization procedures for tree automata and for Nfas. Furthermore, we can compile deterministic SHAs to deterministic NWAs in polynomial time. Conversely, NWAs can be compiled to SHAs in polynomial time too, but at the cost of introducing nondeterminism.</p><p>By composing these compilers and determinization algorithms, NREs can be compiled to deterministic NWAs in the following two manners. The first method is to compile the NRE to an SHA, from there to an NWA, which is then determinized. The second way consists of compiling the NRE to an SHA, determinize it, and convert the result to a deterministic NWA. In an experimental study, we consider a collection of NREs that we constructed automatically from <software ContextAttributes="used">CoreXPath</software> queries in the <software ContextAttributes="used">XMark</software> benchmark <ref type="bibr" target="#b13">[14]</ref>. It turns out a little surprisingly that both above algorithms yield a satisfactory solution: they produce small deterministic NWAs for all NREs in our collection. The sizes of the deterministic may differ, sometimes in favor of the one or the other algorithm. We also discuss, why the NWA determinization behaves reasonably for the NWAs obtained from SHAs, while it behaved so badly for NWAs obtained directly from NREs. The reason seems to be that the former NWAs in contrast to the latter have the single entry property, which basically states that the NWA performs all its work in a bottom-up and left-to-right manner, and none when moving top-down. This conjecture is supported by practical evidence rather than some formal statement. Related Work. <software ContextAttributes="used">CoreXPath</software> <ref type="bibr" target="#b16">[17]</ref> is a fragment of nested regular path queries on data trees, in which recursion is restricted to basic steps up, down, left and right. Nested regular path queries were introduced in the seventies <ref type="bibr" target="#b12">[13]</ref> under the name of the propositional dynamic logic (PDL). There they were applied to general labeled graphs, rather than being restricted to data trees.</p><p>Since certain query answering for <software ContextAttributes="used">CoreXPath</software> was considered as difficult, the currently existing approaches to <software ContextAttributes="used">CoreXPath</software> evaluation on <software ContextAttributes="used">Xml</software> streams <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b23">24]</ref> either approximate certain query answers based on nondeterministic machines or restrict the queries so that answers certainty can be decided without latency <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b3">4]</ref>. This also holds for recent streaming algorithms on words without nesting in the context of complex event processing <ref type="bibr" target="#b17">[18]</ref>.</p></div>
+<div><head n="2">Nested Words</head><p>Nested words are words with parentheses that are well-nested. They can be identified with hedges, that is sequences of internal symbols and unranked trees.</p><p>Nested words are constructed with an opening and a closing parentheses, respectively and . An unranked alphabet Σ is a possibly infinite set of so called "internal" symbols, that does not contain the two parentheses. Nested words over Σ then have the following abstract syntax:</p><formula xml:id="formula_0">h, h ::= ε | a | h | h • h where a ∈ Σ</formula><p>The empty word is denoted by ε and assumed to satisfy</p><formula xml:id="formula_1">ε • h = h = h • ε.</formula><p>Nested words can be identified with hedges, i.e., words of trees and internal symbols. Seen as a graph, the inner nodes are labeled by the tree constructor and the leafs by symbols in Σ or the tree constructor. For instance a Variants. Our notion of nested words accepts only well-nested words without dangling opening or closing parentheses in contrast to others <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">3]</ref>. This will lead to simpler notion of regular expressions, avoiding the more complex operators as with visibly rational expressions <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b24">25]</ref>. A less important difference is that we do not support labeled parentheses. Labeled trees. Labeled parentheses can be simulated by using internal letters. For instance, the labeled tree a(b(), c()) can be represented by the nested word of type tree a • b • c . In this way, the labeled tree a() is represented by the nested word a which is of type tree (while the internal letter a alone is not). <software ContextAttributes="created">Xml</software> documents are particular labeled trees, such as for instance: a name = "uf f " b isgaga d/ /b c/ /a . Labeled trees satisfying the <software ContextAttributes="created">Xml</software> data model can be represented as nested words over a signature that contains the <software ContextAttributes="created">Xml</software> nodetypes (elem, attr, text, . . .), the <software ContextAttributes="created">Xml</software> names of the document (a, . . . , d, name), and the characters of the data values, say UTF8. For the above example, we get the nested word elem</p><formula xml:id="formula_2">• b • ε • c • d • ε corresponds</formula><formula xml:id="formula_3">• a • attr • name • u • f • f elem • b • text • i • s • g • a • g • a elem • d elem • c</formula></div>
+<div><head n="3">Nested Regular Expressions</head><p>We present nested regular expressions (NREs), that were introduced under the name regular expression types in the context of <software ContextAttributes="created">XDuce</software> <ref type="bibr" target="#b18">[19]</ref> up to minor details. A NRE over alphabet Σ has the following abstract syntax:</p><formula xml:id="formula_4">E, E ::= ε | a | ¬Σ | ∅ | E • E | E + E | E&amp;E | E * | E | µa.E</formula><p>where a ∈ Σ and Σ ⊆ Σ is finite. We restrict the recursive expressions µa.E such that all occurrences of a in E are nested below parentheses. The sets of free and bound symbols fn(E) and bn(E) are defined as usual where µa.E binds symbol a with scope E and there is no other binder.</p><p>There are two differences with the regular expression types from <ref type="bibr" target="#b18">[19]</ref>. First, our NREs treat labels as internal symbols instead of labels of parentheses. Second, they provide recursion through the µ-operator instead of using recursive equation systems. Even though not needed from the view point of expressiveness, we allow conjunctions E&amp;E to simplify the compilation of <software ContextAttributes="created">CoreXPath</software> expressions with filters to NREs. NREs having no subexpressions E&amp;E are called conjunction-free (CF-NREs). Any NRE describes a language of nested words that is defined by structural induction as follows:</p><formula xml:id="formula_5">L(ε) = {ε} L(a) = {a} L(¬Σ ) = Σ \ Σ L(∅) = ∅ L(E • E ) = L(E) • L(E ) L(E * ) = L(E) * L(E + E ) = L(E) ∪ L(E ) L(E&amp;E ) = L(E) ∩ L(E ) L( E ) = { h | h ∈ L(E)} L(µa.E) = ∪ n≥0 L(µ n a.E)</formula><p>A negation ¬Σ stands for Σ\Σ . This is useful for dealing with infinite alphabets and with large finite alphabets. For all expressions E, E 1 and E 2 , the notation</p><formula xml:id="formula_6">E[E 1 /E 2 ]</formula><p>stands for the expression E where all the occurrences of E 1 have been replaced by E 2 . The semantics of a µ-operator is then defined using the shortcuts</p><formula xml:id="formula_7">µ 0 a.E = E[a/∅] and µ n a.E = E[a/µ n-1 a.E] for all n ≥ 1. Note that µa. b • a • c + ε would define the string language {b n • c n | n ≥ 0} which is not regular.</formula><p>But this expression is ruled out since the µ-bound name a is not nested below parentheses.</p><p>In the context of <software>Xml</software> queries, we can express the child and descendant-orself axes of XPath expressions by using the following NREs:</p><formula xml:id="formula_8">ch(E) = df T • E • T T = df µx. ( x + ¬∅) * ch * (E) = df µx. (E + ch(x))</formula><p>where</p><formula xml:id="formula_9">x ∈ fn(E) ch + (E) = df µx. (ch(E) + ch(x))</formula><p>where x ∈ fn(E)</p><p>Thereby, the XPath expression a[following-sibling::b]/descendant::c can be expressed as a NRE, in which x ∈ Σ serves as the selection variable, while the negation ¬{x} expresses nonselection.</p><formula xml:id="formula_10">elem • a • ¬{x} • ch + ( elem • c • x • T ) • T • elem • b • ¬{x} • T • T</formula><p>Our next objective is to distinguish NREs that can be evaluated deterministically in polynomial time, for instance by compilation to deterministic NWAs.</p><p>For this, we consider the language of NREs nregexp(ch, T ) extended by the constant T and the unary constructor ch.</p><p>Definition 1. An expression of nregexp(ch, T ) is deterministic if it does not contain a subexpression of any of the forms:</p><formula xml:id="formula_11">E 1 + E 2 , E * , T • E, µa.E.</formula><p>Note in particular that ch(a) is a deterministic expression of nregexp(ch, T ).</p><p>In contrast, the semantically equivalent expression T. a .T is not deterministic. Similarly, T is deterministic while the equivalent expression µx.( x + ¬∅) * is not. The expression ch * (E) is not deterministic since its definition relies on the µ-operator.</p></div>
+<div><head n="4">Nested Word Automata</head><p>Nested word automata (NWAs) are pushdown automata reading nested words, whose stacks are visible: they push a single stack symbol when reading an opening parenthesis, pop a single stack symbol when reading a closing parenthesis, and don't alter or inspect the stack otherwise.</p><p>Definition 2. An NWA is a tuple A = (Q h , Q t , Σ, Γ, ∆, I, F ) consisting of a possibly infinite set Σ of internal symbols, finite sets Q h and Q t of states of type hedge and tree respectively, sets of initial and final states I, F ⊆ Q h , a finite set Γ of stack symbols, and a finite set ∆ of transition rules of the forms:</p><formula xml:id="formula_12">hedge rules a ∆ , ∆ , ε ∆ ⊆ Q h × Q h where a ∈ Σ opening rules ∆ γ ⊆ Q h × Q h where γ ∈ Γ hedge ending rules tree ∆ ⊆ Q h × Q t closing rules ∆ γ ⊆ Q t × Q h</formula><p>Our NWAs are symbolic, in that they come with else rules, i.e elements of (q, q ) ∈ ∆ that we will denote by q -→ q , for dealing with large or infinite alphabets. An example for an NWA is given in a graphical syntax in Fig. <ref type="figure" target="#fig_1">1</ref>. Tree states are drawn in circles that are filled in light gray q , while hedge states are in unfilled circles q . Initial states are drawn as → q and final states as q . Hedge rules that have the form (q 1 , q 2 ) ∈ o ∆ where o ∈ Σ ∪ { , ε, tree} are denoted by q 1 o -→ q 2 . They are either label, else, epsilon, or tree rules depending of the type of letter o. Opening rules (q 1 , q 2 ) ∈ ∆ γ are represented as q 1 ↓γ --→ q 2 and closing rules (q 1 , q 2 ) ∈ Our notion of NWAs supports factorization in the spirit of <ref type="bibr" target="#b8">[9]</ref>. It is obtained by distinguishing two types of states q ∈ Q h and p ∈ Q t , and adding explicit type coercion rules q tree --→ p. Semantically, both kinds of states could be merged when replacing type the coercion rules by the epsilon rule q ε -→ p, but at the cost of introducing additional nondeterminism. This may lead to quadratically larger deterministic automata, as we will illustrate at the NWA in Fig. <ref type="figure">5</ref>.</p><formula xml:id="formula_13">∆ γ as q 1 ↑γ --→ q 2 .</formula><p>The language of nested words between two states q 1 , q 2 ∈ Q h is defined as the least language such that:</p><formula xml:id="formula_14">L q1,q2 (∆) = {ε | if q 1 = q 2 or q 1 ε -→ q 2 wrt.∆} ∪ q3∈Q h L q1,q3 (∆) • L q3,q2 (∆) ∪ {a | if q 1 a -→ q 2 ∈ ∆ or (q 1 - → q 2 ∈ ∆ and ¬∃q 2 . q 1 a -→ q 2 ∈ ∆)} ∪ { h | ∃q 1 , q 2 ∈ Q h .∃q 3 ∈ Q t .∃γ ∈ Γ. q 1 ↓γ --→ q 1 , h ∈ L q 1 ,q 2 (∆), q 2 tree --→ q 3 ∈ ∆ and q 3 ↑γ --→ q 2 ∈ ∆}.</formula><p>The language of the NWA then is L(A) = q1∈I,q2∈F L q1,q2 (∆) . NWAs can be determinized by adapting the usual determinization procedure for NWAs <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b0">1]</ref> so that it can account for hedge ending and else rules, as shown in the appendix. As argued earlier, NREs have the same expressiveness as NWAs and thus as deterministic NWAs. But in practice, the sizes may blow-up surprisingly by determinization <ref type="bibr" target="#b11">[12]</ref>. We next discuss on a compiler from expression an E of nregexp(T, ch) to an NWA nwa(E) that preserves determinism. For instance, the NWA for the expression ch * (a + b) is shown in Fig. <ref type="figure" target="#fig_1">1</ref>. For regular expressions without nesting, the compiler is based on Glushkov's construction recursively on the structure of the expression while eliminating ε-edges on the fly. Such construction is known to preserve determinism <ref type="bibr" target="#b6">[7]</ref>. For deterministic expressions ch(E), we adapt ideas from <ref type="bibr" target="#b11">[12]</ref>. Conjunctions E&amp;E are compiled to products of automata. Special care has to be given to µa.E expressions in order to preserve the recognized language and also have the following complexity result: Theorem 1. For any nested regular expression E we can construct an NWA A such that L(A) = L(E) while preserving determinism in at most exponential time. For conjunction-free NREs, the construction is in time O(|E| 2 ). This quadratic time result generalizes a previous result for the Glushkov construction <ref type="bibr" target="#b5">[6]</ref> from conjunction-free regular expressions to CF-NREs. Since conjunctions are compiled to products of automata, the NWAs produced may As for nondeterministic expressions, the NWA determinization procedure is not a solution to the problem at hand, due to huge size increase. For instance, the deterministic NWA det(nwa(ch * (a + b))) in Fig. <ref type="figure" target="#fig_10">15</ref> has size 271, which may seem way too large. Even worse cases can be found in the experimental section. The problem is not solved by factorization, and actually confirms a size increase reported earlier for NWAs obtained from XPath by a different compiler <ref type="bibr" target="#b11">[12]</ref>. So the question is, whether there do not exist better methods to obtain smaller deterministic NWAs for nested regular expressions.</p></div>
+<div><head n="5">Stepwise Hedge Automata</head><p>We propose SHAs as an extension of stepwise tree automata <ref type="bibr" target="#b7">[8]</ref> to recognize not only unranked trees but also hedges. The problematic notion of determinism of the hedge automata from <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b25">26]</ref> is avoided.</p><p>Our notion of SHAs will be symbolic in using else rules, and factorized in the sense of <ref type="bibr" target="#b8">[9]</ref>: there are two types of states for hedges and trees and an operator for explicit type coercion. We also propose a novel treatment of internal letters inspired by nested word automata, so that SHAs generalize both on stepwise tree automata and on Nfas. Definition 3. A SHA is a tuple S = (Q h , Q t , Σ, ∆, I, F ) such that Q t and Q h are finite set of states of two types t for tree and respectively h for hedge, Σ an alphabet of internal letters (that may be infinite), I, F ⊆ Q h subsets of initial and final states respectively, and ∆ a finite set of transition rules such that for all q ∈ Q t and a ∈ Σ:</p><formula xml:id="formula_15">hedge rules q ∆ , a ∆ , ∆ , ε ∆ ⊆ Q h × Q h tree final rules tree ∆ ⊆ Q h × Q t tree initial states ∆ ⊆ Q h</formula><p>An example for a SHA is given in graphical syntax in Fig. <ref type="figure" target="#fig_2">2</ref>. It recognizes all hedges which are either just a or b or contain some tree node that contains either just a or b. In the graphical syntax, the states of type tree q ∈ Q t are drawn in circles filled in light gray q , while the states of type hedge q ∈ Q h are drawn in unfilled circles q . The right part of the graph is an Nfa which uses tree states as additional edge labels, while the left part is a stepwise tree automaton, that defines the tree languages of these tree states.</p><p>Let ∆ h be the restriction of ∆ to the hedge rules. Then, (Q h , Σ Q t , ∆ h , I, F ) is a standard Nfa with ε-rules, which is symbolic <ref type="bibr" target="#b10">[11]</ref> in providing else rules for dealing with large or infinite alphabets in addition. Therefore, we denote the initial states q ∈ I by → q and the final states q ∈ F by q . A rule with an internal letter (q 1 , q 2 ) ∈ a ∆ is denoted by q 1 a -→ q 2 wrt ∆ stating that a hedge in state q 1 can be extended by the internal letter a leading to a hedge in state q 2 . Similarly, an epsilon rule (q 1 , q 2 ) ∈ ε ∆ is denoted by q 1 ε -→ q 2 , and an else rule (q 1 , q 2 ) ∈ ∆ is denoted by q 1 -→ q 2 . In the same spirit, a hedge rule (q 1 , q 2 ) ∈ q ∆ is denoted by q 1 q -→ q 2 wrt. ∆, stating that a hedge in state q 1 can be extended by a tree in state q leading to a hedge in state q 2 . A tree initial state q ∈ ∆ is graphically denoted by -→ q and a tree final rule (q 1 , q 2 ) ∈ tree ∆ by q 1 tree --→ q 2 . Intuitively, a tree h can be evaluated to state q if h can be evaluated starting with some tree initial state -→ q 1 to some state q 2 such that q 2 tree --→ q. More formally, the hedge languages L q1,q2 (S) between any two hedge states q 1 , q 2 ∈ Q h are defined as follows:</p><formula xml:id="formula_16">L q1,q2 (S) = {ε | if q 1 = q 2 or q 1 ε -→ q 2 wrt. ∆} ∪ q3∈Q h L q1,q3 (S) • L q3,q2 (S) ∪ {a | if q 1 a -→ q 2 ∈ ∆ or (q 1 - → q 2 ∈ ∆ and ¬∃q 2 . q 1 a -→ q 2 ∈ ∆)} ∪ q1 q -→q2∈∆ L q (S)</formula><p>This definition is mutually recursive with the definition of the tree languages L q (S) of all tree states q ∈ Q t :</p><formula xml:id="formula_17">L q (S) = { h | -→ q 1 , h ∈ L q1,q2 (S), q 2 tree --→ q}</formula><p>The hedge language L(S) that is recognized by automaton is q1∈I,q2∈F L q1,q2 (S).</p><p>The rules of standard bottom-up tree automata have the form a(q 1 , . . . , q n ) → q where a is a symbol of arity n. With SHAs, this rule can be encoded by the sequence -→ p 0 a -→ p 1 q1 -→ . . . qn -→ p n tree --→ q where the states q 1 , . . . , q n , q are all tree states, and p 0 , . . . , p n fresh hedge states. Stepwise hedge automata have a natural notion of determinism, generalizing both on that of stepwise tree automata and on Nfas, in contrast to the earlier notion of hedge automata in <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b25">26]</ref>, as presented in the appendix. For instance, the SHA in Fig. <ref type="figure">3</ref> is obtained by determinization of the automaton in Fig. <ref type="figure" target="#fig_2">2</ref>. It consists of a Dfa on the right and a deterministic stepwise tree automaton on the left. We show that Proposition 1. Any SHA can be made deterministic in at most exponential time such that the hedge language is preserved.</p><p>Any expression E can be compiled to a SHA sha However, the construction does not preserve determinism. For the deterministic NRE a 1 • a 2 • . . . • a n . . . , one would have an SHA having a tree initial state for each of the a i . . . subtree, implying nondeterminism. This is in contrast to the compiler to NWAs, which can rely on top-down determinism that is unavailable for SHAs though. Furthermore, as for NWAs, conjunctions may cause an exponential blow-up of the produced SHA.</p><formula xml:id="formula_18">(E) = (Q h , Q t , Σ, ∆, I, F ) such that Q t = {E | E = E subexpression of E} and L t (E ) = L(E ) for all tree states E ∈ Q t . The SHA sha(E) can be partitioned into disjoint SHAs sha(E) = A top ∪ E ∈Qt A E such that A top = (Q top h , Q t , Σ, ∆ top , I, F ) and A E = (Q E h , Q t , Σ, ∆ E , ∅, ∅) for all E ∈ Q t and ∆ top = ∅.</formula></div>
+<div><head n="6">NWAs versus SHAs</head><p>We next show how to compile SHAs to NWAs such that determinism is preserved, and back while introducing nondeterminism. Thereby we can obtain small NWAs for NREs such as E = ch * (a + b) for which det(nwa(E)) blows up in size in a surprising manner. SHAs to NWAs. Any SHA S = (Q h , Q t , Σ, ∆, I, F ) can be compiled to an NWA nwa(S) = (Q h , Q t , Σ, Γ, ∆ , I, F ) such that L q1,q2 (S) = L q1,q2 (nwa(S)). We set</p><formula xml:id="formula_19">Γ = Q h , ∆ = ∆ , a ∆ = a ∆ for all a ∈ Σ, ε ∆ = ε ∆ , tree ∆ = tree ∆ : q 1 q -→ q 2 ∈ ∆ p ∈ ∆ q 1 ↓q1 ---→ p ∈ ∆ and q ↑q1 ---→ q 2 ∈ ∆</formula><p>Clearly, if S is deterministic then so is nwa(S), since p is unique in this case in particular. One might be tempted to restrict the above construction rule to states p such that L q (S[ ∆ /{p}]) = ∅ where the set of tree initial states ∆ is replaced by {p}. However, this would lead to huge blow-up when determinizing these NWAs, basically since this change spoils the single-entry property discussed in Definition 4.</p><p>The conversion of sha(ch * (a + b)) in Fig. <ref type="figure" target="#fig_2">2</ref> yields the NWA in Fig. <ref type="figure">4</ref>. Note that the opening rules are deterministic (but not the whole NWA), since for all tree states q there is at most one hedge state p with → p such that q is accessible from p. The NWA has size 64, while its determinization has size 159 (see Fig. <ref type="figure" target="#fig_12">17</ref> of the appendix). The size increase raised by determinization is thus 95 = 159 -64 for this NWA. The size increase for determinization is considerably smaller for the NWA obtained from the regular expressions by indirection via a stepwise hedge automaton, than for NWAs obtained by direct compilation. Indeed, the determinization of nwa(ch * (a + b)) blows the size from 39 to 271. The size increase for the determinization of nwa(ch * (a + b)) is thus 242 = 271 -39 and while for nwa(sha(ch * (a + b))) is is only 95 = 159 -64.</p><p>The experiments will show that this is not an exception but the general rule. Intuitively, the reason is that NWAs obtained from stepwise hedge automata do all work bottom-up, where NWAs obtained directly from the regular expression do a considerable amount of work top-down. In terms of <ref type="bibr" target="#b1">[2]</ref> this restriction can be characterized syntactically by the single-entry property: Definition 4. An NWA A has the single-entry property, if there exists a single state q entry ∈ Q h such that all opening rules of A have the form q ↓q --→ q entry . It can be shown that nwa(S) has the single-entry property for all SHAs S for which the p's are unique in the above construction rule, i.e. such that -→ p. Note that this wasn't the case for sha(ch * (a + b)) in Fig. <ref type="figure" target="#fig_2">2</ref> but could have been imposed wlog leading to a slightly different NWA than in Fig. <ref type="figure">4</ref>. The conversion of the determinization det(sha(ch * (a+b))) in Fig. <ref type="figure">3</ref> yields the deterministic NWA in Fig. <ref type="figure">5</ref>. The size goes up slightly from 53 to 73. It should be noticed, that factorization avoids a quadratic blow up in this case. This can be observed at state 14, which has 3 incoming tree-edges and 10 outgoing closing edges. Without factorization, the 3 tree edges could be replaced by 3 ε-edges whose elimination would produce 30 closing edges. This would increase the number 3 + 10 edges to 3 * 10 edges. NWAs to SHAs. Conversely, NWAs can be compiled to stepwise hedge automata, but at the cost of introducing nondeterminism, since an NWA may traverse the branches of a tree top-down, while a stepwise must traverse them bottom-up. For this, the stepwise guesses the state in which the NWA will arrive from above and then evaluates the subtree starting with this state, while verifying the correctness of the guess later on.</p><formula xml:id="formula_20">o ∈ Σ ∪ {tree, , ε} q1 o -→ q2 ∈ ∆ q ∈ Q h (q, q1) o -→ (q, q2) ∈ ∆ s q1 ↓γ --→ q2 ∈ ∆ -→ (q2, q2) ∈ ∆ s q1 ↓γ --→ q2 ∈ ∆ q3 ∈ Qt q3 ↑γ --→ q4 ∈ ∆ q ∈ Q h (q, q1) (q 2 ,q 3 ) ----→ (q, q4) ∈ ∆ s</formula><formula xml:id="formula_21">Let A = (Q h , Q t , Σ, ∆ , I, F ) be an NWA. We build a SHA sha(A) = (Q s h , Q s t , Σ, ∆ s , I s , F s ) where Q s h = Q h × Q h , Q s t = Q h × Q t , I s = {(q, q) | q ∈ I}, F s = I × F</formula><p>and ∆ s is the smallest satisfying the rule schemas in Fig. <ref type="figure" target="#fig_5">6</ref>. The construction is such that L(A) = L(sha(A)).</p><p>For the NWA nwa(ch * (a + b)) in Fig. <ref type="figure" target="#fig_1">1</ref> we obtain the stepwise in Fig. <ref type="figure" target="#fig_11">16</ref> upto removing useless states and separating the top-level. Determinization yields det(sha(nwa(ch * (a + b)) = det(sha(ch * (a + b))) in Fig. <ref type="figure">3</ref>.</p></div>
+<div><head n="7">Experimental Results and Discussion</head><p>We now compare the sizes of deterministic NWAs that we can obtain by composing the various compilers in different orders.</p><p>We test the A1, . . . , A8 XPath queries in the usual XPath benchmark <ref type="bibr" target="#b13">[14]</ref>, which contain not only forward child, descendant and following-sibling axes, but also filters and path compositions. Note that the queries A4 until A8 contain filters, which are mapped to NREs with conjunctions. We compiled these queries automatically to nested regular expressions, then compiled these expressions to deterministic NWAs, by composing the various compilers presented earlier in all reasonable manners. A1 is the only query for which we obtain a deterministic regular expression. But since we replaced ch(E) systematically by T • E • T in our experiments, all nested regular expression become nondeterministic.</p><p>The overall size of the resulting automata and the number of their rules are given in Fig. <ref type="figure">7</ref>. We can see that determinization applied to the NWAs for these expressions fails. Only 2 out of 8 automata have a size less than 400000, and for the others, the determinization run out of time. In contrast, 3 of the 4 other methods -that use stepwise hedge automaton intermediately -produce reasonable small deterministic NWAs. For the fourth method in the last  </p><p>column, NWA-determinization didn't terminate on nwa(sha(nwa(A8))) after a few hours.</p><p>We also tested our algorithms on collections of XPath queries with a scalable parameter, such as the queries ch n (a) for increasing n. This series is known to require many states for deterministic bottom-up evaluation. Indeed, the determinization for stepwise hedge automata nwa(det(sha)) leads to a size explosion. The method det(nwa(sha(.))), however, still yields small deterministic automata! Generally this method produced satisfactory results in all our experiments. In quite some cases, however, nwa(det(sha(.))) still behaves better.</p><p>We conjecture that these differences are related to the lack of minimization in our current implementation. The main problem here is that minimal deterministic NWAs do not exist for all regular languages of nested words <ref type="bibr" target="#b1">[2]</ref>. This is in strict contrast to the cases of word automata, tree automata, and SHAs.</p><p>We point out that SHAs are determinized in bottom-up and left-to-right manner by combining the usual bottom-up determinization algorithms for tree automata and the usual left-to-right determinization algorithm for Nfas. In contrast to deterministic NWAs, they cannot support top-down determinism in combination with bottom-up and left-to-right determinism though. The NWAs obtained by compilation from SHAs are special in that they perform all their work in a bottom-up and left-to-right manner, and nothing top-down. Such NWAs were characterized syntactically as single-entry NWAs, and deterministic single-entry NWAs are shown to admit a unique minimization in <ref type="bibr" target="#b1">[2]</ref>. Our experiments show that NWA determinization often works nicely for single-entry NWAs, while it explodes quickly without the single-entry restriction. The intuition is that single-entry NWAs behave like SHAs.</p></div>
+<div><head>A XPath Benchmark</head><p>We consider the navigational XPath queries A1-A8 from the XPath benchmark with forward axes child and descendant axes, path compositions, and filters. These are recalled in Fig. <ref type="figure">9</ref> We encoded these XPath queries semi-automatically to nested regular expressions, some of which are given in Fig. <ref type="figure" target="#fig_7">10</ref>. Without filters as in A1 and A2 this is can be done automatically. In the case of nonoverlapping filters as in A4, we test them in all possible orders.</p></div>
+<div><head>B NWAs for µ-Expressions</head><p>For illustration, we consider the NRE E = µa. a * . The reader should be warned that constructing an NWA for E is less trivial than it might seem at first sight. One has to start from the NWA for a * ) which is given in Fig. <ref type="figure" target="#fig_1">11</ref>. Simply adding epsilon edges to capture the operator µa will not work though. It will lead to the wrong automaton in Fig. <ref type="figure" target="#fig_2">12</ref>. This automaton will wrong accept the hedge , since this hedge does not belong to L(E). Fig. <ref type="figure" target="#fig_8">13</ref> illustrates the product automaton for E obtained by our construction, where only accessible states are kept.</p></div>
+<div><head>C Determinization of NWAs</head><p>We adapt the usual determinization procedure for NWAs <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b0">1]</ref> so that they can account for hedge ending and else rules. Definition 5. An NWA is deterministic if I is a singleton or empty, ε ∆ is empty, for all a ∈ Σ a ∆ and ∆ are partial functions from Q h to Q h , for all q ∈ Q h and γ ∈ Γ there exists a most one q ∈ Q h such that q ∈ ∆ γ , and for all γ ∈ Γ ,</p><formula xml:id="formula_23">∆ γ is a partial function from Q h to Q t .</formula><p>Given an NWA A = (Q h , Q t , Σ, Γ, ∆, I, F ), the difficulty is to deal with concurrent opening rules q ↓γ1 ---→ q 1 and q ↓γ2 ---→ q 2 in ∆ during determinization without mixing up the stack symbols γ 1 and γ 2 . Therefore, we use transition relations as states of the determinized automaton det</p><formula xml:id="formula_24">(A) = (Q det h , Q det t , Σ, Γ det , ∆ det , I det , F det ), that is Q det h = 2 Q h ×Q h , Q det t = 2 Q h ×Qt .</formula><p>The only initial state is the transition id I which relates all initial states of A to themselves, i.e., I det = {id I }. The set of final states is</p><formula xml:id="formula_25">F det = {τ ∈ Q det h | τ ∩(I ×F ) = ∅}.</formula><p>Schemas generating the transition rules in ∆ det are given in Fig. <ref type="figure" target="#fig_9">14</ref>. For a transition τ ∈ Q × Q, we write lab(τ ) = {a ∈ Σ | ∃(q, q ) ∈ τ, q ∈ Q.q a -→ q wrt. ∆}. These schemas for generate transition rules for the accessible transitions only.</p><p>The determinization of det(nwa(ch * (a + b))) is given in Fig. <ref type="figure" target="#fig_10">15</ref> of the appendix: it has size 271 while the nondeterministic version has size 39. Even worse, we will see in Section 7, that the size increase is really too bad in many practical cases of the XPath benchmark suite. Unfortunately, this problem is not solved by adding factorization and restricting the compiler to accessible transitions. Indeed, the problem of such a huge size increase was also reported earlier for NWAs obtained from XPath by a different compiler <ref type="bibr" target="#b11">[12]</ref> via a logical intermediate language. So the question is, whether there do not exist better compilation methods to obtain smaller deterministic NWAs for nested regular expressions.</p></div>
+<div><head>D Determinization of SHAs</head><p>We formalize the notion of determinism for stepwise hedge automata and show that how determinization works. Definition 6. A SHA is deterministic if ∆ and I are both singletons or empty, ε ∆ is empty, for all a ∈ Σ and q ∈ Q t , a ∆ , q ∆ , ∆ are partial functions from Q h to Q h , and tree ∆ is a partial function from Q h to Q t .</p><p>Proposition 1 A SHA can be made deterministic in at most exponential time such that the hedge language is preserved.</p><p>Proof. In a first step we eliminate ε-rules as usual for NFAs in cubic time. Given a stepwise hedge automaton S = (Q h , Q t , Σ, ∆, I, F ) without ε-rules, we define an equivalent deterministic stepwise hedge automaton det</p><formula xml:id="formula_26">(A) = (Q det h , Q det t , Σ, ∆ det , I det , F det ) such that Q det h = 2 Q h , Q det t = 2 Qt , I det = {I} and F det = {Q ⊆ Q h | Q ∩ F = ∅}.</formula><p>There is a unique tree initial state in</p><formula xml:id="formula_27">∆ det = { ∆ } and no ε-rule in ε ∆ det = ∅. Furthermore, for all Q 1 , Q 2 ⊆ Q h , a ∈ lab(Q 1 ), and Q ⊆ Q t : Q 1 Q -→ Q 2 wrt. ∆ det iff Q 2 = {q 2 | ∃q 1 ∈ Q 1 , q ∈ Q . q 1 q -→ q 2 wrt ∆} Q 1 a -→ Q 2 wrt. ∆ det iff Q 2 = {q 2 | ∃q 1 ∈ Q 1 , q 1 a -→ q 2 wrt ∆}∪ {q 2 | ∃q 1 ∈ Q 1 . q 1 - → q 2 wrt. ∆ and ∃q 3 ∈ Q.q 1 a -→ q 3 wrt. ∆} Q 1 - → Q 2 wrt. ∆ det iff Q 2 = {q 2 | ∃q 1 ∈ Q 1 , q 1 - → q 2 wrt ∆} Q 1 - → Q 2 wrt. ∆ det iff Q 2 = {q 2 | ∃q 1 ∈ Q 1 , q 1 - → q 2 wrt ∆} We can show for all Q 1 , Q 2 ⊆ Q h and Q ⊆ Q t that L Q1,Q2 (det(S)) = q1∈Q1,q2∈Q2 L q1,q2<label>(</label></formula><p>S) and that L Q (det(S)) = q ∈Q L q (S). Hence L(det(S)) = Q ∈F det L I,Q (det(S)) and thus L(det(S)) = q1∈I q2∈F L q1,q2 (S) = L(S). Fig. <ref type="figure">9</ref>: XPath benchmark queries. Here is the NRE that accepts any internal letter, that is ¬{}. The schema restricts this letter to be either equal to the variable x or its negation ¬x. In most cases it must be ¬x since x will be read elsewhere, and may be read at most once. q 0 q 1 q 2 q 3 ↓ γ a tree ↓ γ Fig. <ref type="figure" target="#fig_1">11</ref>: Automaton for the a * expression.</p><formula xml:id="formula_28">A1 doc • • elem • site • • T • elem • closed auctions • • T • elem • closed auction • • T • elem • annotation • • T • elem • description • • T • elem • text • • T • elem • keyword • x • T • T • T • T • T • T • T • T A2 doc • • (µd1.( elem • closed auction • • T • (µd2.( elem • keyword • x • T • T + T • d1 • T • T )) • T + T • d1 • T • T )) A3 doc • • elem • site • • T • elem • closed auctions • • T • elem • closed auction • • T • ( µd.( elem • keyword • x • T • T + T • d • T • T )) • T • T • T A4 doc • • elem • site • • T • elem • closed auctions • • T • elem • closed auction • • (T • elem • annotation • • T • elem • description • • T • elem • text • • T • elem • keyword • • T • T • T • T • T • T ) &amp; (T • elem • date • x • T • T • T ) • T • T A5 doc • • elem • site • • T • elem • closed auctions • • T • ( elem • closed auction • • T • ( µd.( elem • keyword • • T • T + T • d • T • T )) • T ) &amp;( elem • closed auction • • T • elem • date • x • T • T • T ) • T • T A6 doc • • elem • site • • T • elem • people • • T • (( elem • person • • T • elem • prof ile • • T • elem • gender • • T • T • T • T ) &amp;( elem • person • • T • elem • prof ile • • T • elem • age • • T • T • T • T )) &amp;( elem • person • • T • elem • name • x • T • T • T ) • T • T A7 doc • • elem • site • • T • elem • people • • T • (( elem • person • • T • elem • phone • • T • T • T + elem • person • • T • elem • homepage • • T • T • T )) &amp;( elem • person • • T • elem • name • x • T • T • T ) • T • T A8 doc • • elem • site • • T • elem • people • • T • ((( elem • person • • T • elem • address • • T • T • T ) &amp; ( elem • person • • T • elem • phone • • T • T • T + elem • person • • T • elem • homepage • • T • T • T )) &amp; (( elem • person • • T • elem • creditcard • • T • T • T + elem • person • • T • elem • prof ile • • T • T • T ))) &amp; ( elem • person • • T • elem • name • x • T • T • T ) • T • T</formula><p>q 0 q 1 q 2 q 3</p><p>↓ γ tree ↓ γ ε ε ε Fig. <ref type="figure" target="#fig_2">12</ref>: Bad automaton for µa. a * (q 0 , 2) (q 1 , 2) (q 2 , 3) (q 3 , 2) (q 0 , 1) (q 3 , 1)     </p><formula xml:id="formula_29">↓ (γ, γ 2 ) tree ↓ (γ,<label>γ 2 )</label></formula><formula xml:id="formula_30">τ ∈ Q det h τ -→ τ • ∆ ∈ ∆ det τ ∈ Q det h Q = {q | ∃( , q) ∈ τ. q ↓γ --→ q ∈ ∆} τ ↓τ --→ id Q ∈ ∆ det τ ∈ Q det h τ tree ---→ τ • tree ∆ ∈ ∆ det τ ∈ Q det t τ ∆ = ∪γ∈Γ ∆ γ • τ • ∆ γ τ ↑τ ---→ τ • τ ∆ ∈ ∆ det τ ∈ Q det h a ∈ lab(τ ) τ = {(q, q ) ∈ ∆ | ∃q .q a -→ q wrt∆} τ a -→ τ • (a ∆ ∪ τ ) ∈ ∆ det</formula></div><figure xml:id="fig_0"><head /><label /><figDesc>to the hedge on the right. A nested word of type tree has the form h .</figDesc></figure>
+<figure xml:id="fig_1"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Nested word automaton nwa(ch * (a + b)).</figDesc><graphic coords="7,134.77,108.63,218.60,90.20" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Stepwise hedge automaton sha(ch * (a + b)): the part with the stepwise tree automaton is on the left and middle, and the Nfa part on the right.</figDesc><graphic coords="8,370.49,108.64,96.87,73.73" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 3 :Proposition 2 .</head><label>32</label><figDesc>Fig. 3: The determinized SHA det(sha(ch * (a + b))).</figDesc><graphic coords="10,235.94,121.90,123.61,73.72" type="bitmap" /></figure>
+<figure xml:id="fig_4"><head>Fig. 4 :Fig. 5 :</head><label>45</label><figDesc>Fig. 4: The NWA from the SHA nwa(sha(ch * (a + b))).</figDesc><graphic coords="11,134.77,108.63,323.80,111.40" type="bitmap" /></figure>
+<figure xml:id="fig_5"><head>Fig. 6 :</head><label>6</label><figDesc>Fig. 6: NWA to stepwise conversion.</figDesc></figure>
+<figure xml:id="fig_6"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: Deterministic NWAs queries ch n [a] for n = 3, 4, 5, 7, 9: size (#states).</figDesc></figure>
+<figure xml:id="fig_7"><head>Fig. 10 :</head><label>10</label><figDesc>Fig.10:The NREs of the XPath benchmark queries. Here is the NRE that accepts any internal letter, that is ¬{}. The schema restricts this letter to be either equal to the variable x or its negation ¬x. In most cases it must be ¬x since x will be read elsewhere, and may be read at most once.</figDesc></figure>
+<figure xml:id="fig_8"><head>Fig. 13 :</head><label>13</label><figDesc>Fig. 13: Good automaton for µa. a *</figDesc></figure>
+<figure xml:id="fig_9"><head>Fig. 14 :</head><label>14</label><figDesc>Fig. 14: Determinization of NWAs.</figDesc></figure>
+<figure xml:id="fig_10"><head>Fig. 15 :</head><label>15</label><figDesc>Fig. 15: Deterministic NWA: det(nwa(ch * (a + b)).</figDesc><graphic coords="20,134.77,184.23,354.70,395.60" type="bitmap" /></figure>
+<figure xml:id="fig_11"><head>Fig. 16 :</head><label>16</label><figDesc>Fig. 16: Stepwise hedge automaton from NWA for sha(nwa(ch * (a + b))).</figDesc><graphic coords="21,134.77,263.62,179.20,236.80" type="bitmap" /></figure>
+<figure xml:id="fig_12"><head>Fig. 17 :</head><label>17</label><figDesc>Fig. 17: Determinization of NWA from stepwise hedge automaton: det(nwa(sha(ch * (a + b)))).</figDesc><graphic coords="22,134.77,108.67,345.87,584.46" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head /><label /><figDesc>Fig. 7: Deterministic NWAs for XPath benchmark: size (#states).</figDesc><table><row><cell>det(nwa(.))</cell><cell>nwa(det(</cell><cell cols="2">det(nwa(</cell><cell>nwa(det(</cell><cell>det(nwa(</cell></row><row><cell /><cell>sha(.)))</cell><cell /><cell>sha(.)))</cell><cell>sha(nwa(.))))</cell><cell>sha(nwa(.))))</cell></row><row><cell>A1</cell><cell>398 (37)</cell><cell cols="2">302 (62)</cell><cell>398 (37)</cell><cell>398 (37)</cell></row><row><cell cols="2">A2 362600 (6782) 668 (57)</cell><cell cols="2">4889 (221)</cell><cell>1648 (127)</cell><cell>4105 (148)</cell></row><row><cell cols="2">A3 318704 (8216) 469 (44)</cell><cell cols="2">542 (66)</cell><cell>625 (56)</cell><cell>907 (62)</cell></row><row><cell>A4</cell><cell>487 (42)</cell><cell cols="2">335 (67)</cell><cell>487 (42)</cell><cell>487 (42)</cell></row><row><cell>A5</cell><cell>676 (55)</cell><cell cols="2">1054 (110)</cell><cell>856 (67)</cell><cell>1192 (73)</cell></row><row><cell>A6</cell><cell>548 (45)</cell><cell cols="2">332 (62)</cell><cell>548 (45)</cell><cell>548 (45)</cell></row><row><cell>A7</cell><cell>468 (41)</cell><cell cols="2">285 (54)</cell><cell>468 (41)</cell><cell>468 (41)</cell></row><row><cell>A8</cell><cell cols="3">2520 (124) 1236 (137)</cell><cell>1804 (118)</cell></row><row><cell>det(nwa(.))</cell><cell>nwa(det(</cell><cell /><cell>det(nwa(</cell><cell>nwa(det(</cell><cell>det(nwa(</cell></row><row><cell /><cell cols="2">sha(.)))</cell><cell cols="3">sha(.))) sha(nwa(.))) sha(nwa(.))))</cell></row><row><cell>ch 3 [a] 19828 (1281)</cell><cell>85 (13)</cell><cell /><cell>157 (30)</cell><cell>192 (24)</cell><cell>352 (32)</cell></row><row><cell>ch 4 [a]</cell><cell>177 (21)</cell><cell /><cell>206 (39)</cell><cell>664 (56)</cell><cell>2200 (88)</cell></row><row><cell>ch 5 [a]</cell><cell>457 (37)</cell><cell /><cell>255 (48)</cell><cell>3336 (168)</cell></row><row><cell>ch 7 [a]</cell><cell cols="2">4825 (133)</cell><cell>353 (66)</cell><cell /></row><row><cell>ch 9 [a]</cell><cell /><cell /><cell>451 (84)</cell><cell /></row></table></figure>
+<figure type="table" xml:id="tab_1"><head /><label /><figDesc>/site/people/person[profile/gender and profile/age]/name A7: /site/people/person[phone or homepage]/name A8: /site/people/person [address and (phone or homepage) and (creditcard or profile)] /name</figDesc><table><row><cell>A1: /site/closed auctions/closed auction/annotation/description/text</cell></row><row><cell>/keyword</cell></row><row><cell>A2: //closed auction//keyword</cell></row><row><cell>A3: /site/closed auctions/closed auction//keyword</cell></row><row><cell>A4: /site/closed auctions/closed auction</cell></row><row><cell>[annotation/description/text/keyword]/date</cell></row><row><cell>A5: /site/closed auctions/closed auction[descendant::keyword]/date</cell></row><row><cell>A6:</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Marrying words and trees</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1265530.1265564</idno>
+		<ptr target="http://dx.doi.org/10.1145/1265530.1265564" />
+	</analytic>
+	<monogr>
+		<title level="m">26th ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<imprint>
+			<publisher>ACM-Press</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="233" to="242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Congruences for visibly pushdown languages</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Madhusudan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Viswanathan</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/11523468_89</idno>
+		<ptr target="http://dx.doi.org/10.1007/11523468_89" />
+	</analytic>
+	<monogr>
+		<title level="m">Automata, Languages and Programming</title>
+		<title level="s">International Colloquium. Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="1102" to="1114" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Visibly pushdown languages</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Madhusudan</surname></persName>
+		</author>
+		<ptr target="http://portal.acm.org/citation.cfm?coll=GUIDE&amp;dl=GUIDE&amp;id=1007390" />
+	</analytic>
+	<monogr>
+		<title level="m">36th ACM Symposium on Theory of Computing</title>
+		<imprint>
+			<publisher>ACM-Press</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="202" to="211" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Stream Firewalling of XML Constraints</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Benedikt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jeffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ley-Wild</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGMOD International Conference on Management of Data</title>
+		<imprint>
+			<publisher>ACM-Press</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="487" to="498" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Visibly rational expressions</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bozzelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sánchez</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00236-013-0190-6</idno>
+		<ptr target="http://dx.doi.org/10.1007/s00236-013-0190-6" />
+	</analytic>
+	<monogr>
+		<title level="j">Acta Inf</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="25" to="49" />
+			<date type="published" when="2014-02">Feb 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Regular expressions into finite automata</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brüggemann-Klein</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0304-3975(93)90287-4</idno>
+		<ptr target="http://dx.doi.org/10.1016/0304-3975(93)90287-4" />
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">120</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="197" to="213" />
+			<date type="published" when="1993-11">Nov 1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">One-Unambiguous regular languages</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Brüggemann-Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wood</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">142</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="182" to="206" />
+			<date type="published" when="1998-05">May 1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Querying unranked trees with stepwise tree automata</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Carme</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<ptr target="http://www.ps.uni-sb.de/Papers/abstracts/stepwise.html" />
+	</analytic>
+	<monogr>
+		<title level="m">19th International Conference on Rewriting Techniques and Applications</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="volume">3091</biblScope>
+			<biblScope unit="page" from="105" to="118" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Efficient inclusion checking for deterministic tree automata and XML schemas</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Champavère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gilleron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lemay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.ic.2009.03.003</idno>
+		<ptr target="http://dx.doi.org/10.1016/j.ic.2009.03.003" />
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">207</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1181" to="1208" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Tree automata techniques and applications</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Comon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dauchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gilleron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Löding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Jacquemard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lugiez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<ptr target="http://tata.gforge.inria.fr" />
+		<imprint>
+			<date type="published" when="1997-10">1997. Oct 2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Symbolic visibly pushdown automata</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>D'antoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Alur</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-08867-9_14</idno>
+		<ptr target="https://doi.org/10.1007/978-3-319-08867-9_14" />
+	</analytic>
+	<monogr>
+		<title level="m">Computer Aided Verification -26th International Conference, CAV 2014, Held as Part of the Vienna Summer of Logic, VSL 2014</title>
+		<title level="s">Proceedings. Lecture Notes in Computer Science</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Biere</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><surname>Bloem</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014">July 18-22, 2014. 2014</date>
+			<biblScope unit="volume">8559</biblScope>
+			<biblScope unit="page" from="209" to="225" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Early nested word automata for xpath query answering on XML streams</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Debarbieux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sebastian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zergaoui</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.tcs.2015.01.017</idno>
+		<ptr target="http://dx.doi.org/10.1016/j.tcs.2015.01.017" />
+	</analytic>
+	<monogr>
+		<title level="j">Theor. Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">578</biblScope>
+			<biblScope unit="page" from="100" to="125" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Propositional dynamic logic of regular programs</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Ladner</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0022-0000(79)90046-1</idno>
+		<ptr target="https://doi.org/10.1016/0022-0000(79)90046-1" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Comput. Syst. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="194" to="211" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Franceschet</surname></persName>
+		</author>
+		<ptr target="https://users.dimi.uniud.it/~massimo.franceschet/xpathmark/PTbench.html" />
+		<title level="m">Xpathmark performance test</title>
+		<imprint>
+			<date type="published" when="2020-03-27">2020-03-27</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Streamable fragments of forward XPath</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-642-22256-6_2</idno>
+		<ptr target="http://dx.doi.org/10.1007/978-3-642-22256-6_2" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Implementation and Application of Automata</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<editor>
+			<persName><forename type="first">B</forename><forename type="middle">B</forename><surname>Markhoff</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Caron</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Champarnaud</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Maurel</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">6807</biblScope>
+			<biblScope unit="page" from="3" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Earliest query answering for deterministic nested word automata</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gauwin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<ptr target="http://hal.inria.fr/inria-00390236/en" />
+	</analytic>
+	<monogr>
+		<title level="m">17th International Symposium on Fundamentals of Computer Theory</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="volume">5699</biblScope>
+			<biblScope unit="page" from="121" to="132" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The complexity of XPath query evaluation</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Koch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pichler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">22nd ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="179" to="190" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A formal framework for complex event processing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Grez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Riveros</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ugarte</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2019.5</idno>
+		<ptr target="https://doi.org/10.4230/LIPIcs.ICDT.2019.5" />
+	</analytic>
+	<monogr>
+		<title level="m">22nd International Conference on Database Theory, ICDT 2019</title>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Barceló</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Calautti</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<publisher>Schloss Dagstuhl -Leibniz-Zentrum fuer Informatik</publisher>
+			<date type="published" when="2019">March 26-28, 2019. 2019</date>
+			<biblScope unit="volume">127</biblScope>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Xduce: A statically typed XML processing language</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hosoya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">C</forename><surname>Pierce</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/767193.767195</idno>
+		<ptr target="https://doi.org/10.1145/767193.767195" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Internet Techn</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="117" to="148" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">On the Minimization of XML-Schemas and Tree Automata for Unranked Trees</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Niehren</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.jcss.2006.10.021</idno>
+		<ptr target="05" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer and System Science</title>
+		<imprint>
+			<biblScope unit="volume">73</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="550" to="583" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+	<note>special issue of DBPL</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">From regular expressions to nested words: Unifying languages and query execution for relational and XML sequences</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mozafari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zaniolo</surname></persName>
+		</author>
+		<idno type="DOI">10.14778/1920841.1920865</idno>
+		<ptr target="http://www.vldb.org/pvldb/vldb2010/pvldb_vol3/R13.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="150" to="161" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">High-performance complex event processing over XML streams</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mozafari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zaniolo</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2213836.2213866</idno>
+		<ptr target="http://dx.doi.org/10.1145/2213836.2213866" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD Conference</title>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Candan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Snodgrass</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Gravano</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fuxman</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">S</forename><surname>Candan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">R</forename><forename type="middle">T</forename><surname>Snodgrass</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Gravano</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fuxman</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="253" to="264" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Locating matches of tree patterns in forests</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Seidl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Foundations of Software Technology and Theoretical Computer Science</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="volume">1530</biblScope>
+			<biblScope unit="page" from="134" to="145" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">SPEX: Streamed and progressive evaluation of XPath</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Olteanu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2007.1063</idno>
+		<ptr target="http://dx.doi.org/10.1109/TKDE.2007.1063" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Know. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="934" to="949" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Visibly pushdown expression effects for xml stream processing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Pitcher</surname></persName>
+		</author>
+		<editor>PlanX</editor>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Characterizing derivation trees of context-free grammars through a generalization of automata theory</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Thatcher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer and System Science</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="317" to="322" />
+			<date type="published" when="1967">1967</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

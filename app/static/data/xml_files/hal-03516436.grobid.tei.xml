@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Hash-ssessing the freshness of SPARQL pipelines</title>
+				<funder>
+					<orgName type="full">Science Foundation Ireland</orgName>
+				</funder>
+				<funder ref="#_K5tMEHm">
+					<orgName type="full">European Unions</orgName>
+				</funder>
+				<funder ref="#_7e2gn3d">
+					<orgName type="full">European Regional Development Fund</orgName>
+					<orgName type="abbreviated">ERDF</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Damien</forename><surname>Graux</surname></persName>
+							<email>grauxd@tcd.ie</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">ADAPT SFI Centre</orgName>
+								<orgName type="institution">Trinity College Dublin</orgName>
+								<address>
+									<country key="IE">Ireland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fabrizio</forename><surname>Orlandi</surname></persName>
+							<email>orlandif@tcd.ie</email>
+							<idno type="ORCID">0000-0003-3392-3162</idno>
+							<affiliation key="aff1">
+								<orgName type="department">ADAPT SFI Centre</orgName>
+								<orgName type="institution">Trinity College Dublin</orgName>
+								<address>
+									<country key="IE">Ireland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Declan</forename><surname>O'sullivan</surname></persName>
+							<email>declan.osullivan@tcd.ie</email>
+							<idno type="ORCID">0000-0003-1090-3548</idno>
+							<affiliation key="aff1">
+								<orgName type="department">ADAPT SFI Centre</orgName>
+								<orgName type="institution">Trinity College Dublin</orgName>
+								<address>
+									<country key="IE">Ireland</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Hash-ssessing the freshness of SPARQL pipelines</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">20E12E83DA33EF1547F677A6DF42084F</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The recent increase of RDF usage has witnessed a rising need of "verification" around data obtained from SPARQL endpoints. It is now possible to deploy Semantic Web pipelines and to adapt them to a wide range of needs and use-cases. Practically, these complex ETL pipelines relying on SPARQL endpoints to extract relevant information often have to be relaunched from scratch every once in a while in order to refresh their data. Such a habit adds load on the network and is heavy resource-wise, while sometimes unnecessary if data remains untouched. In this article, we present a useful method to help data consumers (and pipeline designers) identify when data has been updated in a way that impacts the pipeline's result set. This method is based on standard SPARQL 1.1 features and relies on digitally signing parts of query result sets to inform data consumers about their eventual change.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>During the past decades, the number of linked open datasets has rapidly increased <ref type="foot" target="#foot_0">1</ref> . These datasets are structured following the W3C standard Resource Description Framework (RDF) <ref type="bibr" target="#b5">[6]</ref> and share knowledge on various domains, from the generalist ones such as DBpedia <ref type="bibr" target="#b0">[1]</ref> or WikiData <ref type="bibr" target="#b6">[7]</ref> to the most specialised ones, e.g. SemanGit <ref type="bibr" target="#b4">[5]</ref>. This abundance of open datasets and SPARQL <ref type="bibr" target="#b1">[2]</ref> endpoints led not only researchers but also businesses to integrate RDF graphs into their complex data pipelines. In particular, businesses are increasingly leveraging Semantic Web technologies to structure their own data and create value, sometimes integrating external Linked Data to enrich their analyses <ref type="bibr" target="#b3">[4]</ref>.</p><p>Benefiting from the two decades of developments made by the community, it is now possible to deploy Semantic Web pipelines and to adapt them to a wide range of needs and use-cases. Recent developments have been, for example, focused on distributed systems or on connecting Semantic Web data management systems together with non-RDF centric systems, paving the road to querying heterogeneous data. As a consequence of this increasing complexity of the usecases, the pipelines themselves are getting more complicated, and often rely on several distinct data sources in order to compute their final results.</p><p>Hence, as data available may change, these pipelines (or parts of them) are frequently re-run in order to get fresher results. However, lots of times they are re-run unnecessarily as datasets have not been updated in the meantime in ways that impact the result sets of the pipeline. All these operations are leading to a waste of computation power and loads on the network.</p><p>In this article, mainly dedicated to SPARQL practitioners and data pipeline designers, we review the possibilities provided by the SPARQL 1.1 standard <ref type="bibr" target="#b1">[2]</ref> to sign query result sets. In particular, we will discuss how these methods can be used optimise data pipelines avoiding expensive re-computation of results when data triples have not been updated.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">SPARQL 1.1 hashing capabilities</head><p>The SPARQL standard provides a large set of built-in functions, from ones dedicated to strings to specific ones about dates. These can be used by query designers to refine their result set. In particular, the standard offers a set of five hash functions<ref type="foot" target="#foot_2">2</ref> : MD5, SHA1, SHA256, SHA384 &amp; SHA512.</p><p>General signature of the hash functions: Example using MD5:</p><formula xml:id="formula_0">H = md5("ab") = md5("ab"^^xsd:string) H = "187ef4436122d1cc2f40dc2b92f0eba0"</formula><p>These functions accept either RDF literals or strings as argument and return the hash as a literal. In addition, a xsd:string or its corresponding literal should return the same result. In the 'MD5' example above, the hash value represents the result of a simple SPARQL query <ref type="foot" target="#foot_3">3</ref> .</p><p>Practically, these functions can be used to hash a complete RDF graph accessible through a SPARQL endpoint. Indeed, one can extract all the triples available with select * where {?s ?p ?o}, and then hash all of them, aggregated with a group concat function. This could look like so: SELECT (SHA1(GROUP_CONCAT(?tripleStr ; separator=' \n'))) AS ?nTriples WHERE { ?s ?p ?o BIND(CONCAT(STR(?s), " ", STR(?p), " ", STR(?o)) AS ?tripleStr) }</p><p>In the previous query, the triples ?s ?p ?o are cast by element to a string (STR), and then concatenated to form a "triple". The recomposed list of triples is then grouped into one single string (GROUP CCONCAT) and finally hashed.</p><p>Although easy to understand, this "naïve" approach has some drawbacks. First, the result depends on the order of the triples returned by the triplestore: a workaround can be achieved adding e.g. ORDER BY ?s ?p ?o datatype(?o) lcase(lang(?o)). Second, this method has a scalability issue, as all the graph is loaded in-memory before the hash call. We therefore recommend this approach to sign small RDF graphs, e.g. ontologies or small result sets. Finally, this method does not address the complex case of blank node identification as e.g. { :a p o} and { :b p o} do not have the same hashes (see <ref type="bibr" target="#b2">[3]</ref> for algorithmic solutions).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Tracking result updates of SPARQL queries</head><p>Signing an RDF graph through a SPARQL query is not as reliable as the traditional and complete method that transforms the entire graph beforehand. However, it allows users to compare different query results for the same query on the same engine. As we know, on the same endpoint, the same query (without calls to functions like RAND or NOW) is supposed to return the same result set for the same dataset. Therefore, we think this SPARQL-based "lightweight" signing approach could be useful for ETL pipeline designers.</p><p>Indeed, a common challenge for pipeline designers is to know when a refresh (i.e. a re-run, often from scratch) is needed, following a data update. Often, there is no way to know a priori that datasets have been updated and, thereby, pipelines are often run even when nothing has been modified. This, unfortunately, leads to time-consuming and (sometimes) costly processes in terms of both resources and network bandwidth, as multiple intermediate results involved by the pipelines are shuffled.</p><p>We suggest to use the aforedescribed approach to check on the endpoint side if the results of a SPARQL query have changed. A hash of the results could be computed by the endpoint and be compared with a previously obtained one. In case of a mismatch, the query (and the rest of the pipeline) could be run again. Assuming Q is the considered SPARQL select query, we propose the following steps to generate the query which computes the hash of the results of Q:</p><p>1. Extract and sort the list of distinguished variables V (if a * is given, the considered variables are the ones involved in the where); 2. Wrap Q in a select * query ordered by V; 3. Embed the obtained query in a select query computing the hash of the grouped concatenation of the cast (to string) distinguished variables.</p><p>To give an example, if we consider the query which extracts from DBpedia the current members of English-named Punk rock groups, Q= SELECT ?members ?bandName WHERE { ?band dbo:genre dbr:Punk_rock . ?band dbp:currentMembers ?members . ?band foaf:name ?bandName FILTER(langMatches(lang(?bandName), "en")) } Its sorted list of distinguished variables would be ?bandName ?members. And to obtain a (MD5-)hash of the results of Q, we should run: SELECT MD5(GROUP_CONCAT(CONCAT(STR(?bandName),STR(?members)); separator=' \n')) as ?H WHERE { SELECT * WHERE { # Collecting all the ordered results SELECT ?members ?bandName WHERE { # The original query ?band dbo:genre dbr:Punk_rock . ?band dbp:currentMembers ?members. ?band foaf:name ?bandName FILTER(langMatches(lang(?bandName), "en")) } } ORDER BY ?bandName ?members } # Ordering by distinguished variables The three steps to generate the query<ref type="foot" target="#foot_4">4</ref> that obtains the hash are easy to automate and allow users to know when to relaunch their pipelines. All this while making as much computations as possible on the endpoint side in charge of computing the hash.</p><p>Performance: For comparison, we reviewed three queries (Q1, Q2, Q3) on a YAGO4<ref type="foot" target="#foot_5">5</ref> KG loaded on Stardog, running on a 4 cores and 32GB memory VM. Their result sets respectively contain 2 916, 50 000 and 100 000 results corresponding to 186KB, 5.3MB and 10.7MB and were on average computed in 331ms, 675ms and 1315ms. Their MD5 hashed versions all returned one hash string of 46 bytes and were computed in 364ms, 1353ms and 2492ms respectively. Thus, as expected, performing the hashes does not imply a large temporal overhead and greatly reduces the network traffic.</p><p>Web-Interface: To help SPARQL practitioners and pipeline designers with our method, we also developed a Web interface (see Figure <ref type="figure" target="#fig_1">1</ref> for a screenshot) and serve it online . The page allows users to paste their SPARQL query (Q) in order to obtain a new query (Q hash) which should be run to obtain the hash of the results of Q. The interface also provides a way to select the hash function among the ones from the standard. Technically the query generation is done through a JavaScript routine whose parser relies on SPARQL.js<ref type="foot" target="#foot_6">6</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Conclusions</head><p>This paper describes how to improve existing Semantic Web data pipelines with a SPARQL-based method that helps in identifying when query results have changed. It allows to re-run pipelines only when interesting parts of the original datasets have been updated. By using SPARQL to compute the signature of the query results, it avoids large result sets to be sent over the network while letting the triplestore optimise as much as possible all the computations. We hope this will inspire developers to use the hash functions provided by the standard, and serve our method at: https://dgraux.github.io/SPARQL-hash/ where our query converter can be used directly by developers to generate queries computing the hash of their result sets.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>simple literal hash_function (simple literal arg) simple literal hash_function (xsd:string arg)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Web Interface to obtain a Q hash from a given Q.</figDesc><graphic coords="5,134.77,115.83,345.83,191.00" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>From</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2010" xml:id="foot_1"><p>to 2020, the LOD-cloud has grown from 203 to 1 255 datasets, approximately: https://lod-cloud.net/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_2"><p>https://www.w3.org/TR/sparql11-query/#func-hash</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_3"><p>select * where{ values ?x {"ab" "ab"^^xsd:string} bind (md5(?x) as ?H)}</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_4"><p>The queries can be tested directly on DBpedia: the query Q and its Q hash . As of July</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_5"><p>th 2021, Q hash returned ?H = "967d2c8c0a82038d8478d476fa41e14f" and on September</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_6"><p>th it returned "a41d8b97289ea1ef1af2a2ec54cff96c". 5 YAGO4 has ∼209 million triples: https://yago-knowledge.org/downloads/yago-4 6 https://github.com/RubenVerborgh/SPARQL.js</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgments. This research was conducted with the financial support of the <rs type="funder">European Unions</rs> <rs type="programName">H2020 programme</rs> under the <rs type="grantName">EDGE Marie Sk lodowska-Curie</rs> grant agreement No. <rs type="grantNumber">713567</rs> at the <rs type="institution">ADAPT SFI Research Centre at Trinity College Dublin</rs>, which is funded by <rs type="funder">Science Foundation Ireland</rs> and the <rs type="funder">European Regional Development Fund (ERDF)</rs> Grant #<rs type="grantNumber">13/RC/2106 P2</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_K5tMEHm">
+					<idno type="grant-number">713567</idno>
+					<orgName type="grant-name">EDGE Marie Sk lodowska-Curie</orgName>
+					<orgName type="program" subtype="full">H2020 programme</orgName>
+				</org>
+				<org type="funding" xml:id="_7e2gn3d">
+					<idno type="grant-number">13/RC/2106 P2</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">DBpedia: A nucleus for a web of open data</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bizer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kobilarov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cyganiak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ives</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The semantic web</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Sparql 1.1 query language</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Seaborne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Prud'hommeaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">W3C recommendation</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page">778</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Canonical forms for isomorphic and equivalent RDF graphs: algorithms for leaning and labelling blank nodes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on the Web</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Knowledge graph-based legal search over german court cases</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Junior</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Orlandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Graux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hossari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>O'sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dirschl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web: ESWC 2020 Satellite Events. LNCS</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">12124</biblScope>
+			<biblScope unit="page" from="293" to="297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">SemanGit: A linked dataset from git</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">O</forename><surname>Kubitza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Böckmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Graux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Semantic Web Conference</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="215" to="228" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">RDF primer. W3C recommendation</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Manola</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Wikidata: a free collaborative knowledgebase</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vrandečić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Krötzsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="78" to="85" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

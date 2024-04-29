@@ -1,0 +1,1238 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Hybrid Emoji-Based Masked Language Models for Zero-Shot Abusive Language Detection</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Michele</forename><surname>Corazza</surname></persName>
+							<email>michele.corazza2@unibo.itmenini</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Bologna</orgName>
+								<address>
+									<country key="IT">Italy</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stefano</forename><surname>Menini</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Fondazione Bruno Kessler</orgName>
+								<address>
+									<settlement>Trento</settlement>
+									<country key="IT">Italy</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sara</forename><surname>Tonelli</surname></persName>
+							<email>satonelli@fbk.euelena.cabrio</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Fondazione Bruno Kessler</orgName>
+								<address>
+									<settlement>Trento</settlement>
+									<country key="IT">Italy</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+							<email>serena.villata@univ-cotedazur.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Hybrid Emoji-Based Masked Language Models for Zero-Shot Abusive Language Detection</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">1275CF5FF19B14064CC421253BE140EA</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Recent studies have demonstrated the effectiveness of cross-lingual language model pretraining on different NLP tasks, such as natural language inference and machine translation. In our work, we test this approach on social media data, which are particularly challenging to process within this framework, since the limited length of the textual messages and the irregularity of the language make it harder to learn meaningful encodings. More specifically, we propose a hybrid emoji-based Masked Language Model (MLM) to leverage the common information conveyed by emojis across different languages and improve the learned cross-lingual representation of short text messages, with the goal to perform zeroshot abusive language detection. We compare the results obtained with the original MLM to the ones obtained by our method, showing improved performance on German, Italian and Spanish.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>The extensive use of large-scale self-supervised pretraining has greatly contributed to recent progress in many Natural Language Processing (NLP) tasks <ref type="bibr" target="#b9">(Devlin et al., 2019;</ref><ref type="bibr" target="#b15">Liu et al., 2019;</ref><ref type="bibr" target="#b6">Conneau and Lample, 2019)</ref>. In this context, masked language modelling objectives represent one of the main novelties of these approaches, where some tokens of an input sequence are randomly masked, and the objective is to predict these masked positions taking the corrupted sequence as input. Still, little attention has been devoted to the adaptation of these techniques to tasks dealing with social media data, probably because they are characterized by a very domain-specific language, with high variability and instability. Nevertheless, all these challenges make social media data an interesting testbed for novel deep-learning architectures, around the research question: how could the masking mechanism be adapted to target social media language?</p><p>In this paper, we address the above issue by adapting a novel architecture for cross-lingual models called XLM <ref type="bibr" target="#b6">(Conneau and Lample, 2019)</ref> to zero-shot abusive language detection, a task that has gained increasing importance given the recent surge in abusive online behavior and the need to develop reliable and efficient methods to detect it. In particular, we evaluate two methods to pre-train bilingual language models, one similar to the original XLM masked model, and the other based on a novel hybrid emoji-based masked model. We then evaluate them on zero-shot abusive language detection for Italian, German and Spanish, showing that, although our results are below the state-of-the-art in a monolingual setting, the proposed solutions to adapt XLM to social media data are beneficial and can be effectively extended to other languages.</p><p>In the following, Section 2 discusses the related work. Section 3 describes our approach to train cross-lingual models for social media data classification, while Section 4 presents the experimental setup. Section 5 reports on the evaluation results, while Section 6 summarizes our findings.</p></div>
+<div><head n="2">Related work</head><p>The focus of this paper is the abusive language detection task, which has been widely explored in the last years thanks to numerous datasets, approaches and shared tasks <ref type="bibr" target="#b29">(Waseem et al., 2017;</ref><ref type="bibr">Fišer et al., 2018;</ref><ref type="bibr" target="#b4">Carmona et al., 2018;</ref><ref type="bibr" target="#b32">Wiegand et al., 2018;</ref><ref type="bibr" target="#b3">Bosco et al., 2018;</ref><ref type="bibr">Zampieri et al., 2019b;</ref><ref type="bibr">Roberts et al., 2019)</ref> covering different languages. An increasing number of approaches has been proposed to detect this kind of messages (for a survey on the task, see <ref type="bibr" target="#b24">(Schmidt and Wiegand, 2017)</ref> and <ref type="bibr" target="#b11">(Fortuna and Nunes, 2018)</ref>).</p><p>Abusive language detection is usually framed as a supervised learning problem, built using a combination of manually crafted features such as n-grams <ref type="bibr" target="#b33">(Wulczyn et al., 2017)</ref>, syntactic features <ref type="bibr" target="#b17">(Nobata et al., 2016)</ref>, and linguistic features <ref type="bibr" target="#b34">(Yin et al., 2009)</ref>, to more recent neural networks <ref type="bibr" target="#b20">(Park and Fung, 2017;</ref><ref type="bibr" target="#b38">Zhang and Tepper, 2018;</ref><ref type="bibr" target="#b0">Agrawal and Awekar, 2018;</ref><ref type="bibr" target="#b7">Corazza et al., 2018)</ref>. <ref type="bibr" target="#b14">(Lee et al., 2018)</ref> address a comparative study of various learning models on the Hate and Abusive Speech on Twitter dataset <ref type="bibr" target="#b12">(Founta et al., 2018)</ref>, while <ref type="bibr">(Zampieri et al., 2019a)</ref> build the Offensive Language Identification Dataset and experiment with SVMs, BiLSTM and CNN both on the binary abusive language classification and on a more fine-grained categorization. Our work deals with the same task, addressed from a cross-lingual perspective.</p><p>In recent years, some proposals have been made to tackle abusive language detection in a cross-lingual framework <ref type="bibr" target="#b26">(Sohn and Lee, 2019;</ref><ref type="bibr" target="#b19">Pamungkas and Patti, 2019;</ref><ref type="bibr" target="#b5">Casula et al., 2020)</ref>, with some attempts at zero-shot learning <ref type="bibr" target="#b27">(Stappen et al., 2020)</ref>. Most systems, however, rely on pretrained models and do not investigate the potential of indomain data for pretraining. Additionally, as regards masked language models, we are not aware of any work in the literature modifying masking mechanisms for this task.</p><p>3 Cross-Lingual Language Models</p></div>
+<div><head n="3.1">MLM and HE-MLM training objectives</head><p>Our basic architecture relies on the XLM approach described in <ref type="bibr" target="#b6">(Conneau and Lample, 2019)</ref>, specifically developed to learn joint multilingual representations enabling knowledge transfer across languages. In particular, we borrow from XLM the method developed for unsupervised machine translation, that relies on the Masked Language Model (MLM) objective <ref type="bibr" target="#b9">(Devlin et al., 2019)</ref> applied to multiple monolingual datasets as pretraining. We choose to adopt the unsupervised approach because the alternative (i.e., the supervised one based on the Translation Language Modeling) would need to be trained on parallel data, which are not available at scale for social media. As in XLM, we use Byte Pair Encoding (BPE) <ref type="bibr" target="#b25">(Sennrich et al., 2016)</ref> to learn a shared vocabulary of common subwords between the languages. This technique has proven beneficial to the alignment of embeddings from different languages, when used on languages that share some common traits, such as alphabet and digits.</p><p>Following the original approach to MLM, 15% of the tokens in a sentence get selected, which get masked 80% of the times, replaced by a random token in 10% of the cases and kept unchanged 10% of the times. In order to reduce the impact of relatively frequent words on the model, tokens are sampled according to a multinomial distribution that is proportional to the square root of their inverted frequency. While the original XLM operates on streams of text, split by sentence separators, we split the stream of tweets, so that each example contains only one tweet.</p><p>Since using a standard pre-trained language model to classify irregular data obtained from social networks would prove very challenging, we try to adapt our cross-lingual model to social media data as much as possible. Specifically, we rely on two main intuitions: emojis are linked to emotion expressions, correlated in turn with various forms of online harassment <ref type="bibr" target="#b1">(Arslan et al., 2019)</ref>. Besides, emojis could be seen as common traits that are present in tweets across different languages, maintaining a similar meaning at least when comparing Indo-European languages <ref type="bibr" target="#b16">(Lu et al., 2016)</ref>. If we consider the data used in this paper, we can find a good coverage of emojis, with 16.82% of the tweets containing at least one emoji for English, 16.15% for German, 7.68% for Italian, and 18.39% for Spanish. Furthermore, in these datasets the most frequent emojis are shared among all the four languages, with 'red heart', 'face with tears of joy', 'thinking face' and 'smiling face with heart-eyes' among the top ten emojis in each dataset. We therefore compare a standard masked language model with one that targets emoji prediction instead of the cloze task <ref type="bibr" target="#b28">(Taylor, 1953)</ref>. However, since emojis are not always present in each tweet, we adopt a hybrid approach: when emojis are not present, the previously described MLM objective is trained. When emojis are found, we select them as candidates to be masked 80% of the time, replaced by a random token 10% of the time or kept unchanged 10% of the time as in MLM. With this technique, which we call Hybrid Emoji-based Masked Language Model (HE-MLM) we can use all the available data, while also leveraging the common information conveyed by emojis.</p><p>We test also a variant of MLM and HE-MLM, in which we put special tokens "&lt;emoji&gt;" and "&lt;/emoji&gt;" around all emojis in the dataset, given that we are effectively performing two different tasks with the same model. This approach allows the model to distinguish between normal words and emojis in the text while training masked language models.</p></div>
+<div><head n="3.2">Fine-tuning for abusive language detection</head><p>In order to assess how invariant our tweet embeddings are with respect to the language provided as input to the encoder, we create a zero-shot framework, where the system is only trained on English tweets and is evaluated on multiple languages. In particular, we first load the pretrained transformer and attach to it a single feed-forward layer on top of the encoder with a single, sigmoid activated output neuron. The entire model is then fine-tuned on the English hate speech detection dataset using a binary cross-entropy loss function. The system uses early stopping with the minimum F1 score between the two classes as a stopping criterion, relying on a balanced dataset that contains all languages as validation set. Finally, the performance is evaluated on the German, Italian and Spanish test sets to assess how our classifier performs on the different languages using the bilingual models.</p><p>4 Experimental setting</p></div>
+<div><head n="4.1">Datasets</head><p>Since we run our classification in a zero-shot scenario, we use English data for training, and tweets in German, Italian and Spanish for validation and test. The datasets we used and the related number of tweets are reported in Table <ref type="table" target="#tab_0">1</ref>. To guarantee a comparable setting for our experiments, we carefully investigated data samples and the annotation schemes adopted for the different languages, concluding that the tweet content as well as the binary annotation tagsets (hate-speech/offensive and other) of the datasets are similar enough to use them in the same classification framework. Also the class distribution is similar, with the abusive class covering around 30% of the tweets in each dataset.</p><p>To pre-train our cross-lingual language models with in-domain data, we gather 5 million tweets for each of the targeted languages (i.e., English, German, Italian and Spanish).  <ref type="bibr">ish)</ref>. For each classification language, the validation set comprises the same amount of language-specific and English tweets.</p><p>Streaming API using the stopwords of the target language as filter to query the API, as in <ref type="bibr" target="#b23">(Scheffler, 2014)</ref>.</p></div>
+<div><head n="4.2">Data splitting</head><p>Concerning the dataset splits into training and test instances, for the English dataset -since no standardized split is provided -we randomly selected 60% of the dataset for training, 20% for validation and 20% for testing. For the German and Italian datasets, we use the training and test split provided by the Germeval and Evalita task organisers, respectively. In both cases, we use 20% of the training set as validation set. Whenever we split the datasets, we use the train test split function from <software ContextAttributes="created">scikit-learn</software> <ref type="bibr" target="#b21">(Pedregosa et al., 2011)</ref>, using 42 as a seed value. Finally, for Spanish, we use the development, test and training set provided by the <software ContextAttributes="created">HatEval</software> task organisers.</p><p>For each combination of languages tested in our experiments (i.e., English-German, English-Italian and English-Spanish), the validation test is obtained by keeping the language-specific validation set as is and undersampling the English one to the same size, so that each language has the same weight during the early stopping phase.</p><p>Before classification, the text is first lowercased, all accents are removed, then it is tokenized with <ref type="bibr" target="#b13">(Koehn et al., 2007)</ref> fastBPE implementation<ref type="foot" target="#foot_0">1</ref> . We evaluate the classifier performance over a maximum of 100 training epochs, and use an early stopping mechanism with a patience of 5. The selected model is then used to evaluate performance on the test set.</p></div>
+<div><head n="4.3">Pretraining methods</head><p>Since we want to assess the impact of emojis on the pretraining results, we train four different configurations:</p><p>• Using the base MLM training objective;</p><p>• Using the base MLM training objective and &lt;emoji&gt; tokens;</p><p>• Using the HE-MLM training objective;</p><p>• Using the HE-MLM training objective and &lt;emoji&gt; tokens.</p><p>For each configuration, we pretrain two models in order to reduce the impact of random initialization on the final results and we fine-tune each model 10 times (20 total). The final results are obtained by averaging the results of these 20 runs.</p></div>
+<div><head n="5">Evaluation</head><p>We report the experiment results for each language in Tables 2, 3, 4. For all languages, training is performed using only English data.</p><p>Results for German (Table <ref type="table" target="#tab_1">2</ref>) show that using in-domain unlabeled data from Twitter instead of pre-trained models yields an improvement in performance on English, while on German the model is not able to outperform the pre-trained model. In this case, however, the pretrained model is only learning the non-hate class, while the other three models all achieve non zero recall on both classes. Beside the baseline, the HE-MLM model with &lt;emoji&gt; is the best performing one on the German data, while on English the best performance is achieved by using the vanilla MLM model.</p><p>We evaluate MLM and HE-MLM also for zeroshot Italian hate speech classification, comparing the configurations with and without &lt;emoji&gt; tokens like in the previous experiments (Table <ref type="table" target="#tab_2">3</ref>). For English, the best performing model is HE-MLM with emoji tokens, while on Italian the HE-MLM model with no tokens is better in terms of macro averaged F1. When comparing configurations, we observe that the MLM model with emoji tokens has better F1 score than the MLM one in the non hate speech class, while the MLM model has improved performance on the hate class. This results in the MLM model having better macro average F1 for Italian, while the MLM model with emoji tokens shows higher average F1 on English. When considering the hybrid emoji-based models, HE-MLM achieves a higher F1 for the hate speech class in English and for the non hate class in Italian. This results in the HE-MLM model having a higher macro averaged F1 in the Italian language, while the HE-MLM model with emoji tokens is better on English.</p><p>As a final test, we evaluate the performance of the model trained on English and Spanish (Table <ref type="table" target="#tab_3">4</ref>). Our English-Spanish models show a similar behaviour to the one observed for the English-Italian pair. In terms of macro averages, the HE-MLM model with emoji tokens has a higher average F1 for English, while the HE-MLM model has higher macro F1 for Spanish.</p><p>On all the runs, the classifier achieves a lower performance on German than on the other two languages, while the results on Italian and Spanish are comparable. This confirms the findings in <ref type="bibr" target="#b8">(Corazza et al., 2020)</ref> suggesting that, even when using the same classification framework, experimental setting and amount of training data, offensive speech detection on German achieves lower performance than on other languages. This may have two possible reasons: on the one hand, German may have inherent characteristics that make it more challenging to classify for abusive language detection, for example the presence of compound words makes hashtag splitting more error-prone. On the other hand, the Germeval dataset was built by sampling data from specific users and avoiding keyword-based queries, so to obtain the highest possible variability in the offensive language. This led to the creation of a very challenging dataset, where lexical overlap between training and test data is limited and where hate speech is not associated with specific topics or keywords, as suggested in <ref type="bibr" target="#b31">(Wiegand et al., 2019)</ref>.</p></div>
+<div><head n="6">Conclusions</head><p>In this paper, we present a novel zero-shot framework for multilingual abusive language detection. We compare two cross-lingual language models, i.e., standard MLM and a hybrid version of MLM based on emojis (HE-MLM), highlighting that the latter shows some advantages over the MLM model when used on social media data: first of all, when using emojis, the pre-training step is aimed at predicting tokens that are inherently more relevant for the final abusive language detection task whenever possible, as opposed to random tokens. Secondly, emojis convey similar meaning in the languages that we consider, serving as a common trait between languages during pre-training. We also use &lt;emoji&gt; tokens around emojis to help the system discriminate between the two training objectives when using HE-MLM.</p><p>The proposed methods represent a novel contribution with respect to social media data processing and abusive language detection. Our aim is not to create a system comparable with monolingual state-of-the-art solutions, but to investigate the possibility to use an unsupervised approach for zeroshot cross lingual abusive language detection. As a first step in this direction, we focused on four European languages, for which similar data were available. The only existing work dealing with zero-shot abusive language detection, presented in <ref type="bibr" target="#b27">(Stappen et al., 2020)</ref>, only focuses on a language pair and, while obtaining promising results, relies on the English and Spanish corpora annotated for <software ContextAttributes="created">HatEval</software> 2019 following the same guidelines and focusing on hate against immigrants and women. Our approach aims to be more robust, comparing datasets annotated for different shared tasks which may adopt slightly different guidelines.</p><p>In the near future, we plan to further extend the social media-specific datasets we are collecting to pre-train HE-MLM, since 5 million tweets we used for each language correspond to a small-sized corpus compared to standard pre-trained language models. Then, to investigate whether our results can be generalised also when dealing with typologically different languages, we will test our approach on additional abusive language datasets covering other languages <ref type="bibr" target="#b18">(Ousidhoum et al., 2019;</ref><ref type="bibr" target="#b37">Zampieri et al., 2020)</ref>.</p></div><figure type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Such tweets have been collected in different time periods spanning from March to August 2019 through the Twitter Number of tweets used for fine-tuning (English), validation and testing (German, Italian, Span-</figDesc><table><row><cell cols="3">ENGLISH (Waseem and Hovy, 2016)</cell></row><row><cell>Train</cell><cell>Validation</cell><cell>Test</cell></row><row><cell>9,534</cell><cell>-</cell><cell /></row><row><cell cols="3">GERMAN (Wiegand et al., 2018)</cell></row><row><cell>Train</cell><cell>Validation</cell><cell>Test</cell></row><row><cell>-</cell><cell>1,002 (+ 1,002 EN)</cell><cell>3,532</cell></row><row><cell /><cell cols="2">ITALIAN (Bosco et al., 2018)</cell></row><row><cell>Train</cell><cell>Validation</cell><cell>Test</cell></row><row><cell>-</cell><cell>600 (+ 600 EN)</cell><cell>1,000</cell></row><row><cell /><cell cols="2">SPANISH (Basile et al., 2019)</cell></row><row><cell>Train</cell><cell>Validation</cell><cell>Test</cell></row><row><cell>-</cell><cell>500 (+ 500 EN)</cell><cell>1,600</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>'s system. Finally, Byte Pair Encoding is applied to all datasets by using the Average performance (10 runs) on English and German, comparing the En-De model from<ref type="bibr" target="#b6">(Conneau and Lample, 2019)</ref> pre-trained on Wikipedia, our MLM re-trained on English and German tweets, and our Hybrid Emoji-based MLM (HE-MLM). MLM and HE-MLM are evaluated with and without the use of &lt;emoji&gt; tokens.</figDesc><table><row><cell /><cell /><cell /><cell cols="3">pre-trained model</cell><cell /><cell>MLM</cell><cell /><cell cols="3">MLM with &lt;emoji&gt;</cell><cell cols="2">HE-MLM</cell><cell /><cell cols="2">HE-MLM with &lt;emoji&gt;</cell></row><row><cell cols="3">Lang. Category</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell></row><row><cell /><cell cols="16">Non-hate speech 0.682 0.993 0.809 0.700 0.736 0.688 0.698 0.387 0.465 0.690 0.830 0.738 0.685 0.907</cell><cell>0.773</cell></row><row><cell>EN</cell><cell cols="2">Hate speech</cell><cell cols="14">0.423 0.013 0.023 0.340 0.293 0.257 0.320 0.625 0.412 0.304 0.185 0.175 0.248 0.099</cell><cell>0.101</cell></row><row><cell /><cell cols="2">macro avg</cell><cell cols="14">0.553 0.503 0.417 0.520 0.515 0.473 0.509 0.506 0.439 0.497 0.507 0.456 0.466 0.503</cell><cell>0.437</cell></row><row><cell /><cell cols="16">Non-hate speech 0.660 0.998 0.795 0.626 0.371 0.359 0.477 0.114 0.141 0.575 0.319 0.283 0.656 0.821</cell><cell>0.667</cell></row><row><cell>DE</cell><cell cols="2">Hate speech</cell><cell cols="14">0.142 0.002 0.005 0.294 0.637 0.379 0.342 0.890 0.487 0.286 0.676 0.375 0.112 0.180</cell><cell>0.109</cell></row><row><cell /><cell cols="2">macro avg</cell><cell cols="14">0.401 0.500 0.400 0.460 0.504 0.369 0.409 0.502 0.314 0.430 0.497 0.329 0.384 0.500</cell><cell>0.388</cell></row><row><cell /><cell /><cell /><cell /><cell /><cell>MLM</cell><cell /><cell cols="3">MLM with &lt;emoji&gt;</cell><cell /><cell /><cell>HE-MLM</cell><cell /><cell cols="3">HE-MLM with &lt;emoji&gt;</cell></row><row><cell /><cell cols="2">Lang. Category</cell><cell /><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell /><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell></row><row><cell /><cell /><cell cols="14">Non-hate speech 0.473 0.181 0.220 0.699 0.712 0.610 0.449 0.317 0.321 0.616 0.732</cell><cell>0.635</cell></row><row><cell /><cell>EN</cell><cell>Hate speech</cell><cell /><cell cols="12">0.326 0.837 0.458 0.113 0.293 0.162 0.273 0.689 0.374 0.170 0.270</cell><cell>0.179</cell></row><row><cell /><cell /><cell>macro avg</cell><cell /><cell cols="12">0.400 0.509 0.339 0.406 0.503 0.386 0.361 0.503 0.347 0.393 0.501</cell><cell>0.407</cell></row><row><cell /><cell /><cell cols="14">Non-hate speech 0.688 0.718 0.679 0.680 0.891 0.765 0.698 0.740 0.713 0.664 0.446</cell><cell>0.452</cell></row><row><cell /><cell>IT</cell><cell>Hate speech</cell><cell /><cell cols="12">0.352 0.301 0.262 0.221 0.122 0.137 0.381 0.326 0.326 0.296 0.587</cell><cell>0.349</cell></row><row><cell /><cell /><cell>macro avg</cell><cell /><cell cols="12">0.520 0.510 0.470 0.451 0.507 0.451 0.539 0.533 0.519 0.480 0.517</cell><cell>0.401</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 3 :</head><label>3</label><figDesc>Average performance (10 runs) on English and Italian after re-training the Masked Language Model (MLM) on tweets and using Hybrid Emoji-based MLM (HE-MLM).</figDesc><table /></figure>
+<figure type="table" xml:id="tab_3"><head>Table 4 :</head><label>4</label><figDesc>Average performance (10 runs) on English and Spanish after re-training the Masked Language Model (MLM) on tweets and using Hybrid Emoji-based MLM (HE-MLM).</figDesc><table><row><cell /><cell /><cell /><cell>MLM</cell><cell /><cell cols="3">MLM with &lt;emoji&gt;</cell><cell /><cell>HE-MLM</cell><cell /><cell cols="3">HE-MLM with &lt;emoji&gt;</cell></row><row><cell cols="2">Lang. Category</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell><cell>P</cell><cell>R</cell><cell>F1</cell></row><row><cell /><cell cols="12">Non-hate speech 0.667 0.927 0.762 0.692 0.847 0.706 0.752 0.308 0.305 0.699 0.722</cell><cell>0.676</cell></row><row><cell>EN</cell><cell>Hate speech</cell><cell cols="11">0.072 0.072 0.048 0.118 0.146 0.090 0.316 0.698 0.370 0.296 0.307</cell><cell>0.234</cell></row><row><cell /><cell>macro avg</cell><cell cols="11">0.369 0.499 0.405 0.405 0.497 0.398 0.534 0.503 0.337 0.498 0.515</cell><cell>0.455</cell></row><row><cell /><cell cols="12">Non-hate speech 0.599 0.760 0.655 0.577 0.679 0.599 0.598 0.725 0.648 0.595 0.740</cell><cell>0.643</cell></row><row><cell>ES</cell><cell>Hate speech</cell><cell cols="11">0.365 0.267 0.275 0.407 0.307 0.298 0.438 0.303 0.332 0.451 0.275</cell><cell>0.280</cell></row><row><cell /><cell>macro avg</cell><cell cols="11">0.482 0.513 0.465 0.492 0.493 0.449 0.518 0.514 0.490 0.523 0.507</cell><cell>0.461</cell></row></table></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>https://github.com/glample/fastBPE</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Deep learning for detecting cyberbullying across multiple social media platforms</title>
+		<author>
+			<persName><forename type="first">Sweta</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amit</forename><surname>Awekar</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-319-76941-7_11</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ECIR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="141" to="153" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Overwhelmed by Negative Emotions? Maybe You Are Being Cyber-bullied</title>
+		<author>
+			<persName><forename type="first">Pinar</forename><surname>Arslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Corazza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th ACM/SIGAPP Symposium On Applied Computing (SAC)</title>
+		<meeting>the 34th ACM/SIGAPP Symposium On Applied Computing (SAC)<address><addrLine>Limassol, Cyprus</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">SemEval-2019 task 5: Multilingual detection of hate speech against immigrants and women in twitter</title>
+		<author>
+			<persName><forename type="first">Cristina</forename><surname>Valerio Basile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisabetta</forename><surname>Bosco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Debora</forename><surname>Fersini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viviana</forename><surname>Nozza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francisco</forename><surname>Patti</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Manuel Rangel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><surname>Rosso</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sanguinetti</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/S19-2007</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Workshop on Semantic Evaluation</title>
+		<meeting>the 13th International Workshop on Semantic Evaluation<address><addrLine>Minneapolis, Minnesota, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="54" to="63" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Overview of the EVALITA 2018 hate speech detection task</title>
+		<author>
+			<persName><forename type="first">Cristina</forename><surname>Bosco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felice</forename><surname>Dell'orletta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabio</forename><surname>Poletto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuela</forename><surname>Sanguinetti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maurizio</forename><surname>Tesconi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of EVALITA</title>
+		<meeting>EVALITA</meeting>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Overview of MEX-A3T at IberEval 2018: Authorship and Aggressiveness Analysis in Mexican Spanish Tweets</title>
+		<author>
+			<persName><forename type="first">Miguel</forename><surname>Ángel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Álvarez</forename><surname>Carmona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Estefanía</forename><surname>Guzmán-Falcón</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Manuel</forename><surname>Montes-Y-Gómez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hugo</forename><forename type="middle">Jair</forename><surname>Escalante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Villaseñor Pineda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Verónica</forename><surname>Reyes-Meza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><forename type="middle">Rico</forename><surname>Sulayes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of IberEval 2018</title>
+		<meeting>IberEval 2018</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="74" to="96" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">FBK-DH at SemEval-2020 Task 12: Using Multi-channel BERT for Multilingual Offensive Language Detection</title>
+		<author>
+			<persName><forename type="first">Camilla</forename><surname>Casula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alessio</forename><surname>Palmero Aprosio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Menini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Tonelli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Workshop on Semantic Evaluation (SemEval-2020)</title>
+		<meeting>the 13th International Workshop on Semantic Evaluation (SemEval-2020)</meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Crosslingual language model pretraining</title>
+		<author>
+			<persName><forename type="first">Alexis</forename><surname>Conneau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Lample</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 32: Annual Conference on Neural Information Processing Systems 2019</title>
+		<meeting><address><addrLine>NeurIPS; Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-08-14">2019. 2019. 8-14 December 2019</date>
+			<biblScope unit="page" from="7057" to="7067" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Comparing different supervised approaches to hate speech detection</title>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Corazza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Menini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pinar</forename><surname>Arslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachele</forename><surname>Sprugnoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Tonelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Sixth Evaluation Campaign of Natural Language Processing and Speech Tools for Italian. Final Workshop (EVALITA 2018) co-located with the Fifth Italian Conference on Computational Linguistics (CLiC-it 2018)</title>
+		<meeting>the Sixth Evaluation Campaign of Natural Language Processing and Speech Tools for Italian. Final Workshop (EVALITA 2018) co-located with the Fifth Italian Conference on Computational Linguistics (CLiC-it 2018)<address><addrLine>Turin, Italy</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A multilingual evaluation for online hate speech detection</title>
+		<author>
+			<persName><forename type="first">Michele</forename><surname>Corazza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefano</forename><surname>Menini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elena</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Tonelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serena</forename><surname>Villata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Internet Technology (TOIT)</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/N19-1423</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Minneapolis, Minnesota</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="4171" to="4186" />
+		</imprint>
+	</monogr>
+	<note>Long and Short Papers</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m">Proceedings of the 2nd Workshop on Abusive Language Online (ALW2). Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Darja</forename><surname>Fišer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ruihong</forename><surname>Huang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vinodkumar</forename><surname>Prabhakaran</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Rob</forename><surname>Voigt</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zeerak</forename><surname>Waseem</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Jacqueline</forename><surname>Wernimont</surname></persName>
+		</editor>
+		<meeting>the 2nd Workshop on Abusive Language Online (ALW2). Association for Computational Linguistics<address><addrLine>Brussels, Belgium</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A survey on automatic detection of hate speech in text</title>
+		<author>
+			<persName><forename type="first">Paula</forename><surname>Fortuna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sérgio</forename><surname>Nunes</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3232676</idno>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="85" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Large scale crowdsourcing and characterization of twitter abusive behavior</title>
+		<author>
+			<persName><forename type="first">Antigoni-Maria</forename><surname>Founta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Constantinos</forename><surname>Djouvas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Despoina</forename><surname>Chatzakou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilias</forename><surname>Leontiadis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Blackburn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gianluca</forename><surname>Stringhini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Athena</forename><surname>Vakali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Sirivianos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Kourtellis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICWSM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="491" to="500" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Moses: Open source toolkit for statistical machine translation</title>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Koehn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hieu</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Birch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Callison-Burch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcello</forename><surname>Federico</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicola</forename><surname>Bertoldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brooke</forename><surname>Cowan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wade</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christine</forename><surname>Moran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Zens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL: demo and poster</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="177" to="180" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Comparative studies of detecting abusive language on twitter</title>
+		<author>
+			<persName><forename type="first">Younghun</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seunghyun</forename><surname>Yoon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyomin</forename><surname>Jung</surname></persName>
+		</author>
+		<idno>CoRR, abs/1808.10245</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Roberta: A robustly optimized BERT pretraining approach</title>
+		<author>
+			<persName><forename type="first">Yinhan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Myle</forename><surname>Ott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Naman</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingfei</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mandar</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danqi</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mike</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luke</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Veselin</forename><surname>Stoyanov</surname></persName>
+		</author>
+		<idno>CoRR, abs/1907.11692</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Learning from the ubiquitous language: An empirical analysis of emoji usage of smartphone users</title>
+		<author>
+			<persName><forename type="first">Xuan</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xuanzhe</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qian</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ning</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiaozhu</forename><surname>Mei</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2971648.2971724</idno>
+	</analytic>
+	<monogr>
+		<title level="m">UbiComp</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="780" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Abusive language detection in online user content</title>
+		<author>
+			<persName><forename type="first">Chikashi</forename><surname>Nobata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><forename type="middle">R</forename><surname>Tetreault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Achint</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yashar</forename><surname>Mehdad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="145" to="153" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Multilingual and multi-aspect hate speech analysis</title>
+		<author>
+			<persName><forename type="first">Nedjma</forename><surname>Ousidhoum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zizheng</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongming</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangqiu</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dit-Yan</forename><surname>Yeung</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D19-1474</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4667" to="4676" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Cross-domain and cross-lingual abusive language detection: A hybrid approach with deep learning and a multilingual lexicon</title>
+		<author>
+			<persName><forename type="first">Endang</forename><surname>Wahyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pamungkas</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Viviana</forename><surname>Patti</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/p19-2051</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Conference of the Association for Computational Linguistics, ACL 2019</title>
+		<meeting>the 57th Conference of the Association for Computational Linguistics, ACL 2019<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07-28">2019. July 28 -August 2, 2019</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="363" to="370" />
+		</imprint>
+		<respStmt>
+			<orgName>Student Research Workshop</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">One-step and twostep classification for abusive language detection on twitter</title>
+		<author>
+			<persName><forename type="first">Ji</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Park</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pascale</forename><surname>Fung</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/W17-3006</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Abusive Language Online</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="41" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Scikit-learn: Machine learning in Python</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pedregosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Varoquaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gramfort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Thirion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Grisel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Prettenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dubourg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perrot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Duchesnay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="page" from="2825" to="2830" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Proceedings of the Third Workshop on Abusive Lan-Online</title>
+	</analytic>
+	<monogr>
+		<title level="m">Association for Computational Linguistics</title>
+		<editor>
+			<persName><forename type="first">Sarah</forename><forename type="middle">T</forename><surname>Roberts</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Joel</forename><surname>Tetreault</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Vinodkumar</forename><surname>Prabhakaran</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Zeerak</forename><surname>Waseem</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">A german twitter snapshot</title>
+		<author>
+			<persName><forename type="first">Tatjana</forename><surname>Scheffler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Language Resources and Evaluation Conference (LREC)</title>
+		<meeting>Language Resources and Evaluation Conference (LREC)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">A survey on hate speech detection using natural language processing</title>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wiegand</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/W17-1101</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fifth International Workshop on Natural Language Processing for Social Media</title>
+		<meeting>the Fifth International Workshop on Natural Language Processing for Social Media<address><addrLine>Valencia, Spain</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1" to="10" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Neural machine translation of rare words with subword units</title>
+		<author>
+			<persName><forename type="first">Rico</forename><surname>Sennrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Haddow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexandra</forename><surname>Birch</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P16-1162</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<meeting><address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">MC-BERT4HATE: hate speech detection using multichannel BERT for different languages and translations</title>
+		<author>
+			<persName><forename type="first">Hajung</forename><surname>Sohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hyunju</forename><surname>Lee</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDMW.2019.00084</idno>
+	</analytic>
+	<monogr>
+		<title level="m">2019 International Conference on Data Mining Workshops, ICDM Workshops 2019</title>
+		<meeting><address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019-11-08">2019. November 8-11, 2019</date>
+			<biblScope unit="page" from="551" to="559" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Cross-lingual zero-and few-shot hate speech detection utilising frozen transformer language models and AXEL</title>
+		<author>
+			<persName><forename type="first">Lukas</forename><surname>Stappen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Brunn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Björn</forename><forename type="middle">W</forename><surname>Schuller</surname></persName>
+		</author>
+		<idno>CoRR, abs/2004.13850</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Cloze Procedure: A New Tool for Measuring Readability</title>
+		<author>
+			<persName><forename type="first">Wilson</forename><forename type="middle">L</forename><surname>Taylor</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/107769905303000401</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Journalism Bulletin</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="415" to="433" />
+			<date type="published" when="1953">1953</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Proceedings of the First Workshop on Abusive Language Online</title>
+		<author>
+			<persName><forename type="first">Zeerak</forename><surname>Waseem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wendy</forename><surname>Hui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kyong</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Hovy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joel</forename><surname>Tetreault</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/W17-30</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Association for Computational Linguistics</title>
+		<meeting><address><addrLine>Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Hateful symbols or hateful people? predictive features for hate speech detection on twitter</title>
+		<author>
+			<persName><forename type="first">Zeerak</forename><surname>Waseem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dirk</forename><surname>Hovy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SRW@HLT-NAACL</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Detection of Abusive Language: the Problem of Biased Datasets</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wiegand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josef</forename><surname>Ruppenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Kleinbauer</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/N19-1060</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies</title>
+		<meeting>the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies<address><addrLine>Minneapolis, Minnesota</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="602" to="608" />
+		</imprint>
+	</monogr>
+	<note>Long and Short Papers</note>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Overview of the germeval 2018 shared task on the identification of offensive language</title>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Wiegand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Melanie</forename><surname>Siegel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Josef</forename><surname>Ruppenhofer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">GermEval</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Ex machina: Personal attacks seen at scale</title>
+		<author>
+			<persName><forename type="first">Ellery</forename><surname>Wulczyn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nithum</forename><surname>Thain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lucas</forename><surname>Dixon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of WWW Conference</title>
+		<meeting>WWW Conference</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1391" to="1399" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Detection of harassment on web 2.0</title>
+		<author>
+			<persName><forename type="first">Zhenzhen</forename><surname>Dawei Yin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liangjie</forename><surname>Xue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><forename type="middle">D</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">April</forename><surname>Davison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lynne</forename><surname>Kontostathis</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Edwards</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Content Analysis in the Web</title>
+		<meeting>the Content Analysis in the Web</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="1" to="7" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Predicting the type and target of offensive posts in social media</title>
+		<author>
+			<persName><forename type="first">Marcos</forename><surname>Zampieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shervin</forename><surname>Malmasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Preslav</forename><surname>Nakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Rosenthal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noura</forename><surname>Farra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ritesh</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of NAACL-HLT</title>
+		<meeting>NAACL-HLT</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Semeval-2019 task 6: Identifying and categorizing offensive language in social media (offenseval)</title>
+		<author>
+			<persName><forename type="first">Marcos</forename><surname>Zampieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shervin</forename><surname>Malmasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Preslav</forename><surname>Nakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Rosenthal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noura</forename><surname>Farra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ritesh</forename><surname>Kumar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Workshop on Semantic Evaluation</title>
+		<meeting>the 13th International Workshop on Semantic Evaluation</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="75" to="86" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">SemEval-2020 Task 12: Multilingual Offensive Language Identification in Social Media (Offen-sEval 2020)</title>
+		<author>
+			<persName><forename type="first">Marcos</forename><surname>Zampieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Preslav</forename><surname>Nakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sara</forename><surname>Rosenthal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pepa</forename><surname>Atanasova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georgi</forename><surname>Karadzhov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hamdy</forename><surname>Mubarak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Derczynski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zeses</forename><surname>Pitenis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>¸agrı C ¸öltekin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of SemEval</title>
+		<meeting>SemEval</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Detecting hate speech on twitter using a convolution-gru based deep neural network</title>
+		<author>
+			<persName><forename type="first">Robinson</forename><forename type="middle">D</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tepper</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESWC</title>
+		<imprint>
+			<publisher>Springer Verlag</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="745" to="760" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

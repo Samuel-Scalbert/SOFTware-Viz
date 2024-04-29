@@ -1,0 +1,1239 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Sliced-Wasserstein Flows: Nonparametric Generative Modeling via Optimal Transport and Diffusions</title>
+				<funder ref="#_hydjKze #_5wzDUZE #_4WEhW6h">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><roleName>Umut Ş Imşekli</roleName><forename type="first">Antoine</forename><surname>Liutkus</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Szymon</forename><surname>Majewski</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Alain</forename><surname>Durmus</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fabian-Robert</forename><surname>Stöter</surname></persName>
+						</author>
+						<author>
+							<persName><surname>Szymon</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Umut</forename><forename type="middle">S</forename><surname>¸ims ¸ekli</surname></persName>
+						</author>
+						<title level="a" type="main">Sliced-Wasserstein Flows: Nonparametric Generative Modeling via Optimal Transport and Diffusions</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">840ED63E43E90D64EF91197D29204301</idno>
+					<note type="submission">Submitted on 23 Jul 2019</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>de niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div><head n="1.">Introduction</head><p>Implicit generative modeling (IGM) <ref type="bibr" target="#b13">(Diggle &amp; Gratton, 1984;</ref><ref type="bibr" target="#b35">Mohamed &amp; Lakshminarayanan, 2016)</ref> has become very popular recently and has proven successful in various fields; variational auto-encoders (VAE) (Kingma &amp; Welling,   1 Inria and LIRMM, Univ.</p><p>of Montpellier, France 2 LTCI, Télécom Paristech, Université Paris-Saclay, Paris, France 3 Institute of Mathematics, Polish Academy of Sciences, Warsaw, Poland 4 CNRS, ENS Paris-Saclay,Universit Paris-Saclay, Cachan, France.</p><p>Correspondence to: Antoine Liutkus &lt;antoine.liutkus@inria.fr&gt;, Umut S ¸ims ¸ekli &lt;umut.simsekli@telecom-paristech.fr&gt;.</p><p>Proceedings of the 36 th International Conference on Machine <ref type="bibr">Learning, Long Beach, California, PMLR 97, 2019.</ref> Copyright 2019 by the author(s).</p><p>2013) and generative adversarial networks (GAN) <ref type="bibr" target="#b20">(Goodfellow et al., 2014)</ref> being its two well-known examples. The goal in IGM can be briefly described as learning the underlying probability measure of a given dataset, denoted as ν ∈ P(Ω), where P is the space of probability measures on the measurable space (Ω, A), Ω ⊂ R d is a domain and A is the associated Borel σ-field.</p><p>Given a set of data points {y 1 , . . . , y P } that are assumed to be independent and identically distributed (i.i.d.) samples drawn from ν, the implicit generative framework models them as the output of a measurable map, i.e. y = T (x), with T : Ω µ → Ω. Here, the inputs x are generated from a known and easy to sample source measure µ on Ω µ (e.g. Gaussian or uniform measures), and the outputs T (x) should match the unknown target measure ν on Ω.</p><p>Learning generative networks have witnessed several groundbreaking contributions in recent years. Motivated by this fact, there has been an interest in illuminating the theoretical foundations of VAEs and GANs <ref type="bibr" target="#b7">(Bousquet et al., 2017;</ref><ref type="bibr" target="#b30">Liu et al., 2017)</ref>. It has been shown that these implicit models have close connections with the theory of Optimal Transport (OT) <ref type="bibr" target="#b46">(Villani, 2008)</ref>. As it turns out, OT brings new light on the generative modeling problem: there have been several extensions of VAEs <ref type="bibr" target="#b43">(Tolstikhin et al., 2017;</ref><ref type="bibr" target="#b27">Kolouri et al., 2018)</ref> and GANs <ref type="bibr" target="#b1">(Arjovsky et al., 2017;</ref><ref type="bibr" target="#b22">Gulrajani et al., 2017;</ref><ref type="bibr" target="#b23">Guo et al., 2017;</ref><ref type="bibr" target="#b29">Lei et al., 2017)</ref>, which exploit the links between OT and IGM.</p><p>OT studies whether it is possible to transform samples from a source distribution µ to a target distribution ν. From this perspective, an ideal generative model is simply a transport map from µ to ν. This can be written by using some 'pushforward operators': we seek a mapping T that 'pushes µ onto ν', and is formally defined as ν(A) = µ(T -1 (A)) for all Borel sets A ⊂ A. If this relation holds, we denote the push-forward operator T # , such that T # µ = ν. Provided mild conditions on these distributions hold (notably µ is nonatomic <ref type="bibr" target="#b46">(Villani, 2008)</ref>), existence of such a transport map is guaranteed; however, it remains a challenge to construct it in practice.</p><p>One common point between VAE and GAN is to adopt an approximate strategy and consider transport maps that belong to a parametric family T φ with φ ∈ Φ. Then, they aim at finding the best parameter φ that would give T φ # µ ≈ ν. This is typically achieved by attempting to minimize the following optimization problem: φ = arg min φ∈Φ W 2 (T φ# µ, ν), where W 2 denotes the Wasserstein distance that will be properly defined in Section 2. It has been shown that <ref type="bibr" target="#b18">(Genevay et al., 2017)</ref> OT-based GANs <ref type="bibr" target="#b1">(Arjovsky et al., 2017)</ref> and VAEs <ref type="bibr" target="#b43">(Tolstikhin et al., 2017)</ref> both use this formulation with different parameterizations and different equivalent definitions of W 2 . However, their resulting algorithms still lack theoretical understanding.</p><p>In this study, we follow a completely different approach for IGM, where we aim at developing an algorithm with explicit theoretical guarantees for estimating a transport map between source µ and target ν. The generated transport map will be nonparametric (in the sense that it does not belong to some family of functions, like a neural network), and it will be iteratively augmented: always increasing the quality of the fit along iterations. Formally, we take T t as the constructed transport map at time t ∈ [0, ∞), and define µ t = T t #µ as the corresponding output distribution. Our objective is to build the maps so that µ t will converge to the solution of a functional optimization problem, defined through a gradient flow in the Wasserstein space. Informally, we will consider a gradient flow that has the following form:</p><formula xml:id="formula_0">∂ t µ t = -∇ W2 Cost(µ t , ν) + Reg(µ t ) , µ 0 = µ, (1)</formula><p>where the functional Cost computes a discrepancy between µ t and ν, Reg denotes a regularization functional, and ∇ W2 denotes a notion of gradient with respect to a probability measure in the W 2 metric for probability measures<ref type="foot" target="#foot_0">1</ref> . If this flow can be simulated, one would hope for µ t = (T t ) # µ to converge to the minimum of the functional optimization problem: min µ (Cost(µ, ν) + Reg(µ)) <ref type="bibr" target="#b0">(Ambrosio et al., 2008;</ref><ref type="bibr" target="#b41">Santambrogio, 2017)</ref>.</p><p>We construct a gradient flow where we choose the Cost functional as the sliced Wasserstein distance (SW 2 ) <ref type="bibr" target="#b37">(Rabin et al., 2012;</ref><ref type="bibr" target="#b4">Bonneel et al., 2015)</ref> and the Reg functional as the negative entropy. The SW 2 distance is equivalent to the W 2 distance <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref> and has important computational implications since it can be expressed as an average of (one-dimensional) projected optimal transportation costs whose analytical expressions are available.</p><p>We first show that, with the choice of SW 2 and the negativeentropy functionals as the overall objective, we obtain a valid gradient flow that has a solution path (µ t ) t , and the probability density functions of this path solve a particular partial differential equation, which has close connections with stochastic differential equations. Even though gradient flows in Wasserstein spaces cannot be solved in general, by exploiting this connection, we are able to develop a practical algorithm that provides approximate solutions to the gradient flow and is algorithmically similar to stochastic gradient Markov Chain Monte Carlo (MCMC) methods<ref type="foot" target="#foot_1">2</ref>  <ref type="bibr" target="#b47">(Welling &amp; Teh, 2011;</ref><ref type="bibr" target="#b32">Ma et al., 2015;</ref><ref type="bibr" target="#b15">Durmus et al., 2016;</ref><ref type="bibr" target="#b42">S ¸ims ¸ekli, 2017;</ref><ref type="bibr" target="#b9">S ¸ims ¸ekli et al., 2018)</ref>. We provide finitetime error guarantees for the proposed algorithm and show explicit dependence of the error to the algorithm parameters.</p><p>To the best of our knowledge, the proposed algorithm is the first nonparametric IGM algorithm that has explicit theoretical guarantees. In addition to its nice theoretical properties, the proposed algorithm has also significant practical importance: it has low computational requirements and can be easily run on an everyday laptop CPU.Our experiments on both synthetic and real datasets support our theory and illustrate the advantages of the algorithm in several scenarios.</p></div>
+<div><head n="2.">Technical Background</head></div>
+<div><head n="2.1.">Wasserstein distance, optimal transport maps and Kantorovich potentials</head><p>For two probability measures µ, ν ∈ P 2 (Ω), P 2 (Ω) = {µ ∈ P(Ω) : Ω x 2 µ(dx) &lt; +∞}, the 2-Wasserstein distance is defined as follows:</p><formula xml:id="formula_1">W 2 (µ, ν) inf γ∈C(µ,ν) Ω×Ω</formula><p>x -y 2 γ(dx, dy)</p><formula xml:id="formula_2">1/2 ,<label>(2)</label></formula><p>where C(µ, ν) is called the set of transportation plans and defined as the set of probability measures γ on Ω×Ω satisfying for all A ∈ A, γ(A×Ω) = µ(A) and γ(Ω×A) = ν(A), i.e. the marginals of γ coincide with µ and ν. From now on, we will assume that Ω is a compact subset of R d .</p><p>In the case where Ω is finite, computing the Wasserstein distance between two probability measures turns out to be a linear program with linear constraints, and has therefore a dual formulation. Since Ω is a Polish space (i.e. a complete and separable metric space), this dual formulation can be generalized as follows <ref type="bibr" target="#b46">(Villani, 2008)</ref>[Theorem 5.10]:</p><formula xml:id="formula_3">W 2 (µ, ν) = sup ψ∈L 1 (µ) Ω ψ(x)µ(dx) + Ω ψ c (x)ν(dx) 1/2 (3)</formula><p>where L 1 (µ) denotes the class of functions that are absolutely integrable under µ and ψ c denotes the c-conjugate of ψ and is defined as follows:</p><formula xml:id="formula_4">ψ c (y) {inf x∈Ω x - y 2 -ψ(x)}.</formula><p>The functions ψ that realize the supremum in (3) are called the Kantorovich potentials between µ and ν. Provided that µ satisfies a mild condition, we have the following uniqueness result.</p><p>Theorem 1 ( <ref type="bibr">(Santambrogio, 2014)[Theorem 1.4]</ref>). Assume that µ ∈ P 2 (Ω) is absolutely continuous with respect to the Lebesgue measure. Then, there exists a unique optimal transport plan γ that realizes the infimum in (2) and it is of the form (Id × T ) # µ, for a measurable function T : Ω → Ω. Furthermore, there exists at least a Kantorovich potential ψ whose gradient ∇ψ is uniquely determined µalmost everywhere. The function T and the potential ψ are linked by T (x) = x -∇ψ(x).</p><p>The measurable function T : Ω → Ω is referred to as the optimal transport map from µ to ν. This result implies that there exists a solution for transporting samples from µ to samples from ν and this solution is optimal in the sense that it minimizes the 2 displacement. However, identifying this solution is highly non-trivial. In the discrete case, effective solutions have been proposed <ref type="bibr" target="#b10">(Cuturi, 2013)</ref>. However, for continuous and high-dimensional probability measures, constructing an actual transport plan remains a challenge. Even if recent contributions <ref type="bibr" target="#b17">(Genevay et al., 2016)</ref> have made it possible to rapidly compute W 2 , they do so without constructing the optimal map T , which is our objective here.</p></div>
+<div><head n="2.2.">Wasserstein spaces and gradient flows</head><p>By <ref type="bibr" target="#b0">(Ambrosio et al., 2008)</ref>[Proposition 7.1.5], W 2 is a distance over P(Ω). In addition, if Ω ⊂ R d is compact, the topology associated with W 2 is equivalent to the weak convergence of probability measures and (P(Ω), W 2 )<ref type="foot" target="#foot_2">3</ref> is compact. The metric space (P 2 (Ω), W 2 ) is called the Wasserstein space.</p><p>In this study, we are interested in functional optimization problems in (P 2 (Ω), W 2 ), such as min µ∈P2(Ω) F(µ), where F is the functional that we would like to minimize. Similar to Euclidean spaces, one way to formulate this optimization problem is to construct a gradient flow of the form <ref type="bibr" target="#b2">&amp; Brenier, 2000;</ref><ref type="bibr" target="#b28">Lavenant et al., 2018)</ref>, where ∇ W2 denotes a notion of gradient in (P 2 (Ω), W 2 ). If such a flow can be constructed, one can utilize it both for practical algorithms and theoretical analysis.</p><formula xml:id="formula_5">∂ t µ t = -∇ W2 F(µ t ) (Benamou</formula><p>Gradient flows ∂ t µ t = ∇ W2 F(µ t ) with respect to a functional F in (P 2 (Ω), W 2 ) have strong connections with partial differential equations (PDE) that are of the form of a continuity equation <ref type="bibr" target="#b41">(Santambrogio, 2017)</ref>. Indeed, it is shown than under appropriate conditions on F (see e.g. <ref type="bibr" target="#b0">(Ambrosio et al., 2008)</ref>), (µ t ) t is a solution of the gradient flow if and only if it admits a density ρ t with respect to the Lebesgue measure for all t ≥ 0, and solves the continuity equation given by: ∂ t ρ t + div(vρ t ) = 0, where v denotes a vector field and div denotes the divergence operator. Then, for a given gradient flow in (P 2 (Ω), W 2 ), we are interested in the evolution of the densities ρ t , i.e. the PDEs which they solve. Such PDEs are of our particular interest since they have a key role for building practical algorithms.</p></div>
+<div><head n="2.3.">Sliced-Wasserstein distance</head><p>In the one-dimensional case, i.e. µ, ν ∈ P 2 (R), W 2 has an analytical form, given as follows:</p><formula xml:id="formula_6">W 2 (µ, ν) = 1 0 |F -1 µ (τ ) -F -1 ν (τ )| 2 dτ</formula><p>, where F µ and F ν denote the cumulative distribution functions (CDF) of µ and ν, respectively, and F -1 µ , F -1 ν denote the inverse CDFs, also called quantile functions (QF). In this case, the optimal transport map from µ to ν has a closed-form formula as well, given as follows: <ref type="bibr" target="#b46">(Villani, 2008)</ref>. The optimal map T is also known as the increasing arrangement, which maps each quantile of µ to the same quantile of ν, e.g. minimum to minimum, median to median, maximum to maximum <ref type="bibr" target="#b46">(Villani, 2008)</ref>. Due to Theorem 1, the derivative of the corresponding Kantorovich potential is given as:</p><formula xml:id="formula_7">T (x) = (F -1 ν • F µ )(x)</formula><formula xml:id="formula_8">ψ (x) ∂ x ψ(x) = x -(F -1 ν • F µ )(x).</formula><p>In the multidimensional case d &gt; 1, building a transport map is much more difficult. The nice properties of the one-dimensional Wasserstein distance motivate the usage of sliced-Wasserstein distance (SW 2 ) for practical applications. Before formally defining SW 2 , let us first define the orthogonal projection θ * (x) θ, x for any direction θ ∈ S d-1 and x ∈ R d , where •, • denotes the Euclidean inner-product and S d-1 ⊂ R d denotes the d-dimensional unit sphere. Then, the SW 2 distance is formally defined as follows:</p><formula xml:id="formula_9">SW 2 (µ, ν) S d-1 W 2 (θ * # µ, θ * # ν) dθ,<label>(4)</label></formula><p>where dθ represents the uniform probability measure on S d-1 . As shown in <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref>, SW 2 is indeed a distance metric and induces the same topology as W 2 for compact domains.</p><p>The SW 2 distance has important practical implications: provided that the projected distributions θ * # µ and θ * # ν can be computed, then for any θ ∈ S d-1 , the distance W 2 (θ * # µ, θ * # ν), as well as its optimal transport map and the corresponding Kantorovich potential can be analytically computed (since the projected measures are onedimensional). Therefore, one can easily approximate (4) by using a simple Monte Carlo scheme that draws uniform random samples from S d-1 and replaces the integral in (4) with a finite-sample average. Thanks to its computational benefits, SW 2 was very recently considered for OT-based VAEs and GANs <ref type="bibr" target="#b12">(Deshpande et al., 2018;</ref><ref type="bibr" target="#b48">Wu et al., 2018;</ref><ref type="bibr" target="#b27">Kolouri et al., 2018)</ref>, appearing as a stable alternative to the adversarial methods.</p></div>
+<div><head n="3.">Regularized Sliced-Wasserstein Flows for</head><p>Generative Modeling</p></div>
+<div><head n="3.1.">Construction of the gradient flow</head><p>In this paper, we propose the following functional minimization problem on P 2 (Ω) for implicit generative modeling:</p><formula xml:id="formula_10">min µ F ν λ (µ) 1 2 SW 2 2 (µ, ν) + λH(µ) ,<label>(5)</label></formula><p>where λ &gt; 0 is a regularization parameter and H denotes the negative entropy defined by H(µ) Ω ρ(x) log ρ(x)dx if µ has density ρ with respect to the Lebesgue measure and H(µ) = +∞ otherwise. Note that the case λ = 0 has been already proposed and studied in <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref> in a more general OT context. Here, in order to introduce the necessary noise inherent to generative model, we suggest to penalize the slice-Wasserstein distance using H. In other words, the main idea is to find a measure µ that is close to ν as much as possible and also has a certain amount of entropy to make sure that it is sufficiently expressive for generative modeling purposes. The importance of the entropy regularization becomes prominent in practical applications where we have finitely many data samples that are assumed to be drawn from ν. In such a circumstance, the regularization would prevent µ to collapse on the data points and therefore avoid 'over-fitting' to the data distribution. Note that this regularization is fundamentally different from the one used in Sinkhorn distances <ref type="bibr" target="#b19">(Genevay et al., 2018)</ref>.</p><p>In our first result, we show that there exists a flow (µ t ) t≥0 in (P(B(0, r)), W 2 ) which decreases along F ν λ , where B(0, a) denotes the closed unit ball centered at 0 and radius a. This flow will be referred to as a generalized minimizing movement scheme (see Definition 1 in the supplementary document). In addition, the flow (µ t ) t≥0 admits a density ρ t with respect to the Lebesgue measure for all t &gt; 0 and (ρ t ) t≥0 is solution of a non-linear PDE (in the weak sense). Theorem 2. Let ν be a probability measure on B(0, 1) with a strictly positive smooth density. Choose a regularization constant λ &gt; 0 and radius r &gt; √ d, where d is the data dimension. Assume that µ 0 ∈ P(B(0, r)) is absolutely continuous with respect to the Lebesgue measure with density ρ 0 ∈ L ∞ (B(0, r)). There exists a generalized minimizing movement scheme (µ t ) t≥0 associated to (5) and if ρ t stands for the density of µ t for all t ≥ 0, then (ρ t ) t satisfies the following continuity equation:</p><formula xml:id="formula_11">∂ρ t ∂t = -div(v t ρ t ) + λ∆ρ t ,<label>(6)</label></formula><formula xml:id="formula_12">v t (x) v(x, µ t ) = - S d-1 ψ t,θ ( x, θ )θdθ (7)</formula><p>in a weak sense. Here, ∆ denotes the Laplacian operator, div the divergence operator, and ψ t,θ denotes the Kantorovich potential between θ * # µ t and θ * # ν.</p><p>The precise statement of this Theorem, related results and its proof are postponed to the supplementary document.</p><p>For its proof, we use the technique introduced in <ref type="bibr" target="#b24">(Jordan et al., 1998)</ref>: we first prove the existence of a generalized minimizing movement scheme by showing that the solution curve (µ t ) t is a limit of the solution of a time-discretized problem. Then we prove that the curve (ρ t ) t solves the PDE given in (6).</p></div>
+<div><head n="3.2.">Connection with stochastic differential equations</head><p>As a consequence of the entropy regularization, we obtain the Laplacian operator ∆ in the PDE given in ( <ref type="formula" target="#formula_11">6</ref>). We therefore observe that the overall PDE is a Fokker-Planck-type equation <ref type="bibr" target="#b3">(Bogachev et al., 2015)</ref> that has a well-known probabilistic counterpart, which can be expressed as a stochastic differential equation (SDE). More precisely, let us consider a stochastic process (X t ) t , that is the solution of the following SDE starting at X 0 ∼ µ 0 :</p><formula xml:id="formula_13">dX t = v(X t , µ t )dt + √ 2λdW t ,<label>(8)</label></formula><p>where (W t ) t denotes a standard Brownian motion. Then, the probability distribution of X t at time t solves the PDE given in (6) <ref type="bibr" target="#b3">(Bogachev et al., 2015)</ref>. This informally means that, if we could simulate (8), then the distribution of X t would converge to the solution of ( <ref type="formula" target="#formula_10">5</ref>), therefore, we could use the sample paths (X t ) t as samples drawn from (µ t ) t . However, in practice this is not possible due to two reasons: (i) the drift v t cannot be computed analytically since it depends on the probability distribution of X t , (ii) the SDE (8) is a continuous-time process, it needs to be discretized.</p><p>We now focus on the first issue. We observe that the SDE ( <ref type="formula" target="#formula_13">8</ref>) is similar to McKean-Vlasov SDEs <ref type="bibr" target="#b45">(Veretennikov, 2006;</ref><ref type="bibr" target="#b34">Mishura &amp; Veretennikov, 2016)</ref>, a family of SDEs whose drift depends on the distribution of X t . By using this connection, we can borrow tools from the relevant SDE literature <ref type="bibr" target="#b33">(Malrieu, 2003;</ref><ref type="bibr" target="#b8">Cattiaux et al., 2008)</ref> for developing an approximate simulation method for (8).</p><p>Our approach is based on defining a particle system that serves as an approximation to the original SDE (8). The particle system can be written as a collection of SDEs, given as follows <ref type="bibr" target="#b6">(Bossy &amp; Talay, 1997)</ref>:</p><formula xml:id="formula_14">dX i t = v(X i t , µ N t )dt + √ 2λdW i t , i = 1, . . . , N,<label>(9)</label></formula><p>where i denotes the particle index, N ∈ N + denotes the total number of particles, and</p><formula xml:id="formula_15">µ N t = (1/N ) N j=1 δ X j t de-</formula><p>notes the empirical distribution of the particles {X j t } N j=1 . This particle system is particularly interesting, since (i) one typically has lim N →∞ µ N t = µ t with a rate of convergence of order O(1/ √ N ) for all t <ref type="bibr" target="#b33">(Malrieu, 2003;</ref><ref type="bibr" target="#b8">Cattiaux et al., 2008)</ref>, and (ii) each of the particle systems in ( <ref type="formula" target="#formula_14">9</ref>) can be simulated by using an Euler-Maruyama discretization scheme. We note that the existing theoretical results in <ref type="bibr" target="#b45">(Veretennikov, 2006;</ref><ref type="bibr" target="#b34">Mishura &amp; Veretennikov, 2016)</ref> do not directly apply to our case due to the non-standard form of our drift. However, we conjecture that a similar result holds for our problem as well. Such a result would be proven by using the techniques given in <ref type="bibr" target="#b49">(Zhang et al., 2018)</ref>; however, it is out of the scope of this study.</p></div>
+<div><head n="3.3.">Approximate Euler-Maruyama discretization</head><p>In order to be able to simulate the particle SDEs (9) in practice, we propose an approximate Euler-Maruyama discretization for each particle SDE. The algorithm iteratively applies the following update equation: (∀i ∈ {1, . . . , N })</p><formula xml:id="formula_16">Xi 0 i.i.d. ∼ µ 0 , Xi k+1 = Xi k + hv k ( Xi k ) + √ 2λhZ i k+1 ,<label>(10)</label></formula><p>where k ∈ N + denotes the iteration number, Z i k is a standard Gaussian random vector in R d , h denotes the stepsize, and vk is a short-hand notation for a computationally tractable estimator of the original drift v(•, μN kh ), with</p><formula xml:id="formula_17">μN kh = (1/N ) N j=1 δ Xj k being the empirical distribution of { Xj k } N j=1 . A question of fundamental practical importance is how to compute this function v.</formula><p>We propose to approximate the integral in (7) via a simple Monte Carlo estimate. This is done by first drawing N θ uniform i.i.d. samples from the sphere S d-1 , {θ n } N θ n=1 . Then, at each iteration k, we compute:</p><formula xml:id="formula_18">vk (x) -(1/N θ ) N θ n=1 ψ k,θn ( θ n , x )θ n ,<label>(11)</label></formula><p>where for any θ, ψ k,θ is the derivative of the Kantorovich potential (cf. Section 2) that is applied to the OT problem from θ * # μN kh to θ * # ν: i.e.</p><formula xml:id="formula_19">ψ k,θ (z) = z -(F -1 θ * # ν • F θ * # μN kh )(z) . (<label>12</label></formula><formula xml:id="formula_20">)</formula><p>For any particular θ ∈ S d-1 , the QF, F -1 θ * # ν for the projection of the target distribution ν on θ can be easily computed from the data. This is done by first computing the projections θ, y i for all data points y i , and then computing the empirical quantile function for this set of P scalars. Similarly, F θ * # μN kh , the CDF of the particles at iteration k, is easy to compute: we first project all particles Xi k to get θ, Xi k , and then compute the empirical CDF of this set of N scalar values.</p><p>In both cases, the true CDF and quantile functions are approximated as a linear interpolation between a set of the Algorithm 1: Sliced-Wasserstein Flow (SWF)</p><formula xml:id="formula_21">input :D ≡ {y i } P i=1 , µ 0 , N , N θ , h, λ output :{ Xi K } N i=1 // Initialize the particles Xi 0 i.i.d. ∼ µ 0 , i = 1, . . . , N // Generate random directions θ n ∼ Uniform(S d-1 ), n = 1, . . . , N θ // Quantiles of projected target for θ ∈ {θ n } N θ n=1 do F -1 θ * # ν = QF{ θ, y i } P i=1 // Iterations for k = 0, . . . K -1 do for θ ∈ {θ n } N θ n=1 do // CDF of projected particles F θ * # μN kh = CDF{ θ, Xi k } N i=1 // Update the particles Xi k+1 = Xi k -hv k ( Xi k ) + √ 2λhZ i k+1 i = 1, . . . , N computed Q ∈ N + empirical quantiles.</formula><p>Another source of approximation here comes from the fact that the target ν will in practice be a collection of Dirac measures on the observations y i . Since it is currently common to have a very large dataset, we believe this approximation to be accurate in practice for the target. Finally, yet another source of approximation comes from the error induced by using a finite number of θ n instead of a sum over S d-1 in (12).</p><p>Even though the error induced by these approximation schemes can be incorporated into our current analysis framework, we choose to neglect it for now, because (i) all of these one-dimensional computations can be done very accurately and (ii) the quantization of the empirical CDF and QF can be modeled as additive Gaussian noise that enters our discretization scheme (10) ( <ref type="bibr" target="#b44">Van der Vaart, 1998)</ref>. Therefore, we will assume that vk is an unbiased estimator of v, i.e. E[v(x, µ)] = v(x, µ), for any x and µ, where the expectation is taken over θ n .</p><p>The overall algorithm is illustrated in Algorithm 1. It is remarkable that the updates of the particles only involves the learning data {y i } through the CDFs of its projections on the many θ n ∈ S d-1 . This has a fundamental consequence of high practical interest: these CDF may be computed beforehand in a massively distributed manner that is independent of the sliced Wasserstein flow. This aspect is reminiscent of the compressive learning methodology <ref type="bibr" target="#b21">(Gribonval et al., 2017)</ref>, except we exploit quantiles of random projections here, instead of random generalized moments as done there.</p><p>Besides, we can obtain further reductions in the computing time if the CDF, F θ * # ν for the target is computed on random mini-batches of the data, instead of the whole dataset of size P . This simplified procedure might also have some interesting consequences in privacy-preserving settings: since we can vary the number of projection directions N θ for each data point y i , we may guarantee that y i cannot be recovered via these projections, by picking fewer than necessary for reconstruction using, e.g. compressed sensing <ref type="bibr" target="#b14">(Donoho &amp; Tanner, 2009)</ref>.</p><p>3.4. Finite-time analysis for the infinite particle regime</p><p>In this section we will analyze the behavior of the proposed algorithm in the asymptotic regime where the number of particles N → ∞. Within this regime, we will assume that the original SDE ( <ref type="formula" target="#formula_13">8</ref>) can be directly simulated by using an approximate Euler-Maruyama scheme, defined starting at X0</p><p>i.i.d.</p><p>∼ µ 0 as follows:</p><formula xml:id="formula_22">Xk+1 = Xk + hv( Xi k , μkh ) + √ 2λhZ k+1 ,<label>(13)</label></formula><p>where μkh denotes the law of Xk with step size h and {Z k } k denotes a collection of standard Gaussian random variables.</p><p>Apart from its theoretical significance, this scheme is also practically relevant, since one would expect that it captures the behavior of the particle method (10) with large number of particles.</p><p>In practice, we would like to approximate the measure sequence (µ t ) t as accurate as possible, where µ t denotes the law of X t . Therefore, we are interested in analyzing the distance μKh -µ T TV , where K denotes the total number of iterations, T = Kh is called the horizon, and µ -ν TV denotes the total variation distance between two probability measures µ and ν: µ -ν TV sup A∈B(Ω) |µ(A) -ν(A)|.</p><p>In order to analyze this distance, we exploit the algorithmic similarities between (13) and the stochastic gradient Langevin dynamics (SGLD) algorithm <ref type="bibr" target="#b47">(Welling &amp; Teh, 2011)</ref>, which is a Bayesian posterior sampling method having a completely different goal, and is obtained as a discretization of an SDE whose drift has a much simpler form.</p><p>We then bound the distance by extending the recent results on SGLD <ref type="bibr" target="#b38">(Raginsky et al., 2017)</ref> to time-and measuredependent drifts, that are of our interest in the paper.</p><p>We now present our second main theoretical result. We present all our assumptions and the explicit forms of the constants in the supplementary document. Theorem 3. Assume that the conditions given in the supplementary document hold. Then, the following bound holds for T = Kh:</p><formula xml:id="formula_23">μKh -µ T 2 TV ≤ δ λ L 2 K 2λ C 1 h 3 3 + 3λdh 2 + C 2 δKh 4λ ,<label>(14)</label></formula><p>for some C 1 , C 2 , L &gt; 0, δ ∈ (0, 1), and δ λ &gt; 1.</p><p>Here, the constants C 1 , C 2 , L are related to the regularity and smoothness of the functions v and v; δ is directly proportional to the variance of v, and δ λ is inversely proportional to λ. The theorem shows that if we choose h small enough, we can have a non-asymptotic error guarantee, which is formally shown in the following corollary.</p><p>Corollary 1. Assume that the conditions of Theorem 3 hold.</p><p>Then for all ε &gt; 0, K ∈ N + , setting</p><formula xml:id="formula_24">h = (3/C 1 ) ∧ 2ε 2 λ δ λ L 2 T (1 + 3λd) -1 1/2 , (<label>15</label></formula><formula xml:id="formula_25">)</formula><p>we have</p><formula xml:id="formula_26">μKh -µ T TV ≤ ε + C 2 δ λ δT 4λ 1/2<label>(16)</label></formula><p>for T = Kh.</p><p>This corollary shows that for a large horizon T , the approximate drift v should have a small variance in order to obtain accurate estimations. This result is similar to <ref type="bibr" target="#b38">(Raginsky et al., 2017)</ref> and <ref type="bibr" target="#b36">(Nguyen et al., 2019)</ref>: for small ε the variance of the approximate drift should be small as well. On the other hand, we observe that the error decreases as λ increases. This behavior is expected since for large λ, the Brownian term in (8) dominates the drift, which makes the simulation easier.</p><p>We note that these results establish the explicit dependency of the error with respect to the algorithm parameters (e.g. step-size, gradient noise) for a fixed number of iterations, rather than explaining the asymptotic behavior of the algorithm when K goes to infinity.</p></div>
+<div><head n="4.">Experiments</head><p>In this section, we evaluate the SWF algorithm on a synthetic and a real data setting. Our primary goal is to validate our theory and illustrate the behavior of our non-standard approach, rather than to obtain the state-of-the-art results in IGM. In all our experiments, the initial distribution µ 0 is selected as the standard Gaussian distribution on R d , we take Q = 100 quantiles and N = 5000 particles, which proved sufficient to approximate the quantile functions accurately.</p></div>
+<div><head n="4.1.">Gaussian Mixture Model</head><p>We perform the first set of experiments on synthetic data where we consider a standard Gaussian mixture model (GMM) with 10 components and random parameters. Centroids are taken as sufficiently distant from each other to make the problem more challenging. We generate P = 50000 data samples in each experiment. In our first experiment, we set d = 2 for visualization purposes and illustrate the general behavior of the algorithm. Figure <ref type="figure">1</ref> shows the evolution of the particles through the iterations. Here, we set N θ = 30, h = 1 and λ = 10 -4 . We first observe that the SW cost between the empirical distributions of training data and particles is steadily decreasing along the SW flow. Furthermore, we see that the QFs, F -1 θ * # μN kh that are computed with the initial set of particles (the training stage) can be perfectly re-used for new unseen particles in a subsequent test stage, yielding similar -yet slightly higher -SW cost.</p><p>In our second experiment on Figure <ref type="figure">1</ref>, we investigate the effect of the level of the regularization λ. The distribution of the particles becomes more spread with increasing λ. This is due to the increment of the entropy, as expected.</p></div>
+<div><head n="4.2.">Experiments on real data</head><p>In the second set of experiments, we test the SWF algorithm on two real datasets. (i) The traditional MNIST dataset that contains 70K binary images corresponding to different digits. (ii) The popular CelebA dataset <ref type="bibr" target="#b31">(Liu et al., 2015)</ref>, that In experiments reported in the supplementary document, we found out that directly applying SWF to such highdimensional data yielded noisy results, possibly due to the insufficient sampling of S d-1 . To reduce the dimensionality, we trained a standard convolutional autoencoder (AE) on the training set of both datasets (see Figure <ref type="figure">2</ref> and the supplementary document), and the target distribution ν considered becomes the distribution of the resulting bottleneck features, with dimension d. Particles can be visualized with the pre-trained decoder. Our goal is to show that SWF permits to directly sample from the distribution of bottleneck features, as an alternative to enforcing this distribution to Assessing the validity of IGM algorithms is generally done by visualizing the generated samples. Figure <ref type="figure" target="#fig_1">3</ref> shows some particles after 500 iterations of SWF. We can observe they are considerably accurate. Interestingly, the generated samples gradually take the form of either digits or faces along the iterations, as seen on  dataset, namely GAN <ref type="bibr" target="#b20">(Goodfellow et al., 2014)</ref>, Wasserstein GAN (W-GAN) <ref type="bibr" target="#b1">(Arjovsky et al., 2017)</ref> and the Sliced-Wasserstein Generator (SWG) <ref type="bibr" target="#b12">(Deshpande et al., 2018)</ref>.</p><p>The visual comparison suggests that the samples generated by SWF are of slightly better quality than those, although research must still be undertaken to scale up to high dimensions without an AE.</p><p>We also provide the outcome of the pre-trained SWF with samples that are regularly spaced in between those used for training. The result is shown in Figure <ref type="figure" target="#fig_2">4</ref>.2. This plot suggests that SWF is a way to interpolate non-parametrically in between latent spaces of regular AE.</p></div>
+<div><head n="5.">Conclusion and Future Directions</head><p>In this study, we proposed SWF, an efficient, nonparametric IGM algorithm. SWF is based on formulating IGM as a functional optimization problem in Wasserstein spaces, where the aim is to find a probability measure that is close to the data distribution as much as possible while maintaining the expressiveness at a certain level. SWF lies in the intersection of OT, gradient flows, and SDEs, which allowed us to convert the IGM problem to an SDE simulation problem. We provided finite-time bounds for the infinite-particle regime and established explicit links between the algorithm parameters and the overall error. We conducted several experiments, where we showed that the results support our theory: SWF is able to generate samples from non-trivial distributions with low computational requirements.</p><p>The SWF algorithm opens up interesting future directions: (i) extension to differentially private settings <ref type="bibr" target="#b16">(Dwork &amp; Roth, 2014)</ref> by exploiting the fact that it only requires random projections of the data, (ii) showing the convergence scheme of the particle system (9) to the original SDE ( <ref type="formula" target="#formula_13">8</ref>), (iii) providing bounds directly for the particle scheme (10).</p><formula xml:id="formula_27">1 2h W 2 2 (µ, µ 0 ),</formula><p>where F ν λ is given by (5). Moreover the optimal µ has a density ρ on B(0, r) and:</p><formula xml:id="formula_28">||ρ|| L ∞ ≤ (1 + h/ √ d) d ||ρ 0 || L ∞ . (S1)</formula><p>Proof. The set of measures supported on B(0, r) is compact in the topology given by W 2 metric. Furthermore by <ref type="bibr">(Ambrosio et al., 2008)[Lemma 9.4.3</ref>] H is lower semicontinuous on (P(B(0, r)), W 2 ). Since by <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref>[Proposition 5.1.2, Proposition 5.1.3], SW 2 is a distance on P(B(0, r)), dominated by d -1/2 W 2 , we have:</p><formula xml:id="formula_29">|SW 2 (π 0 , ν) -SW 2 (π 1 , ν)| ≤ SW 2 (π 0 , π 1 ) ≤ 1 √ d W 2 (π 0 , π 1 ).</formula><p>The above means that SW 2 (•, ν) is continuous with respect to topology given by W 2 , which implies that SW 2 2 (•, ν) is continuous in this topology as well. Therefore G : P(B(0, r)) → (-∞, +∞] is a lower semicontinuous function on the compact set (P(B(0, r)), W 2 ). Hence there exists a minimum µ of G on P(B(0, r)). Furthermore, since H(π) = +∞ for measures π that do not admit a density with respect to Lebesgue measure, the measure µ must admit a density ρ.</p><p>If ρ 0 is smooth and positive on B(0, r), the inequality S1 is true by <ref type="bibr">(Bonnotte, 2013)[Lemma 5.4.3.]</ref> When ρ 0 is just in L ∞ (B(0, r)), we proceed by smoothing. For t ∈ (0, 1], let ρ t be a function obtained by convolution of ρ 0 with a Gaussian kernel (t, x, y) → (2π) d/2 exp( x -y 2 /2), restricting the result to B(0, r) and normalizing to obtain a probability density.</p><p>Then (ρ t ) t are smooth positive densities, and it is easy to see that lim</p><formula xml:id="formula_30">t→0 ||ρ t || L ∞ ≤ ||ρ 0 || L ∞ .</formula><p>Furthermore, if we denote by µ t the measure on B(0, r) with density ρ t , then µ t converge weakly to µ 0 . For t ∈ (0, 1] let μt be the minimum of</p><formula xml:id="formula_31">F ν λ (•) + 1 2h W 2 2 (•, µ t )</formula><p>, and let ρt be the density of μt . Using <ref type="bibr">(Bonnotte, 2013)[Lemma 5.4.3.]</ref> we get</p><formula xml:id="formula_32">||ρ t || L ∞ ≤ (1 + h √ d) d ||ρ t || L ∞ .</formula><p>so ρt lies in a ball of finite radius in L ∞ . Using compactness of P(B(0, r)) in weak topology and compactness of closed ball in L ∞ (B(0, r)) in weak star topology, we can choose a subsequence μt k , ρt k , lim k→+∞ t k = 0, that converges along that subsequence to limits μ, ρ. Obviously ρ is the density of μ, since for any continuous function f on B(0, r) we have:</p><formula xml:id="formula_33">ρf dx = lim k→∞ ρ t k f dx = lim k→∞ f dµ t k = f dµ.</formula><p>Furthermore, since ρ is the weak star limit of a bounded subsequence, we have:</p><formula xml:id="formula_34">||ρ|| L ∞ ≤ lim sup k→∞ (1 + h √ d) d ||ρ t k || L ∞ ≤ (1 + h √ d) d ||ρ 0 || L ∞ .</formula><p>To finish, we just need to prove that μ is a minimum of G. We remind our reader, that we already established existence of some minimum µ (that might be different from μ). Since μt k converges weakly to μ in P(B(0, r)), it implies convergence in W 2 as well since B(0, r) is compact. Similarly µ t k converges to µ 0 in W 2 . Using the lower semicontinuity of G we now have:</p><formula xml:id="formula_35">F ν λ (μ) + 1 2h W 2 2 (μ, µ 0 ) ≤ lim inf k→∞ F ν λ (μ t k ) + 1 2h W 2 2 (μ t k , µ 0 ) ≤ lim inf k→∞ F ν λ (µ) + 1 2h W 2 2 (µ, µ t k ) + 1 2h W 2 2 (μ t k , µ 0 ) - 1 2h W 2 2 (μ t k , µ t k ) = F ν λ (µ) + 1 2h W 2 2 (µ, µ 0 ),</formula><p>where the second inequality comes from the fact, that μt k minimizes</p><formula xml:id="formula_36">F ν λ (•) + 1 2h W 2 2 (•, µ t k ).</formula><p>From the above inequality and previously established facts, it follows that μ is a minimum of G with density satisfying S1.</p><p>Definition 1. Minimizing movement scheme Let r &gt; 0 and F : R + × P(B(0, r)) × P(B(0, r)) → R be a functional. Let µ 0 ∈ P(B(0, r)) be a starting point. For h &gt; 0 a piecewise constant trajectory µ h : [0, ∞) → P(B(0, r)) for F starting at µ 0 is a function such that:</p><formula xml:id="formula_37">• µ h (0) = µ 0 . • µ h is constant on each interval [nh, (n + 1)h), so µ h (t) = µ h (nh) with n = t/h . • µ h ((n + 1)h) minimizes the functional ζ → F(h, ζ, µ h (nh)), for all n ∈ N.</formula><p>We say μ is a minimizing movement scheme for F starting at µ 0 , if there exists a family of piecewise constant trajectory (µ h ) h&gt;0 for F such that μ is a pointwise limit of µ h as h goes to 0, i.e. for all t ∈ R + , lim h→0 µ h (t) = µ(t) in P(B(0, r)). We say that μ is a generalized minimizing movement for F starting at µ 0 , if there exists a family of piecewise constant trajectory (µ h ) h&gt;0 for F and a sequence (h n ) n , lim n→∞ h n = 0, such that µ hn converges pointwise to μ.</p><p>Theorem S5. Let ν be a probability measure on B(0, 1) with a strictly positive smooth density. Fix a regularization constant λ &gt; 0 and radius r &gt; √ d. Given an absolutely continuous measure µ 0 ∈ P(B(0, r)) with density ρ 0 ∈ L ∞ (B(0, r)), there is a generalized minimizing movement scheme (µ t ) t in P(B(0, r)) starting from µ 0 for the functional defined by</p><formula xml:id="formula_38">F ν (h, µ + , µ -) = F ν λ (µ + ) + 1 2h W 2 2 (µ + , µ -). (S2)</formula><p>Moreover for any time t &gt; 0, the probability measure µ t = µ(t) has density ρ t with respect to the Lebesgue measure and:</p><formula xml:id="formula_39">||ρ t || L ∞ ≤ e dt √ d ||ρ 0 || L ∞ . (S3)</formula><p>Proof. We start by noting, that by S4 for any h &gt; 0 there exists a piecewise constant trajectory µ h for S2 starting at µ 0 . Furthermore for t ≥ 0 measure µ h t = µ h (t) has density ρ h t , and:</p><formula xml:id="formula_40">||ρ h t || L ∞ ≤ e d √ d(t+h) ||ρ 0 || L ∞ . (S4)</formula><p>Let us choose T &gt; 0. We denote ρ h (t, x) = ρ h t (x). For h ≤ 1, the functions ρ h lie in a ball in L ∞ ([0, T ] × B(0, r)), so from Banach-Alaoglu theorem there is a sequence h n converging to 0, such that ρ hn converges in weak-star topology in L ∞ ([0, T ] × B(0, r)) to a certain limit ρ. Since ρ has to be nonnegative except for a set of measure zero, we assume ρ is nonnegative. We denote ρ t (x) = ρ(t, x). We will prove that for almost all t, ρ t is a probability density and µ hn t converges in W 2 to a measure µ t with density ρ t .</p><p>First of all, for almost all t ∈ [0, T ], ρ t is a probability density, since for any Borel set A ⊆ [0, T ] the indicator of set A × B(0, r) is integrable, and hence by definition of the weak-star topology:</p><formula xml:id="formula_41">A B(0,r) ρ t (x)dxdt = lim n→∞ A B(0,r) ρ hn t (x)dxdt,</formula><p>and so we have to have ρ t (x)dx = 1 for almost all t ∈ [0, T ]. Nonnegativity of ρ t follows from nonnegativity of ρ.</p><p>We will now prove, that for almost all t ∈ [0, T ] the measures µ hn t converge to a measure with density ρ t . Let t ∈ (0, T ), take δ &lt; min(T -t, t) and ζ ∈ C 1 (B(0, r)). We have:</p><formula xml:id="formula_42">B(0,r) ζdµ hn t - B(0,r) ζdµ hm t ≤ B(0,r) ζdµ hn t - 1 2δ t+δ t-δ B(0,r)</formula><p>ζdµ hn s ds + B(0,r)</p><formula xml:id="formula_43">ζdµ hm t - 1 2δ t+δ t-δ B(0,r) ζdµ hm s ds + 1 2δ t+δ t-δ B(0,r)</formula><p>ζdµ hm s ds -</p><formula xml:id="formula_44">1 2δ t+δ t-δ B(0,r)</formula><p>ζdµ hn s ds . (S5)</p><p>Because µ hn t have densities ρ hn t and both ρ hn , ρ hm converge to ρ in weak-star topology, the last element of the sum on the right hand side converges to zero, as n, m → ∞. Next, we get a bound on the other two terms.</p><p>First, if we denote by γ the optimal transport plan between µ hn t and µ hn s , we have:</p><formula xml:id="formula_45">B(0,r) ζdµ hn t - B(0,r) ζdµ hn s 2 ≤ B(0,r)×B(0,r) |ζ(x) -ζ(y)| 2 dγ(x, y) ≤ ||∇ζ|| 2 ∞ W 2 2 (µ hn t , µ hn s ). (S6)</formula><p>In addition, for n t = t/h n and n s = s/h n we have µ hn t = µ hn nthn and µ hn s = µ hn nshn . For all k ≥ 0 we have:</p><formula xml:id="formula_46">W 2 2 (µ hn khn , µ hn (k+1)hn ) ≤ 2h n (F ν λ (µ hn khn ) -F ν λ (µ hn (k+1)hn ).<label>(S7)</label></formula><p>Using this result and (S6) and assuming without loss of generality n t ≤ n s , from the Cauchy-Schwartz inequality we get:</p><formula xml:id="formula_47">W 2 2 (µ hn t , µ hn s ) ≤ ns-1 k=nt W 2 (µ hn khn , µ hn (k+1)hn ) 2 ≤ |n t -n s | ns1 k=nt W 2 2 (µ hn khn , µ hn (k+1)hn ) ≤ 2h n |n t -n s |(F ν λ (µ hn nthn ) -F ν λ (µ hn nshn )) ≤ 2C(|t -s| + h n ),<label>(S8)</label></formula><p>where we used for the last inequality, denoting C = F ν λ (µ 0 ) -min P(B(0,r)) F ν λ , that (F ν λ (µ hn khn )) n is non-increasing by (S7) and min P(B(0,r)) F ν λ is finite since F ν λ is lower semi-continuous. Finally, using Jensen's inequality, the above bound and S6 we get:</p><formula xml:id="formula_48">B(0,r) ζdµ hn t - 1 2δ t+δ t-δ B(0,r) ζdµ hn s ds 2 ≤ 1 2δ t+δ t-δ B(0,r) ζdµ hn t - B(0,r) ζdµ hn s 2 ds ≤ C||∇ζ|| 2 ∞ δ t+δ t-δ (|t -s| + h n )ds ≤ 2C||∇ζ|| 2 ∞ (h n + δ).</formula><p>Together with (S5), when taking δ = h n , this result means that B(0,r) ζdµ hn t is a Cauchy sequence for all t ∈ (0, T ). On the other hand, since ρ hn converges to ρ in weak-star topology on L ∞ , the limit of B(0,r) ζdµ hn t has to be B(0,r) ζ(x)ρ t (x)dx for almost all t ∈ (0, T ). This means that for almost all t ∈ [0, T ] sequence µ hn t converges to a measure µ t with density ρ t . Let S ∈ [0, T ] be the set of times such that for t ∈ S sequence µ hn t converges to µ t . As we established almost all points from [0, T ] belong to S. Let t ∈ [0, T ] \ S. Then, there exists a sequence of times t k ∈ S converging to t, such that µ t k converge to some limit µ t . We have:</p><formula xml:id="formula_49">W 2 (µ hn t , µ t ) ≤ W 2 (µ hn t , µ hn t k ) + W 2 (µ hn t k , µ t k ) + W 2 (µ t k , µ t ).</formula><p>From which we have for all k ≥ 1:</p><formula xml:id="formula_50">lim sup n→∞ W 2 (µ hn t , µ t ) ≤ W 2 (µ t k , µ t ) + lim sup n→∞ W 2 (µ hn t , µ hn t k ),</formula><p>and using (S8), we get µ hn t → µ t . Furthermore, the measure µ t has to have density, since ρ hn t lie in a ball in L ∞ (B(0, r)), so we can choose a subsequence of ρ hn t converging in weak-star topology to a certain limit ρt , which is the density of µ t . We use now the diagonal argument to get convergence for all t &gt; 0. Let (T k ) ∞ k=1 be a sequence of times increasing to infinity. Let h 1 n be a sequence converging to 0, such that µ h 1 n t converge to µ t for all t ∈ [0, T 1 ]. Using the same arguments as above, we can choose a subsequence h 2 n of h 1 n , such that µ h 2 n t converges to a limit µ t for all t ∈ [0, T 2 ]. Inductively, we construct subsequences h k n , and in the end take h n = h n n . For this subsequence we have that µ hn t converges to µ t for all t &gt; 0, and µ t has a density satisfying the bound from the statement of the theorem.</p><p>Finally, note that (S5) follows from (S4).</p><p>Theorem S6. Let (µ t ) t≥0 be a generalized minimizing movement scheme given by Theorem S5 with initial distribution µ 0 with density ρ 0 ∈ L(B(0, r)). We denote by ρ t the density of µ t for all t ≥ 0. Then ρ t satisfies the continuity equation:</p><formula xml:id="formula_51">∂ρ t ∂t + div(v t ρ t ) + λ∆ρ t = 0 , v t (x) = - S d-1 ψ t,θ ( x, θ )θdθ, in a weak sense, that is for all ξ ∈ C ∞ c ([0, ∞) × B(0, r)) we have: ∞ 0 B(0,r) ∂ξ ∂t (t, x) -v t ∇ξ(t, x) -λ∆ξ(t, x) ρ t (x)dxdt = - B(0,r) ξ(0, x)ρ 0 (x)dx.</formula><p>Proof. Our proof is based on the proof of <ref type="bibr">(Bonnotte, 2013)[Theorem 5.6.1]</ref>. We proceed in five steps.</p><p>(1) Let h n → 0 be a sequence given by Theorem S5, such that µ hn t converges to µ t pointwise. Furthermore we know that µ hn have densities ρ hn that converge to ρ in L r , for r ≥ 1, and in weak-star topology in L ∞ . Let ξ ∈ C ∞ c ([0, ∞) × B(0, r)). We denote ξ n k (x) = ξ(kh n , x). Using part 1 of the proof of <ref type="bibr">(Bonnotte, 2013)[Theorem 5.6</ref>.1], we obtain:</p><formula xml:id="formula_52">B(0,r) ξ(0, x)ρ 0 (x)dx + ∞ 0 B(0,r) ∂ξ ∂t (t, x)ρ t (x)dxdt = lim n→∞ -h n ∞ k=1 B(0,r) ξ n k (x) ρ hn khn (x) -ρ hn (k-1)hn (x) h n dx. (S9)</formula><p>(2) Again, this part is the same as part 2 of the proof of <ref type="bibr">(Bonnotte, 2013)[Theorem 5.6.1]</ref>. For any θ ∈ S d-1 we denote by ψ t,θ the unique Kantorovich potential from θ * # µ t to θ * # ν, and by ψ hn t,θ the unique Kantorovich potential from θ * # µ hn t to θ * # ν. Then, by the same reasoning as part 2 of the proof of <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref> <ref type="bibr">[Theorem 5.6</ref>.1], we get:</p><formula xml:id="formula_53">∞ 0 B(0,r) S d-1 (ψ t,θ ) ( θ, x ) θ, ∇ξ(x, t) dθdµ t (x)dt = lim n→∞ h n ∞ k=1 B(0,r) S d-1</formula><p>ψ hn khn,θ (θ * ) θ, ∇ξ n k dθdµ hn khn . (S10)</p><p>(3) Since ξ is compactly supported and smooth, ∆ξ is Lipschitz, and so for any t ≥ 0 if we take k = t/h n we get |∆ξ n k (x) -∆ξ(t, x)| ≤ Ch n for some constant C. Let T &gt; 0 be such that ξ(t, x) = 0 for t &gt; T . We have:</p><formula xml:id="formula_54">∞ k=1 h n B(0,r) ∆ξ n k (x)ρ hn khn (x)dx - +∞ 0 B(0,r) ∆ξ(t, x)ρ hn t (x)dxdt ≤ CT h n .</formula><p>On the other hand, we know, that ρ hn converges to ρ in weak star topology on L ∞ ([0, T ] × B(0, r)), and ∆ξ is bounded, so:</p><formula xml:id="formula_55">lim n→+∞ +∞ 0 B(0,r) ∆ξ(t, x)ρ hn t (x)dxdt - +∞ 0 B(0,r) ∆ξ(t, x)ρ t (x)dxdt = 0.</formula><p>Combining those two results give:</p><formula xml:id="formula_56">lim n→∞ h n ∞ k=1 B(0,r) ∆ξ n k (x)ρ hn khn (x)dx = +∞ 0 B(0,r) ∆ξ(t, x)ρ t (x)dxdt.<label>(S11)</label></formula><p>(4) Let φ hn k denote the unique Kantorovich potential from µ hn khn to µ hn (k-1)hn . Using <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref>[Propositions 1.5.7 and 5.1.7], as well as <ref type="bibr">(Jordan et al., 1998)[Equation (38)</ref>] with Ψ = 0, and optimality of µ hn khn , we get:</p><formula xml:id="formula_57">1 h n B(0,r) ∇φ hn k (x), ∇ξ n k (x) dµ hn khn (x) - B(0,r) S d-1 (ψ hn khn ) (θ * ) θ, ∇ξ n k (x) dθdµ hn khn (x) -λ B(0,r) ∆ξ n k (x)dµ hn khn (x), (S12)</formula><p>which is the derivative of F ν λ (•) + 1 2hn W 2 2 (•, µ (k-1)hn ) in the direction given by vector field ∇ξ n k is zero.</p><p>Let γ be the optimal transport between µ hn khn and µ hn (k-1)hn . Then:</p><formula xml:id="formula_58">B(0,r) ξ n k (x) ρ hn khn (x) -ρ hn (k-1)hn (x) h n dx = 1 h n B(0,r) (ξ n k (y) -ξ n k (x))dγ(x, y). (S13) 1 h n B(0,r) ∇φ hn k (x), ∇ξ n k (x) dµ hn khn (x) = 1 h n B(0,r) ∇ξ n k (x), y -x dγ(x, y). (<label>S14</label></formula><formula xml:id="formula_59">)</formula><p>Since ξ is C ∞ c , it has Lipschitz gradient. Let C be twice the Lipschitz constant of ∇ξ. Then we have |ξ(y) -ξ(x) -∇ξ(x), y -x | ≤ C|x -y| 2 , and hence:</p><formula xml:id="formula_60">B(0,r) |ξ n k (y) -ξ n k (x) -∇ξ n k (x), y -x |dγ(x, y) ≤ CW 2 2 (µ hn (k-1)hn , µ hn khn ).<label>(S15)</label></formula><p>Combining (S13), (S14) and (S15), we get:</p><formula xml:id="formula_61">∞ k=1 h n B(0,r) ξ n k (x) ρ hn khn -ρ hn (k-1)hn h n dx + ∞ k=1 h n B(0,r) ∇φ hn k , ∇ξ n k dµ hn khn ≤ C ∞ k=1 W 2 2 (µ hn (k-1)hn , µ hn khn ). (S16)</formula><p>As some F ν λ have a finite minimum on P(B(0, r)), we have: <ref type="bibr">)</ref> and so the sum on the right hand side of the equation goes to zero as n goes to infinity.</p><formula xml:id="formula_62">∞ k=1 W 2 2 (µ hn (k-1)hn , µ hn khn ) ≤ 2h n ∞ k=1 F ν λ (µ hn (k-1)hn ) -F ν λ (µ hn khn ) ≤ 2h n F ν λ (µ 0 ) -min P(B(0,r)) F ν λ . (<label>S17</label></formula><p>By Lemma 3.2 of <ref type="bibr" target="#b38">(Raginsky et al., 2017)</ref> </p><formula xml:id="formula_63">4 , we have E[ Y kh 2 ] ≤ C 0 C e + 2(1 ∨ 1 m )(b + 2B 2 + dλ),</formula><p>where C e denotes the entropy of µ 0 . Using this result in the above equation yields:</p><formula xml:id="formula_64">E[ Y t -Y kh 2 ] ≤12(t -kh) 2 (L 2 C 0 + B 2 ) + 6λ(t -kh)d. (S37)</formula><p>We now focus on the term E[ v kh (Y kh ) -vkh (Y kh ) 2 ] in (S31). Similarly to the previous term, we can upper-bound this term as follows:</p><formula xml:id="formula_65">E[ v kh (Y kh ) -vkh (Y kh ) 2 ] ≤2δ(L 2 E[ Y kh 2 ] + B 2 ) (S38) ≤2δ(L 2 C 0 + B 2 ). (S39)</formula><p>By using (S37) and (S39) in (S31), we obtain:</p><formula xml:id="formula_66">KL(π T X ||π T Y ) ≤ L 2 λ K-1 k=0 (k+1)h kh 12(t -kh) 2 (L 2 C 0 + B 2 ) + 6λ(t -kh)d + (t -kh) 2 dt + 1 2λ K-1 k=0 (k+1)h kh 2δ(L 2 C 0 + B 2 ) dt (S40) = L 2 K λ C 1 h 3 3 + 6λdh 2 2 + C 2 δKh 2λ ,<label>(S41)</label></formula><p>where</p><formula xml:id="formula_67">C 1 = 12(L 2 C 0 + B 2 ) + 1 and C 2 = 2(L 2 C 0 + B 2 ).</formula><p>Finally, by using the data processing and Pinsker inequalities, we obtain: <ref type="bibr">)</ref> This concludes the proof. Now, we bound the term μKh -μKh TV .</p><formula xml:id="formula_68">μKh -µ T 2 TV ≤ π T X -π T Y 2 TV ≤ 1 4 KL(π T X ||π T Y ) (S42) = L 2 K 4λ C 1 h 3 3 + 3λdh 2 + C 2 δKh 8λ . (<label>S43</label></formula><p>Lemma S2. Assume that HS2 holds. Then the following bound holds:</p><formula xml:id="formula_69">π T U -π T Y 2 TV ≤ L 2 Kh 16λ π T X -π T U 2 TV . (S44)</formula><p>Proof. We use that same approach than in Lemma S1. By Girsanov's theorem once again, we have</p><formula xml:id="formula_70">KL(π T Y ||π T U ) = 1 4λ K-1 k=0 (k+1)h kh E[ v(U kh , µ kh ) -v(U kh , μkh ) 2 ] dt,<label>(S45)</label></formula><p>where π T U denotes the distributions of (U t ) t∈[0,T ] with T = Kh. By using HS2, we have:</p><formula xml:id="formula_71">KL(π T Y ||π T U ) ≤ L 2 h 4λ K-1 k=0 µ kh -μkh 2 TV (S46) ≤ L 2 Kh 4λ π T X -π T U 2 TV . (S47)</formula><p>By applying the data processing and Pinsker inequalities, we obtain the desired result.</p></div>
+<div><head n="2.1.">Proof of Theorem 3</head><p>Here, we precise the statement of Theorem 3.</p><p>Theorem S7. Assume that the assumptions in Lemma S1 and Lemma S2 hold. Then for λ &gt; KL 2 h 8 , the following bound holds:</p><formula xml:id="formula_72">μKh -µ T 2 TV ≤ δ λ L 2 K 2λ C 1 h 3 3 + 3λdh 2 + C 2 δKh 4λ ,<label>(S48)</label></formula><p>where</p><formula xml:id="formula_73">δ λ = (1 -KL 2 h 8λ ) -1 .</formula><p>Proof. We have the following decomposition: (with</p><formula xml:id="formula_74">T = Kh) π T X -π T U 2 TV ≤ 2 π T X -π T Y 2 TV + 2 π T Y -π T U 2 TV (S49) ≤ L 2 K 2λ C 1 h 3 3 + 3λdh 2 + C 2 δKh 4λ + L 2 Kh 8λ π T X -π T U 2 TV (S50) ≤ 1 - KL 2 h 8λ -1 L 2 K 2λ C 1 h 3 3 + 3λdh 2 + C 2 δKh 4λ . (S51)</formula><p>The second line follows from Lemma S1 and Lemma S2. Last line follows from the assumption that λ is large enough. This completes the proof.</p></div>
+<div><head n="3.">Proof of Corollary 1</head><p>Proof. Considering the bound given in Theorem 3, the choice h implies that</p><formula xml:id="formula_75">δ λ L 2 K 2λ C 1 h 3 3 + 3λdh 2 ≤ ε 2 . (S52)</formula><p>This finalizes the proof.</p></div>
+<div><head n="4.">Additional Experimental Results</head></div>
+<div><head n="4.1.">The Sliced Wasserstein Flow</head><p>The whole <software ContextAttributes="used">code</software> for the Sliced Wasserstein Flow was implemented in Python, for use with <software ContextAttributes="used">Pytorch</software><ref type="foot" target="#foot_4">5</ref> . The <software ContextAttributes="used">code</software> was written so as to run efficiently on GPU, and is available on the publicly available repository related to this paper<ref type="foot" target="#foot_5">6</ref> .</p><p>In practice, the SWF involves relatively simple operations, the most important being:</p><p>• For each random θ ∈ {θ n } n=1...N θ , compute its inner product with all items from a dataset and obtain the empirical quantiles for these projections.</p><p>• At each step k of the SWF, for each projection z = θ, Xi k , apply two piece-wise linear functions, corresponding to the scalar optimal transport ψ k,θ (z).</p><p>Even if such steps are conceptually simple, the quantile and required linear interpolation functions were not available on GPU for any framework we could figure out at the time of writing this paper. Hence, we implemented them ourselves for use with <software ContextAttributes="used">Pytorch</software>, and the interested reader will find the details in the Github repository dedicated to this paper. Given these operations, putting a SWF implementation together is straightforward. The <software ContextAttributes="used">code</software> provided allows not only to apply it on any dataset, but also provides routines to have the computation of these sketches running in the background in a parallel manner. . The evolution of SWF through 15000 iterations, when the original high-dimensional data is kept instead of working on reduced bottleneck features as done in the main document. Showing results on the MNIST and FashionMNIST datasets. For a visual comparison for FashionMNIST, we refer the reader to <ref type="bibr" target="#b39">(Samangouei et al., 2018)</ref>.</p></div>
+<div><head n="4.2.">The need for dimension reduction through autoencoders</head><p>In this study, we used an autoencoder trained on the dataset as a dimension reduction technique, so that the SWF is applied to transport particles in a latent space of dimension d ≈ 50, instead of the original d &gt; 1000 of image data.</p><p>The curious reader may wonder why SWF is not applied directly to this original space, and what performances should be expected there. We have done this experiment, and we found out that SWF has much trouble rapidly converging to satisfying samples. In figure <ref type="figure">S1</ref>, we show the progressive evolution of particles undergoing SWF when the target is directly taken as the uncompressed dataset.</p><p>In this experiment, the strategy was to change the projections θ at each iteration, so that we ended up with a set of projections being {θ n,k } k=1...K n=1...N θ instead of the fixed set of N θ we now consider in the main document (for this, we picked N θ = 200). This strategy is motivated by the complete failure we observed whenever we picked such fixed projections throughout iterations, even for a relatively large number as N θ = 16000.</p><p>As may be seen on Figure <ref type="figure">S1</ref>, the particles definitely converge to samples from the desired datasets, and this is encouraging. However, we feel that the extreme number of iterations required to achieve such convergence comes from the fact that theory needs an integral over the d-dimensional sphere at each step of the SWF, which is clearly an issue whenever d gets too large. Although our solution of picking new samples from the sphere at each iteration alleviated this issue to some extent, the curse of dimensionality prevents us from doing much better with just thousands of random projections at a time. approximately computed SW 2 distance between the distribution of the particles and the data distribution. Even though minimizing this distance is not the real objective of our method, arguably, it is still a good proxy for understanding the convergence behavior.</p><p>Figure <ref type="figure">S2</ref> illustrates the results. We observe that, for all choices of d, we see a steady and smooth decrease in the cost for all runs, which is in line with our theory. The absolute value of the cost for varying dimensions remains hard to interpret at this stage of our investigations.</p></div>
+<div><head n="5.">Additional samples</head></div>
+<div><head n="5.1.">Evolution throughout iterations</head><p>In Figures S3 and S4 below, we provide the evolution of the SWF algorithm on the Fashion MNIST and the MNIST datasets in higher resolution, for an AE with d = 48 bottleneck features.</p></div>
+<div><head n="5.2.">Training samples, interpolation and extrapolation</head><p>In Figures S5 and S6 below, we provide other examples of outcome from SWF, both for the MNIST and the FashionMNIST datasets, still with d = 48 bottleneck features.</p><p>The most noticeable fact we may see on these figures is that while the actual particles which went through SWF, as well as linear combinations of them, all yield very satisfying results, this is however not the case for particles that are drawn randomly and then brought through a pre-learned SWF.</p><p>Once again, we interpret this fact through the curse of dimensionality: while we saw in our toy GMM example that using a pre-trained SWF was totally working for small dimensions, it is already not so for d = 48 and only 3000 training samples.  This noticed, we highlight that this generalization weakness of SWF for high dimensions is not really an issue, since it is always possible to i/ run SWF with more training samples if generalization is required ii/ re-run the algorithm for a set of new particles. Remember indeed that this does not require passing through the data again, since the distribution of the data projections needs to be done only once.  </p></div><figure xml:id="fig_0"><head>Figure 1 .Figure 2 .</head><label>12</label><figDesc>Figure 1. SWF on toy 2D data. Left: Target distribution (shaded contour plot) and distribution of particles (lines) during SWF. (bottom) SW cost over iterations during training (left) and test (right) stages. Right: Influence of the regularization parameter λ.</figDesc><graphic coords="8,424.51,293.18,114.56,185.81" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Samples generated after 200 iterations of SWF to match the distribution of bottleneck features for the training dataset. Visualization is done with the pre-trained decoder.</figDesc><graphic coords="8,307.32,293.38,114.74,186.01" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Initial random particles (left), particles through iterations (middle, from 1 to 200 iterations) and closest sample from the training dataset (right), for both MNIST and CelebA.</figDesc><graphic coords="9,54.41,380.85,79.12,78.15" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>In this figure, we also display the closest sample from the original database to check we are not just reproducing training data. For a visual comparison, we provide the results presented in (Deshpande et al., 2018) in Figure 5. These results are obtained by running different IGM approaches on the MNIST MNIST samples after 40k training iterations for differnt generator configurations. Batch size = 250, Learning rate 0.0005, Adam optimizer rror bars which highlight the stability of the proposed aproach.</figDesc></figure>
+<figure xml:id="fig_4"><head>Figure 5 .Figure 6 .</head><label>56</label><figDesc>Figure 5. Performance of GAN (left), W-GAN (middle), SWG (right) on MNIST. (The figure is directly taken from (Deshpande et al., 2018).)</figDesc><graphic coords="9,54.41,615.30,79.12,78.15" type="bitmap" /></figure>
+<figure xml:id="fig_5"><head>Figure S1</head><label /><figDesc>Figure S1. The evolution of SWF through 15000 iterations, when the original high-dimensional data is kept instead of working on reduced bottleneck features as done in the main document. Showing results on the MNIST and FashionMNIST datasets. For a visual comparison for FashionMNIST, we refer the reader to<ref type="bibr" target="#b39">(Samangouei et al., 2018)</ref>.</figDesc><graphic coords="21,55.44,217.26,486.01,200.06" type="bitmap" /></figure>
+<figure xml:id="fig_6"><head>Figure S3 .</head><label>S3</label><figDesc>Figure S3. The evolution of SWF through 200 iterations on the MNIST dataset. Plots are for 1, 11, 21, 31, 41, 51, 101 and 201 iterations</figDesc><graphic coords="23,99.06,225.56,97.20,157.50" type="bitmap" /></figure>
+<figure xml:id="fig_7"><head /><label /><figDesc>(a) particles undergoing SWF (b) After SWF is done: applying learned map on linear combinations of train particles (c) After SWF is done: applying learned map on random inputs.</figDesc></figure>
+<figure xml:id="fig_8"><head>Figure S5 .</head><label>S5</label><figDesc>Figure S5. SWF on MNIST: training samples, interpolation in learned mapping, extrapolation.</figDesc><graphic coords="25,74.76,72.04,145.80,182.11" type="bitmap" /></figure>
+<figure xml:id="fig_9"><head /><label /><figDesc>(a) particles undergoing SWF (b) After SWF is done: applying learned map on linear combinations of train particles (c) After SWF is done: applying learned map on random inputs.</figDesc></figure>
+<figure xml:id="fig_10"><head>Figure S6 .</head><label>S6</label><figDesc>Figure S6. SWF on FashionMNIST: training samples, interpolation in learned mapping, extrapolation.</figDesc><graphic coords="26,74.76,274.50,145.80,182.11" type="bitmap" /></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>This gradient flow is similar to the usual Euclidean gradient flows, i.e. ∂txt = -∇(f (xt) + r(xt)), where f is typically the data-dependent cost function and r is a regularization term. The (explicit) Euler discretization of this flow results in the well-known gradient descent algorithm for solving minx(f (x) + r(x)).</p></note>
+			<note place="foot" n="2" xml:id="foot_1"><p>We note that, despite the algorithmic similarities, the proposed algorithm is not a Bayesian posterior sampling algorithm.</p></note>
+			<note place="foot" n="3" xml:id="foot_2"><p>Note that in that case, P2(Ω) = P(Ω)</p></note>
+			<note place="foot" n="4" xml:id="foot_3"><p>Note that Lemma 3.2 of<ref type="bibr" target="#b38">(Raginsky et al., 2017)</ref> considers the case where the drift is not time-or measure-dependent. However, with HS3 it is easy to show that the same result holds for our case as well.</p></note>
+			<note place="foot" n="5" xml:id="foot_4"><p>http://www.pytorch.org.</p></note>
+			<note place="foot" n="6" xml:id="foot_5"><p>https://github.com/aliutkus/swf.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work is partly supported by the <rs type="funder">French National Research Agency (ANR)</rs> as a part of the <rs type="projectName">FBIMATRIX</rs> (<rs type="grantNumber">ANR-16-CE23-0014</rs>) and <rs type="projectName">KAMoulox</rs> (<rs type="grantNumber">ANR-15-CE38-0003-01</rs>) projects. <rs type="person">Szymon Majewski</rs> is partially supported by <rs type="funder">Polish National Science Center</rs> grant number <rs type="grantNumber">2016/23/B/ST1/00454</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_hydjKze">
+					<idno type="grant-number">ANR-16-CE23-0014</idno>
+					<orgName type="project" subtype="full">FBIMATRIX</orgName>
+				</org>
+				<org type="funded-project" xml:id="_5wzDUZE">
+					<idno type="grant-number">ANR-15-CE38-0003-01</idno>
+					<orgName type="project" subtype="full">KAMoulox</orgName>
+				</org>
+				<org type="funding" xml:id="_4WEhW6h">
+					<idno type="grant-number">2016/23/B/ST1/00454</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div><head>SUPPLEMENTARY DOCUMENT</head><p>Antoine Liutkus 1 Umut S ¸ims ¸ekli 2 Szymon Majewski 3 Alain Durmus 4 Fabian-Robert Stöter 1</p></div>
+<div><head n="1.">Proof of Theorem 2</head><p>We first need to generalize <ref type="bibr" target="#b5">(Bonnotte, 2013)</ref> <ref type="bibr">[Lemma 5.4.3]</ref> to distribution ρ ∈ L ∞ (B(0, r)), r &gt; 0.</p><p>Theorem S4. Let ν be a probability measure on B(0, 1) with a strictly positive smooth density. Fix a time step h &gt; 0, regularization constant λ &gt; 0 and a radius r &gt; √ d. For any probability measure µ 0 on B(0, r) with density ρ 0 ∈ L ∞ (B(0, r)), there is a probability measure µ on B(0, r) minimizing:</p><p>From (S16), (S17) and (S12) we conclude:</p><p>ρ hn khn -ρ hn (k-1)hn</p><p>where both limits exist, since the difference of left hand side and right hand side of the equation goes to zero, while the left hand side converges to a finite value by (S9).</p><p>(5) Combining (S9), (S10), (S11) and (S18) we get the result.</p></div>
+<div><head n="2.">Proof of Theorem 3</head><p>Before proceeding to the proof, let us first define the following Euler-Maruyama scheme which will be useful for our analysis:</p><p>where µ t denotes the probability distribution of X t with (X t ) t being the solution of the original SDE (8). Now, consider the probability distribution of Xk as μkh . Starting from the discrete-time process ( Xk ) k∈N+ , we first define a continuous-time process (Y t ) t≥0 that linearly interpolates ( Xk ) k∈N+ , given as follows:</p><p>where ṽt (Y ) -∞ k=0 vkh (Y kh )1 [kh,(k+1)h) (t) and 1 denotes the indicator function. Similarly, we define a continuoustime process (U t ) t≥0 that linearly interpolates ( Xk ) k∈N+ , defined by (13), given as follows:</p><p>where vt (U ) -∞ k=0 v(U kh , μkh )1 [kh,(k+1)h) (t) and μkh denotes the probability distribution of Xk . Let us denote the distributions of (X t ) t∈[0,T ] , (Y t ) t∈[0,T ] and (U t ) t∈[0,T ] as π T X , π T Y and π T U respectively with T = Kh. We consider the following assumptions: HS1. For all λ &gt; 0, the SDE (8) has a unique strong solution denoted by (X t ) t≥0 for any starting point x ∈ R d .</p><p>HS2. There exits L &lt; ∞ such that</p><p>for some m, b &gt; 0.</p><p>HS4. The estimator of the drift satisfies the following conditions: E[v t ] = v t for all t ≥ 0, and for all t ≥ 0,</p><p>for some δ ∈ (0, 1).</p><p>HS5. For all t ≥ 0: |Ψ t (0)| ≤ A and v t (0) ≤ B, for A, B ≥ 0, where Ψ t = S d-1 ψ t ( θ, • )dθ. We start by upper-bounding μKh -µ T TV . Lemma S1. Assume that the conditions HS2 to S5 hold. Then, the following bound holds:</p><p>where</p><p>and C e denotes the entropy of µ 0 .</p><p>Proof. We use the proof technique presented in <ref type="bibr" target="#b11">(Dalalyan, 2017;</ref><ref type="bibr" target="#b38">Raginsky et al., 2017)</ref>. It is easy to verify that for all k ∈ N + , we have Y kh = Xk . By Girsanov's theorem to express the Kullback-Leibler (KL) divergence between these two distributions, given as follows:</p><p>The last inequality is due to the Lipschitz condition HS2.</p></div>
+<div><head>Now, let us focus on the term</head><p>. By using (S20), we obtain:</p><p>where Z denotes a standard normal random variable. By adding and subtracting the term -(t -kh)v kh (Y kh ), we have:</p><p>Taking the square and then the expectation of both sides yields:</p><p>As a consequence of HS2 and HS5, we have v t (x) ≤ L x + B for all t ≥ 0, x ∈ R d . Combining this inequality with H S4, we obtain: This being said, we are confident that good performance would be obtained if millions of random projections could be considered for transporting such high dimensional data because i/ theory suggests it and ii/ we observed excellent performance on reduced dimensions. However, we, unfortunately, did not have the computing power it takes for such large scale experiments and this is what motivated us in the first place to introduce some dimension-reduction technique through AE.</p></div>
+<div><head n="4.3.">Structure of our autoencoders for reducing data dimension</head><p>As mentioned in the text, we used autoencoders to reduce the dimensionality of the transport problem. The structure of these networks is the following:</p><p>• Encoder Four 2d convolution layers with (num chan out, kernel size, stride, padding) being (3, 3, 1, 1), (32, 2, 2, 0), (32, 3, 1, 1), (32, 3, 1, 1), each one followed by a ReLU activation. At the output, a linear layer gets the desired bottleneck size.</p><p>• Decoder A linear layer gets from the bottleneck features to a vector of dimension 8192, which is reshaped as <ref type="bibr">(32,</ref><ref type="bibr">16,</ref><ref type="bibr">16)</ref>. Then, three convolution layers are applied, all with 32 output channels and (kernel size, stride, panning) being respectively (3, 1, 1), (3, 1, 1), (2, 2, 0). A 2d convolution layer is then applied with an output number of channels being that of the data (1 for black and white, 3 for color), and a (kernel size, stride, panning) as (3, 1, 1). In any case, all layers are followed by a ReLU activation, and a sigmoid activation is applied a the very output.</p><p>Once these networks defined, these autoencoders are trained in a very simple manner by minimizing the binary cross entropy between input and output over the training set of the considered dataset (here MNIST, CelebA or FashionMNIST). This training was achieved with the Adam algorithm <ref type="bibr" target="#b25">(Kingma &amp; Ba, 2014)</ref> with learning rate 1e -3.</p><p>No additional training trick was involved as in Variational Autoencoder <ref type="bibr" target="#b26">(Kingma &amp; Welling, 2013)</ref> to make sure the distribution of the bottleneck features matches some prior. The core advantage of the proposed method in this respect is indeed to turn any previously learned AE as a generative model, by automatically and non-parametrically transporting particles drawn from an arbitrary prior distribution µ to the observed empirical distribution ν of the bottleneck features over the training set.</p></div>
+<div><head n="4.4.">Convergence plots of SWF</head><p>In the same experimental setting as in the main document, we also illustrate the behavior of the algorithm for varying dimensionality d for the bottleneck-features. To monitor the convergence of SWF as predicted by theory, we display the</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Gradient flows: in metric spaces and in the space of probability measures</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ambrosio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gigli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Savaré</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Wasserstein generative adversarial networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arjovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chintala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bottou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="214" to="223" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A computational fluid mechanics solution to the Monge-Kantorovich mass transfer problem</title>
+		<author>
+			<persName><forename type="first">J.-D</forename><surname>Benamou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Brenier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Numerische Mathematik</title>
+		<imprint>
+			<biblScope unit="volume">84</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="375" to="393" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">I</forename><surname>Bogachev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">V</forename><surname>Krylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Röckner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">V</forename><surname>Shaposhnikov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fokker</surname></persName>
+		</author>
+		<title level="m">Planck-Kolmogorov Equations</title>
+		<imprint>
+			<publisher>American Mathematical Soc</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">207</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Sliced and Radon Wasserstein barycenters of measures</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bonneel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rabin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peyré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pfister</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Mathematical Imaging and Vision</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="22" to="45" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Unidimensional and evolution methods for optimal transportation</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bonnotte</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">11, 2013</date>
+			<pubPlace>Paris</pubPlace>
+		</imprint>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A stochastic particle method for the McKean-Vlasov and the Burgers equation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bossy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Talay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mathematics of Computation of the American Mathematical Society</title>
+		<imprint>
+			<biblScope unit="volume">66</biblScope>
+			<biblScope unit="issue">217</biblScope>
+			<biblScope unit="page" from="157" to="192" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Tolstikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-J</forename><surname>Simon-Gabriel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.07642</idno>
+		<title level="m">From optimal transport to generative modeling: the vegan cookbook</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Probabilistic approach for granular media equations in the non uniformly convex case</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cattiaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guillin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Malrieu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Prob. Theor. Rel. Fields</title>
+		<imprint>
+			<biblScope unit="volume">140</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="19" to="40" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Asynchronous stochastic quasi-Newton MCMC for non-convex optimization</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Yildiz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Cemgil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4674" to="4683" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Sinkhorn distances: Lightspeed computation of optimal transport</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cuturi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="2292" to="2300" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Theoretical guarantees for approximate sampling from smooth and log-concave densities</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Dalalyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society: Series B (Statistical Methodology)</title>
+		<imprint>
+			<biblScope unit="volume">79</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="651" to="676" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">I</forename><surname>Deshpande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schwing</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1803.11188</idno>
+		<title level="m">Generative modeling using the sliced wasserstein distance</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Monte carlo methods of inference for implicit statistical models</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Diggle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Gratton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society. Series B (Methodological</title>
+		<imprint>
+			<biblScope unit="page" from="193" to="227" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Observed universality of phase transitions in high-dimensional geometry, with implications for modern data analysis and signal processing</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Donoho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tanner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Philosophical Transactions of the Royal Society of London A: Mathematical, Physical and Engineering Sciences</title>
+		<imprint>
+			<biblScope unit="volume">367</biblScope>
+			<biblScope unit="page" from="4273" to="4293" />
+			<date type="published" when="1906">1906. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Stochastic gradient Richardson-Romberg Markov Chain Monte Carlo</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Durmus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Moulines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Badeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The algorithmic foundations of differential privacy</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dwork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends R in Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="211" to="407" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Stochastic optimization for large-scale optimal transport</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Genevay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cuturi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peyré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="3440" to="3448" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Genevay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peyré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cuturi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.01807</idno>
+		<title level="m">vae from an optimal transport point of view</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Learning generative models with Sinkhorn divergences</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Genevay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peyré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cuturi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Artificial Intelligence and Statistics</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1608" to="1617" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Generative adversarial nets</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pouget-Abadie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mirza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Warde-Farley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ozair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="2672" to="2680" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gribonval</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Blanchard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Keriven</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Traonmilin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.07180</idno>
+		<title level="m">Compressive statistical learning with random feature moments</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Improved training of Wasserstein GANs</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arjovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dumoulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Courville</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="5769" to="5779" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">X</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yang</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1705.07164</idno>
+		<title level="m">Relaxed Wasserstein with applications to GANs</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The variational formulation of the Fokker-Planck equation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kinderlehrer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Otto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM journal on mathematical analysis</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="17" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">A method for stochastic optimization</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Adam</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1412.6980</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<monogr>
+		<title level="m" type="main">Auto-encoding variational bayes</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Welling</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1312.6114</idno>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kolouri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">K</forename><surname>Rohde</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1804.01947</idno>
+		<title level="m">Slicedwasserstein autoencoder: An embarrassingly simple generative model</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Dynamical optimal transport on discrete surfaces</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Lavenant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Claici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Chien</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Solomon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGGRAPH Asia 2018 Technical Papers</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page">250</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-T</forename><surname>Yau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">X</forename><surname>Gu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1710.05488</idno>
+		<title level="m">A geometric view of optimal transportation and generative model</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Approximation and convergence properties of generative adversarial learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chaudhuri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="5551" to="5559" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Deep learning face attributes in the wild</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of International Conference on Computer Vision (ICCV)</title>
+		<meeting>International Conference on Computer Vision (ICCV)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">A complete recipe for stochastic gradient MCMC</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">A</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2899" to="2907" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Convergence to equilibrium for granular media equations and their Euler schemes</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Malrieu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Ann. Appl. Probab</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="540" to="560" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Existence and uniqueness theorems for solutions of McKean-Vlasov stochastic equations</title>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">S</forename><surname>Mishura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Veretennikov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1603.02212</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lakshminarayanan</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1610.03483</idno>
+		<title level="m">Learning in implicit generative models</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Nonasymptotic analysis of fractional Langevin Monte Carlo for non-convex optimization</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Richard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Wasserstein barycenter and its application to texture mixing</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rabin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Peyré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Delon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bernot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Scale Space and Variational Methods in Computer Vision</title>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Bruckstein</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename><forename type="middle">M</forename><surname>Ter Haar Romeny</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">M</forename><surname>Bronstein</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">M</forename><surname>Bronstein</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin, Heidelberg; Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="435" to="446" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Non-convex learning via stochastic gradient Langevin dynamics: a nonasymptotic analysis</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Raginsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rakhlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Telgarsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 Conference on Learning Theory</title>
+		<meeting>the 2017 Conference on Learning Theory</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="page" from="1674" to="1703" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Protecting classifiers against adversarial attacks using generative models</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Samangouei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kabkab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chellappa</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Defense-Gan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Introduction to optimal transport theory</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Santambrogio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Optimal Transportation: Theory and Applications</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Pajot</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Ollivier</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Villani</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+	<note>chapter 1</note>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">metric, and Wasserstein} gradient flows: an overview</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Santambrogio</surname></persName>
+		</author>
+		<author>
+			<persName><surname>{euclidean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bulletin of Mathematical Sciences</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="87" to="154" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Fractional Langevin Monte Carlo: Exploring Lévy Driven Stochastic Differential Equations for Markov Chain Monte Carlo</title>
+		<author>
+			<persName><forename type="first">U</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<author>
+			<persName><forename type="first">I</forename><surname>Tolstikhin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bousquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gelly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schoelkopf</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.01558</idno>
+		<title level="m">Wasserstein auto-encoders</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Van Der Vaart</surname></persName>
+		</author>
+		<title level="m">Asymptotic statistics</title>
+		<imprint>
+			<publisher>Cambridge university press</publisher>
+			<date type="published" when="1998">1998</date>
+			<biblScope unit="volume">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">On ergodic measures for McKean-Vlasov stochastic equations</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Veretennikov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Monte Carlo and Quasi-Monte Carlo Methods</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2004">2004. 2006</date>
+			<biblScope unit="page" from="471" to="486" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Optimal transport: old and new</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Villani</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<biblScope unit="volume">338</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Bayesian learning via stochastic gradient Langevin dynamics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Welling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">W</forename><surname>Teh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="681" to="688" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V</forename><surname>Gool</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.02631,abs/1706.02631</idno>
+		<title level="m">Sliced wasserstein generative models</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1809.01293</idno>
+		<title level="m">Stochastic particleoptimization sampling and the non-asymptotic convergence theory</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

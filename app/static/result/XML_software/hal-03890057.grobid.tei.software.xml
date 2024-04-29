@@ -1,0 +1,576 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">CATREEN : Context-Aware Code Timing Estimation with Stacked Recurrent Networks</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Abderaouf</forename><forename type="middle">N</forename><surname>Amalou</surname></persName>
+							<email>abderaouf.amalou@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ. Rennes</orgName>
+								<orgName type="institution" key="instit2">INRIA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA Rennes</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+							<email>elisa.fromont@irisa.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Univ. Rennes</orgName>
+								<orgName type="institution" key="instit2">IUF</orgName>
+								<orgName type="institution" key="instit3">INRIA</orgName>
+								<orgName type="institution" key="instit4">CNRS</orgName>
+								<orgName type="institution" key="instit5">IRISA Rennes</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Isabelle</forename><surname>Puaut</surname></persName>
+							<email>isabelle.puaut@irisa.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Univ. Rennes</orgName>
+								<orgName type="institution" key="instit2">INRIA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA Rennes</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">CATREEN : Context-Aware Code Timing Estimation with Stacked Recurrent Networks</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">38EADB37F2184051739BF33A8139CBF1</idno>
+					<idno type="DOI">10.1109/ICTAI56018.2022.00090</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Automatic prediction of the execution time of programs for a given architecture is crucial, both for performance analysis in general and for compiler designers in particular. In this paper, we present <software>CATREEN</software>, a recurrent neural network able to predict the steady-state execution time of each basic block in a program. Contrarily to other models, <software ContextAttributes="used">CATREEN</software> can take into account the execution context formed by the previously executed basic blocks which allows accounting for the processor micro-architecture without explicit modeling of micro-architectural elements (caches, pipelines, branch predictors, etc.). The evaluations conducted with synthetic programs and real ones (programs from <software ContextAttributes="used">Mibench</software> and <software ContextAttributes="used">Polybench</software>) show that <software ContextAttributes="used">CATREEN</software> can provide accurate prediction for execution time with 11.4% and 16.5% error on average, respectively and that we got an improvement of 18% and 27.6% respectively when comparing our tool estimations to the state-of-the-art LSTM-based model.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head>I. INTRODUCTION</head><p>The complexity of developing cycle-accurate simulators and integrating them into compiler infrastructures has led compiler designers to use much simpler ways to estimate execution times. Such estimation is useful to decide about the compiler optimizations to apply, the simplest ones being architecture-independent cost functions, e.g., simply counting the number of machine instructions. An alternative, reachable thanks to the recent advances in Machine Learning (ML), consists in predicting the execution times of code snippets to guide optimizations <ref type="bibr" target="#b0">[1]</ref>. The benefit of using ML for timing prediction is threefold: (i) no detail of the processor microarchitecture is needed, because the behavior is learned from timing measurements; (ii) porting the ML-based execution timing predictor to a new microarchitecture does not need any deep expertise, only a new training step is required; (iii) even if training an ML model is a time-consuming task, prediction is in general fast, allowing ML-based timing predictions to be used in compilers.</p><p>Today's processors feature increasing complexity (e.g., cache hierarchy, pipelines, branch predictors, instruction scheduling in out-of-order cores), which, combined with the lack of associated documentation, makes building a cycle-accurate simulator like <ref type="bibr" target="#b1">[2]</ref> for each new architecture time-consuming and error-prone. This complexity is mainly due to the integration of several hardware accelerators, which aim to speed up the execution time of programs. The cohabitation of these components makes the timing modeling of a processor difficult to achieve. Moreover, these components introduce dependencies between successive instructions, making the timing of a sequence of instructions dependent on its execution context (history of instructions executed before the sequence under study).</p><p>In this paper, we introduce <software ContextAttributes="used">CATREEN</software>, for Context-Aware code Timing estimation with stacked REcurrEnt Networks. <software ContextAttributes="used">CATREEN</software> infers the steady-state execution times of individual basic blocks (BBs) in programs (at the assembly code level). As compared to related works on estimating the execution time of BBs, the novelty of our work is to assess the execution time of a BB within its execution context. Instead of calculating the best-case execution time in isolation of a basic block b; like it was done in <software ContextAttributes="used">ITHEMAL</software> <ref type="bibr" target="#b2">[3]</ref>, <software ContextAttributes="used">CATREEN</software> calculates the execution time of b after executing a sequence of other BBs. Experiments on an embedded architecture (STM32H6 board, featuring an ARM Cortex M7 processor) demonstrate that <software ContextAttributes="used">CATREEN</software> produces more accurate predictions than state-ofthe-art context-agnostic ML-based techniques, on both synthetic programs and real codes.</p><p>The remainder of this paper is organized as follows. Section II surveys related works that use ML-based techniques for performance evaluation and optimization. An overview of <software>CATREEN</software> is given in Section III. The performance of <software ContextAttributes="used">CATREEN</software> is evaluated in Section IV. Finally, Section V concludes with a summary of the contributions and directions for future work.</p></div>
+<div><head>II. RELATED WORK</head><p>The complexity of evaluating and improving the performance of programs has motivated the use of machine learning techniques. These techniques can be classified into two categories: those which directly evaluate the execution time of programs ( § II-A) and those which target other metrics that are related to performance like speedup or energy consumption, albeit not directly evaluating execution times ( § II-B).</p></div>
+<div><head>A. Machine learning for execution time prediction</head><p><software ContextAttributes="used">ITHEMAL</software> <ref type="bibr" target="#b2">[3]</ref> leverages a hierarchical multi-scale Recurrent Neural Network (RNN) and, in particular, Long Short-Term Memory (LSTM) layers to predict the throughput of basic blocks. <software ContextAttributes="used">ITHEMAL</software> captures the interactions between instructions from the same basic block. Each basic block is isolated from the program and executed repetitively to reach its steadystate behavior and obtain its throughput (peak performance or best-case execution time). In contrast to <software ContextAttributes="used">ITHEMAL</software>, <software ContextAttributes="used">CATREEN</software> relaxes the assumption that a basic block is executed in isolation and predicts the execution time of a basic block given its actual context of execution at steady-state.</p><p>[4] advocates the use of sparse polynomial regression to predict the execution time of programs given a set of static features. <software ContextAttributes="used">CATREEN</software> differs from <ref type="bibr" target="#b3">[4]</ref> by the features used during learning that allow capturing the execution context of basic blocks. It also differs by the type of method used to predict the throughput (in our case, a recurrent neural network).</p><p>Ritter and Hack <ref type="bibr" target="#b4">[5]</ref> present a framework for inferring port usage of instructions based on an evolutionary algorithm that solves a linear program to predict the throughput of a basic block. The solution was designed to infer port mappings for an out-of-order processor but it is not clear how the approach could be extended to infer the throughput for a more complex trace execution, e.g., how data dependencies could be included in the analysis. In comparison, <software ContextAttributes="used">CATREEN</software> was designed for in-order processor architecture due to the sequential processing of instructions, but it has the ability to learn instruction and data dependencies.</p></div>
+<div><head>B. Machine learning for performance optimization</head><p>ML techniques were proposed in the past to improve the performance of programs <ref type="bibr" target="#b5">[6]</ref>- <ref type="bibr" target="#b7">[8]</ref>.</p><p>The <software ContextAttributes="used">DeepTune</software> <ref type="bibr" target="#b5">[6]</ref> tool leverages an RNN LSTM-based model that can be used as a classifier to choose the best choice between running a program on the CPU or the GPU, or to predict the best number of threads among a set of values. In <ref type="bibr" target="#b6">[7]</ref>, a neural network (NN) model uses performance counters to predict the performance (instructions per cycle) of a thread migration from one core to another in S-NUCA architecture. Tousi and Lujan <ref type="bibr" target="#b7">[8]</ref> study the feasibility of using classic machine learning techniques to predict performances (latency, speedup...) on the SPEC Benchmarks, while <software ContextAttributes="used">CATREEN</software> only uses programs that can run without an operating system (baremetal environment to avoid OS noises) which is not the case of SPEC Benchmarks.</p><p>If the methods presented before and their inputs are (somewhat) similar to ours, our end goal is entirely different. <software>CATREEN</software>, in contrast to the works mentioned above, focuses on the prediction of execution time for a given hardware and compiler settings.</p></div>
+<div><head>III. EXECUTION TIME PREDICTION USING CATREEN</head><p><software>CATREEN</software> leverages a stacked recurrent neural network architecture to predict the execution time of a basic block b (or the basic block under analysis) given its execution context (sequence of basic blocks executed before b). By considering the execution history of basic blocks, <software ContextAttributes="used">CATREEN</software> naturally accounts for the state of the hardware when executing the basic block (pipeline, cache hierarchy, and branch prediction).</p></div>
+<div><head>A. Overview of CATREEN</head><p>Recurrent Neural Networks (RNN) are particular neural network architectures that can be trained to predict outputs from a variable-length sequence of data. These networks can memorize (parts of) the sequence and the computed sequential information along time. Long Short-Term Memory (LSTM) are special kinds of RNN, capable of learning longterm dependencies <ref type="bibr" target="#b8">[9]</ref> in the sequences. LSTM architectures have mechanisms, called gates, that are trained to choose whether or not to keep particular sequential information. These architectures are, for example, extensively used in domains such as natural language processing [10] <ref type="bibr" target="#b10">[11]</ref>, where the context of a word in a sentence is useful to learn its characteristics. Figure <ref type="figure" target="#fig_0">1</ref> represents the overall architecture of <software ContextAttributes="used">CATREEN</software>. <software ContextAttributes="used">CATREEN</software> estimates the execution time of a basic block within a sequence of basic blocks in a similar way that an LSTM would process a paragraph in natural language to predict, for example, the sentiment (positive or negative) of a given sentence in this paragraph. The analogy is as follows: an instruction represents a word. An instruction is composed of an opcode and one or more operands, which can be treated as letters that constitute this word. A set of instructions will form a basic block (a sentence), and a sequence of basic blocks will therefore represent a paragraph.</p><p>The architecture of <software ContextAttributes="used">CATREEN</software> is composed of five layers, depicted in Figure <ref type="figure" target="#fig_0">1</ref> from top to bottom. The first layer is a tokenization and embedding layer that pre-processes the assembly language, extracted from the machine code, and generates inputs that are understandable by the next layers. The next three layers are the central layers of <software ContextAttributes="used">CATREEN</software>. They are LSTM layers (called RNN in the following): one to process an instruction (Instruction layer in Figure <ref type="figure" target="#fig_0">1</ref>), one to process a basic block (BB layer in Figure <ref type="figure" target="#fig_0">1</ref>), and one to process a sequence of basic blocks (Sequence layer in Figure <ref type="figure" target="#fig_0">1</ref>). After that, and before processing the last BB in the sequence (the basic block under analysis), a residual connection is created using this vector and it is directly concatenate with the formed context (the result of processing all BBs), this helps the model to converge faster as we aim to estimate the execution time of the last BB in the sequence. Finally, The formed context and the BB under analysis vector are sent to a dense layer that is used to predict the final timing output (timing a basic block in the context of the previously executed basic blocks). More details on each layer are given below.</p></div>
+<div><head>B. Tokenization and embedding</head><p>In order for the RNN to properly interpret basic blocks, an encoding of machine code into a sequence of integers is needed, where each integer represents an index (token) in a predefined dictionary. This is performed as follows. We preprocess the raw data (assembly code) by encoding each basic element of an instruction (opcode and operand) with a unique number (token), with a special treatment given to the operands: all immediate operands are encoded with the same token, the same treatment is done for all addresses which are encoded with the same token. Finally, addressing modes using registers In order to be suitable inputs for RNN layers, each token is again encoded into a distinct fixed-size vector of floats within the interval [-1,1] using word2vec <ref type="bibr" target="#b11">[12]</ref>.</p></div>
+<div><head>C. LSTM RNN layers of CATREEN</head><p>Since we do not, a priori, know what is the length of the sequences (i.e., how many basic blocks they contain) nor the basic blocks' length (i.e., how many instructions they contain) nor even the length of the instructions (i.e., how many operands they contain), we model these data with LSTM, which are suited to variable-length sequences. Three levels of LSTM are used for that purpose:</p><p>• The Instruction Layer (in green in Figure <ref type="figure" target="#fig_0">1</ref>) is the first LSTM layer in <software ContextAttributes="used">CATREEN</software>. It takes as input a sequence of embedded code operands/opcodes (i.e., an instruction). We loosely denote the length of the sequence of operands/opcodes by O (resp. I and B in the subsequent layers) even though it differs from one instruction to another. This LSTM layer processes the entire sequence of embedded tokens from instruction and produces a single final output representation for the entire instruction. To avoid direct influence between instructions, the hidden state is reset to its initial state h Ø at each instruction (resp. at each BB and sequence), this helps to learn longer sequences where each representation is sent to the next stage to be better interpreted: the outputs (instructions) are treated one by one by the next LSTM layer (BB layer, for Basic Block layer). We loosely denote the dimension per layer by N even though it may differ in the three RNN layers. The selected hidden size per layer is given in Section IV-D. • The BB layer (in blue in Figure <ref type="figure" target="#fig_0">1</ref>) processes the sequence (of length I) of the treated instructions in a basic block and produces a new representation for each basic block. Again, all representations of a basic block are treated one element after one by the next LSTM layer (Sequence layer). • Finally, the Sequence layer (in red in Figure <ref type="figure" target="#fig_0">1</ref>) processes the sequence of S basic blocks within a sequence. Similarly to the other RNN layers, it produces at the end a representation of the sequence or what we call Context. Then, the value of Context is concatenated to the value of the BB under analysis (that we save from the previous layer BBs) and they are given as inputs to a fully connected linear layer connected to a single output which produces an estimate of the execution time of the last basic block of the sequence given the execution history.</p></div>
+<div><head>IV. EXPERIMENTAL EVALUATION</head><p>Before evaluating <software ContextAttributes="used">CATREEN</software>, we describe the data used to train and test our tool in Section IV-A, followed by the experimental setup in Section IV-B. In Section IV-C, we present the context-agnostic baselines used to assess our method. Then, we show that a careful selection of hyper-parameters is crucial for high precision results, for both <software ContextAttributes="used">CATREEN</software> and the baseline predictors (Section IV-D). We then demonstrate that <software ContextAttributes="used">CATREEN</software> outperforms the baseline context agnostic techniques, on both synthetic code (Section IV-E) and real code (<software ContextAttributes="used">MiBench2</software> and <software ContextAttributes="used">PolyBench</software> programs, Section IV-F). A more detailed evaluation of <software ContextAttributes="used">CATREEN</software>, that studies the inference time of <software ContextAttributes="used">CATREEN</software> and provides further information on hyper-parameter selection can be found on a longer version of this paper <ref type="bibr" target="#b12">[13]</ref>. Code and data can be found by following the link https://gitlab.inria.fr/ aamalou/<software ContextAttributes="used">CATREEN</software>.git.</p></div>
+<div><head>A. Training and test data</head><p>The supervised training of our stacked LSTM network requires a large number of labeled data samples. In order to cover a large number of possible programs, we use synthetic codes. To test our model, both synthetic and real programs are used. In both cases (training and testing), we use a hardware-assisted solution to obtain a timed execution trace from these programs (ground truth timing data used as a label for supervised learning). The execution trace (instruction-byinstruction representation of the program execution) is then pre-processed to constitute suitable inputs for our model.</p><p>1) Synthetic data: A code generator was developed to produce varied C source code programs. The code generator produces programs that randomly manipulate a selected number of statements and variables (the user provides parameters specifying the proportion of each element from a declared grammar). The code generator produces source code with loops, if-then-else constructs, and uses all the elementary types from the C language (integers, floats, etc.). Basic statements use the most common operations available in C (arithmetic and logical operations, shift and rotate operations, binary and unary operators or booleans, etc.). Arrays are also covered with various access modes: constant (access to a constant index), sequential, linear (affine loop indices), and random. The code generation ensures the absence of run-time errors by construction (out-of-bound array accesses, divide by zero).</p><p>2) Real Data: We evaluate our approach on a dataset of real programs, <software ContextAttributes="used">MiBench 2</software>, a benchmark suite based on <software ContextAttributes="used">MiBench</software> <ref type="bibr" target="#b13">[14]</ref> and ported for IoT devices. Our tests were carried out on the Automotive and Industrial Control category of <software ContextAttributes="used">MiBench</software>. We also use <software ContextAttributes="used">PolyBench</software> v4.2 <ref type="bibr" target="#b14">[15]</ref> a set of programs that has the specificity to manipulate nested loops.</p><p>3) Ground truth timing generation: Training and validating <software ContextAttributes="used">CATREEN</software> have to be performed with accurate timing values. Moreover, the way the timing values are obtained should not change the timing of the code under execution (well-known as probe-effect). In <software ContextAttributes="used">CATREEN</software>, we opted for a hardwarebased solution, using the Joint Test Action Group (JTAG) interface. The <software ContextAttributes="used">J-Trace Pro</software> trace solution from Segger <ref type="bibr" target="#b15">[16]</ref> is used to connect to the JTAG interface of the target processor, alongside Ozone <ref type="bibr" target="#b16">[17]</ref>, a cross-platform debugger and performance analyzer. Ozone generates execution traces with a format of one line per machine instruction. Each line contains information about the value of the cycle counter after executing the instruction, the address of the instruction, its opcode and operands, and the corresponding assembly code.</p></div>
+<div><head>4) Data pre-processing:</head><p>To create the final data (both for synthetic and real programs), the execution trace generated by Ozone is processed as follows. First, BBs are extracted and the execution time of each BB is calculated. In order to eliminate outliers, the ground truth timing of each BB is obtained by using multiple executions and keeping the median value. <software>CATREEN</software> is trained by using a normalized timing value equal to the median value of the measurements divided by the number of instructions in the BB. Sequences that are too short to have enough contextual information (in our experiments, sequences shorter than 5 BBs) are filtered out.</p></div>
+<div><head>B. Experimental setup</head><p>Experiments were performed on an STM32H7 board. The board features an ARM Cortex M7 processor, which has a 6-stage in-order pipeline, 16 KB instruction and data caches, and a branch predictor. We generated 1000 synthetic code snippets that we executed on the bare-metal target processor to eliminate any possible interference. After the pre-processing data phase to get sequences (as explained in Section IV-A4), 10000 different sequences were available for training, 2000 different sequences for validation, and 1000 different sequences for testing. Each subset of data (training, validation, test) comes from a separate set of programs to remove the bias it would otherwise introduce. We performed 1000 execution time measurements for each basic block, with cache warming before sampling (cache warming is performed by executing the program 20 times). All learning models were implemented in <software ContextAttributes="used">PyTorch</software> <ref type="bibr" target="#b17">[18]</ref> and were trained on NVIDIA GeForce RTX 2080 Ti. <software ContextAttributes="used">CATREEN</software> training lasted four days for each setting (set of values of hyperparameters).</p></div>
+<div><head>C. Baseline ML-based execution time predictors</head><p>The performance of <software ContextAttributes="used">CATREEN</software> is compared with two context-agnostic execution time predictors. The most simple, albeit not naive one, is a Multi-Layer Perceptron regressor (denoted as <software ContextAttributes="used">MLPr</software> in the following). An <software ContextAttributes="used">MLPr</software> is a feedforward neural network that does not take into account sequential information and requires a fixed-size input. Such a baseline has been successfully used for timing prediction in <ref type="bibr" target="#b18">[19]</ref>. Specifically, the <software ContextAttributes="used">MLPr</software> we have implemented takes as an input 233 static features of the basic blocks: the proportions of each type of machine instruction (e.g., MOV, ADD, LDR); the proportion of the different addressing modes (e.g., immediate, direct access, register indirect access, register indirect access with offset). We used a grid search algorithm to select proper <software ContextAttributes="used">MLPr</software> hyperparameters (number of hidden layers, optimizer, learning rate, and the loss function). The result of this search gave us the following ideal (on the validation dataset) parameters: {hidden layer sizes=(256, 256), learning rate init=0.001, solver='adam', loss function='mean squared error'.}. Our second baseline is <software ContextAttributes="used">ITHEMAL</software> <ref type="bibr" target="#b2">[3]</ref>, that similarly to <software ContextAttributes="used">CATREEN</software>, uses RNNs for execution time prediction. More precisely, we compare <software ContextAttributes="used">CATREEN</software> with two versions of <software ContextAttributes="used">ITHEMAL</software>. The first one is a direct re-implementation of <software ContextAttributes="used">ITHEMAL</software> from the original paper (denoted as <software ContextAttributes="used">ITHEMALuntuned</software> in the following), using the hyperparameters suggested by the authors. The re-implementation consisted in porting the tokenization/embedding step of <software ContextAttributes="used">ITHEMAL</software> to the ARM instruction set and using a GPU for training instead of a parallel CPU. For the second version of <software ContextAttributes="used">ITHEMAL</software> (called <software ContextAttributes="used">ITHEMALtuned</software> hereafter), we have tuned the hyperparameters of the model to better fit the new data.</p></div>
+<div><head>D. Hyperparameters tuning</head><p>Finding suitable hyperparameters is of utmost importance to guarantee the training convergence of the learned models on new data. Therefore, we show in the following how we have tuned (on validation data) our learning hyperparameters and how this can drastically improve the performance (in terms of Mean Absolute Percent Error, MAPE) of both <software>CATREEN</software> and our closest competitor, <software ContextAttributes="used">ITHEMAL</software>. The impact of three learning hyperparameters were studied:</p><p>• The optimization algorithm: Stochastic Gradient Descent (SGD), used in <software ContextAttributes="used">ITHEMAL</software> <ref type="bibr" target="#b2">[3]</ref> and <software ContextAttributes="used">ADAM</software> optimizer widely used in deep learning. • The learning rate: three learning rates; two constant values 10 -3 and 10 -4 , and an adaptive (that starts from 10 -2 and decreases at each epoch by a factor of 10 until 10 -4 ). • The loss function: the MAPE loss -used in <software ContextAttributes="used">ITHEMALand</software> the symmetric Mean Absolute Percentage Error loss function (sMAPE) which is neutral regarding under or overforecasting:</p><formula xml:id="formula_0">MAP E loss = 1 n * n i=0 |predicti -actuali| actuali (<label>1</label></formula><formula xml:id="formula_1">)</formula><formula xml:id="formula_2">sM AP E loss = 2 n * n i=0 |predicti -actuali| predicti + actuali (2)</formula><p>We kept the number of training epochs <ref type="bibr" target="#b19">(20)</ref>, the token embedding size 512, and the number of LSTM cells 512 the same during this study since this was the largest that we could do with our computation power.</p><p>The sensitivity of <software ContextAttributes="used">CATREEN</software> and <software ContextAttributes="used">ITHEMAL</software> to hyperparameter tuning is shown in Table <ref type="table" target="#tab_1">I</ref>. Several observations can be made from the results. First, we observe that <software ContextAttributes="used">ADAM</software> drastically reduces the generalization error of the learned models. Second, regarding the learning rate, the best results are obtained in all cases with a learning rate of 10 -4 except when sMAPE+SGD is used, where 10 -3 gives the best results (12% and 20%) both from <software ContextAttributes="used">CATREEN</software> and <software ContextAttributes="used">ITHEMAL</software>. The adaptive version (adapt) gives the worst results in most of the tests (except for <software ContextAttributes="used">ITHEMAL</software>, when MAPE+SGD is used, in this case, it is the constant value 10 -3 that gives the worst error percentage). Finally, we observe that sMAPE generally gives better results whatever the other parameters. MAPE is asymmetric by definition and puts a heavier penalty on overestimation errors than on underestimation errors. As a result, MAPE will favor models that are under-forecast. Overall, the results reported in Table <ref type="table" target="#tab_1">I</ref> show that the hyperparameter selection has a huge impact on the model performance. They further show that the hyperparameter selection, as done in the original version of <software ContextAttributes="used">ITHEMAL</software>, is sub-optimal for our data. In the next sections, we use <software ContextAttributes="used">CATREEN</software> and <software ContextAttributes="used">ITHEMAL</software> with their best-found hyperparameters.</p></div>
+<div><head>E. Prediction performance on synthetic data</head><p>We compare the performance of <software ContextAttributes="created">MLPr</software>, <software ContextAttributes="created">ITHEMAL</software>-untuned <ref type="bibr" target="#b2">[3]</ref>, <software ContextAttributes="created">ITHEMAL</software>-tuned and <software ContextAttributes="created">CATREEN</software> on the 1000 test sequences. The results are reported in Table <ref type="table" target="#tab_2">II</ref> and they are given as a MAPE, where the mean is computed over the 1000 test samples and the MAPE is expressed as a percentage. We also provide a Spearman score (rank correlation) and Pearson score (linear correlation) test for each method. The best results in the table are highlighted in bold. We observe that <software ContextAttributes="created">CATREEN</software> gives the best results, with a MAPE of 11.4% an improvement of 18% compared to <software ContextAttributes="created">ITHEMAL</software> tuned (which was trained on the same data set for a fair comparison). This means that the model has benefited from the execution history of a given basic block to predict its timing, as further detailed below. In comparison, the other techniques that are context-agnostic provide more modest results; the simplest technique (<software ContextAttributes="created">MLPr</software>) gives the worst results, which shows that handcrafted features (even though we introduced a large features number, here 233) are less discriminant than the learned ones.</p></div>
+<div><head>F. Timing prediction on benchmarks</head><p>We evaluate our approach on real programs, the Automotive program set from <software>MiBench 2</software> and <software ContextAttributes="created">PolyBench</software>. The execution time is estimated for the entire program. For <software ContextAttributes="created">PolyBench</software> programs, we choose to use small dataset option because of the flash memory size limitation for programs when running them on bare-metal (we also had to drop some programs that do not fit on the flash memory). The same experimental process as for the synthetic dataset (see Section IV-A) was used to (i) generate the sequences of basic blocks serving as inputs for the timing predictions, (ii) obtain the ground truth timing values. ) for the different programs, for <software ContextAttributes="created">CATREEN</software>, <software ContextAttributes="created">ITHEMAL-tuned</software> and <software ContextAttributes="created">MLPr</software>. The results of <software ContextAttributes="created">ITHEMAL</software>-untuned were not good enough to deserve their reporting in the table. The best APE values are highlighted in bold. The results show that <software ContextAttributes="created">CATREEN</software> outperforms <software ContextAttributes="created">ITHEMALtuned</software> and <software ContextAttributes="created">MLPr</software>, with a lower APE on all benchmarks (16.5% on average), except for the mvt program. In general, we can observe that <software ContextAttributes="created">ITHEMAL</software>-tuned tends to have good results in <software ContextAttributes="created">PolyBench</software> programs which can be explained by the nested loops that constitute them. These loops make the execution time of the BBs steady (in best case), which can hide the context effect on these BBs. The use of a completely context-agnostic technique like <software ContextAttributes="created">MLPr</software> gives, as expected, the worst predictions. The average prediction error of <software ContextAttributes="created">CATREEN</software> on the tested benchmarks is comparable (although slightly higher) to that obtained on the synthetic codes. This shows that our synthetic dataset is globally representative of real code. The slightly higher error may come from two factors: (i) Not sufficiently representative code generation regarding array accesses. This can be addressed by improving our dataset, for instance, by synthesizing training data from real code; (ii) Too compact tokenization of memory accesses (<software ContextAttributes="created">CATREEN</software> does not consider different memory addresses as distinct tokens, in order to avoid an explosion of tokens number).</p></div>
+<div><head>V. CONCLUSION</head><p>We have presented <software ContextAttributes="used">CATREEN</software>, an ML-based program timing predictor. <software ContextAttributes="used">CATREEN</software> leverages recurrent neural networks to predict the steady-state execution time of basic blocks in a program while taking into account the execution context formed by the previously executed basic blocks. Experimental results have shown that <software ContextAttributes="used">CATREEN</software>'s timing predictions are 18% (27.6%) better than those estimated by state-of-the-art context-agnostic ML-based tools on synthetic (respectively real   programs). <ref type="bibr" target="#b19">[20]</ref> has observed that LSTM models can use a maximum of 200 context tokens which prevent them from learning longer-term information (i.e., they can remember sequences of hundreds but not thousands). An area for improvement, is to use Transformers <ref type="bibr" target="#b20">[21]</ref> which have demonstrated a great ability to address text sequence learning. Using attention mechanisms, they can increase the quality of the contextual information drawn from the sequence under analysis and its size. We thus plan to consider Transformers for timing estimation.</p></div><figure xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Architecture of CATREEN. The input is a sequence of basic blocks consisting of a sequence of instructions which are themselves, sequences of operands/opcodes. CATREEN regresses a timing estimation for the last basic block in the input sequence.</figDesc><graphic coords="4,81.66,73.00,195.42,350.23" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head /><label /><figDesc>Table III reports the Absolute Percentage Error (AP E = 100 * |prediction-actual|</figDesc><table><row><cell>actual</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>TABLE I :</head><label>I</label><figDesc>MAPE performance of CATREEN and ITHEMAL, for different learning hyperparameters (loss function, optimizer, learning rate)</figDesc><table><row><cell>Loss function</cell><cell /><cell /><cell cols="2">MAPE</cell><cell /><cell /><cell /><cell /><cell cols="2">sMAPE</cell><cell /><cell /></row><row><cell>Optimizer</cell><cell /><cell>SGD</cell><cell /><cell /><cell>ADAM</cell><cell /><cell /><cell>SGD</cell><cell /><cell /><cell>ADAM</cell><cell /></row><row><cell>Learning Rate</cell><cell>10 -3</cell><cell>10 -4</cell><cell>adapt</cell><cell>10 -3</cell><cell>10 -4</cell><cell>adapt</cell><cell>10 -3</cell><cell>10 -4</cell><cell>adapt</cell><cell>10 -3</cell><cell>10 -4</cell><cell>adapt</cell></row><row><cell>CATREEN</cell><cell>18%</cell><cell>18%</cell><cell>19%</cell><cell>11%</cell><cell>13%</cell><cell>17%</cell><cell>12%</cell><cell>16%</cell><cell>17%</cell><cell>11%</cell><cell>10%</cell><cell>13%</cell></row><row><cell>ITHEMAL</cell><cell>39%</cell><cell>24%</cell><cell>38%</cell><cell>18%</cell><cell>17%</cell><cell>21%</cell><cell>20%</cell><cell>27%</cell><cell>28%</cell><cell>25%</cell><cell>25%</cell><cell>25%</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>TABLE II :</head><label>II</label><figDesc>MAPE of timing predictions for 1000 basic blocks by four different ML-based methods.</figDesc><table><row><cell>ML technique</cell><cell cols="3">MAPE Spearman Pearson</cell></row><row><cell>MLPr</cell><cell>28.8%</cell><cell>0.974</cell><cell>0.966</cell></row><row><cell cols="2">ITHEMAL-untuned 27.4%</cell><cell>0.973</cell><cell>0.968</cell></row><row><cell>ITHEMAL-tuned</cell><cell>13.9%</cell><cell>0.972</cell><cell>0.975</cell></row><row><cell>CATREEN</cell><cell>11.4%</cell><cell>0.983</cell><cell>0.977</cell></row></table></figure>
+<figure type="table" xml:id="tab_3"><head>TABLE III :</head><label>III</label><figDesc>Execution time APE on MiBench (automotive) and PolyBench for CATREEN, ITHEMAL-tuned and MLPr</figDesc><table><row><cell>Model</cell><cell>CATREEN</cell><cell>ITHEMAL-tuned</cell><cell>MLPr</cell></row><row><cell>basicmath</cell><cell>2.1%</cell><cell>13.4%</cell><cell>67.1%</cell></row><row><cell>bitcount</cell><cell>9.3%</cell><cell>29.3%</cell><cell>68.3%</cell></row><row><cell>qsort</cell><cell>19.0%</cell><cell>37.5%</cell><cell>68.6%</cell></row><row><cell>susan:corner+edges</cell><cell>18.9%</cell><cell>35.3%</cell><cell>107.1%</cell></row><row><cell>susan:smoothing</cell><cell>2.1%</cell><cell>26.1%</cell><cell>67.1%</cell></row><row><cell>covariance</cell><cell>15.8%</cell><cell>18.4%</cell><cell>81.7%</cell></row><row><cell>gemm</cell><cell>19.8%</cell><cell>21.1%</cell><cell>30.2 %</cell></row><row><cell>gemver</cell><cell>20.9%</cell><cell>22.5%</cell><cell>79.9 %</cell></row><row><cell>gesummv</cell><cell>15.0%</cell><cell>15.3%</cell><cell>28.8 %</cell></row><row><cell>symm</cell><cell>17.8%</cell><cell>18.4%</cell><cell>35.0 %</cell></row><row><cell>syrk</cell><cell>18.3%</cell><cell>18.6%</cell><cell>30.0%</cell></row><row><cell>trmm</cell><cell>22.6%</cell><cell>24.8%</cell><cell>26.1%</cell></row><row><cell>2mm</cell><cell>17.2%</cell><cell>21.3%</cell><cell>25.3 %</cell></row><row><cell>3mm</cell><cell>17.7%</cell><cell>21.3%</cell><cell>27.2 %</cell></row><row><cell>atax</cell><cell>23.2%</cell><cell>24.8%</cell><cell>25.5%</cell></row><row><cell>bicg</cell><cell>18.7%</cell><cell>20.2%</cell><cell>28.1 %</cell></row><row><cell>dotigen</cell><cell>21.5%</cell><cell>25.5%</cell><cell>26.2 %</cell></row><row><cell>mvt</cell><cell>25.7%</cell><cell>25.3%</cell><cell>42.1%</cell></row><row><cell>cholesky</cell><cell>20.6%</cell><cell>22.4%</cell><cell>24.2 %</cell></row><row><cell>gramschmidt</cell><cell>16.9%</cell><cell>20.1%</cell><cell>21.8%</cell></row><row><cell>lu</cell><cell>18.7%</cell><cell>22.1%</cell><cell>106.5%</cell></row><row><cell>ludcmp</cell><cell>11.0%</cell><cell>16.9%</cell><cell>144.0%</cell></row><row><cell>trisolv</cell><cell>9.1%</cell><cell>11.9%</cell><cell>17.2%</cell></row><row><cell>floyd warshall</cell><cell>11.5%</cell><cell>21.6%</cell><cell>268.7%</cell></row><row><cell>Avg.</cell><cell>16.5%</cell><cell>22.8%</cell><cell>62.2%</cell></row></table></figure>
+			<note place="foot" xml:id="foot_0"><p>Authorized licensed use limited to: INRIA. Downloaded on July 03,2023 at 08:30:25 UTC from IEEE Xplore. Restrictions apply.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>The authors are very grateful to <rs type="person">Pierre Michaud</rs> and <rs type="person">Hugo Reymond</rs> for their comments on earlier drafts of the paper.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Machine learning in compiler optimization</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>O'boyle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE</title>
+		<meeting>the IEEE</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">106</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Cycle Models</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ltd</surname></persName>
+		</author>
+		<ptr target="https://www.arm.com/products/development-tools/simulation/cycle-models" />
+		<imprint />
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Ithemal: Accurate, portable and fast basic block throughput estimation using deep neural networks</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mendis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Renda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Amarasinghe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Carbin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Predicting execution time of computer programs using sparse polynomial regression</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B.-G</forename><surname>Chun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Maniatis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Naik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Pmevo: portable inference of port mappings for out-of-order processors by evolutionary optimization</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ritter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hack</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 41st ACM SIGPLAN Conference on Programming Language Design and Implementation</title>
+		<meeting>the 41st ACM SIGPLAN Conference on Programming Language Design and Implementation</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="608" to="622" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">End-to-end deep learning of optimization heuristics</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cummins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Petoumenos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Leather</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">26th Int. Conference on Parallel Architectures and Compilation Techniques</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Neural network-based performance prediction for task migration on s-nuca many-cores</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pathania</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mitra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Henkel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Computers</title>
+		<imprint>
+			<biblScope unit="volume">70</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1691" to="1704" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Comparative analysis of machine learning models for performance prediction of the spec benchmarks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tousi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Luján</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="11" to="994" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Long short-term memory</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hochreiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schmidhuber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural computation</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1735" to="1780" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Investigating dynamic routing in tree-structured LSTM for sentiment analysis</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-C</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conference on Empirical Methods in Natural Language Processing and Int. Joint Conference on NLP</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multilingual code-switching identification via lstm recurrent neural networks</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Samih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Maharjan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Attia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kallmeyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Solorio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Second Workshop on Computational Approaches to Code Switching</title>
+		<meeting>the Second Workshop on Computational Approaches to Code Switching</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Distributed representations of words and phrases and their compositionality</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title level="m" type="main">CATREEN: Context-Aware Code Timing Estimation with Stacked Recurrent Networks</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Amalou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">É</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Puaut</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-03776508" />
+		<imprint>
+			<date type="published" when="2022-09">Sep. 2022</date>
+		</imprint>
+	</monogr>
+	<note>preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Mibench: A free, commercially representative embedded benchmark suite</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Guthaus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Ringenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ernst</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">M</forename><surname>Austin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mudge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">B</forename><surname>Brown</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">4th IEEE international workshop on workload characterization</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">L.-N</forename><surname>Pouchet</surname></persName>
+		</author>
+		<ptr target="http://www.cse.ohiostate.edu/pouchet/software/polybench" />
+		<title level="m">The polyhedral benchmark suite</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">J-Trace PRO -The Leading Trace Solution</title>
+		<author>
+			<persName><surname>Segger</surname></persName>
+		</author>
+		<ptr target="https://www.segger.com/products/debug-probes/j-trace/" />
+		<imprint />
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Ozone User Guide &amp; Reference Manual</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Gmbh</surname></persName>
+		</author>
+		<ptr target="https://www.segger.com/" />
+		<imprint>
+			<biblScope unit="page">348</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">PyTorch</title>
+		<author>
+			<persName><surname>Pytorch</surname></persName>
+		</author>
+		<ptr target="https://www.pytorch.org" />
+		<imprint />
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">WE-HML: hybrid WCET estimation using machine learning for architectures with caches</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Amalou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Puaut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Muller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">27th IEEE Int. Conference on Embedded and Real-Time Computing Systems and Applications</title>
+		<imprint>
+			<publisher>RTCSA</publisher>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Sharp nearby, fuzzy far away: How neural language models use context</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1805.04623</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Attention is all you need</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Parmar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Uszkoreit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jones</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Gomez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ł</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Polosukhin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

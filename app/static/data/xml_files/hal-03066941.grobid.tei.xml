@@ -1,0 +1,1712 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Compression Boosts Differentially Private Federated Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Raouf</forename><surname>Kerkouche</surname></persName>
+							<email>raouf.kerkouche@inria.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Gergely</forename><surname>Ács</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Claude</forename><surname>Castelluccia</surname></persName>
+							<email>claude.castelluccia@inria.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Genevès</surname></persName>
+							<email>pierre.geneves@cnrs.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution">Privatics team Univ. Grenoble Alpes</orgName>
+								<address>
+									<postCode>38000</postCode>
+									<settlement>Inria, Grenoble</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Crysys Lab BME-HIT</orgName>
+								<address>
+									<settlement>Budapest</settlement>
+									<country key="HU">Hungary</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Privatics team Univ. Grenoble Alpes</orgName>
+								<address>
+									<postCode>38000</postCode>
+									<settlement>Inria, Grenoble</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">Tyrex team Univ. Grenoble Alpes</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Grenoble INP</orgName>
+								<address>
+									<postCode>38000</postCode>
+									<settlement>LIG, Grenoble</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Compression Boosts Differentially Private Federated Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AEE24B320534F1600C1A0B3EE3D8A631</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Federated Learning</term>
+					<term>Compressive Sensing</term>
+					<term>Differential Privacy</term>
+					<term>Compression</term>
+					<term>Denoising</term>
+					<term>Bandwidth Efficiency</term>
+					<term>Scalability</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Federated Learning allows distributed entities to train a common model collaboratively without sharing their own data. Although it prevents data collection and aggregation by exchanging only parameter updates, it remains vulnerable to various inference and reconstruction attacks where a malicious entity can learn private information about the participants' training data from the captured gradients. Differential Privacy is used to obtain theoretically sound privacy guarantees against such inference attacks by noising the exchanged update vectors. However, the added noise is proportional to the model size which can be very large with modern neural networks. This can result in poor model quality. In this paper, compressive sensing is used to reduce the model size and hence increase model quality without sacrificing privacy. We show experimentally, using 2 datasets, that our privacy-preserving proposal can reduce the communication costs by up to 95% with only a negligible performance penalty compared to traditional non-private federated learning schemes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Traditional training of machine learning models usually requires the centralization of the user-held data. This limitation is considerably penalizing especially when the data is sensitive such as medical data. To deal with this problem, federated learning protocols have been proposed <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref> to collaboratively train a common model without sharing any private training data held by individual parties. In federated learning, each entity trains a common model using its own training data, and share only the gradients (i.e., model update) with each other through a central server. The server updates the common model with the shared gradients, and re-distributes the updated model to the clients for further training. This process repeats until the convergence of the common model.</p><p>However, sharing gradients computed by individual parties can leak information about their private training data. Several recent attacks have demonstrated that a sufficiently skilled adversary, who can capture the model updates (gradients) sent by individual parties, can infer whether a specific record <ref type="bibr" target="#b2">[3]</ref> or a group property <ref type="bibr" target="#b3">[4]</ref> is present in the dataset of a specific party. Moreover, complete training samples can also be reconstructed purely from the captured gradients <ref type="bibr" target="#b4">[5]</ref>.</p><p>Differential privacy (DP) <ref type="bibr" target="#b5">[6]</ref> has become a de facto privacy model which provides a formal privacy guarantee for any participant. It guarantees that the common model is roughly independent of any single client's training data, and depends only on the characteristics that are shared among multiple parties' training data <ref type="foot" target="#foot_0">1</ref> . DP can be achieved by adding Gaussian noise to the shared model updates. In addition, secure aggregation protocols <ref type="bibr" target="#b6">[7]</ref> allow parties to add noise to the model update in a distributed manner, which increases robustness against byzantine attacks and requires less noise than other decentralized perturbation approaches such as randomized response <ref type="bibr" target="#b7">[8]</ref> used in local differential privacy <ref type="bibr" target="#b8">[9]</ref>.</p><p>However, the norm of the added noise is proportional to the model size (i.e., the number of model parameters or weights). Indeed, the noise is added to every coordinate value of the gradient (update) vector including those which have very small magnitude and would anyway not improve convergence. In other words, adding noise to sparse model updates can slow down convergence significantly, or result in poor model quality <ref type="bibr" target="#b9">[10]</ref>.</p><p>In this paper, we propose to first lossily compress the gradients using compressive sensing <ref type="bibr" target="#b10">[11]</ref>- <ref type="bibr" target="#b12">[13]</ref> and then add noise to the compressed gradient vector. The noisy compressed vectors are then transferred to the server for aggregation. This approach has several benefits. First, compressed gradients are less sparse and also shorter than the original gradient vectors. This allows to add less noise to the compressed gradients, which eventually yields faster convergence with more accurate models than the uncompressed noisy gradients. Second, compressive sensing is linear, which means that the sum of compressed gradients equals the compressed sum of the gradients. Therefore, compressive sensing can be smoothly integrated with secure aggregation; the server can only access the aggregated compressed vectors which is identical to the compressed aggregation. Finally, by decreasing the size of the model updates, communication costs are reduced and bandwidth is saved. This is crucial with resource constrained parties training large models which is not uncommon nowadays.</p><p>The main contributions of this paper are summarized as follows:</p><p>• We use a slighlty modified version of compressive sensing to compress sparse model updates in federated learning. Our protocol, called FL-CS allows to save bandwidth and reduce communication costs by transferring only the low frequency components of the gradient vector to the server (instead of some random frequency components like in traditional compressive sensing). The server can reconstruct the approximated sparse gradient vector by efficiently solving a convex quadratic optimization problem. This approach provides more accurate reconstruction than simply applying the inverse Fourier transform on the low frequency components. Our approach is scalable to large gradient vectors and is almost as accurate as the vanilla federated learning protocol, referred to FL-STD, without any compression, still incuring much smaller communication cost.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>•</head><p>We propose a privacy-preserving extension of FL-CS, called FL-CS-DP, by adding Gaussian noise to the compressed gradients. In FL-CS-DP, participants inject Gaussian noise in a distributed manner so that the sum of the noisy compressed vectors is differentially private. In addition, secure aggregation guarantees that the server (or any other third party) can only learn the noisy compressed aggregate owing to the linear compression scheme. Reconstructing the approximated gradients is an instance of Basis Pursuit Denoising (or LASSO), which can be solved with efficient solvers that provide large accuracy despite the added Gaussian noise. We show that FL-CS-DP produces more accurate models than FL-STD-DP, that is, the differentially private variant of the vanilla federated learning protocol without any compression. Therefore, compression boosts the accuracy of differentially private federated learning and also reduces bandwith cost by more than 60% with early stopping <ref type="bibr" target="#b13">[14]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>•</head><p>We evaluate our proposals on real datasets, a private medical dataset of 1.2 millions of US hospital patients and the public Fashion-MNIST dataset. We show that FL-CS-DP reduces its bandwidth cost with more than 60% compared to FL-STD-DP, meanwhile suffering negligible performance loss compared to uncompressed federated learning without any privacy guarantee (FL-STD).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Background</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Federated Learning (FL-STD)</head><p>In federated learning <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b1">[2]</ref>, multiple parties (clients) build a common machine learning model from union of their training data without sharing them with each other. At each round of the training, a selected set of clients retrieve the global model from the parameter server, update the global model based on their own training data, and send back their updated model to the server. The server aggregates the updated models of all clients to obtain a global model that is re-distributed to some selected parties in the next round.</p><p>In particular, a subset K of all N clients are randomly selected at each round to update the global model, and </p><formula xml:id="formula_0">w t = w t-1 + k∈K |D k | j |Dj | ∆w k t ,</formula><p>where |D k | is known to the server for all k (a client's update is weighted with the size of its training data). The server stops training after a fixed number of rounds T cl , or when the performance of the common model does not improve on a held-out data.</p><p>Note that each D k may be generated from different distributions (i.e., Non-IID case), that is, any client's local dataset may not be representative of the population distribution <ref type="bibr" target="#b1">[2]</ref>. This can happen, for example, when not all output classes are represented in every client's training data. The federated learning of neural networks is summarized in Alg. 1. In the sequel, each client is assumed to use the same model architecture. 12</p><formula xml:id="formula_1">w k t = SGD(D k , w k t-1 , T gd ) Output: Model update (w k t -w k t-1 )</formula><p>The motivation of federated learning is three-fold: first, it aims to provide confidentiality of each participant's training data by sharing only model updates instead of potentially sensitive training data. Second, in order to decrease communication costs, clients can perform multiple local SGD iterations before sending their update back to the server. Third, in each round, only a few clients are required to perform local training of the common model, Output: Model w which further diminishes communication costs and makes the approach especially appealing with large number of clients. However, several prior works have demonstrated that model updates do leak potentially sensitive information <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>. Hence, simply not sharing training data per se is not enough to guarantee their confidentiality.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Differential Privacy</head><p>Differential privacy allows a party to privately release information about a dataset: a function of an input dataset is perturbed, so that any information which can differentiate a record from the rest of the dataset is bounded <ref type="bibr" target="#b5">[6]</ref>.</p><p>Definition 1 (Privacy loss). Let A be a privacy mechanism which assigns a value Range(A) to a dataset D. The privacy loss of A with datasets D and D at output</p><formula xml:id="formula_2">O ∈ Range(A) is a random variable P(A, D, D , O) = log Pr[A(D)=O] Pr[A(D )=O]</formula><p>where the probability is taken on the randomness of A.</p><p>Definition 2 (( , δ)-Differential Privacy <ref type="bibr" target="#b5">[6]</ref>). A privacy mechanism A guarantees (ε, δ)-differential privacy if for any database D and D , differing on at most one record,</p><formula xml:id="formula_3">Pr O∼A(D) [P(A, D, D , O) &gt; ε] ≤ δ.</formula><p>Intuitively, this guarantees that an adversary, provided with the output of A, can draw almost the same conclusions (up to ε with probability larger than 1 -δ) about any record no matter if it is included in the input of A or not <ref type="bibr" target="#b5">[6]</ref>. That is, for any record owner, a privacy breach is unlikely to be due to its participation in the dataset. Moments Accountant. Differential privacy maintains composition; the privacy guarantee of the k-fold adaptive composition of A 1:k = A 1 , . . . , A k can be computed using the moments accountant method <ref type="bibr" target="#b14">[15]</ref>. In particular, it follows from Markov's inequality that Pr <ref type="figure">(A,</ref><ref type="figure">D,</ref><ref type="figure">D ,</ref><ref type="figure">O</ref>))] is the log of the moment generating function of the privacy loss. The privacy guarantee of the composite mechanism A 1:k can be computed using that α A 1:k (λ) ≤ k i=1 α Ai (λ) <ref type="bibr" target="#b14">[15]</ref>. Gaussian Mechanism. There are a few ways to achieve DP, including the Gaussian mechanism <ref type="bibr" target="#b5">[6]</ref>. A fundamental concept of all of them is the global sensitivity of a function <ref type="bibr" target="#b5">[6]</ref>. The Gaussian Mechanism <ref type="bibr" target="#b5">[6]</ref> consists of adding Gaussian noise to the true output of a function. In particular, for any function f : D → R n , the Gaussian mechanism is defined as adding i.i.d Gaussian noise with variance (∆ 2 f • σ) 2 and zero mean to each coordinate value of f (D). Recall that the pdf of the Gaussian distribution with mean µ and variance ξ 2 is</p><formula xml:id="formula_4">[P(A, D, D , O) ≥ ε] ≤ E[exp(λP(A, D, D , O))]/ exp(λε) for any output O ∈ Range(A) and λ &gt; 0. This implies that A is (ε, δ)- DP with δ = min λ exp(α A (λ) -λε), where α A (λ) = max D,D log E O∼A(D) [exp(λP</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Definition 3 (Global L p -sensitivity). For any function</head><formula xml:id="formula_5">f : D → R n , the L p -sensitivity of f is ∆ p f = max D,D ||f (D) -f (D )|| p ,</formula><formula xml:id="formula_6">pdf G(µ,ξ) (x) = 1 √ 2πξ exp - (x -µ) 2 2ξ 2<label>(1)</label></formula><p>In fact, the Gaussian mechanism draws vector values from a multivariate spherical (or isotropic) Gaussian distribution which is described by random variable</p><formula xml:id="formula_7">G(f (D), ∆ 2 f •σI n ),</formula><p>where n is omitted if its unambiguous in the given context.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Compressive Sensing</head><p>Compressive Sensing (CS) introduced in <ref type="bibr" target="#b10">[11]</ref>- <ref type="bibr" target="#b12">[13]</ref> aims to recover the original signal from significantly fewer samples (or measurements) than other traditional sampling techniques, which are based on the Nyquist-Shannon theorem, by exploiting the sparsity of the signal.</p><p>Consider a signal x ∈ R n which admits a sparse representation s ∈ R n , that is, there exists a sparsity orthonormal basis with matrix Ψ ∈ R n×n such that:</p><formula xml:id="formula_8">x = Ψs<label>(2)</label></formula><p>Here, s is U -sparse if s 0 = U. Ψ can denote any linear transformation, such as Discrete Fourier/Cosine or Wavelet Transform, which render the original signal x sparse. If x is already sparse, then Ψ can be the identity matrix which corresponds to the canonical sparsity basis.</p><p>In CS, x is reconstructed from some of its linear measurements. For m measurements, the signal is "sampled" in m values y j = φ j , x (1 ≤ j ≤ m), where the vectors φ j ∈ R n constitute the sensing basis matrix Φ = (φ 1 , φ 2 , . . . , φ m ) ∈ R m×n . Here, m = r×n, where r is the compression ratio. Therefore, the compression operator C is defined as:</p><formula xml:id="formula_9">C(x, m) = y = Φx = ΦΨs = Θs (<label>3</label></formula><formula xml:id="formula_10">)</formula><p>where Θ is the sparsity sensing matrix. There are several options to select the sensing matrix Φ. When Φ is a random matrix (e.g., each element of Φ is an iid sample from G(0, 1/m)), then Ψ works well with an arbitrary sparsity basis <ref type="bibr" target="#b15">[16]</ref>. On the other hand, the numerical reconstruction of x in that case has a complexity of O(mn) which can be very large (recall that n is the model size in the order of 10 6 ). Another (faster) option for the sensing matrix Φ is when it is composed of random m rows of the matrix of the (real) Discrete Fourier/Cosine Transform. Then, matrix multiplication can be executed with the Fast Fourier Transform (FFT) in O(n ln n), but such sensing matrix provides accurate reconstruction if Ψ is the identity matrix, i.e. x is already sparse <ref type="bibr" target="#b15">[16]</ref>. Fortunately, this usually holds for gradient vectors (or can be made as such by sparsification without significantly affecting convergence) and hence we will use this option in this paper.</p><p>In order to recover s from y, one has to solve a system of linear equations with m equations and n unknowns. Although this system seems underdetermined because m &lt; n, CS exploits the U -sparsity of s for the reconstruction. It aims to reconstruct the sparse vector s from y = Θs given the sparsity sensing basis Θ by solving the following optimization problem:</p><formula xml:id="formula_11">arg min s s 0 s.t. y = Θs</formula><p>Since this optimization problem is NP-complete <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b16">[17]</ref>, it is further relaxed into the following slightly different problem called Basis Pursuit (BP) <ref type="bibr" target="#b17">[18]</ref>:</p><formula xml:id="formula_12">arg min s s 1 s.t. y = Θs</formula><p>Indeed, the convex L 1 -norm usually approximates the non-convex L 0 -norm well, and the relaxed optimization problem can be efficiently solved with any convex optimization technique <ref type="bibr" target="#b15">[16]</ref> (e.g., with an LP solver).</p><p>When the measurements y are noisy (i.e., y = Θs+z, where z ∈ R m is the additional bounded iid noise, i.e. z 2 ≤ κ), then the following convex quadratic variant of BP called Basis Pursuit Denoising (BPDN) is rather considered:</p><formula xml:id="formula_13">R(y, κ) = arg min s s 1 s.t. y -Θs 2 ≤ κ and therefore D(y, n) = Ψ arg min s 1 2 y -Θs 2 2 + λ s 1 ,<label>(4)</label></formula><p>Eq. ( <ref type="formula" target="#formula_13">4</ref>) defines our decompression operator and is an instance of convex quadratic programming. In this paper, we use the Orthant-Wise Limited-memory Quasi-Newton (OWL-QN) algorithm <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b19">[20]</ref>, an extension of Limitedmemory BFGS, which is a numerical scalable optimization procedure that can efficiently solve Eq. ( <ref type="formula" target="#formula_13">4</ref>). When λ → 0, the problem in Eq. ( <ref type="formula" target="#formula_13">4</ref>) becomes BP because λ s 1 tends to 0. In the case of non-noisy sensing measurements, a BP decoder is more adapted to reconstruct the sparse signal s. Otherwise, BPDN is more suited. This has particular importance in our case when the compressed vector (measurements) are noised to guarantee Differential Privacy, i.e., y = Θs + z where z ∼ N (0, SIσ) (see Section 3.2.2). Approximate signal reconstruction from noisy measurements have been theoretically justified in <ref type="bibr" target="#b20">[21]</ref> from the Restricted Isometry Property of Θ.</p><p>Definition 4 (Restricted Isometry Property (RIP) <ref type="bibr" target="#b21">[22]</ref>). The U -restricted isometry constants 0 ≤ δ U &lt; 1 of a matrix Θ ∈ R m×n is defined as the smallest number such that:</p><formula xml:id="formula_14">(1 -δ U ) s 2 2 ≤ Θs 2 2 ≤ (1 + δ U ) s 2 2</formula><p>for all U -sparse vector s ∈ R n and we say that the matrix Θ obeys the Restricted Isometry Property (or RIP(U ,δ U )) of order U &lt; m.</p><p>Theorem 1 (Reconstruction error of BPDN <ref type="bibr" target="#b20">[21]</ref>).</p><formula xml:id="formula_15">If Θ is RIP(2U, δ U ) and δ U &lt; √ 2 -1, then ||s -R(y, κ)|| 2 ≤ Cκ + (D/ √ K)||s -s K || 1</formula><p>, where C and D are constants and s K is a vector with all but the K-largest entries of s set to zero 2 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">For instance, for δ</head><formula xml:id="formula_16">U = 0.2, C &lt; 4.2 and D &lt; 8.5</formula><p>Finally, notice that the compression operator C in Eq. ( <ref type="formula" target="#formula_9">3</ref>) is linear, which means that:</p><formula xml:id="formula_17">i C(x i , m) = C i x i , m</formula><p>and therefore</p><formula xml:id="formula_18">D i C(x i , m) ≈ i x i</formula><p>This linearity allows to combine secure aggregation and compressive sensing described in Section 3.2.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4.">Error Propagation</head><p>Biased estimation of the gradients may prevent model convergence unless the approximation error introduced by lossy compression techniques, such as compressive sensing, sketching, or quantization, is accumulated and re-injected in every optimization round <ref type="bibr" target="#b22">[23]</ref> as follows:</p><formula xml:id="formula_19">g t = ∇f (B, w t-1 ) : Computing gradients on batch B p t = ηg t + e t-1 : Error feedback (correction) ∆ t = D(C(p t )) : Reconstruction of p t w t = w t-1 -∆ t :</formula><p>Updating model parameters (weights) e t = p t -∆ t : Error accumulation</p><p>The corrected direction p t is obtained by adding the error e t-1 accumulated over all iterations to g t (see Alg. 2 in <ref type="bibr" target="#b22">[23]</ref> for more details). Here, the error is calculated based on the biased estimation of the update given by D(C(p t )).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Federated Learning with Compressive Sensing</head><p>In the FL-STD scheme, presented in Section 2, each randomly selected client sends its complete model update to the server. Knowing that a model has on average millions of parameters (each is a floating point value represented on 32 bits), the network can suffer from large traffic.</p><p>To decrease large network traffic, we adapt compressive sensing to federated learning. The new algoritm is called FL-CS. Moreover, this scheme is also extended to a privacy-preserving version, called FL-CS-DP, which aims to protect the training data of every participant. We show that compression improves model performance with Differential Privacy by reducing the added noise compared to the uncompressed DP variant of federated learning. Hence, both FL-CS and FL-CS-DP improve bandwidth efficiency, and in addition, FL-CS-DP also boosts the accuracy of differentially private federated learning.</p><p>In what follows, we will first describe the non-private scheme FL-CS and then the privacy-preserving FL-CS-DP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">FL-CS: Federated Learning with Compressive Sensing</head><p>CS assumes the sparsity of the reconstructed signal in a specific basis domain Ψ as explained in Section 2.</p><p>We assume the model update (as a signal) to be already sparse in the time domain, that is, Ψ is canonical sparsity basis (i.e., Ψ = I), and therefore, the compression operator is C(∆w, m) = Φ∆w, where Φ is composed of the first m rows of the matrix of the Discrete Cosine Transform (DCT) <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b24">[25]</ref>. Indeed, due to the large energy compaction property of DCT, the first coefficients, which correspond to the low frequency components of ∆w, tend to have the largest magnitude and hence convey the most information about the model update <ref type="bibr" target="#b25">[26]</ref>. In fact, for a canonical sparsity basis Ψ = I, Θ = Φ is RIP with overwhelming probability as soon as m = O(U ln 4 n) if ∆w is U -sparse <ref type="bibr" target="#b26">[27]</ref>. Therefore, reconstruction is possible according to Theorem 1.</p><p>The decompression operator D is defined Eq. ( <ref type="formula" target="#formula_13">4</ref>). Note that the compression operator can be computed in O(n ln n) with FFT and the decompression (or reconstruction) operator is implemented with the OWL-QN algorithm <ref type="bibr" target="#b18">[19]</ref> which makes our approach reasonably fast in practice. FL-CS is described in Alg. 3. A client first computes its update ∆w k t with SGD, and then transfers the compressed update C(∆w k t , m), which consists of the first m DCT coefficients of the update (Line 18). The server takes the average of the client's updates (Line 8), updates the momentum (Line 9), and computes the error e t (Line 10-12) due to compression following the error propagation technique described in Section 2.4. This error is accumulated over all federated rounds and added to the model (Line 13) to compensate its negative effect on convergence. The server uses OWL-QN <ref type="bibr" target="#b18">[19]</ref>, <ref type="bibr" target="#b19">[20]</ref> to reconstruct the error-compensated aggregated model update s t ∈ R n . Finally, the server updates the global model as w t = w t-1 + s t before re-distributing the updated model to a new set of clients K.</p><p>Notice that the error e t , the averaged model update y t , as well as the momentum are maintained in the compressed domain and have a size of m instead of n. This is possible due to the linearity of the compression scheme which is detailed in Section 2.3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Scalable reconstruction:</head><p>Although OWL-QN is reasonably fast in practice, its computational overhead may not be tolerated with very large models. A scalable reconstruction is proposed as follows. On the client side, the update vector ∆w t is shuffled and then splitted into P equally-sized chunks. Then, the compression operator C is applied on each individual chunk. Finally, the compressed chunks are transferred to the server. On the server side, each chunk is reconstructed independently using OWL-QN. The decompressed chunks are concatenated, and the resulted vector with size n is reshuffled to obtain s t by inverting the client-side shuffling.</p><p>Shuffling is performed by each client identically which guarantees that the compressed chunks can still be aggregated by the server. In practice, this can be implemented by sharing a common random seed among all participants to initialize the shuffler. As the server also knows this seed, it can invert this shuffling and reconstruct the aggregated model updates.</p><p>Notice that, instead of reconstructing the complete update vector at once, the server performs reconstruction on smaller chunks which makes decompression faster.</p><p>In addition, shuffling guarantees that the sparsity of the chunks is proportional to the sparsity of the whole update vector (i.e., if the update vector is U -sparse then all its chunks are U/P -sparse). Hence, the same compression operator C(•, m/P ) can be applied on every chunk without increasing the compression ratio (i.e., the compressed update still has a size of m).</p><p>Note that shuffling is also performed identically over all the rounds to maintain the error.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">FL-CS-DP: Differentially Private Federated</head><p>Learning with Compressive Sensing 3.2.1. Privacy Model. We consider an adversary, or a set of colluding adversaries, who can access any update vector sent by the server or any clients at each round of the protocol. A plausible adversary is a participating entity, i.e. a malicious client or server, that wants to infer the training data used by other participants. The adversary is passive (i.e., honest-but-curious), that is, it follows the learning protocol faithfully.</p><p>Different privacy requirements can be considered depending on what information the adversary aims to infer. In general, private information can be inferred about:</p><p>• any record (user) in any dataset of any client (record-level privacy),</p><p>• any client/party (client-level privacy).</p><p>To illustrate the above requirements, suppose that several banks build a common model to predict the creditworthiness of their customers. A bank certainly does not want other banks to learn the financial status of any of their customers (record privacy) and perhaps not even the average income of all their customers (client privacy).</p><p>Record-level privacy is a standard requirement used in the privacy literature and is usually weaker than clientlevel privacy. Indeed, client-level privacy requires to hide any information which is unique to a client including perhaps all its training data.</p><p>We aim at developing a solution that provides clientlevel privacy and is also bandwidth efficient. For example, in the scenario of collaborating banks, we aim at protecting any information that is unique to each single bank's training data. The adversary should not be able to learn from the received model or its updates whether any client's data is involved in the federated run (up to ε and δ). We believe that this adversarial model is reasonable in many practical applications when the confidential information spans over multiple samples in the training data of a single client (e.g., the presence of a group a samples, such as people from a certain race). Differential Privacy guarantees plausible deniability not only to any groups of samples of a client but also to any client in the federated run. Therefore, any negative privacy impact on a party (or its training samples) cannot be attributed to their involvement in the protocol run. </p><formula xml:id="formula_20">z k ∼ G(0, SσI/ √ K) is added to ĉk t such that k∈K (ĉ k t + z k ) = k∈K ĉk</formula><p>t + G(0, SσI) as the sum of Gaussian random variables also follows Gaussian distribution 3 and then differential privacy is satisfied where ε and δ can be computed using the moments accountant described in Section 2.2.</p><p>However, as the noise is inversely proportional to √ K, z k is likely to be small if |K| is too large. Therefore, the adversary accessing an individual update ĉk t + z k can almost learn a non-noisy update since z k is small. Hence, each client uses secure aggregation to encrypt its individual update before sending it to the server. Upon reception, the server sums the encrypted updates as:</p><formula xml:id="formula_21">k∈K y k t = k∈K Enc K k (ĉ k t + z k ) = k∈K ĉk t + k∈K z k = k∈K ĉk t + G(0, SσI)<label>(5)</label></formula><p>where <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b27">[28]</ref> for details). Here the modulo is taken element-wise and</p><formula xml:id="formula_22">Enc K k (ĉ k t + z k ) = ĉk t + z k + K k mod p and k K k = 0 (see</formula><formula xml:id="formula_23">p = 2 log 2 (max k ||ĉ k t +z k ||∞|K|) . Let γ k t = 1/ max 1, ||c k t ||2 S</formula><p>. Then,</p><formula xml:id="formula_24">k∈K ĉk t = k∈K γ k t c k t = k∈K γ k t C(∆w k t , m) = C( k∈K γ k t ∆w k t , m)<label>(6)</label></formula><p>where the last equality comes from the linearity of the compression operation (see Section 2.3). Plugging Eq. ( <ref type="formula" target="#formula_24">6</ref>) into Eq. ( <ref type="formula" target="#formula_21">5</ref>). we get that k∈K</p><formula xml:id="formula_25">y k t = C( k∈K γ k t ∆w k t , m) + G(0, SσI)</formula><p>This is an instance of BPDN (see Section 2.3), and therefore the direct reconstruction of k∈K y k t would be an approximation of k∈K γ k t ∆w k t . However, analogously to FL-CS, the server applies error propagation and computes the (noisy) error e t from y t = (1/|K|) k∈K y k t (in Line 10), and decompresses e t into s t by using OWL-QN. Recall that the reconstruction algorithm solves the BPDN problem, where a sparse vector s is reconstructed from m noisy measurements of the form Θs + z, where the noise z ∈ R m is assumed to be identically and independently distributed over its elements with a Gaussian distribution <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b17">[18]</ref>. Since z ∼ G(0, SIσ) in our case, the reconstruction algorithm is therefore optimized to reconstruct the differentially private compressed vectors (see Theorem 1).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Privacy analysis:</head><p>The server can only access the noisy aggregate which is sufficiently perturbed to ensure differential privacy; any client-specific information that could be inferred from the noisy aggregate is tracked and quantified by the moments accountant, described in Section 2.2, as follows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">More precisely,</head><formula xml:id="formula_26">i G(ν i , ξ i ) = G( i ν i , i ξ 2 i ) Let η 0 (x|ξ) = pdf G(0,ξ) (x) and η 1 (x|ξ) = (1 - C)pdf G(0,ξ) (x) + Cpdf G(1,ξ) (x)</formula><p>where C is the sampling probability of a single client in a single round. Let α(λ|C) = log max(E 1 (λ, ξ, C), E 2 (λ, ξ, C)) <ref type="bibr" target="#b6">(7)</ref> where</p><formula xml:id="formula_27">E 1 (λ, ξ, C) = R η 0 (x|ξ, C) • η0(x|ξ,C) η1(x|ξ,C) λ</formula><p>dx and</p><formula xml:id="formula_28">E 2 (λ, ξ, C) = R η 1 (x|ξ, C) • η1(x|ξ,C) η0(x|ξ,C) λ dx.</formula><p>Theorem 2 (Privacy of FL-CS-DP). FL-CS-DP is</p><formula xml:id="formula_29">(min λ (T cl • α(λ|C) -log δ)/λ, δ)-DP.</formula><p>Given a fixed value of δ, ε is computed numerically as in <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b28">[29]</ref>.</p><p>The magnitude of the added Gaussian noise is proportional to the sensitivity S, which is in turn often proportional to the model size n <ref type="bibr" target="#b9">[10]</ref>. Hence, when n becomes large, SGD often fails to converge due to the perturbation error caused by the added noise <ref type="bibr" target="#b9">[10]</ref>. In our approach, the perturbation error is less since Gaussian noise is added to the compressed vector with size m &lt; n. On the other hand, compression also induces some reconstruction error owing to its lossy nature. The total error is the sum of the reconstruction and the perturbation error and is quantified in Theorem 1. Finding the right trade-off between these two errors is the key to achieve good model quality. 17</p><formula xml:id="formula_30">w k t = SGD(D k , w k t-1 , T gd ) 18 ∆w k t = w k t -w k t-1 Output: Model update C(∆w k t , m)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental Results</head><p>The goal of this section is to evaluate the performance of our proposed schemes FL-CS and FL-CS-DP on a benchmark dataset and a realistic in-hospital mortality prediction scenario. We aim at evaluating their performance with different levels of compression and comparing them with the performance of the following learning protocols:</p><p>• FL-STD: It is described in Section 2.1 (see Alg. 1).</p><p>• FL-RND: This baseline follows the algorithm of FL-STD except that a random subset of the update vector with size m ≤ n is sent to the server instead 17</p><formula xml:id="formula_31">w k t = SGD(D k , w k t-1 , T gd ) 18 ∆w k t = w k t -w k t-1 19 c k t = C(∆w k t , m) 20 ĉk t = c k t / max 1, ||c k t || 2 S Output: EncK k (G(ĉ k t , SIσ/ |K|))</formula><p>Algorithm 5: FL-STD-DP: Federated Learning with Client Privacy </p><formula xml:id="formula_32">11 w k t-1 = w 12 ∆w k t = SGD(D k , w k-1 t , T gd ) -w k t-1 13 ∆ ŵk t = ∆w k t / max 1, ||∆w k t || 2 S Output: EncK k (G(∆ ŵk t , SIσ/ |K|))</formula><p>of the complete update of size n. Each client selects the same random subset of coordinates from the update vector, but a different subset in every round. The server then averages the received updates before updating only the corresponding m weights. Note that if m = n, FL-RND is equivalent to FL-STD (see Alg. 6).</p><p>• FL-FREQ: In this baseline, a client transforms the model update to the frequency domain by using DCT <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b24">[25]</ref>, and then the first m coefficients (low frequency components) are extracted and sent to the server as in FL-CS. However, as opposed to FL-CS, the server reconstructs the aggregated update vector by applying the inverse DCT on the aggregated compressed vectors where the last nm coefficients are zeroed out (see Alg. 7). This baseline corresponds to a low-pass filter applied on the update vector. Φ in Alg. 7 is composed of the first m rows of the matrix of the DCT.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Medical Dataset</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.1.">The In-hospital Mortality Prediction Scenario.</head><p>The ability to accurately predict the risks in the patient's perspectives of evolution is a crucial prerequisite in order to adapt the care that certain patients receive <ref type="bibr" target="#b29">[30]</ref>.</p><p>We consider the scenario where several hospitals are collaborating to train models for in-hospital mortality prediction using our Federated Learning schemes. This wellstudied real-world problem consists in trying to precisely identify the patients who are at risk of dying from complications during their hospital stay <ref type="bibr" target="#b29">[30]</ref>- <ref type="bibr" target="#b31">[32]</ref>. As commonly found in the literature <ref type="bibr" target="#b29">[30]</ref>, for such predictions, we focus on hospital admissions of adults hospitalized for at least 3 days, excluding elective admissions.</p><p>4.1.2. The Premier Healthcare Database. We used EHR data from the Premier healthcare database <ref type="foot" target="#foot_1">4</ref> which is one of the largest clinical databases in the United States, collecting information from millions of patients over a period of 12 months from 415 hospitals in the USA <ref type="bibr" target="#b29">[30]</ref>. These hospitals are supposedly representative of the United States hospital experience <ref type="bibr" target="#b29">[30]</ref>. Each hospital in the database provides discharge files that are dated records of all billable items (including therapeutic and diagnostic procedures, medication, and laboratory usage) which are all linked to a given patient's admission <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b32">[33]</ref>.</p><p>The initial snapshot of the database used in our work (before pre-processing step) comprises the EHR data of 1,271,733 hospital admissions. Electronic Health Record (EHR) is a digital version of a patient's paper chart readily available in hospitals. For developing supervised learning and specifically deep learning models, we focus on a specific set of features from EHR data. The features of interest that capture the patients information are summarized in Table <ref type="table" target="#tab_2">1</ref>. There is a total of 24,428 features per patient, mainly due to the variety of drugs possibly served. As in <ref type="bibr" target="#b30">[31]</ref>, we also removed all the features which appear on less than 100 patients' records, hence, the number of features was reduced to 7,280 features.</p><p>The Medication regimen complexity index (MRCI) <ref type="bibr" target="#b33">[34]</ref> is an aggregate score computed from a total of 65 items, whose purpose is to indicate the complexity of the patient's situation. The minimum MRCI score for a patient is 1.5, which represents a single tablet or capsule taken once a day as needed (single medication). However the maximum is not defined since the number of medications increases the score <ref type="bibr" target="#b33">[34]</ref>. In our case, after statistical analysis of our dataset, we consider the MRCI score as ranging from 2 to 60.</p><p>Most real datasets like ours are generally imbalanced with a skewed distribution between the classes. In our case, the positive cases (patients who die during their hospital stay) represent only 3% of all patients. Table <ref type="table" target="#tab_3">2</ref> gives more details about this distribution after the preprocessing step which is discussed in A.1. To deal with this well-known problem, we have decided to use down- Drugs given to the patient on the 1 st day of hospitalization. There is a total of 24,419 possible drugs that can be served.</p><p>sampling technique <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b35">[36]</ref>, a standard solution used for this purpose 5 .</p><p>4.1.3. Model architecture. As in <ref type="bibr" target="#b30">[31]</ref>, we use a fully connected neural network model with the following architecture: two hidden layers of 200 units, which use a Relu activation function followed by an output layer of 1 unit with sigmoid activation function and a binary cross entropy loss function. A dropout layer with a rate set to 0.5 is used between each hidden layer and between the last hidden layer and the output layer. This results in 1,496,601 parameters in total. We tune η from 0.01 to 0.5 with an increment value of 0.005. As in <ref type="bibr" target="#b36">[37]</ref>, we fix the momentum parameter ρ to 0.9 and we tuned the global learning rate η G from 0.05 to 2.0 with an increment value of 0.05. The number of chunks is P = 200. The hyperparameters used by each of the considered schemes are summarized in Table <ref type="table">6</ref>.</p><p>The sensitivity S is selected during an initialization round for each scheme by taking the median value over N L 2 -norm values. We also noticed that the sensitivity of FL-CS-DP, FL-RND and FL-FREQ are nearly equivalent for the same level of compression. For this reason, the same sensitivity value is used for each compressed scheme and for the same compression ratio. Table <ref type="table">5</ref> and Table <ref type="table">6</ref> show the selected clipping threshold (i.e., sensitivity S) for each dataset and according to each compression ratio. Preprocessing: The pixel of each image is an unsigned integer in the range between 0 and 255. We rescale them to the range [0,1] instead.</p><p>Model architecture: For Fashion-MNIST, we use a model <ref type="bibr" target="#b1">[2]</ref> with the following architecture: a convolutional neural network (CNN) with two 5x5 convolution layers (the first with 32 filters, the second with 64, each followed with 5. We have also tested weighted loss function and oversampling techniques. But, we noticed experimentally that downsampling technique outperforms the others whatever the considered scheme. 2x2 max pooling), a fully connected layer with 512 units and ReLu activation, and a final softmax output layer. This results in 1,663,370 parameters in total. We tune η from 0.01 to 0.5 with an increment value of 0.005. As in <ref type="bibr" target="#b36">[37]</ref>, we fix the momentum parameter ρ to 0.9 and we tuned the global learning rate η G from 0.05 to 2.0 with an increment value of 0.05. The number of chunks used is P = 200. The hyperparameters used by each of the considered schemes are summarized in Table <ref type="table">5</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Computational environment</head><p>Our experiments were performed on a server running Ubuntu 18.04 LTS equipped with a Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz, 192GB RAM, and two NVIDIA Quadro P5000 GPU card of 16 Go each. We use Keras 2.2.0 <ref type="bibr" target="#b39">[40]</ref> with a TensorFlow backend 1.12.0 <ref type="bibr" target="#b40">[41]</ref> and Numpy 1.14.3 <ref type="bibr" target="#b41">[42]</ref> to implement our models and experiments. We use Python 3.6.5 and our code runs on a Docker container to simplify reproducibility.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Results</head><p>Table <ref type="table" target="#tab_5">3</ref> represents the best accuracy over 200 rounds for each scheme on the Fashion-Mnist dataset. Round corresponds to the round when the best accuracy is reached and Cost is the average bandwidth consumption calculated as: r × n × 32 × Round × C, where 32 is the number of bits necessary to represent a float value, n is the uncompressed model size, r = m n , m is the compressed model size, C is the sampling probability of a client, and Round is the round when we get the the best accuracy.</p><p>Table <ref type="table" target="#tab_6">4</ref> represents the best balanced accuracy over 100 rounds for each scheme on the Medical dataset. AUROC (area under the receiver operating characteristic curve <ref type="bibr" target="#b42">[43]</ref>) corresponds to the AUROC value when the best balanced accuracy is reached, round is also the round when we get the best balanced accuracy, and finally, Cost is the average bandwidth consumption calculated as for the Fashion-MNIST dataset described above.</p><p>Without DP, notice that our FL-CS scheme outperforms FL-RND and FL-FREQ whatever the considered compression ratio or the dataset are. Also, compared to FL-STD, our scheme started to reach the same accuracy from a compression ratio r being equal or greater than 0.1 for both datasets, although the differences between FL-CS and FL-STD for a compression ratio of 0.05 are only of 6% 6 and 1% 7 for the Fashion-Mnist and the medical datasets, respectively. However, FL-STD consumes much more bandwidth than FL-CS. Indeed, FL-CS reduces the bandwidth cost by 95% compared to FL-STD with a compression ratio of 0.05 for both datasets, while the 6. Based on the accuracy 7. Based on the balanced accuracy <ref type="bibr" target="#b43">[44]</ref>, <ref type="bibr" target="#b44">[45]</ref> bandwidth cost is reduced to 80% and 85% with a compression ratio of 0.2 for Fashion-MNIST and the medical data, respectively.</p><p>Surprisingly, for the smallest compression ratio 5%, FL-CS-DP performs as well as FL-RND-DP or FL-FREQ in terms of accuracy and much better in terms of bandwidth consumption. Indeed, FL-CS-DP with a compression ratio of 5% reached 0.78 of accuracy on Fashion-MNIST, however, our baseline FL-RND needs a compression ratio of 10% to reach a similar result (0.77) and 20% to have slightly better result (0.80). The same holds for the medical dataset, where FL-CS-DP reached 0.69 and 0.76 of balanced accuracy and Auroc, respectively. However, our other baseline FL-FREQ needs a compression ratio of 20% to reach the same performance. FL-CS-DP performs better for a small compression ratio. Indeed, FL-CS-DP reaches 0.78, 0.73 and 0.66 for 5%, 10% and 20% of accuracy, respectively, on Fashion-MNIST. The accuracy degradation with DP can be explained by the fact increasing the compression ratio r also increases the sensitivity S which has a direct impact on the additive Gaussian noise as explained in Section 3.2.2. Indeed, the standard deviation of the normal distribution is σ × S.</p><p>On both datasets, FL-STD-DP suffers from the noise due to the large sensitivity which is the largest one in Table <ref type="table">5</ref> and 6 for a compression ratio of 1.0 (uncompressed model). Even for FL-RND and FL-FREQ, the gap between the non-private and the private version is larger when the compression ratio increases for both datasets. As the noise proportional to S and is added to every coordinate, the norm of the added noise increases with the model size n. This has negative impact on model convergence for a large n as discussed in <ref type="bibr" target="#b9">[10]</ref>. By decreasing n, compression helps reach better utility.</p><p>On Fashion-MNIST, FL-CS-DP with a compression ratio of 0.05 outperforms FL-STD-DP on both utility and bandwidth preservation. However, and even though FL-CS-DP reduces the bandwidth cost by 95% which is not negligible, they have both comparable accuracy on the medical data. It can be explained by the reduction of the noise due to the reduction of S and σ (see Table <ref type="table">6</ref> and Table <ref type="table">5</ref>) needed to reach an value of at most 1 after T cl rounds.</p><p>There is a possible tradeoff between the privacy, communication cost, and utility. Indeed, having a small (better privacy) results in a reduction of the communication costs while it decreases accuracy. FL-STD-DP, for example, converges to the best accuracy (61%) after only 25 rounds with early stopping, which results on high privacy ( =0.69) and low communication cost (only 22.18 Megabyte). However, the accuracy degradation is more important (about 30% which is the worst accuracy degradation indicated in Table <ref type="table" target="#tab_5">3</ref>). Indeed, the large amount of added noise impacts the convergence of the model which can not achieve an accuracy larger than 61%.</p><p>Finally, we highlight a trade-off for FL-CS-DP. As mentioned above, FL-CS-DP performs better when the smallest compression ratio r is used, as the sensitivity for this level of compression is the smallest one. On the other hand, the compression ratio cannot be decreased arbitrarily as it will result in large reconstruction error. Therefore, one has to find the smallest compression ratio thay is small enough to reduce the perturbation error but large enough to induce small reconstruction error.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Related work</head><p>Privacy of Federated Learning: There exist a few inference attacks specifically designed against federated learning schemes. In <ref type="bibr" target="#b3">[4]</ref>, the adversary's goal is to infer whether records with a specific property are included in the training dataset of the other participants (called batch property inference). The authors demonstrate the attack by inferring whether black people are included in any of the training datasets, where the common model is trained for gender classification (i.e., the inferred property is independent of the learning objective). The adversary is supposed to have access to the aggregated model update of honest participants. In <ref type="bibr" target="#b2">[3]</ref>, the proposed attack infers if a specific person is included in the training dataset of the participants (aka, Membership inference). The adversary extracts the following features from every snapshot of the common model, which is a neural network: output value, hidden layers, loss values, and the gradient of the loss with respect to the parameters of each layer. These features are used to train a membership inference model, which is a convolutional neural network.</p><p>The concept of Client-based Differential Privacy has been introduced in <ref type="bibr" target="#b45">[46]</ref> and <ref type="bibr" target="#b46">[47]</ref>, where the goal is to hide any information that is specific to a single client's training data. These algorithms bound and noise the contribution of a single client's instead of a single record in the client's dataset. The noise is added by the server, hence, unlike our solution, these works assume that the server is trusted. Also, the noise is drawn from continuous distributions. Bandwidth Optimization in Federated Learning: Different quantization methods have been proposed to save the bandwidth and reduce the communication costs in federated learning. They can be divided into two main groups: unbiased and biased methods. The unbiased approximation techniques use probabilistic quantization schemes to compress the stochastic gradient and attempt to approximate the true gradient value as much as possible <ref type="bibr" target="#b47">[48]</ref> [49] [50] <ref type="bibr" target="#b50">[51]</ref>. However, biased approximations of the stochastic gradient can still guarantee convergence both in theory and practice <ref type="bibr" target="#b51">[52]</ref>- <ref type="bibr" target="#b53">[54]</ref>. In signSGD <ref type="bibr" target="#b51">[52]</ref>, all the clients calculate the stochastic gradient based on a single mini-batch and then send the sign vector of this gradient to the server. The server calculates the aggregated sign vector by taking the median (majority vote) and sends the signs of the aggregated signs back to each client.</p><p>A different line of works exploit the sparsity of model updates to compress model updates. Our work belongs to this line. The authors in <ref type="bibr" target="#b54">[55]</ref> use CS for low-complexity energy-efficient ECG compression. Although compressed sensing was primarily designed for compression <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b12">[13]</ref>, it was extended for denoising as in <ref type="bibr" target="#b55">[56]</ref>, <ref type="bibr" target="#b56">[57]</ref> where compressive sensing is used for the purpose of denoising. In <ref type="bibr" target="#b57">[58]</ref>, compressed sensing based denoising and certain artificial intelligence are combined to improve the prediction performance.</p><p>CS was also used with DP in <ref type="bibr" target="#b58">[59]</ref>. The authors show that the amount of noise is reduced from O( √ n) to O(log(n)), when the noise is added on the sampled coefficients instead of the original database.   Existing works <ref type="bibr" target="#b59">[60]</ref>, <ref type="bibr" target="#b60">[61]</ref> proposed to use a compressive sensing for federated learning in order to compress model updates without privacy guarantees. However, they assume that all clients participate in each round (as they maintain an error accumulation vector at each client due to the compression scheme), but as discussed in <ref type="bibr" target="#b61">[62]</ref> this assumption is not always realistic. Recently in <ref type="bibr" target="#b62">[63]</ref> another compressive sensing algorithm was proposed for federated learning for the denoising purpose (instead of the compression), where the added noise is due to the network transmission.</p><p>Sketching was adapted to federated learning for the purpose of compressing model updates in <ref type="bibr" target="#b36">[37]</ref>. The authors proposed to use Count-Sketch <ref type="bibr" target="#b63">[64]</ref> to retrieve the largest weights in the update vector on the server side. After that, the server uses two additional communication rounds to inform the clients about what gradient values they need to send back to the server. The server then takes the average of the received gradients and zerosout the others before updating the model. The error due to the compression is maintained at each client, and the participation of all clients are required in each round which, as per <ref type="bibr" target="#b61">[62]</ref> and as discussed above, is not practical to federated learning. In <ref type="bibr" target="#b64">[65]</ref>, the aforementioned scheme is improved further by directly retrieving the most updated gradient values without asking for their positions in the update vector. This makes the scheme more efficient as it needs fewer communication rounds. Similarly to our approach, the error vector is also maintained on the server side instead of the client side, which is clearly a better fit for federated learning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Conclusion</head><p>In this paper, we propose to extend Federated Learning with compressive sensing. Specifically, we propose two schemes: the first one (FL-CS) uses compressive sensing in order to reduce communication bandwidth. The second one (FL-CS-DP) combines compressive sensing and differential privacy in order to protect participants' information.</p><p>We present some experimental results that are based on the Fashion-MNIST dataset as well as on a medical dataset of 1.2 millions of US hospital patients. Results indicate that using compressive sensing in Federated Learning allows to reduce the communication costs by up to 95% for a moderate loss of accuracy.</p><p>Results with the privacy-preserving extension FL-CS-DP indicate that compression happens to be especially useful and interesting in this context as it improves accuracy. This is due to the sensitivity reduction which is proportional to the added noise needed to guarantee differential privacy, and to the considered optimization problem (BPDN) which reconstructs data from noisy measurements.</p><p>We believe that the proposed privacy-preserving extension (FL-CS-DP) is an interesting alternative to differentially private federated learning (FL-STD-DP), as it improves both accuracy and bandwidth cost.</p><p>split randomly the dataset into disjoint training and testing data (80% and 20% respectively). The final dataset for testing contains 254,347 patients, with 7,882 deceased patients and 246,465 nondeceased patients (see Table <ref type="table" target="#tab_3">2</ref>). Using Client-Level differential privacy requires to add more noise than Record-Level differential privacy, because the privacy purposes are not the same as detailled in Section 2. To reduce the noise (when is fixed) and then improve the utility, we have to reduce the number of iterations or to reduce the sampling probability which are the parameters used to compute . We therefore have two options to reduce the sampling probability:</p><p>-Reducing the number of clients selected at each round |K|. However this option also decreases the amount of data, and hence have a negative impact on the utility. We therefore preferred to use the next option. -Increasing the total number of clients N :</p><p>we created more hospitals by splitting randomly the training data over 5011 "virtual" hospitals. We also, took care to have at least one in-hospital dead patient per hospital. Each hospital contains 203 patients except one which has 356 patients. We created 5011 hospitals in order to have approximately the same number of patients per hospital, each of them with some inhospital dead patients. In practise, Client-Level differential privacy is more adapted to an environment with a large set of clients as explained in <ref type="bibr" target="#b45">[46]</ref>, <ref type="bibr" target="#b46">[47]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Imbalanced data</head><p>The dataset of each hospital is imbalanced because the proportion of patients that leave the hospital alive is, fortunately, much larger than in-hospital dead patients. To deal with this well-known problem, we have decided to use downsampling technique <ref type="bibr" target="#b34">[35]</ref>, <ref type="bibr" target="#b35">[36]</ref>, a standard solution used for this purpose. 10   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Performance Metrics</head><p>We use the following metrics:</p><p>• Balanced accuracy <ref type="bibr" target="#b43">[44]</ref>, <ref type="bibr" target="#b44">[45]</ref> is computed as 1/2 • ( TP P + TN N ) = TPR +TNR 2 and is mainly used with imbalanced data. True Positive Rate (TPR ) and True Negative Rate (TNR ): TPR = TP P and TNR = TN N , where P and N are the number of positive and negative instances, respectively, and TP and TN are the number of true positive and true negative instances. We note that traditional ("non-balanced") accuracy metrics such as TP +TN P +N can be misleading for very imbalanced data <ref type="bibr" target="#b65">[66]</ref>: 10. We have also tested weighted loss function and oversampling techniques. But, we noticed experimentally that downsampling technique outperforms the other techniques for all the schemes. in our dataset, the minority class has only 3% of all the training samples (see Table <ref type="table" target="#tab_3">2</ref>), which means that a biased (and totally useless) model always predicting the majority class would have a (nonbalanced) accuracy of 97%.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>•</head><p>The area under the ROC curve (AUROC ) is also a frequently used accuracy metric. The ROC curve is calculated by varying the prediction threshold from 1 to 0, when TPR and FPR are calculated at each threshold. The area under this curve is then used to measure the quality of the predictions. A random guess has an AUROC value of 0.5, whereas a perfect prediction has the largest AUROC value of 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4. Evaluation Method.</head><p>First, we split randomly the dataset of each hospital into disjoint training and testing data (80% and 20% respectively). An entire federated run is executed with this split, and all the metrics are evaluated in every round on the union of all clients' testing data. All metric values of the round with the best balanced metric are recorded.  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Algorithm 1 : 2 Initialize common model w0 3 for t = 1 to T cl do 4 Select K clients uniformly at random 5 forj |D j | ∆w k t 9 end Output: Global model wt 10 11</head><label>123145910</label><figDesc>FL-STD: Federated Learning1 Server: each client k in K do 6 ∆w k t = Client k (wt-1) Client k (w k t-1 ):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Algorithm 2 : 3 w</head><label>23</label><figDesc>Stochastic Gradient Descent Input: D : training data, T gd : local epochs, w : weights 1 for t = 1 to T gd do 2 Select batch B from D randomly = w -η∇f (B; w) 4 end</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>for all D, D differing in at most one record, where || • || p denotes the L p -norm.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Algorithm 3 : 3 for t = 1 to T cl do 4 Select K clients uniformly at random 5 for each client k in K do 6 9 ut = ρut- 1 + 14 end Output: Global model wt 15 16</head><label>331456911415</label><figDesc>FL-CS: Federated Learning 1 Server: 2 Initialize common model w0 , ηG , ρ, ut = 0, et = 0 yt : Momentum 10 et = ηGut + et-1 : Error Feedback 11 st = D(et, n) : Reconstruction 12 et = et -C(st, m) : Error accumulation 13 wt = wt-1 + st : Update Client k (w k t-1 ):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Algorithm 4 : 3 for t = 1 to T cl do 4 Select K clients uniformly at random 5 for each client k in K do 6 9 ut = ρut- 1 + 14 end Output: Global model wt 15 16</head><label>431456911415</label><figDesc>FL-CS-DP: Private Compressive Sensing Federated Learning 1 Server: 2 Initialize common model w0 , ηG , ρ, ut = 0, et = 0 yt : Momentum 10 et = ηGut + et-1 : Error Feedback 11 st = D(et, n) : Reconstruction 12 et = et -C(st, m) : Error accumulation 13 wt = wt-1 + st : Update Client k (w k t-1 ):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>2 Initialize common model w0 3 for t = 1 to T cl do 4 Select K clients randomly 5 for each client k in K do 6 ∆ 7 end 8 wt = wt-1 + 1 |K| k ∆ wk t 9 end 10</head><label>231456781910</label><figDesc>wk t = Client k (wt-1) Client k (w):</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Algorithm 6 : 2 Initialize common model w0 3 for t = 1 to T cl do 4 Generate a random seed ζ Select K clients uniformly at random 5 for each client k in K do 6 y 10 forGlobal model wt 15 16Algorithm 7 : 2 Initialize common model w0 3 for t = 1 to T cl do 4 Select K clients uniformly at random 5 for|D j | ∆w k t 9 ŷt = Φ - 1</head><label>6231456101572314591</label><figDesc>FL-RND 1 Server: k t = Client k (wt-1, ζ) each element i in G do 11 wt[i] = wt-1[i] + yt[j] Client k (w k t-1 , ζ): 17 w k t = SGD(D k , w k t-1 , T gd ) 18 ∆w k t = w k t -w k t-1 19 Generates a random set G = {x ∈ {1, • • • , n}} of m randominteger values such that m ≤ n based on the seed ζ 20 ∆ w k t =Sample m elements from ∆w k t by taking each element of G as a coordinate Output: The sampled Model update ∆ w k t FL-FREQ 1 Server: each client k in K do 6 ∆y k t = Client k (wt-1) yt : Transform to time domain 10 wt = wt-1 + ŷt</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>C = |K|/N denotes the fraction of selected clients. At round t, a selected client k ∈ K executes T gd local gradient descent iterations on the common model w t-1 using its own training data D k (D = ∪ k∈K D k ), and obtains the updated model w k t , where the number of weights is denoted by n (i.e., |w k t | = |∆w k t | = n for all k and t). Each client k submits the update ∆w k t = w k t -w k t-1 to the server, which then updates the common model as follows:</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>3.2.2. Operation. FL-CS-DP is described in Alg. 4. Client-level differential privacy requires each client to add Gaussian noise to the compressed model updates. In particular, each client first calculates c k t = C(∆w k t , m) (in Line 19), which is then clipped (in Line 20) to obtain ĉk</figDesc><table /><note><p>t with L 2 -norm at most S. Then, random noise</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>TABLE 1 :</head><label>1</label><figDesc>Descriptions of features</figDesc><table><row><cell>Features</cell><cell>Descriptions</cell></row><row><cell>Age</cell><cell>Value in the range of 15 and 89</cell></row><row><cell>Gender</cell><cell>Male, Female or Unknown</cell></row><row><cell>Admission type</cell><cell>Emergency, Urgent, Trauma Center: visits to a trauma center/hospital or Unknown</cell></row><row><cell>MRCI</cell><cell>Medication regimen complexity index score (ranging from 2 to 60)</cell></row><row><cell>Drugs</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>TABLE 2 :</head><label>2</label><figDesc>Number of instances for our case study. The Medical dataset contains in total 1,271,733 records.</figDesc><table><row><cell>Data</cell><cell cols="2">Positive cases Negative cases</cell><cell>Ratio</cell><cell>Total</cell></row><row><cell>Train</cell><cell>32,106</cell><cell>985,280</cell><cell cols="2">3.16% 1,017,386</cell></row><row><cell>Test</cell><cell>7,882</cell><cell>246,465</cell><cell>3.10%</cell><cell>254,347</cell></row><row><cell cols="2">4.2. Fashion-MNIST</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">4.2.1. Data Description. Fashion-MNIST database of</cell></row><row><cell cols="5">fashion articles consists of 60,000 28x28 grayscale images</cell></row><row><cell cols="5">of 10 fashion categories, along with a test set of 10,000</cell></row><row><cell cols="2">images [38] [39].</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">4.2.2. Data pre-processing &amp; experimental setup.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>TABLE 3 :</head><label>3</label><figDesc>Summary of results on Fashion-MNIST dataset.</figDesc><table><row><cell>Compression ratio (r)</cell><cell>Algorithms</cell><cell>Bal Acc</cell><cell>AUROC</cell><cell cols="2">Performance Round Cost(Megabyte)</cell><cell></cell></row><row><cell></cell><cell>FL-RND</cell><cell>0.60</cell><cell>0.69</cell><cell>99</cell><cell>4.73</cell><cell>N/A</cell></row><row><cell>0.05</cell><cell>FL-FREQ FL-CS</cell><cell>0.69 0.73</cell><cell>0.76 0.80</cell><cell>100 100</cell><cell>4.78 4.78</cell><cell>N/A N/A</cell></row><row><cell></cell><cell>FL-RND-DP</cell><cell>0.60</cell><cell>0.69</cell><cell>100</cell><cell>4.78</cell><cell>1</cell></row><row><cell></cell><cell>FL-FREQ-DP</cell><cell>0.65</cell><cell>0.72</cell><cell>100</cell><cell>4.78</cell><cell>1</cell></row><row><cell></cell><cell>FL-CS-DP</cell><cell>0.69</cell><cell>0.76</cell><cell>100</cell><cell>4.78</cell><cell>1</cell></row><row><cell></cell><cell>FL-RND</cell><cell>0.66</cell><cell>0.73</cell><cell>100</cell><cell>9.56</cell><cell>N/A</cell></row><row><cell>0.1</cell><cell>FL-FREQ FL-CS</cell><cell>0.71 0.73</cell><cell>0.78 0.81</cell><cell>100 87</cell><cell>9.56 8.31</cell><cell>N/A N/A</cell></row><row><cell></cell><cell>FL-RND-DP</cell><cell>0.65</cell><cell>0.72</cell><cell>100</cell><cell>9.56</cell><cell>1</cell></row><row><cell></cell><cell>FL-FREQ-DP</cell><cell>0.67</cell><cell>0.74</cell><cell>100</cell><cell>9.56</cell><cell>1</cell></row><row><cell></cell><cell>FL-CS-DP</cell><cell>0.69</cell><cell>0.76</cell><cell>99</cell><cell>9.46</cell><cell>1</cell></row><row><cell></cell><cell>FL-RND</cell><cell>0.69</cell><cell>0.76</cell><cell>100</cell><cell>19.11</cell><cell>N/A</cell></row><row><cell>0.2</cell><cell>FL-FREQ FL-CS</cell><cell>0.72 0.73</cell><cell>0.80 0.81</cell><cell>100 74</cell><cell>19.11 14.14</cell><cell>N/A N/A</cell></row><row><cell></cell><cell>FL-RND-DP</cell><cell>0.67</cell><cell>0.74</cell><cell>99</cell><cell>18.92</cell><cell>1</cell></row><row><cell></cell><cell>FL-FREQ-DP</cell><cell>0.69</cell><cell>0.76</cell><cell>100</cell><cell>19.11</cell><cell>1</cell></row><row><cell></cell><cell>FL-CS-DP</cell><cell>0.68</cell><cell>0.74</cell><cell>64</cell><cell>12.23</cell><cell>0.92</cell></row><row><cell>1.0</cell><cell>FL-STD FL-STD-DP</cell><cell>0.74 0.70</cell><cell>0.82 0.77</cell><cell>99 93</cell><cell>94.62 88.88</cell><cell>N/A 0.99</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>TABLE 4 :</head><label>4</label><figDesc>Summary of results on Medical dataset.</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head></head><label></label><figDesc>Output: The sampled Model update Φ∆w k Generates a random set G = {x ∈ {1, • • • , n}} of m random integer values such that m ≤ n based on the seed ζ</figDesc><table><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>11</cell><cell>end</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Output: Global model wt</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>12</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">13 Client k (w k t-1 ):</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>14</cell><cell cols="2">w k t = SGD(D k , w k t-1 , T gd )</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>15</cell><cell cols="2">∆w k t = w k t -w k t-1</cell></row><row><cell>7</cell><cell>end</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>8</cell><cell>yt = k</cell><cell>|D k |</cell><cell></cell><cell></cell><cell></cell></row><row><cell>11</cell><cell>end</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="2">Output: Global model wt</cell><cell></cell><cell></cell><cell></cell></row><row><cell>12</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">13 Client k (w k t-1 ):</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>14</cell><cell cols="3">w k t = SGD(D k , w k t-1 , T gd )</cell><cell></cell><cell></cell></row><row><cell>15</cell><cell cols="2">∆w k t = w k t -w k t-1</cell><cell></cell><cell></cell><cell></cell></row><row><cell>16</cell><cell cols="2">∆ w k t = Φ∆w k t / max 1,</cell><cell>||C( ∆ w k t ,m)|| 2</cell><cell>7 8</cell><cell>end yt = k</cell><cell>|D k | N j |D j | ∆w k t</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>9</cell><cell>j = 0</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>13</cell><cell>end</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>14</cell><cell>end</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">Output: Global model wt</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>15</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">16 Client k (w k t-1 , ζ):</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>17</cell><cell cols="2">w k t = SGD(D k , w k t-1 , T gd )</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>18</cell><cell cols="2">∆w k t = w k t -w k t-1</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>19</cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>20</cell><cell cols="2">∆ w k t =Sample m elements from ∆w k t by taking</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="2">each element of G as a coordinate</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell>21</cell><cell cols="2">∆ w k t = ∆ w k t / max 1,</cell><cell>|| ∆ w k t || 2</cell></row></table><note><p>t Algorithm 8: FL-RND-DP 1 Server: 2 Initialize common model w0 3 for t = 1 to T cl do 4 Generate a random seed ζ Select K clients uniformly at random 5 for each client k in K do 6 y k t = Client k (wt-1, ζ) 10 for each element i in G do 11 wt[i] = wt-1[i] + yt[j] 12 j = j + 1 S Output: EncK k (G( ∆ w k t , SIσ/ |K|)) Algorithm 9: FL-FREQ-DP 1 Server: 2 Initialize common model w0 3 for t = 1 to T cl do 4 Select K clients uniformly at random 5 for each client k in K do 6 ∆y k t = Client k (wt-1) N j |D j | ∆w k t 9 ŷt = Φ -1 yt : Transform to time domain 10 wt = wt-1 + ŷt S Output: EncK k (G( ∆ w k t , SIσ/ |K|))</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>If client-level DP is considered. See Section 3.2.1 for more clarification.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_1"><p>https://www.premierinc.com/newsroom/education/premierhealthcare-database-whitepaper</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A. Medical data: Data pre-processing &amp; experimental setup details</head><p>This section describes the experimental setting which is used to evaluate the accuracy and the privacy of our proposals.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.1. Preprocessing</head><p>1) Features normalization: we extract from the dataset the values of each feature represented in Table <ref type="table">1</ref>. For gender, we use one-hot encoding: Male, Female and Unknown. Similarly, for admission type we use 4 features: Emergency, Urgent, Trauma Center, and Unknown 8 . For drugs, we extract 24,419 features which correspond to the different drugs (name and dosage). A given patient receives only a few of the possible drugs served, resulting in a very sparse patient's record. We use a MinMax normalization for age and MRCI in order to rescale the values of these features between 0 and 1 (using MinMaxScaler class of scikit-learn 9 ). The labels that we consider are boolean: true means that the patient died during his hospital stay while false means she survived. 2) Patients filtering: We consider patient and drug information of the first day at the hospital so that we can make predictions 24 hours after admission (as commonly found in the literature <ref type="bibr" target="#b29">[30]</ref>, <ref type="bibr" target="#b31">[32]</ref>). We filter out the pregnant and new-born patients because the medication types and admission services are not the same for theses two categories of patients. Our model prediction is built without patients' historical medical data. This has the advantage to require minimum patient's information and to work for new patients. 3) Hospitals filtering: The dataset contains 415 hospitals for a total size of 1,271,733 records. We</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Privacy-preserving deep learning</title>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Shokri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vitaly</forename><surname>Shmatikov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGSAC Conference on Computer and Communications Security</title>
+		<imprint>
+			<date type="published" when="2015">2015. 2015</date>
+			<biblScope unit="page" from="1310" to="1321" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Communication-efficient learning of deep networks from decentralized data</title>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eider</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename><surname>Hampson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blaise</forename><surname>Agüera Y Arcas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Comprehensive privacy analysis of deep learning: Passive and active white-box inference attacks against centralized and federated learning</title>
+		<author>
+			<persName><forename type="first">Milad</forename><surname>Nasr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reza</forename><surname>Shokri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Houmansadr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Symposium on Security and Privacy</title>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+			<biblScope unit="page" from="739" to="753" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Inference attacks against collaborative learning</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Melis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Congzheng</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emiliano</forename><surname>De Cristofaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vitaly</forename><surname>Shmatikov</surname></persName>
+		</author>
+		<idno>abs/1805.04049</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Deep leakage from gradients</title>
+		<author>
+			<persName><forename type="first">Ligeng</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhijian</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 32: Annual Conference on Neural Information Processing Systems 2019</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Hanna</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Hugo</forename><surname>Wallach</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Alina</forename><surname>Larochelle</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Beygelzimer</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Emily</forename><forename type="middle">B</forename><surname>Florence D'alché-Buc</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Roman</forename><surname>Fox</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Garnett</surname></persName>
+		</editor>
+		<meeting><address><addrLine>NeurIPS; Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-08-14">2019. 8-14 December 2019. 2019</date>
+			<biblScope unit="page" from="14747" to="14756" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The Algorithmic Foundations of Differential Privacy</title>
+		<author>
+			<persName><forename type="first">Cynthia</forename><surname>Dwork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aaron</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends in Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Practical secure aggregation for federated learning on user-held data</title>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<idno>abs/1611.04482</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">RAP-POR: randomized aggregatable privacy-preserving ordinal response</title>
+		<author>
+			<persName><forename type="first">Úlfar</forename><surname>Erlingsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vasyl</forename><surname>Pihur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Korolova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2014 ACM SIGSAC Conference on Computer and Communications Security</title>
+		<editor>
+			<persName><forename type="first">Gail-Joon</forename><surname>Ahn</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Moti</forename><surname>Yung</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Ninghui</forename><surname>Li</surname></persName>
+		</editor>
+		<meeting>the 2014 ACM SIGSAC Conference on Computer and Communications Security<address><addrLine>Scottsdale, AZ, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014">November 3-7, 2014. 2014</date>
+			<biblScope unit="page" from="1054" to="1067" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A hybrid approach to privacy-preserving federated learning</title>
+		<author>
+			<persName><forename type="first">Stacey</forename><surname>Truex</surname></persName>
+		</author>
+		<idno>abs/1812.03224</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Votingbased approaches for differentially private federated learning</title>
+		<author>
+			<persName><forename type="first">Yuqing</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi-Hsuan</forename><surname>Tsai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Pittaluga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Masoud</forename><surname>Faraki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiang</forename><surname>Manmohan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Compressed sensing</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Donoho</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on information theory</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1289" to="1306" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Near-optimal signal recovery from random projections: Universal encoding strategies?</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Emmanuel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terence</forename><surname>Candes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE transactions on information theory</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="5406" to="5425" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Robust uncertainty principles: Exact signal reconstruction from highly incomplete frequency information</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Emmanuel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Justin</forename><surname>Candès</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terence</forename><surname>Romberg</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on information theory</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="489" to="509" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Keras early stopping</title>
+		<author>
+			<persName><forename type="first">Chollet</forename><surname>Franc</surname></persName>
+		</author>
+		<ptr target="https://keras.io/api/callbacks/earlystopping/" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Deep learning with differential privacy</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Brendan</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Mironov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunal</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM CCS</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="308" to="318" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">Compressed sensing: When sparsity meets sampling</title>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Jacques</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Vandergheynst</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>Wiley-Blackwell</publisher>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech. Rep</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Sparse approximate solutions to linear systems</title>
+		<author>
+			<persName><forename type="first">Balas</forename><surname>Kausik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natarajan</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM journal on computing</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="227" to="234" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Atomic decomposition by basis pursuit</title>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Shaobing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chen</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">L</forename><surname>Donoho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">A</forename><surname>Saunders</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM review</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="129" to="159" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Scalable training of l 1regularized log-linear models</title>
+		<author>
+			<persName><forename type="first">Galen</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th international conference on Machine learning</title>
+		<meeting>the 24th international conference on Machine learning</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="33" to="40" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Orthant-wise limited-memory quasi-newton (owl-qn) algorithm implementation</title>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Taylor</surname></persName>
+		</author>
+		<ptr target="https://bitbucket.org/rtaylor/pylbfgs/src/master/" />
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">The restricted isometry property and its implications for compressed sensing</title>
+		<author>
+			<persName><forename type="first">Emmanuel</forename><surname>Candès</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Compte Rendus de l&apos;Academie des Sciences</title>
+		<imprint>
+			<biblScope unit="volume">346</biblScope>
+			<biblScope unit="page" from="589" to="592" />
+			<date type="published" when="2008-05">05 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Decoding by linear programming</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Emmanuel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terence</forename><surname>Candes</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE transactions on information theory</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="4203" to="4215" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Error feedback fixes signsgd and other gradient compression schemes</title>
+		<author>
+			<persName><forename type="first">Praneeth</forename><surname>Sai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Karimireddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><forename type="middle">U</forename><surname>Rebjock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Stich</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Jaggi</surname></persName>
+		</author>
+		<idno>abs/1901.09847</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Discrete cosine transform</title>
+		<author>
+			<persName><forename type="first">Nasir</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Natarajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamisetty R</forename><surname>Rao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE transactions on Computers</title>
+		<imprint>
+			<biblScope unit="volume">100</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="90" to="93" />
+			<date type="published" when="1974">1974</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">How I came up with the discrete cosine transform</title>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Nasir</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Digit. Signal Process</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="4" to="5" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Discrete cosine transform: algorithms, advantages, applications</title>
+		<author>
+			<persName><forename type="first">Ramamohan</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Yip</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>Academic press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Near-optimal signal recovery from random projections: Universal encoding strategies?</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Candes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Theory</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="5406" to="5425" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">I have a dream! (differentially private smart metering)</title>
+		<author>
+			<persName><forename type="first">Gergely</forename><surname>Ács</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claude</forename><surname>Castelluccia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Information Hiding -13th International Conference</title>
+		<meeting><address><addrLine>IH</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<biblScope unit="page" from="118" to="132" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Rényi differential privacy of the sampled gaussian mechanism</title>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Mironov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunal</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno>abs/1908.10530</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Scalable and interpretable predictive models for electronic health records</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fejza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Genevès</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Layaïda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bosson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE 5th International Conference on Data Science and Advanced Analytics (DSAA)</title>
+		<imprint>
+			<date type="published" when="2018-10">Oct 2018</date>
+			<biblScope unit="page" from="341" to="350" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Improving palliative care with deep learning</title>
+		<author>
+			<persName><forename type="first">Anand</forename><surname>Avati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenneth</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephanie</forename><surname>Harman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lance</forename><surname>Downing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Nigam</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Shah</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">BMC Medical Informatics and Decision Making</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">122</biblScope>
+			<date type="published" when="2018-12">Dec 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Scalable and accurate deep learning with electronic health records</title>
+		<author>
+			<persName><forename type="first">Alvin</forename><surname>Rajkomar</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/s41746-018-0029-1</idno>
+		<idno type="arXiv">arXiv:1801.07860</idno>
+	</analytic>
+	<monogr>
+		<title level="j">npj Digital Medicine</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page">18</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Transforming the premier perspective® hospital database into the observational medical outcomes partnership (omop) common data model</title>
+		<author>
+			<persName><forename type="first">Rupa</forename><surname>Makadia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><forename type="middle">B</forename><surname>Ryan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">EGEMS</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Automating the medication regimen complexity index</title>
+		<author>
+			<persName><forename type="first">Margaret</forename><surname>Mcdonald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sridevi</forename><surname>Sridharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Janice</forename><surname>Foust</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Polina</forename><surname>Kogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liliana</forename><surname>Pezzin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Penny</forename><surname>Feldman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Medical Informatics Association : JAMIA</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="page">12</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<monogr>
+		<title level="m" type="main">Survey of resampling techniques for improving classification performance in unbalanced datasets</title>
+		<author>
+			<persName><forename type="first">Ajinkya</forename><surname>More</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.06048</idno>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Learning from imbalanced data</title>
+		<author>
+			<persName><forename type="first">Haibo</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edwardo</forename><forename type="middle">A</forename><surname>Garcia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on knowledge and data engineering</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="1263" to="1284" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Communication-efficient distributed sgd with sketching</title>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Ivkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rothchild</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enayat</forename><surname>Ullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raman</forename><surname>Arora</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="13144" to="13154" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Fashion-mnist: a novel image dataset for benchmarking machine learning algorithms</title>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Vollgraf</surname></persName>
+		</author>
+		<idno>abs/1708.07747</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Keras datasets</title>
+		<author>
+			<persName><forename type="first">Chollet</forename><surname>Franc</surname></persName>
+		</author>
+		<ptr target="https://keras.io/datasets/" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Keras</title>
+		<author>
+			<persName><forename type="first">Chollet</forename><surname>Franc</surname></persName>
+		</author>
+		<ptr target="https://keras.io" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">TensorFlow: Large-scale machine learning on heterogeneous systems</title>
+		<author>
+			<persName><forename type="first">Martín</forename><surname>Abadi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Software available from tensorflow</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<monogr>
+		<author>
+			<persName><forename type="first">Travis</forename><forename type="middle">E</forename><surname>Oliphant</surname></persName>
+		</author>
+		<title level="m">A guide to NumPy</title>
+		<imprint>
+			<publisher>Trelgol Publishing USA</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="volume">1</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<author>
+			<persName><forename type="first">Sarang</forename><surname>Narkhede</surname></persName>
+		</author>
+		<ptr target="https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5" />
+		<title level="m">Understanding auc -roc curve</title>
+		<imprint>
+			<date type="published" when="2018">, 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">The balanced accuracy and its posterior distribution</title>
+		<author>
+			<persName><forename type="first">Kay</forename><surname>Henning Brodersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Soon</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Klaas</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joachim</forename><forename type="middle">M</forename><surname>Enno Stephan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Buhmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2010 20th International Conference on Pattern Recognition</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="3121" to="3124" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Evaluation measures for models assessment over imbalanced data sets</title>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Bekkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hassiba</forename><surname>Djema</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">A</forename><surname>Alitouche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Information Engineering and Applications</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="27" to="38" />
+			<date type="published" when="2013-01">01 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Learning differentially private recurrent language models</title>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kunal</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Differentially private federated learning: A client level perspective</title>
+		<author>
+			<persName><forename type="first">Robin</forename><forename type="middle">C</forename><surname>Geyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tassilo</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moin</forename><surname>Nabi</surname></persName>
+		</author>
+		<idno>abs/1712.07557</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">QSGD: randomized quantization for communication-optimal stochastic gradient descent</title>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Alistarh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryota</forename><surname>Tomioka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Milan</forename><surname>Vojnovic</surname></persName>
+		</author>
+		<idno>abs/1610.02132</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Terngrad: Ternary gradients to reduce communication in distributed deep learning</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Wen</surname></persName>
+		</author>
+		<idno>abs/1705.07878</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Atomo: Communication-efficient learning via atomic sparsification</title>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Sievert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shengchao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><forename type="middle">B</forename><surname>Charles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitris</forename><forename type="middle">S</forename><surname>Papailiopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Wright</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Federated learning: Strategies for improving communication efficiency</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">Brendan</forename><surname>Jakub Konecný</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><forename type="middle">X</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ananda</forename><surname>Richtárik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dave</forename><surname>Theertha Suresh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bacon</surname></persName>
+		</author>
+		<idno>abs/1610.05492</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">signsgd: compressed optimisation for nonconvex problems</title>
+		<author>
+			<persName><forename type="first">Jeremy</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kamyar</forename><surname>Azizzadenesheli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anima</forename><surname>Anandkumar</surname></persName>
+		</author>
+		<idno>abs/1802.04434</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Deep gradient compression: Reducing the communication bandwidth for distributed training</title>
+		<author>
+			<persName><forename type="first">Yujun</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huizi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bill</forename><surname>Dally</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<publisher>ICLR</publisher>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">1bit stochastic gradient descent and its application to data-parallel distributed training of speech dnns</title>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Seide</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jasha</forename><surname>Droppo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">INTERSPEECH 2014</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1058" to="1062" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Compressed sensing for real-time energy-efficient ecg compression on wireless body sensor nodes</title>
+		<author>
+			<persName><forename type="first">Hossein</forename><surname>Mamaghanian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nadia</forename><surname>Khaled</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Atienza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Vandergheynst</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Biomedical Engineering</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="2456" to="2466" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">From denoising to compressed sensing</title>
+		<author>
+			<persName><forename type="first">Arian</forename><surname>Christopher A Metzler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">G</forename><surname>Maleki</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Baraniuk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Theory</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="5117" to="5144" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Image denoising based on compressed sensing</title>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Tavakoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Pourmohammad</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Theory and Engineering</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">266</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">A compressed sensing based ai learning paradigm for crude oil price forecasting</title>
+		<author>
+			<persName><forename type="first">Lean</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Energy Economics</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="page" from="236" to="245" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Compressive mechanism: Utilizing sparse representation in differential privacy</title>
+		<author>
+			<persName><forename type="first">Yang</forename><forename type="middle">D</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhenjie</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marianne</forename><surname>Winslett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yin</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 10th Annual ACM Workshop on Privacy in the Electronic Society</title>
+		<meeting>the 10th Annual ACM Workshop on Privacy in the Electronic Society<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="177" to="182" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Machine learning at the wireless edge: Distributed stochastic gradient descent over-the-air</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Mohammadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amiri</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deniz</forename><surname>Gündüz</surname></persName>
+		</author>
+		<idno>abs/1901.00844</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Federated learning over wireless fading channels</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Mohammadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amiri</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deniz</forename><surname>Gündüz</surname></persName>
+		</author>
+		<idno>abs/1907.09769</idno>
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<monogr>
+		<title level="m" type="main">Advances and open problems in federated learning</title>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Kairouz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Avent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aurélien</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mehdi</forename><surname>Bennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitin</forename><surname>Arjun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Keith</forename><surname>Bhagoji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zachary</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Graham</forename><surname>Charles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rachel</forename><surname>Cormode</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Cummings</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1912.04977</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<monogr>
+		<title level="m" type="main">A compressive sensing approach for federated learning over massive mimo communication systems</title>
+		<author>
+			<persName><forename type="first">Yo-Seb</forename><surname>Jeon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Mohammadi Amiri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note>Vincent Poor</note>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">Finding frequent items in data streams</title>
+		<author>
+			<persName><forename type="first">Moses</forename><surname>Charikar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Farach-Colton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Colloquium on Automata, Languages, and Programming</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="693" to="703" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<monogr>
+		<title level="m" type="main">Fetchsgd: Communication-efficient federated learning with sketching</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Rothchild</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashwinee</forename><surname>Panda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enayat</forename><surname>Ullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Ivkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ion</forename><surname>Stoica</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vladimir</forename><surname>Braverman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Gonzalez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raman</forename><surname>Arora</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Predictive accuracy: a misleading performance measure for highly imbalanced data</title>
+		<author>
+			<persName><forename type="first">Josephine</forename><surname>Akosa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the SAS Global Forum</title>
+		<meeting>the SAS Global Forum</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

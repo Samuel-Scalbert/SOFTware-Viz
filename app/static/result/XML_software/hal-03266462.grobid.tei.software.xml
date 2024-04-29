@@ -1,0 +1,1202 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DeepRoute: Herding Elephant and Mice Flows with Reinforcement Learning</title>
+				<funder ref="#_YJW2THn">
+					<orgName type="full">DOE</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Mariam</forename><surname>Kiran</surname></persName>
+							<email>mkiran@lbl.gov</email>
+							<affiliation key="aff0">
+								<orgName type="department">Energy Sciences Network (ESnet)</orgName>
+								<orgName type="institution">Lawrence Berkeley National Laboratory</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+									<region>CA</region>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bashir</forename><surname>Mohammed</surname></persName>
+							<email>bmohammed@lbl.gov</email>
+							<affiliation key="aff1">
+								<orgName type="department">Scientific Data Management</orgName>
+								<orgName type="institution">Lawrence Berkeley National Laboratory</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+									<region>CA</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Nandini</forename><surname>Krishnaswamy</surname></persName>
+							<email>nkrishnaswamy@lbl.gov</email>
+							<affiliation key="aff1">
+								<orgName type="department">Scientific Data Management</orgName>
+								<orgName type="institution">Lawrence Berkeley National Laboratory</orgName>
+								<address>
+									<settlement>Berkeley</settlement>
+									<region>CA</region>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">DeepRoute: Herding Elephant and Mice Flows with Reinforcement Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">481429E81CB9BC51CE31DD42FB83FE0C</idno>
+					<idno type="DOI">10.1007/978-3-030-45778-5_20</idno>
+					<note type="submission">Submitted on 21 Jun 2021</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Reinforcement learning</term>
+					<term>route optimization</term>
+					<term>path computation ?</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>de niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div><head n="1">Introduction</head><p>The rise of data hungry services such as mobile, video streaming and Cloud/Internet applications are bringing unprecedented demands to underlying network backbones <ref type="bibr" target="#b8">[9]</ref>. Wide area networks (WANs) are investigating intelligent and e cient network management techniques to do load balancing, improve used bandwidth and overall optimize network performance. Tra c congestion can directly cause performance deterioration, such as when links are oversubscribed causing bottlenecks <ref type="bibr" target="#b9">[10]</ref>. Many services rely on having high-throughput transfers and need high capacity links such as 100s Gbps. However, even for the busiest link, the current average utilization is only between 40-60%, to account for unanticipated peaks <ref type="bibr" target="#b0">[1]</ref>. Tra c engineering and path computation techniques such as MPLS-TE (Multiprotocol Label Switching Tra c Engineering) <ref type="bibr" target="#b4">[5]</ref>, Google's B4 <ref type="bibr" target="#b17">[18]</ref> and Microsoft's SWAN (Software Driven WAN) <ref type="bibr" target="#b0">[1]</ref> have proposed manners in which routers can greedily select routing patterns for arriving flows, both locally and globally, to increase path utilization. However, these techniques require meticulously designed heuristics to calculate optimal routes and also do not distinguish between arriving flow characteristics.</p><p>Path computation has a number of real-world networking implications. Examples such as load balancing, minimizing congestion and utilizing maximumbandwidth as some cases that can be explored as a reward. WAN networks al-low a number of pathways to exist between pairs of end-hosts.</p><p>Internet and WAN tra c usually contains a mixture of flow characteristics, such as long and short flows, which if on the same path, can have detrimental e↵ects on each other. Known as bulk long-living file transfers (elephant flows) are bandwidth-sensitive and short transfers (mice flows) are latency-sensitive, significantly impacting user experience and require innovative ways to manage them <ref type="bibr" target="#b33">[34]</ref>. WAN tra c usually contains a 80%:20% flow distribution (mice to elephant ratio) and if mixed on same paths, can cause queuing delays impacted by high latency and low throughput <ref type="bibr" target="#b1">[2]</ref>. Isolating flows to dedicated routes <ref type="bibr" target="#b37">[38]</ref> is challenging in real-time <ref type="bibr" target="#b33">[34]</ref> <ref type="bibr" target="#b31">[32]</ref> and has led to under-utilized paths. Researchers have attempted to recognize arriving flows to e ciently manage them <ref type="bibr" target="#b21">[22]</ref>. In data center networks, these are often prioritized, such as mice latency <ref type="bibr" target="#b6">[7]</ref> <ref type="bibr" target="#b5">[6]</ref> or elephant throughput <ref type="bibr" target="#b3">[4]</ref> to improve data center network performance. In WAN, path computation uses optimization to calculate paths taken between end-hosts.</p><p>Leveraging research in software defined networking (SDN) and reinforcement learning, we explore this problem of path computation and finding optimal routes in general, as a path resource allocation problem. We use machine learning algorithms to learn and provide viable solutions for dynamic flow management for both elephant and mice flows.</p><p>Network routing and machine learning is not new. Broadly speaking, there are two main approaches used here <ref type="bibr" target="#b32">[33]</ref>:</p><p>1. optimize routing configurations by predicting future tra c conditions depending on past tra c patterns or 2. optimize routing configurations based on number of feasible tra c scenarios with aim to improve performance parameters.</p><p>While SDN's centralized control o↵ers great promise, these calculations cause overhead for high-performance networks and need global management to work, which is di cult in a large network <ref type="bibr" target="#b11">[12]</ref>. Recent success of machine learning in complex decision making problems such as Alpha-Go <ref type="bibr" target="#b28">[29]</ref>, cooling datacenters and self-driving cars <ref type="bibr" target="#b36">[37]</ref> suggest feasible applications to our problem. Particularly reinforcement learning (RL), actively being applied in robotics <ref type="bibr" target="#b30">[31]</ref>, allows agents to learn how to make better decisions by interacting directly with the environment. Using concepts of rewards and penalties it can learn through experience to optimize its objective function.</p><p>Revisiting the path computation challenge, in this paper we use RL to find optimal paths (or routes) as a resource management problem. First, the system learns optimal paths by repeatedly selecting available paths between source and destination, given the arriving flow distribution. RL directly interacts with the network environment and learns best paths to minimize the flow completion time given the current network conditions. Our RL approach (<software ContextAttributes="created">DeepRoute</software>) is developed using Q-learning as a value-based gradient reinforcement learning <ref type="bibr" target="#b38">[39]</ref>.</p><p>Our experiments are focused on WAN scenarios, with two implementations, 1. We simulate an environment with synthetic data set of 100 flows, with 80:20 (elephant:mice) distributions, being allocated on 4 possible paths. We compare <software>DeepRoute</software> to either randomly selecting paths or prioritizing one flow type over the other. Here we use the analogy of 100 flows waiting to be allocated on paths and aim to quickly empty the wait queue. 2. We translate the experiment on <software ContextAttributes="created">Mininet</software> network emulator environment. Doing so, we remove some assumptions we drew in the simulation and also understand how <software ContextAttributes="created">DeepRoute</software> will work in a real network environment.</p><p>In both cases, we train <software>DeepRoute</software> via experience generating abundance of flow interaction data with the network. Evaluation of the agent's performance is done on test data set, which is previously unseen flow data, to see how well <software ContextAttributes="created">DeepRoute</software> fares against other techniques.</p></div>
+<div><head n="2">Background</head></div>
+<div><head n="2.1">Path Computation and Flow Management in WAN</head><p>We explain why path computation is a challenging problem:</p><p>-Network tra c demands are continuously changing and are often di cult to predict. Routing tables are continuously changing with new devices joining/leaving the network. However, paths between two endpoints, usually follows one optimized route. If there are too many flows, this leads to potential congestion on the path <ref type="bibr" target="#b12">[13]</ref>.</p><p>-Underlying network systems are complex and distributed, with multiple links between source-destination pairs. Understanding link properties such as bandwidth or latency is di cult to model accurately <ref type="bibr" target="#b13">[14]</ref>.</p><p>-Most flow management techniques are developed for data center networks <ref type="bibr" target="#b2">[3]</ref>. WANs, on the other hand, prioritize performance metrics such as minimizing packet loss and bandwidth utilization for tra c diversion <ref type="bibr" target="#b35">[36]</ref>. Google's B4 and Microsoft's SWAN, both, make decisions on application characteristics and heuristics.</p><p>Compared to approaches designed by B4 and SWAN <ref type="bibr" target="#b17">[18]</ref>[1], we leverage reinforcement learning to provide alternative to heuristic-based path computation problem. We aim to allow networks to learn best routes such to minimize flow completion times of both elephant and mice flows.</p><p>Path computation has a number of real-world networking implications. Examples such as load balancing, minimizing congestion and utilizing maximum bandwidth as some cases that can be explored as a reward. WAN networks allow a number of pathways to exist between pairs of end-hosts. These paths can have equal or di↵erent cost distributions such as settings for bandwidth, latency, throughput and more. These settings can determine how quickly the arriving flow will reach its destination, and can be allocated using di↵erent egress ports to choose path to take. ECMP routing is an example of this where it uniformly picks an egress port to reduce congestion on one path, however has seen to su↵er from hash collisions <ref type="bibr" target="#b16">[17]</ref> and unbalance on di↵erent cost distribution paths. Another problem is the changing tra c conditions in the network. Figure <ref type="figure" target="#fig_0">1</ref> shows a new flow F2 being allocated to one of the paths. However, there might be other previous flows running F0 and F1, already allocated on part of the paths. This means that while the links costs can be set in advance, the available bandwidth on the links is continuously changing and di cult to anticipate when selecting paths.</p><p>Tra c engineering such as MPLS-TE, B4 and SWAN use heuristics to design optimal allocations for paths using local and global optimization functions. For <software>DeepRoute</software>, we focus on WAN network path computation, particularly where we want flow-based routing decisions to improve flow completions times for mice and elephants that can allow all available paths to be chosen and utilized.</p></div>
+<div><head n="2.2">Reinforcement Learning</head><p>A reinforcement learning problem is formulated with an agent, situated in a partially observable environment, learning from past interaction data to make current decisions. The agent receives data in form of environment snapshots, processed in some manner, with specific relevant features. After receiving information and computing the value for future actions given the current state, an agent then acts to change its environment, subsequently receiving feedback on its action in form of rewards, until terminal state is reached. The objective is to maximize the cumulative reward over all actions in the time agent is active. Reinforcement learning research has investigated multiple techniques such as in multi-armed bandit problems, resource allocation or finding routes through a maze <ref type="bibr" target="#b29">[30]</ref>. Deep reinforcement learning builds upon classical models, replacing the learning with a neural network to approximate policy and value functions. Here, the function approximates the environment state space with actions and rewards. Particularly when the state space is too large to store, this approach has proved feasible in learning approximate conditions. In future, we plan to expand <software ContextAttributes="created">DeepRoute</software> to adapt from Q-learning to neural network learning (deep Q-networks), but is currently out of scope of the work presented here.</p><p>Reinforcement learning can be expressed as a Markov Decision Process (MDP) involving sequential decisions. This is given as a tuple (S, A, R, P ), where s 2 S set of states, a 2 A set of actions, R(s, a, s 0 ) represents reward given for executing action a at s and moving to new state s 0 . There is probability P for executing action in state s.</p><p>In our problem, the network is modeled as a MDP. We model 4 paths and their current allocations as a state. The agent selects a path and receives a reward after a flow has completed. In the simulation model, this is delayed reward as flows take longer to finish. In the mininet model, we get the reward at every iteration. The reward act as signals to adjust the forwarding-link priorities to enhance or diminish the probability a specific next-hop is selected for the flow. Our agent learns to adjust path selection policies based on experience through continuous modification and rewards.</p></div>
+<div><head n="2.3">Q-learning Formulation</head><p>A Q-value represents state-action combinations. Better Q-values shows better chances of getting higher rewards which are earned at the end of a complete episode. The Q-value is calculated using a Q-function. It approximates the Qvalue using prior Q-values, a short-term and a discounted future reward. This way the find optimal control policies across all environment states. Q-learning is an o↵-policy reinforcement learning algorithm that uses a table to store all Q-values with possible states and action pairs. This table is updated using the Bellman equation, allowing the action to be chosen using a greedy policy, given as with is discounting factor.</p><formula xml:id="formula_0">Q(s, a) = R(s, a) + max a 0 Q(s 0 , a 0 ))<label>(1)</label></formula><p>Temporal Di↵erence (TD) Learning. In our model, we enable the agent to learn in every action taken, despite it being end of the episode or not. We define an episode to end after 100 flows have been allocated. The TD learning factor updates current Q-value where ↵ is the learning rate,</p><formula xml:id="formula_1">Q t (s, a) = Q t 1 (s, a) + ↵T D t (a, s)<label>(2)</label></formula><p>Therefore, our final equation becomes,</p><formula xml:id="formula_2">Q t (s, a) = Q t 1 (s, a) + ↵(R(s, a) + max Q(s 0 , a 0 ) Q t 1 (s, a))<label>(3)</label></formula><p>Where 2 [0, 1] represents discounting factor that scales importance of the immediate reward obtained for the action and rewards R obtainable for actions at the new state s 0 . The learning rate ↵ 2 [0, 1] models the rate at which of Q-values are updated.</p></div>
+<div><head n="3">Related Work</head><p>E cient selection of paths for short and long flows has also shown to reduce congestion <ref type="bibr" target="#b25">[26]</ref>. Additionally, adaptive tra c management using congestion-based routing has proven to improve overall network utilization <ref type="bibr" target="#b7">[8]</ref>  <ref type="bibr" target="#b17">[18]</ref>. However, adaptive algorithms in heavy tra c load, could cause oscillatory behavior and cause performance degradation <ref type="bibr" target="#b34">[35]</ref>. OWAN was developed to optimize bulk transfers on WAN by re-configuring the optical layer showing a 4-times faster flow completion rate <ref type="bibr" target="#b19">[20]</ref>.</p><p>Flow completion time has been used as a vital metric to improve network congestion <ref type="bibr" target="#b26">[27]</ref>. Additionally, separating elephant and mice flows can have a direct impact on network quality <ref type="bibr" target="#b14">[15]</ref>. Other approaches have used calendaring to improve bandwidth utilization and reduce congestion <ref type="bibr" target="#b20">[21]</ref>.</p><p>In comparison to above approaches, machine learning has been used for network routing. The authors <ref type="bibr" target="#b32">[33]</ref> show how learning can help improve the average congestion rate through softmin learning.</p><p>Reinforcement learning , in particular, has given interesting results in compute resource allocations such as CAPES <ref type="bibr" target="#b22">[23]</ref> learning to optimize the Luster file system and DeepRM <ref type="bibr" target="#b23">[24]</ref> learning to allocate jobs on processors. Within networks, implementations of reinforcement learning in internet congestion control <ref type="bibr" target="#b18">[19]</ref> and developing intelligent TCP congestion algorithms <ref type="bibr" target="#b35">[36]</ref> have shown game-changing results in managing bandwidth and bottleneck across individual links. But nearly all of these demonstrations have only been shown on small networks and simulation only. There is also little evidence on how these can be expanded to real WAN environments.</p><p>In this paper, we prove the usefulness of reinforcement learning for path computation, but this is presented as early work on how Q-learning approaches can provide benefit and be translated in WAN environments, which we will expand in future work.</p></div>
+<div><head n="4">Design of DeepRoute</head><p>We define a general network topology with unidirectional links denoted as paths p 2 P with varying bandwidth capacity and latency. Flows arrive at time step t = 1 and are assigned a fixed path, for example either 1 ! 2 ! 4 or 1 ! 3 ! 4 (in Figure <ref type="figure" target="#fig_0">1</ref>). The arriving flows are generated with a specified size and duration allowing the flow to exist on the path for a time period (longer for elephant flows). Given every flow f i from source s i to destination d i , is defined with flow size v i and duration r i . The flow is assigned to a path p i which would have latency lat pi and available capacity ac pi . The latency influences the actual flow completion time c i = r i + lat pi . At a given time, flows are allocated based on available bandwidth ac pi , which changes depending on tra c patterns.</p><p>Similar to SDN <ref type="bibr" target="#b0">[1]</ref>, we assume a centrally existing routing control. The controller maintains information on current allocations across paths and makes routing decisions based on completion times of previous flows. </p></div>
+<div><head n="4.1">DeepRoute in Simulation Model</head><p>Figure <ref type="figure" target="#fig_1">2</ref> shows the network topology used in the simulation. The goal is to move all arriving flows from source to destination as quickly as possible. There are 4 possible paths with di↵erent bandwidth and latency settings. In the model, we assume 100 flows are arriving together in one timestep, and the controller allocates each flow to the next available path. The 100 flows contain a distribution of 80% mice flows and 20% elephant flows (Table : 1). Once allocated, the time step progresses to t+1, where the controller tries to allocate the remaining flows.</p><p>Objective. When a flow duration r i (in time units) finishes, it computes its completion time c i by adding its duration with path latency. We then inverse this, to give the flow's slowness rate by l i = c i /r i . Similar to <ref type="bibr" target="#b23">[24]</ref>, we normalize this, to prevent skewing results for longer flows. The objective of <software ContextAttributes="created">DeepRoute</software> is to get as many flows completed soon as possible.</p><p>Paths as Resources. We assume 100 flows arrive at Node-1 going to Node-5.</p><p>There are 4 possible paths 1 ! 2 ! 5, 1 ! 5, 1 ! 3 ! 5 or 1 ! 4 ! 5, with each path having di↵erent bandwidths and latency attached. bu means total bandwidth units available to be allocated. This changes as flows are allocated on them consuming part of the bu equal to flow size. The allocations last for the flow's duration, and the completion time is computed summing path latency given in tu (time units). We define this as current available bandwidth across all paths, size of the flow being allocated and current allocations on the paths. For example, after an allocation on path0 (1 ! 2 ! 5), the bandwidth availability is now ac p0 = 10 v 1 and this part of state becomes (ac p0 , ac p1 , ac p2 , ac p3 ).</p><p>Action Space. There are 4 paths so 4 possible actions. We assume one action is taken per one flow, within one time step. If there are no available paths, the controller skips a time step with no allocations. Once all 100 flows are allocated, it finishes a complete episode. The simulation is run for number of iterations containing many episodes. The total reward is calculated per episode when all 100 flows are allocated.</p><p>Reward Calculation. At the end of each episode, the RL agent calculates if any flows have finished and total completion time is recorded.</p></div>
+<div><head n="4.2">DeepRoute in Mininet</head><p>Figure <ref type="figure" target="#fig_2">3</ref> shows mininet topology forming multiple paths to chose from one endhost to the other. Here, we configure three metrics for the links -capacity, packet loss and latency. <software ContextAttributes="created">Mininet</software> allows us to add delays on links. The capacities (bandwidth) are setup as 2 x 10 Gbps links for path0 and path1, and 2 x 8 Gbps for path2 and path3.</p><p>Sending flows. We ping from one end-host to the other and record the time in which the ping reaches the other host. The controller learns which egress port to use, deciding which path to take. This time is recorded as the reward against the path taken. SDN Control. We emulate an SDN network using an Ryu OpenFlow switch. To have a global view, we configure a network controller, Openflow switches, <software>linux</software> hosts and network links. The hosts run a standard <software ContextAttributes="created">Linux</software> kernel and network stack to emulate running real network applications. Traceroute measurements are recorded on the route taken and the specific gateway at each hop. We calculate the total time across each hop as a reward. In this case, every episode is represented by one flow (one ping).</p><p>State and Action Space. For dynamic multipath selection, we send a packet from source to destination via one of the four network paths, dynamically allocating flows on links. The flows go through paths: 1 ! 2 ! 5, 1 ! 5, 1 ! 3 ! 5 and 1 ! 4 ! 5.</p><p>For initial learning, we use Link Layer Discovery Protocol (LLDP) <ref type="bibr" target="#b10">[11]</ref> to obtain link and switch states in the topology, it uses to advertise device identity and abilities, and other devices connected within. LLDP helps maintain a global view of network topology and also retains a multipath environment.</p></div>
+<div><head n="5">Training DeepRoute</head><p>The <software>DeepRoute</software> agent runs in an episodic fashion (with 100 flows in simulation and 1 flow in mininet). The episode terminates when all flows have been allocated.</p><p>A Q-value is added with each state and action taken and saved into a Q-table. We design our algorithm based on <ref type="bibr" target="#b29">[30]</ref>. As the reinforcement learning algorithm uses Bellman's equation, there is a possibility of overfitting to ideal conditions. To prevent this, during the testing phase, we use ✏ for allowing <software ContextAttributes="created">DeepRoute</software> to select random action rather than Q-table values. Q-table is recorded by monitoring Wireshark logs across all interfaces on the controller.</p><p>Initially, the OpenFlow switch performs active and passive measurements across all egress links, building the Q-table. The utilization data across the interfaces is collected. Here, we also have a local Q-table at each network node, as well as a global aggregation table managed by the network controller, shown in Figure <ref type="figure" target="#fig_4">5</ref>. The wireshark logs allow to collect data on latency, throughput and packet loss. Rewards or the completion time is added afterwards to populate the Q-values in the table constructed. Table <ref type="table" target="#tab_1">2</ref> shows an example of the Q-table constructed in <software ContextAttributes="created">Mininet</software>. Showing only 4 entries, 1 in each path. We transfer a mixture of flow distributions (8 and 16 GBytes). The arrival time (or completion time) is considered as the reward, added to the Q-table for that state and action.    </p></div>
+<div><head n="6">Evaluation</head><p>We evaluate <software>DeepRoute</software> for the following objectives:</p><p>-With a distribution of network path parameters, how does <software>DeepRoute</software> compare with other allocation techniques in simulation model?</p><p>-How can <software>DeepRoute</software> be translated into real network environments as in a mininet model?</p><p>-How much of utilized capacity improvements are observed for the overall network?</p></div>
+<div><head n="6.1">Simulation Model Results</head><p>Testing Data. We generate a new set of 100 flows of 80:20 (mice:elephant) distribution. This data is unseen by the <software ContextAttributes="created">DeepRoute</software> during training phase. The test data is consistent for all other comparison schemes to validate the results. Comparing with other techniques. We compare <software ContextAttributes="created">DeepRoute</software> with other algorithms -Random, to randomly assign flows on available paths, Prioritize-Mice, to allocate mice flows before allocating elephant flows, and Prioritize-Elephant, allocate elephant flows before mice flows. These have been published in path computation problems <ref type="bibr">[3][32]</ref>.</p><p>Average Path Utilization. Figure <ref type="figure" target="#fig_6">6</ref> shows the path capacity used during testing phase. Here we see that while Path0 is the most used by the elephantand mice-first techniques, <software ContextAttributes="created">DeepRoute</software> is able to show a more spread of using other paths e ciently. It learns to use Path 1 and Path 2, with lower latency more e ciently. This is also shown in Figure <ref type="figure" target="#fig_7">7</ref>, where paths are used more than in other techniques. The random technique just spread use across all paths. Figure <ref type="figure" target="#fig_8">8</ref> shows that <software ContextAttributes="created">DeepRoute</software> is able to completely utilize the network at stable 30% as compared to the other techniques as number of flows increase. Mice and Elephant allocations. Figure <ref type="figure" target="#fig_7">7</ref> shows that <software ContextAttributes="created">DeepRoute</software> is able to spread elephant and mice flows more uniformly across all the paths. We also see that by spreading the load, there is less congestion on one path, which was the case with other techniques.</p><p>Comparing with shortest path route. Based on the path configurations, the network would use Path1 the most due to higher bandwidth and lower latency. However, in the simulation <software>DeepRoute</software> learns to allocate on alternate paths, based on the current allocations already active on the paths.</p></div>
+<div><head n="6.2">Mininet Model Results</head><p>After training, we configure the Ryu SDN controller to select egress based on Q-table. This adjusts forwarding rules dynamically as new flows arrive.</p><p>Testing data. We generate 100 pings from one end-host to the other and record the utilization across all the paths. Throughputs recorded. Figure <ref type="figure" target="#fig_9">9</ref> shows the throughput measurements along the 4 paths. Here, because the mininet model is extremely simple, the states learned are the available paths, flow size sent and the time recorded. This allows the controller to learn the shortest, less cost path, Path 1, as the most optimal path to use. As a result, all future tra c goes through this path and less evenly distributed at other paths. This result shows, if the controller was able to learn more features of the current state, we could enhance the controller decisions. This will form basis for future investigations of implementing <software ContextAttributes="created">DeepRoute</software> in real networks.</p></div>
+<div><head n="7">Discussion</head></div>
+<div><head n="7.1">Modelling realistic WAN flows</head><p>In this section we explained how we model realistic WAN flows, using di↵erent size parameters in mininet simulation. We use <software ContextAttributes="created">NETEM</software> <ref type="bibr" target="#b15">[16]</ref> which provides network emulation functionality for testing protocols by emulating properties of wide area networks. To emulate the real-world network scenario, with control on parameters that a↵ect network performance, we change the path delay on all four paths to (300ms, 100ms, 100ms, 300ms). In running our emulation, we consider four key metrics -link capacity (bandwidth), latency, transfer size and flow arrival time (presented in Table <ref type="table" target="#tab_1">2</ref>). To calculate latency, link delays were assigned paths.</p><p>For link capacities (bandwidth), the <software ContextAttributes="created">DeepRoute</software> topology has a total link capacity of 36 Gbps linking the path 0 to path 3. This includes (2 X 10 Gbps) on path 0 and 1 as well as (2 X 8 Gbps) on path 2 and 3 respectively. Iperf3 <ref type="bibr" target="#b24">[25]</ref>  is used for measuring performance characteristics, specifically, the TCP version of Iperf3. Each TCP Iperf throughput test is initiated for 60 seconds per path. All end hosts loop through this process for at least 100 flow rounds, thereby measuring throughput on all the network paths (path 0-3) with di↵erent flow distributions. We use wireshark <ref type="bibr" target="#b27">[28]</ref>, a free and open-source packet analyzer to capture packets on all interfaces.</p></div>
+<div><head n="7.2">Performance measurement with load and delay</head><p>As flow are sent, the network controller starts the learning process by performing active and passive measurements between all switches (S1-S5). The active measurements are used to measure latency between the switches, while passive measurements are used to obtain load and residual capacity in each link.</p><p>Having successfully deployed emulated WAN using <software>NETEM</software> and <software ContextAttributes="created">Mininet</software>, we conducted some performance measurement. With a set of flows, we specify a normal distribution for delay, but since delays are not always uniform, we specify a Pareto distribution (non-uniform delay distribution). As a result, all packets leaving source to destination via path 1 and 2 will experience a delay time of 100ms, while those leaving via path 0 and 3 will experience 300ms. The final results show minimum, average, maximum and standard deviation of the Round-Trip-Time (RTT) and if packet loss is recorded.</p></div>
+<div><head n="7.3">Comparing to optimization approaches</head><p>The current implementation of Q-table shows that similar results could have been achieved by optimization techniques. However, this implementation is limited by modelling the system as a simple MDP approach. In a real network setting, conditions are much more dynamic with unseen environment conditions. This means the Q-table approach will have to updated the build approximate value functions, such as deep Q-networks, to make decisions in unseen conditions.</p></div>
+<div><head n="8">Conclusions and Future Work</head><p>Recent breakthroughs in deep learning research, made possible by accelerated hardware and big data, in many fields. However, there is still a lack of understanding on how this can be used in network routing research.</p><p>By utilizing Q-learning we allow the controller to learn from the environment about the paths and best hops between source and destination. With network environments being very dynamic, with possible packet loss and tra c congestion across some of the best paths, we explore how a <software>DeepRoute</software> controller can learn best possible combinations depending on the tra c arriving and the current network conditions to optimally utilize the network.</p><p>Commercial systems that promise improved network performance tend to focus on average typical flows and through exploring edges (when compared to average) press exploration of new tra c engineering models. Our work highlights the need to change approaches to path computation and flow management for new applications like hybrid cloud computing and other use cases cited. While networks are challenged to strike the balance between capacity, throughput, latency and cost, AI applications can have an impact on future deployments. Our results show promise on how <software>DeepRoute</software> can allow e cient use of path capacity and the mininet implementation shows how it can be adapted in a real network environment.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Example of routing a new flow F1 from 1!4. There are two possible paths to take through Node-3 or Node-2.</figDesc><graphic coords="5,221.22,258.83,172.91,107.47" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Topology used in the Simulation Model (bu=bandwidth units occupied and tu=time units occupied).</figDesc><graphic coords="9,177.99,115.84,259.37,141.97" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Mininet Topology.</figDesc><graphic coords="10,186.64,115.84,242.08,167.78" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Changing number of iterations during training gives di↵erent rewards.</figDesc><graphic coords="12,195.29,115.83,224.79,99.76" type="bitmap" /></figure>
+<figure xml:id="fig_4"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5. Q-values for Local and Global levels.</figDesc><graphic coords="12,177.99,450.83,259.36,162.10" type="bitmap" /></figure>
+<figure xml:id="fig_5"><head /><label /><figDesc>Capacity (Gbps) Latency (ms) Path Transfer (GB) Arrival Time (ms)</figDesc></figure>
+<figure xml:id="fig_6"><head>Fig. 6 .</head><label>6</label><figDesc>Fig. 6. Occupied bandwidth across the paths with arriving flows. Occupied bandwidth refers to the percentage bandwidth occupied on the path.</figDesc><graphic coords="13,148.99,322.26,155.62,88.97" type="bitmap" /></figure>
+<figure xml:id="fig_7"><head>Fig. 7 .</head><label>7</label><figDesc>Fig. 7. Average flows allocated to all paths.</figDesc><graphic coords="14,95.08,115.84,425.20,127.56" type="bitmap" /></figure>
+<figure xml:id="fig_8"><head>Fig. 8 .</head><label>8</label><figDesc>Fig. 8. Average network utilization.</figDesc><graphic coords="14,195.29,485.70,224.78,131.68" type="bitmap" /></figure>
+<figure xml:id="fig_9"><head>Fig. 9 .</head><label>9</label><figDesc>Fig. 9. Throughput measurement from Source-Destination.</figDesc><graphic coords="16,312.29,239.23,121.04,104.89" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Elephant and mice flow distributions used in simulation case.</figDesc><table><row><cell cols="2">Flow type Size</cell><cell>of</cell><cell>Flow</cell><cell>Duration of Flow</cell><cell>Distribution %</cell></row><row><cell /><cell cols="3">(bandwidth units</cell><cell>(time units occu-</cell></row><row><cell /><cell cols="2">occupied)</cell><cell /><cell>pied)</cell></row><row><cell cols="3">Elephant Range(3,5)</cell><cell /><cell>Range(5,8)</cell><cell>20%</cell></row><row><cell>Mice</cell><cell cols="2">Range(1,2)</cell><cell /><cell>Range(1,3)</cell><cell>80%</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Sample Q-table showing capacity, latency and flow arrival time.</figDesc><table /></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>This work is funded under <rs type="funder">DOE</rs> <rs type="grantName">ASCR Early Career Grant Deep Learning</rs>: <rs type="grantNumber">FP00006145</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_YJW2THn">
+					<idno type="grant-number">FP00006145</idno>
+					<orgName type="grant-name">ASCR Early Career Grant Deep Learning</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div><head n="5.1">Training in Simulation</head><p><software>DeepRoute</software> is trained for multiple iterations as shown in Algorithm 1. Each iteration generates new 100 flows and <software ContextAttributes="used">DeepRoute</software> learns by allocating these flows on the paths. We record the network state (available bandwidth on all 4 paths, current allocations, size of the flow to allocate), action taken (which path is chosen) and reward collected in the episode.</p></div>
+<div><head>Training iterations.</head><p>Training for more iterations, allows the size of the Q-table to grow (from 3532 for 50 iterations, 6238 for 100 and 21640 for 500 iterations). However, Figure <ref type="figure">4</ref> shows that the maximum score is achieved by 400 iterations. Therefore this is chosen as the ideal training iterations.</p></div>
+<div><head n="5.2">Training in Mininet</head><p>The implementation in <software>Mininet</software> removes some assumptions drawn in the simulation model. Here, along with using an OpenFlow switch, we use packet loss and latency, to calculate the reward for every ping received at other host. The</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Achieving high utilization with software-driven wan</title>
+		<idno>MSR-TR-2013-54</idno>
+		<ptr target="https://www.microsoft.com/en-us/research/publication/achieving-high-utilization-with-software-driven-wan/" />
+		<imprint>
+			<date type="published" when="2013-08">August 2013</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">Tech. Rep.</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">An empirical evaluation of wide-area internet bottlenecks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Akella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Seshan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shaikh</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/781027.781075</idno>
+		<ptr target="http://doi.acm.org/10.1145/781027.781075" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGMETRICS</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="316" to="317" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Hedera: Dynamic flow scheduling for data center networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Al-Fares</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Radhakrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Raghavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vahdat</surname></persName>
+		</author>
+		<ptr target="http://dl.acm.org/citation.cfm?id=1855711.1855730" />
+	</analytic>
+	<monogr>
+		<title level="m">USENIX Conf. Networked Systems Design and Implementation</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="19" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Data center tcp (dctcp)</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Greenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">A</forename><surname>Maltz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Padhye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Prabhakar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sengupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sridharan</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1851182.1851192</idno>
+		<ptr target="http://doi.acm.org/10.1145/1851182.1851192" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGCOMM</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="63" to="74" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Awduche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malcolm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Agogbua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>O'dell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mcmanus</surname></persName>
+		</author>
+		<title level="m">Requirements for tra c engineering over mpls</title>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Microte: Fine grained tra c engineering for data centers</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Benson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Akella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2079296.2079304</idno>
+		<ptr target="http://doi.acm.org/10.1145/2079296.2079304" />
+	</analytic>
+	<monogr>
+		<title level="j">COnference on Emerging Networking EXperiments and Technologies</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="1" to="8" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Di↵flow: Di↵erentiating short and long flows for load balancing in data center networks</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Carpio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Engelmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jukan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/GLOCOM.2016.7841733</idno>
+		<ptr target="https://doi.org/10.1109/GLOCOM.2016.7841733" />
+	</analytic>
+	<monogr>
+		<title level="m">GLOBECOM</title>
+		<imprint>
+			<date type="published" when="2016-12">Dec 2016</date>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Performance optimizations for wireless wide-area networks: Comparative study and experimental evaluation</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Chakravorty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Banerjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chesterfield</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Pratt</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1023720.1023737</idno>
+		<ptr target="http://doi.acm.org/10.1145/1023720.1023737" />
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Mobile Computing and Networking</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="159" to="173" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<ptr target="https://www.cisco.com/c/en/us/solutions/collateral/service-provider/visual-networking-index-vni/vni-hyperconnectivity-wp.html" />
+		<title level="m">Cisco: Trending analysis</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Measurement and Analysis of Internet Interconnection and Congestion</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dhamdhere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hu↵aker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lehr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Luckie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Telecomm. Policy Research Conf</title>
+		<imprint>
+			<date type="published" when="2014-09">Sep 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Link layer discovery protocol and mib</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Congdon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">V1</title>
+		<imprint>
+			<biblScope unit="issue">0</biblScope>
+			<biblScope unit="page" from="1" to="20" />
+			<date type="published" when="2002-05-20">May 20(2002. 2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Devoflow: Scaling flow management for high-performance networks</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Curtis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Mogul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tourrilhes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Yalagandula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Banerjee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGCOMM Comput. Commun. Rev</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">New congestion control mechanisms for flow-aware networks</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Domzal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Jajszczyk</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICC.2008.11</idno>
+		<ptr target="https://doi.org/10.1109/ICC.2008.11" />
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. Communications</title>
+		<imprint>
+			<date type="published" when="2008-05">May 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Link-sharing and resource management models for packet networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Floyd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Jacobson</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/90.413212</idno>
+		<ptr target="https://doi.org/10.1109/90.413212" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Transactions on Networking</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="365" to="386" />
+			<date type="published" when="1995-08">Aug 1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Enabling fast and slow lanes for content providers using software defined networking</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Habibi Gharakheili</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sivaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Moors</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vishwanath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Matthews</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Russell</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TNET.2016.2627005</idno>
+		<ptr target="https://doi.org/10.1109/TNET.2016.2627005" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Trans. Netw</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1373" to="1385" />
+			<date type="published" when="2017-06">Jun 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Network emulation with netem</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hemminger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Linux conf au</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="18" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Resilient routing using mpls and ecmp</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iselt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kirstadter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pardigon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schwabe</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/HPSR.2004.1303507</idno>
+		<ptr target="https://doi.org/10.1109/HPSR.2004.1303507" />
+	</analytic>
+	<monogr>
+		<title level="m">2004 Workshop on High Performance Switching and Routing</title>
+		<imprint>
+			<date type="published" when="2004-04">2004. April 2004</date>
+			<biblScope unit="page" from="345" to="349" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">B4: Experience with a globally-deployed software defined wan</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mandal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Poutievski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Venkata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wanderer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Zolla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Hölzle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Stuart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vahdat</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2534169.2486019</idno>
+		<ptr target="http://doi.acm.org/10.1145/2534169.2486019" />
+	</analytic>
+	<monogr>
+		<title level="j">SIGCOMM Comput. Commun. Rev</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="3" to="14" />
+			<date type="published" when="2013-08">Aug 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">A deep reinforcement learning perspective on internet congestion control</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Jay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rotman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Godfrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schapira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tamar</surname></persName>
+		</author>
+		<ptr target="http://proceedings.mlr.press/v97/jay19a.html" />
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019-06">Jun 2019</date>
+			<biblScope unit="volume">97</biblScope>
+			<biblScope unit="page" from="9" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Optimizing bulk transfers with software-defined optical wan</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rexford</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2934872.2934904</idno>
+		<ptr target="http://doi.acm.org/10.1145/2934872.2934904" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGCOMM</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="87" to="100" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Calendaring for wide area networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kandula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Menache</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Schwartz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Babbula</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2619239.2626336</idno>
+		<ptr target="http://doi.acm.org/10.1145/2619239.2626336" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGCOMM</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="515" to="526" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Understanding flows in high-speed scientific networks: A netflow data study</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kiran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chhabra</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.future.2018.11.006</idno>
+		<ptr target="http://www.sciencedirect.com/science/article/pii/S0167739X18302322" />
+	</analytic>
+	<monogr>
+		<title level="j">Future Generation Computer Systems</title>
+		<imprint>
+			<biblScope unit="volume">94</biblScope>
+			<biblScope unit="page" from="72" to="79" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Capes: Unsupervised storage performance tuning using neural network-based deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Bel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">L</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">D E</forename><surname>Long</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3126908.3126951</idno>
+		<ptr target="http://doi.acm.org/10.1145/3126908.3126951" />
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. for High Performance Computing, Networking, Storage and Analysis</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="page" from="1" to="42" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Resource management with deep reinforcement learning</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Alizadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Menache</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kandula</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3005745.3005750</idno>
+		<ptr target="http://doi.acm.org/10.1145/3005745.3005750" />
+	</analytic>
+	<monogr>
+		<title level="m">ACM Workshop on Hot Topics in Networks</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="50" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mortimer</surname></persName>
+		</author>
+		<title level="m">iperf3 documentation</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Minimizing flow completion times in data centers</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Munir</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">A</forename><surname>Qazi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><forename type="middle">A</forename><surname>Uzmi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mushtaq</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Ismail</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">S</forename><surname>Iqbal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Khan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/INFCOM.2013.6567018</idno>
+		<ptr target="https://doi.org/10.1109/INFCOM.2013.6567018" />
+	</analytic>
+	<monogr>
+		<title level="m">IEEE INFOCOM</title>
+		<imprint>
+			<date type="published" when="2013-04">April 2013</date>
+			<biblScope unit="page" from="2157" to="2165" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">On minimizing the completion times of long flows over inter-datacenter wan</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Noormohammadpour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">S</forename><surname>Raghavendra</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/LCOMM.2018.2872980</idno>
+		<ptr target="https://doi.org/10.1109/LCOMM.2018.2872980" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Communications Letters</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2475" to="2478" />
+			<date type="published" when="2018-12">Dec 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Wireshark &amp; Ethereal network protocol analyzer toolkit</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Orebaugh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ramirez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Beale</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>Elsevier</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Mastering the game of go with deep neural networks and tree search</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">J</forename><surname>Maddison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Guez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Sifre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Van Den Driessche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schrittwieser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Antonoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Panneershelvam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lanctot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dieleman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Grewe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kalchbrenner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lillicrap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Graepel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hassabis</surname></persName>
+		</author>
+		<idno type="DOI">10.1038/nature16961</idno>
+		<ptr target="https://doi.org/10.1038/nature16961" />
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">529</biblScope>
+			<biblScope unit="issue">01</biblScope>
+			<biblScope unit="page">484</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Reinforcement Learning: An Introduction</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">S</forename><surname>Sutton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Barto</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>A Bradford Book</publisher>
+			<pubPlace>USA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Mamic: Macro and micro curriculum for robotic reinforcement learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tomar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sathuluri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ravindran</surname></persName>
+		</author>
+		<ptr target="http://dl.acm.org/citation.cfm?id=3306127.3332066" />
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Autonomous Agents and MultiAgent Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2226" to="2228" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">Micetrap: Scalable tra c engineering of datacenter mice flows using openflow</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Trestian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Muntean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Katrinis</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013-05">May 2013</date>
+			<biblScope unit="page" from="904" to="907" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Learning to route</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Valadarsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schapira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Shahaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tamar</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3152434.3152441</idno>
+		<ptr target="http://doi.acm.org/10.1145/3152434.3152441" />
+	</analytic>
+	<monogr>
+		<title level="m">Hot Topics in Networks</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="185" to="191" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Adaptive path isolation for elephant and mice flows by exploiting path diversity in datacenters</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Salamatian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TNSM.2016.2517087</idno>
+		<ptr target="https://doi.org/10.1109/TNSM.2016.2517087" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Network and Service Mng</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5" to="18" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Analysis of shortest-path routing algorithms in a dynamic network environment</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Crowcroft</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/141800.141805</idno>
+		<ptr target="http://doi.acm.org/10.1145/141800.141805" />
+	</analytic>
+	<monogr>
+		<title level="j">SIGCOMM Comput. Commun. Rev</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="63" to="71" />
+			<date type="published" when="1992-04">Apr 1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Tcp ex machina: Computer-generated congestion control</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Winstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Balakrishnan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGCOMM</title>
+		<meeting><address><addrLine>Hong Kong</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Learning a↵ordance for autonomous driving</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Xiao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3131944.3133941</idno>
+		<ptr target="http://doi.acm.org/10.1145/3131944.3133941" />
+	</analytic>
+	<monogr>
+		<title level="m">Wrkp on Smart, Autonomous, and Connected Vehicular Systems and Services</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1" to="1" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">A network management system for handling scientific data flows</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tracy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Veeraraghavan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s10922-014-9336-2</idno>
+		<ptr target="http://dx.doi.org/10.1007/s10922-014-9336-2" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Netw. Syst. Manage</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="33" />
+			<date type="published" when="2016-01">Jan 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">A q-values sharing framework for multiple independent q-learners</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Leung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cai</surname></persName>
+		</author>
+		<ptr target="http://dl.acm.org/citation.cfm?id=3306127.3332099" />
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Autonomous Agents and MultiAgent Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2324" to="2326" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

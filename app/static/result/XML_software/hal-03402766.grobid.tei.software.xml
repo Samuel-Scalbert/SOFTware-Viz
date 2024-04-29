@@ -1,0 +1,436 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">User Scored Evaluation of Non-Unique Explanations for Relational Graph Convolutional Network Link Prediction on Knowledge Graphs</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Nicholas</forename><surname>Halliwell</surname></persName>
+							<email>nicholas.halliwell@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">UCA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">I3S</orgName>
+								<address>
+									<settlement>Sophia Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Fabien</forename><surname>Gandon</surname></persName>
+							<email>fabien.gandon@inria.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">UCA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">I3S</orgName>
+								<address>
+									<settlement>Sophia Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Freddy</forename><surname>Lecue</surname></persName>
+							<email>freddy.lecue@thalesgroup.com</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">CortAIx</orgName>
+								<orgName type="institution" key="instit2">Thales Montreal</orgName>
+								<address>
+									<country key="CA">Canada</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">User Scored Evaluation of Non-Unique Explanations for Relational Graph Convolutional Network Link Prediction on Knowledge Graphs</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">E8A6B4029D0BC4D0E58C8F52030FA347</idno>
+					<idno type="DOI">10.1145/3460210.3493557</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>• Mathematics of computing → Computing most probable explanation</term>
+					<term>• Computing methodologies → Knowledge representation and reasoning</term>
+					<term>Neural networks link prediction</term>
+					<term>Explainable AI</term>
+					<term>knowledge graphs</term>
+					<term>graph neural networks</term>
+					<term>explanation evaluation</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>Relational Graph Convolutional Networks (RGCNs) are commonly used on Knowledge Graphs (KGs) to perform black box link prediction. Several algorithms, or explanation methods, have been proposed to explain their predictions. Evaluating performance of explanation methods for link prediction is difficult without ground truth explanations. Furthermore, there can be multiple explanations for a given prediction in a KG. No dataset exists where observations have multiple ground truth explanations to compare against. Additionally, no standard scoring metrics exist to compare predicted explanations against multiple ground truth explanations. In this paper, we introduce a method, including a dataset (FrenchRoyalty-200k), to benchmark explanation methods on the task of link prediction on KGs, when there are multiple explanations to consider. We conduct a user experiment, where users score each possible ground truth explanation based on their understanding of the explanation. We propose the use of several scoring metrics, using relevance weights derived from user scores for each predicted explanation. Lastly, we benchmark this dataset on state-of-the-art explanation methods for link prediction using the proposed scoring metrics.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">INTRODUCTION</head><p>Knowledge Graphs represent facts as triples in the form (subject, predicate, object), where a subject and object represent a real-world entity, linked by some predicate. Knowledge Graphs often do not explicitly contain every available fact. Link prediction on Knowledge Graphs is used to identify unknown facts from existing ones.</p><p>One approach to link prediction on Knowledge Graphs involves the use of graph embedding algorithms that learn a function mapping each subject, object, and predicate to a low-dimensional space. A scoring function is defined to quantify if a link (relation) exists between two nodes (entities). Relational Graph Convolutional Networks (RGCN) <ref type="bibr" target="#b8">[9]</ref> extends Graph Convolutional Networks <ref type="bibr" target="#b6">[7]</ref> for applications to link prediction on Knowledge Graphs, using the scoring function from <software ContextAttributes="created">DistMult</software> <ref type="bibr" target="#b10">[11]</ref> as an output layer, returning a probability of the input triple being a fact.</p><p>The decision function of a black box link predictor such as an RGCN gives no insight, or explanation, as to why the model arrives at a particular decision. As a result, several algorithms for explainable link prediction have been proposed, in particular: <software ContextAttributes="created">ExplaiNE</software> <ref type="bibr" target="#b4">[5]</ref> quantifies how the predicted probability of a link changes when weakening or removing a link with a neighboring node, while <software ContextAttributes="created">GNNExplainer</software> <ref type="bibr" target="#b11">[12]</ref> explains the predictions of any Graph Neural Network, learning a mask over the adjacency matrix to identify the most informative subgraph. Explanations from <software ContextAttributes="created">ExplaiNE</software> and GN-NExplainer return explanations to the user in the form of existing triples in the Knowledge Graph.</p><p>Ground truth explanations however can be non-unique. There can be multiple, logically correct ways to explain why a link could exist between two nodes. Consider an example where a model predicts the hasChild link between two entities Louis VII of France, and Agnes of France, i.e. (Louis VII, hasChild, Agnes of France) . One way to explain why this link could exist between these two entities is because Agnes of France is the child of Louis VII's spouse Adela of Champagne. This is not the only way to explain why the hasChild link exists between Louis VII and Agnes. Agnes could be the child of Louis VII because Agnes' grandparent, Louis VI is the parent of Louis VII. Both of these explanations are correct, it is unclear as to which explanation is optimal.</p><p>State-of-the-art explanation methods for link prediction on Knowledge Graphs have no common dataset or performance metrics to quantitatively evaluate explanation quality when there are multiple ways to explain the model's prediction. In this paper, we propose a method, including a dataset (FrenchRoyalty-200k), to quantitatively evaluate explanation methods on the task of link prediction using Graph Neural Networks, when there are multiple explanations. This dataset includes all possible ground truth explanations for each triple, allowing for quantitative comparisons across every possible explanation. Additionally, we perform a user experiment, where users decide which explanations are optimal. Furthermore, we propose the use of several scoring metrics using these user scores as relevance weights for each predicted explanation. Lastly, we benchmark this dataset on state-of-the-art explanation methods using the proposed dataset and evaluation metrics.</p></div>
+<div><head n="2">RELATED WORK, SHORTCOMINGS, AND CONTRIBUTIONS</head><p>Knowledge Graph embeddings. Knowledge Graph embedding algorithms learn continuous vectors for each subject, predicate and object. A scoring function assigns a value to each triple based on if the subject, predicate, and object form a valid fact. TransE <ref type="bibr" target="#b0">[1]</ref> models relationships as translation operations on learned entity vectors. <software ContextAttributes="used">DistMult</software> <ref type="bibr" target="#b10">[11]</ref> learns a diagonal matrix of parameters for each relation. We refer the reader to a recent survey <ref type="bibr" target="#b3">[4]</ref> for more information. A Relational Graph Convolutional Networks (RGCN) <ref type="bibr" target="#b8">[9]</ref> can be used to learn embeddings and perform link prediction on Knowledge Graphs. The RGCN performs embedding updates for a given entity by multiplying the neighboring entities with a weight matrix for each relation in the dataset, and summing across each neighbor and relation. There are many approaches for link prediction (e.g. rule based, bayesian, etc.), however, this work focuses on the evaluation and explanation of link prediction on Knowledge Graphs using Graph Neural Networks.</p><p>Explainable link prediction. Few algorithms exist to understand the predictions of Knowledge Graph embedding algorithms. For some model with scoring function 𝑔, <software ContextAttributes="used">ExplaiNE</software> <ref type="bibr" target="#b4">[5]</ref> computes the gradient of the scoring function with respect to the adjacency matrix. This measures the change in score due to a small perturbation in the adjacency matrix, that is, how much will the score change if a link is added or removed between two given nodes. Formally, given two nodes 𝑖, 𝑗 serving as prediction candidates, and two nodes 𝑘, 𝑙 serving as a candidate explanation, the score assigned to node pair 𝑘, 𝑙 is given by Equation <ref type="formula" target="#formula_0">1</ref>, where X * is the optimal embedding matrix, and 𝑎 𝑘𝑙 is an element of the adjacency matrix A.</p><formula xml:id="formula_0">𝜕𝑔 𝑖 𝑗 𝜕𝑎 𝑘𝑙 (A) = ∇ X 𝑔 𝑖 𝑗 (X * ) 𝑇 • 𝜕X * 𝜕𝑎 𝑘𝑙 (A)<label>(1)</label></formula><p><software ContextAttributes="used">GNNExplainer</software> <ref type="bibr" target="#b11">[12]</ref> explains the predictions of any Graph Neural Network, learning a mask over the input adjacency matrix to identify the most relevant subgraph. This is achieved by minimizing the cross entropy between the predicted label using the input adjacency matrix, and the predicted label using the masked adjacency matrix. The objective function minimized by <software ContextAttributes="used">GNNExplainer</software> is given by Equation <ref type="formula">2</ref>, where M is a mask learned and ⊙ denotes element-wise multiplication. min</p><formula xml:id="formula_1">M - 𝐶 𝑐=1 1[𝑦 = 𝑐] 𝑙𝑜𝑔𝑃 Φ (𝑌 = 𝑦|A 𝑐 ⊙ 𝜎 (M), X 𝑐 ) (2)</formula><p>Explanation quality. The weakness of these explanation methods is the empirical evaluation of explanation quality. The authors of <software ContextAttributes="used">ExplaiNE</software> acknowledge the difficulty in measuring the quality of explanation due to the lack of available datasets with ground truth explanations <ref type="bibr" target="#b4">[5]</ref>. <software ContextAttributes="used">ExplaiNE</software> relies on the assumption that an explanation can be found using one of the 1 𝑠𝑡 degree neighbors. On the task of movie recommendation, <software ContextAttributes="used">ExplaiNE</software> measures the quality of explanations using the average Jaccard similarity between the genres for a given recommended movie, and the set of genres from the top 5 ranked explanations computed. A 𝑝-value is then computed to estimate the significance of the average. It is unknown how this evaluation method generalizes to tasks outside of movie recommendation. <software ContextAttributes="used">ExplaiNE</software> has been previously benchmarked with 4 datasets: Karate, DBLP, MovieLens, and Game of Thrones networks. These datasets do not include ground truth explanations, and defining ground truth explanations for these networks is non-trivial. GN-NExplainer has not been benchmarked on the task of explainable link prediction on Knowledge Graphs due to the lack of available datasets. Both <software ContextAttributes="used">GNNExplainer</software> and <software ContextAttributes="used">ExplaiNE</software> lack a common dataset and metric to evaluate explanation quality.</p><p>Multiple ground truths. There can be multiple ways to explain why a link could exist between two nodes. Not all explanations are equally informative about the model's decision, some explanations can be arbitrarily more complicated than others. Explanation methods could generate an explanation when a more intuitive explanation could exist. Datasets containing only one ground truth explanation for each observation are insufficient to quantitatively evaluate explanation methods. Without considering all possible explanations, an explanation method could be incorrectly penalized for identifying a correct explanation not included in the ground truths. Therefore, a predicted explanation must be evaluated against all possible ground truth explanations. To our knowledge, there exists no dataset for link prediction on Knowledge Graphs where all possible ground truth explanations are included. Additionally, there are no standard quantitative metrics to measure the quality of explanations generated when there are multiple explanations to consider, making quantitative comparisons across explanations difficult.</p><p>Contributions. Our contributions include a method to quantitatively evaluate explanation methods on the task of link prediction on Knowledge Graphs, when there are multiple ground truth explanations to consider. Additionally, we propose a dataset, FrenchRoyalty-200k, that includes every possible ground truth explanation for each observation. We perform a user experiment to determine which ground truth explanations are most intuitive. Furthermore, we propose the use of several performance metrics that score predicted explanations based on how intuitive users found the explanation, allowing for quantitative comparisons across explanation methods. Lastly, we benchmark state-of-the-art explanation methods using the proposed dataset and metrics.</p></div>
+<div><head n="3">GENERATING A USER EVALUATED DATASET WITH GROUND TRUTH EXPLANATIONS 3.1 Inference Traces as Explanations</head><p>In a Knowledge Graph, the available formal semantics allow us to view ground truth explanations as equivalent to computing justification for an entailment. We select an open-source semantic reasoner with rule-tracing capabilities <ref type="bibr" target="#b1">[2]</ref> to generate ground truth explanations for each defined rule, without needing manual annotations. This tracing pinpoints the input triples that caused the generation of a triple we will then try to predict and explain. We rely on a set of rules equivalent to strict Horns clauses i.e. disjunctions of literals with exactly one positive literal 𝑙 𝑐 , all the other 𝑙 𝑖 being negated: ¬𝑙 1 ∨ ... ∨ ¬𝑙 𝑛 ∨ 𝑙 𝑐 . The implication form of the clause can be seen as an inference rule assuming that, if all 𝑙 𝑖 hold (the antecedent of the rule), then the consequent 𝑙 𝑐 also holds, denoted 𝑙 𝑐 ← 𝑙 1 ∧ ... ∧ 𝑙 𝑛 . Each literal is a binary predicate capturing a triple pattern of the Knowledge Graph with variables universally quantified for the whole clause. For instance, ℎ𝑎𝑠𝐺𝑟𝑎𝑛𝑑𝑝𝑎𝑟𝑒𝑛𝑡 (𝑋, 𝑍 ) ← ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑋, 𝑌 ) ∧ ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑌, 𝑍 ).</p><p>For a given Knowledge Graph and a given set of rules, the semantic reasoner performs a forward chaining materialization of all inferences that can be made. Each time the engine finds a mapping of triples 𝑇 1 , . . . ,𝑇 𝑛 making the antecedent of a rule true, it materializes the consequent triple 𝑇 𝑐 , and records the explanations in the form 𝑇 𝑐 ← (𝑇 1 , . . . ,𝑇 𝑛 ), where 𝑇 𝑐 is a generated triple, and triples 𝑇 1 , . . . ,𝑇 𝑛 are its explanation.</p><p>Indeed this forms an intuitive explanation for graph data: a study shows users prefer example based explanations <ref type="bibr" target="#b2">[3]</ref> and nonpersonalized feature-based explanations are efficient <ref type="bibr" target="#b9">[10]</ref>. This generic approach to generating ground truth explanations can be applied to many Knowledge Graphs and many sets of rules. In this work, we focus on non-unique explanations, i.e. logical rules constructed to include all possible ground truth explanations. To our knowledge, this approach to generating non-unique ground truth explanations has not been applied to the task of explainable link prediction on Knowledge Graphs using Graph Neural Networks. All the resources used and produced in this work are available online including the download link for the reasoner, code for this paper and datasets 1 .</p></div>
+<div><head n="3.2">Ensuring Completeness of Explanations</head><p>In this paper, we focus on providing a dataset with non-unique explanations. We chose to describe family relations as no prior domain knowledge is needed. The explanation methods we want to evaluate provide their explanations as a set of triples that justify a prediction. In order to construct a dataset that includes all possible explanations for a given predicted triple, we first enumerated all possible paths between the two nodes involved in this predicted triple. To exhaustively list all possible cases, we defined a small synthetic family graph systematically using all the possible types of family relations. This graph describes some individual Paul, and all family members within a 2-hop neighborhood, this includes 1 https://github.com/halliwelln/multiple-explanations/ aunts, grandparents, children, etc. This complete synthetic graph is then used to identify all possible paths with a maximum length of 2 linking the subject and objects of its triples. This graph is purposely kept small, to ensure each possible path can be verified manually. Each of these paths corresponds to one possible explanation as to why a link could exist between two given nodes e.g., Paul and Tom are brothers because Paul and Tom both have the same parent Jim. Indeed some of these paths can be turned into the antecedent of an inference rule for that type of triple e.g. ℎ𝑎𝑠𝐺𝑟𝑎𝑛𝑑𝑝𝑎𝑟𝑒𝑛𝑡 (𝑋, 𝑍 ) ← ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑋, 𝑌 ) ∧ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑌 , 𝑍 ). We define paths that can always be turned into the antecedent of an inference rule as logical explanations. In other words, these explanations are always true. Other paths do not always logically imply the targeted triple but still provide a good indication that could have triggered a human guess or a statistical prediction. For instance, ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑋, 𝑌 ) ∧ ℎ𝑎𝑠𝑃𝑎𝑟𝑒𝑛𝑡 (𝑍, 𝑌 ) could indicate X and Z are brothers or sisters or any combination of these relations. Without additional knowledge (e.g. the gender) the explanation is not always logically true. We define these paths as partial explanations. Some explanations will be more convincing than others to a user, especially among partial explanations. A score is needed for each possible explanation to distinguish good, intuitive explanations from bad, unintuitive ones.</p></div>
+<div><head n="3.3">Logical Derivation and Partial Explanation Rules</head><p>In this work, we focus on 6 family relationships: hasSpouse, with 3 possible explanations, hasBrother, with 7 possible explanations, hasSister, with 7 possible explanations, hasGrandparent, with 6 possible explanations, and hasChild, and hasParent with 9 possible explanations. As we have two types of explanations (logical vs. partial), there are also have two types of rules (logical derivation vs. partial explanation). We define a logical derivation rule as one that is always true, and a partial explanation rule as one that is not always true without additional information, such as gender. The predicate of each triple used on the link prediction task is in the consequent of one or more of these rules. The associated explanation consists of the all possible triples that triggered each rule.</p><p>The logical derivation rules trigger every time their antecedent is matched, and its corresponding triple and logically true explanation are generated. The partial explanation rules trigger only if the triple is already known (asserted or inferred by other rules) and are just adding alternative partial explanations, therefore preventing any false triples from being included in the graph. In addition, each rule (both logical derivation and partial explanation) associates a score to the explanations it generates. The score is defined at the per rule level, and is the same for all the explanations generated by that rule. The score captures how intuitive a given pattern of explanation is for a given type of predicted triple, detailed in the next section.</p><p>We apply all rules to the entire Knowledge Graph of the French Royalty families found in DBpedia <ref type="bibr" target="#b7">[8]</ref> to build the FrenchRoyalty-200k dataset. Included with each triple in the training and test sets are all possible explanations as to why a given link could exist between the two nodes. Figure <ref type="figure" target="#fig_0">1</ref> shows an example of a candidate triple along with several possible explanations. Table <ref type="table">1</ref> outlines all rules defined in the FrenchRoyalty-200k dataset. Included in this table is the number of total triples for each predicate, the predicates used to define every possible explanation, the user score assigned to each predicate, and a column to indicate whether a rule is logically true or provides a partial explanation.</p></div>
+<div><head n="3.4">Users' Evaluation of Explanation Scores</head><p>Although <software>ExplaiNE</software> and <software ContextAttributes="used">GNNExplainer</software> have many possible explanations to choose from, these explanations are not equal. Some explanations may be easier to understand than others. When benchmarking explanation methods with non-unique explanations, a scoring metric should assign a high score when an explanation method correctly predicts an intuitive explanation, and a low score when an unintuitive, overly complicated explanation is predicted.</p><p>We conducted a user experiment to score each possible explanation. This allows us to distinguish explanations that are intuitive from those that are not without relying on any prior assumptions. One could rely on the assumption that for example the shortest path, i.e., the explanation that uses the fewest number of predicates, is the most intuitive explanation. This assumption would fail when predicting the hasGrandparent predicate, as there are no 1 hop paths, but many 2 hop paths. Relying on the shortest path would treat all 2 hop paths as equally intuitive, while the hasParent/hasParent path is by far the best explanation for hasGrandparent.</p><p>Using a survey platform, we conduct an experimental evaluation where for each predicate, users are shown all possible explanations on the Paul's Family graph, and asked to assign a score to each path based on if the explanation is intuitive. Users are given the following definition: "An explanation is considered intuitive if it is easily and immediately understood." For each predicate, and for each possible explanation, users are given an example of the predicate and its explanation used in a sentence. For example, for the hasSister predicate, one explanation uses the hasParent, and hasChild relations. Users are asked to score the following explanation: "Ruth is the sister of Paul because Mary is the parent of Paul, and Ruth is the child of Mary. "</p><p>Users scored each of these explanations on a five-point Likert scale: (4) Very intuitive, an explanation I could give or expect; (3) Intuitive; (2) Neither intuitive or unintuitive; (1) Unintuitive ; (0) Not intuitive at all, not an explanation I would give or expect.</p><p>In total, 42 users responded from 11 different nationalities, consisting of both computer science and non-computer science backgrounds. We normalized the average scores between 0 and 1 for each possible explanation, and round them to the nearest tenth. These user scores are used in the rules and in the benchmark, detailed below, to penalize unintuitive predicted explanations, and reward intuitive predicted explanations. User scores for each predicate and explanation can be found in Table <ref type="table">1</ref>.</p><p>This survey also showed that, even for humans, explanations can be difficult to define and assess. Users had difficulty deciding which explanations were intuitive. Even when presented equivalent explanations for two different predicates, for example, using has-Brother, hasSister to explain a hasBrother link, and using hasBrother, hasSister to explain a hasSister link, users on average did not assign these explanations the same score. This lack of symmetry can be seen for multiple predicates in Table <ref type="table">1</ref>.</p></div>
+<div><head n="4">EVALUATION OF NON-UNIQUE EXPLANATIONS 4.1 Scoring Metrics</head><p>To our knowledge, there is no standard evaluation metric to measure the quality of explanations generated by explanation methods when there are non-unique explanations available to predict. A standard evaluation metric is needed to identify when one explanation method is preferable to the other. The binary precision and recall could be used for this task, however, these metrics fail to account for the fact that some explanations can be more intuitive than others to users. Both metrics would give a score of 1 when a predicted explanation exactly matches a ground truth explanation. However, an explanation method could predict an unintuitive explanation, and receive the highest possible evaluation score, potentially misleading practitioners into thinking the predicted explanation is of high quality. Therefore, scoring metrics used for this task must compare a predicted explanation to all possible explanations, and account for the fact that explanations have different degrees of relevance. Ideally, a scoring metric for this task should assign a lower score to an unintuitive predicted explanation, and a higher score to an intuitive predicted explanation.</p><p>We propose to score explanation methods with non-unique explanations by adapting the generalized precision and generalized recall <ref type="bibr" target="#b5">[6]</ref>. Originally proposed for document retrieval, generalized precision and generalized recall measure precision and recall based on the relevance score assigned to each retrieved document. Generalized precision is defined by the sum of relevance scores for each retrieved document divided by the number of retrieved documents. Generalized recall is defined by the sum of relevance scores for each retrieved document divided by the sum of relevance scores for all documents in the database.</p><p>We adapted these metrics in the context of link prediction on Knowledge Graphs. Formally, let 𝑡 𝑖 be a triple, 𝑒 𝑖 = {𝑡 1 , . . . , 𝑡 𝑛 } be one of the possible ground truth explanations for triple 𝑡 𝑖 . Let ê𝑖 ∈ 𝐸 𝑖 be the predicted explanation for 𝑡 𝑖 , and 𝐸 𝑖 be defined as all possible explanations for 𝑡 𝑖 . Lastly, let 𝑠 (.) gives the relevance score (determined by the user experiment) for a given explanation. First, the best possible user score for an explanation is given by Equation <ref type="formula" target="#formula_2">3</ref>:  <ref type="table">1</ref>: FrenchRoyalty-200k dataset: Breakdown of all predicates each possible explanation, and its score given by users. # Triples column denotes the total number of triples with that predicate. User Score column gives the score assigned to each explanation by users. Explanation Type column denotes whether this explanation is a logical (always true) or only partial.</p><formula xml:id="formula_2">𝑠 𝑖 = max 𝑒 𝑖 ∈𝐸 𝑖 𝑠 (𝑒 𝑖 )<label>(3)</label></formula><p>The generalized precision between a predicted explanation and a ground truth explanation is given by Equation <ref type="formula">4</ref>:</p><formula xml:id="formula_3">𝑔𝑝 ( ê𝑖 , 𝑒 𝑖 ) = | ê𝑖 ∩ 𝑒 𝑖 | × 𝑠 (𝑒 𝑖 ) | ê𝑖 | × 𝑠 𝑖 (4)</formula><p>Intuitively, it is a sum of the user scores of the triples shared by the prediction and the ground truth, divided by the number of triples in the prediction, and the largest possible user score. For a given triple 𝑡 𝑖 , we take the highest generalized precision across all of 𝑡 𝑖 's ground truth explanations, given by Equation <ref type="formula" target="#formula_4">5</ref>:</p><formula xml:id="formula_4">𝑔𝑝 ( ê𝑖 , 𝐸 𝑖 ) = max 𝑒 𝑖 ∈𝐸 𝑖 𝑔𝑝 ( ê𝑖 , 𝑒 𝑖 )<label>(5)</label></formula><p>We compute the maximum generalized precision for each triple, and average across the dataset. For the set of all predicted explanations Ê, and the set of all ground truth explanation sets 𝐸, the generalized precision for an explanation method across the entire dataset is given by Equation <ref type="formula" target="#formula_5">6</ref>:</p><formula xml:id="formula_5">𝐺𝑃 ( Ê, 𝐸) = ê𝑖 ∈ Ê,𝐸 𝑖 ∈𝐸 𝑔𝑝 ( ê𝑖 , 𝐸 𝑖 ) | Ê|<label>(6)</label></formula><p>The generalized recall sums the relevance scores for each predicted explanation that exists in the ground truth explanations, divided by the number of triples in the ground truth explanation, and the largest possible user score, given by Equation <ref type="formula" target="#formula_6">7</ref>:</p><formula xml:id="formula_6">𝑔𝑟 ( ê𝑖 , 𝑒 𝑖 ) = | ê𝑖 ∩ 𝑒 𝑖 | × 𝑠 (𝑒 𝑖 ) |𝑒 𝑖 | × 𝑠 𝑖 . (<label>7</label></formula><formula xml:id="formula_7">)</formula><p>Similar to generalized precision, we propose to compute a maximum generalized recall for each triple in the dataset (Equation <ref type="formula">8</ref>) and average it across the dataset (Equation <ref type="formula">9</ref>).</p><formula xml:id="formula_8">𝑔𝑟 ( ê𝑖 , 𝐸 𝑖 ) = max 𝑒 𝑖 ∈𝐸 𝑖 𝑔𝑟 ( ê𝑖 , 𝑒 𝑖 ) (8) 𝐺𝑅( Ê, 𝐸) = ê𝑖 ∈ Ê,𝐸 𝑖 ∈𝐸 𝑔𝑟 ( ê𝑖 , 𝐸 𝑖 ) | Ê| (9)</formula><p>Note that we normalize the generalized precision and recall by the largest possible user score for each explanation to ensure they take values between 0 and 1.</p><p>We compute the generalized 𝐹 1 score, defined as the harmonic mean between the generalized precision and generalized recall. To ensure the recall and precision are computed on the same explanation, we compute them before we select the maximum (Equation <ref type="formula">10</ref>) and average it (Equation <ref type="formula" target="#formula_9">11</ref>)</p><formula xml:id="formula_9">𝑔𝑓 1 ( ê𝑖 , 𝐸 𝑖 ) = max 𝑒 𝑖 ∈𝐸 𝑖 2 × 𝑔𝑟 ( ê𝑖 , 𝑒 𝑖 ) × 𝑔𝑝 ( ê𝑖 , 𝑒 𝑖 ) 𝑔𝑟 ( ê𝑖 , 𝑒 𝑖 ) + 𝑔𝑝 ( ê𝑖 , 𝑒 𝑖 ) (10) 𝐺𝐹 1 ( Ê, 𝐸) = ê𝑖 ∈ Ê,𝐸 𝑖 ∈𝐸 𝑔𝑓 1 ( ê𝑖 , 𝐸 𝑖 ) | Ê|<label>(11)</label></formula><p>Finally we propose the use of the max-Jaccard metric to identify which explanation had the most in common with the predicted explanation. Formally, for triple 𝑡 𝑖 , we compute the Jaccard similarity between predicted explanation ê𝑖 with one of the possible ground truth explanation sets 𝑒 𝑖 , given by Equation <ref type="formula" target="#formula_10">12</ref>:</p><formula xml:id="formula_10">𝑗 (𝑒 𝑖 , ê𝑖 ) = |𝑒 𝑖 ∩ ê𝑖 | |𝑒 𝑖 ∪ ê𝑖 | = |𝑒 𝑖 ∩ ê𝑖 | |𝑒 𝑖 | + | ê𝑖 | -|𝑒 𝑖 ∩ ê𝑖 | .<label>(12)</label></formula><p>We compute this Jaccard similarity across all possible explanations in set 𝐸 𝑖 for triple 𝑡 𝑖 (Equation <ref type="formula" target="#formula_11">13</ref>) and average the result over the dataset (Equation <ref type="formula" target="#formula_12">14</ref>):</p><formula xml:id="formula_11">𝑚 𝑗 ( ê𝑖 , 𝐸 𝑖 ) = max 𝑒 𝑖 ∈𝐸 𝑖 𝑗 ( ê𝑖 , 𝑒 𝑖 )<label>(13)</label></formula><formula xml:id="formula_12">𝑀 𝐽 ( Ê, 𝐸) = ê𝑖 ∈ Ê,𝐸 𝑖 ∈𝐸 𝑚 𝑗 ( ê𝑖 , 𝐸 𝑖 ) | Ê|<label>(14)</label></formula><p>The max-Jaccard compares a predicted explanation with all possible explanations available to choose from. Intuitively it identifies the ground truth explanation that shares a maximum number of triples with the predicted explanation, therefore indicating which explanation a method may have tried to predict.</p><p>We argue these metrics are sufficient to quantitatively compare explanation methods when there are multiple explanations to consider. The max-Jaccard score measures if the explanation method is able to accurately predict one of the possible explanations to choose from. The generalized precision and generalized recall measure if the predicted explanation was given a high intuitive score assigned by users. Both metrics prevent an explanation method from only predicting low scored, unintuitive explanations, and receiving a high score. Lastly, the generalized 𝐹 1 provides an overview of performance on the generalized precision and recall.</p></div>
+<div><head n="4.2">Benchmark Setup and Protocol</head><p>One way to perform link prediction on Knowledge Graphs is to learn a real-valued vector for each entity and relation. For this benchmark, we use a Relational Graph Convolutional Network (RGCN) to learn embeddings. This was chosen as it can be used with many explanation methods without the need for any further adaptations. <software>GNNExplainer</software> is only defined for Graph Neural Networks, hence a GNN must be used on the link prediction task.</p><p><software>ExplaiNE</software> requires a model that takes an adjacency matrix as input. The RGCN meets both of these requirements. Additionally, the scoring function has a meaningful interpretation, returning the probability that an input triple is a fact. We fix the number of dimensions to 10, the best performing in terms of accuracy from the set {3, 5, 10}. We use a learning rate of 0.01, the best performing from the set {0.01, 0.001, 0.0001}. Lastly, we train the RGCN on 1000 epochs for all rules, found to the best performing from the set {50, 100, 500, 1000, 2000}. We report the accuracy of the RGCN on the link prediction task. For each data subset and each explanation method, we report the generalized precision, generalized recall, generalized 𝐹 1 , and max-Jaccard.</p><p>We train <software>GNNExplainer</software> using a learning rate of 0.001 for each rule. We use 20 iterations for each observation. 3-fold cross validation is performed for both explanation methods, and we report the results of the best performing fold.</p></div>
+<div><head n="4.3">Results and Discussion</head><p>Results per Subset. We benchmark the FrenchRoyalty-200k dataset by splitting the full data into subsets where only one type of predictable predicate is included. The top half of Table <ref type="table" target="#tab_1">2</ref> reports performance results of each predicate subset. For example, the Spouse subset included only triples in the training and test sets with the hasSpouse predicates, and their associated explanations.</p><p>First, the topmost row of Table <ref type="table" target="#tab_1">2</ref> reports the results of the RGCN on the link prediction task. We observe the highest accuracy on the hasSpouse relation, and a drop in performance across the other predicates. We observe the lowest accuracy on the hasChild relation.</p><p>Additionally, the top half of Table <ref type="table" target="#tab_1">2</ref> reports the results of GN-NExplainer on the task of explainable link prediction. We can see <software ContextAttributes="used">GNNExplainer</software> performed the best on the hasBrother predicate explanation in terms of the generalized 𝐹 1 score. Note that the RGCN link prediction also performed well on the hasBrother predicate. We observe performance drops on the relations hasChild and has-Parent, and on the full dataset, with all predicates included. Indeed the hasChild and hasParent explanations follow a similar structure and definition of being logically inverse relations of each other.</p><p>The top half of Table <ref type="table" target="#tab_1">2</ref> reports the results of <software ContextAttributes="used">ExplaiNE</software> on the task of explainable link prediction. This method performed the best on the hasBrother and hasSister predicate subsets in terms of generalized 𝐹 1 score. We see the lowest performance on the full datset, followed by the hasGrandparent and hasChild predicate subsets. Across all metrics and predicate subsets, we find <software ContextAttributes="used">ExplaiNE</software> outperformed <software ContextAttributes="used">GNNExplainer</software>.</p><p>Full Data Results. The bottom half of Table <ref type="table" target="#tab_1">2</ref> further breaks down the results on the full dataset (Full data column of the top half table). We filter the results on the full data for each predicate and compare performance metrics to each predicate subset. For example, the Spouse column from the bottom half of Table <ref type="table" target="#tab_1">2</ref> reports the benchmark performance of all input triples with the hasSpouse predicate from an RGCN trained on the full data. This RGCN is exposed to all possible predicates, whereas the Spouse column from the top half reports benchmark performance on an RGCN trained only on the input triples with the hasSpouse predicate.</p><p>Comparing the two halves of large changes across explanation performance metrics suggest that embeddings learned by the RGCN play a significant role. The RGCN trained on the hasSpouse subset is learning embeddings using only triples with hasSpouse and explanations containing hasSpouse, hasChild, and hasParent. In other words, the RGCN trained on this subset only has access to these predicates. The RGCN trained on the full dataset however has access to all predicates listed in Table <ref type="table">1</ref>. This could suggest, for instance, the embeddings from the full data is incorporating additional, useless information into the embedding causing a drop in explanation metrics. Error Analysis. We define an incomplete attempt to be a predicted explanation where the max-Jaccard score across all possible explanations is less than 1. If two explanations have the same max-Jaccard score, we take the explanation with the highest user score. An incomplete attempt is considered to be a mistake made by the explanation method. Table <ref type="table" target="#tab_3">3</ref> reports the distributions of user scores amongst the incomplete attempts of <software ContextAttributes="used">GNNExplainer</software> and <software ContextAttributes="used">ExplaiNE</software> for each predicate subset. On the hasSpouse subset, <software ContextAttributes="used">GNNExplainer</software> unsuccessfully attempted to predict an explanation with a user score of 0.5 on 50 observations in the test set. From this table, we can see both explanations methods attempted many times but failed to predict explanations with user scores of 0.7. Both explanation methods do not always attempt to predict explanations with the highest user scores (0.9). We recognize the imbalance of user scores, with 0.7 being the most common user score assigned to an explanation. Still, we bring to attention the fact that these explanation methods do not always try to predict the best possible explanation (those with the highest user scores).</p><p>Finally, the proposed method and dataset allows us to perform an error analysis on the most frequently predicted predicates amongst incomplete attempts. For instance, Figure <ref type="figure" target="#fig_1">2</ref> shows a histogram of <software ContextAttributes="used">ExplaiNE</software>'s incomplete attempts on the hasSpouse predicate. The most frequently predicated predicate was hasSpouse, accounting for 83% of incomplete attempts. As an example, for an input triple (Eadhild, hasSpouse, Hugh the Great), and its ground truth explanations (Hugh the Great, hasSpouse, Eadhild), <software ContextAttributes="used">ExplaiNE</software> predicted a first degree neighbor (Hugh the Great, hasSpouse, Hedwig of Saxony). This incorrect predicted explanation uses the hasSpouse predicate but in the wrong way. This type of analysis can be performed on any predicate. We omit these results due to space constraints.</p><p>We can see the importance of the FrenchRoyalty-200k dataset from this benchmark, along with the method we use to construct it, and the metrics we provide. State-of-the-art explanation methods do not always give accurate explanations. Explanation methods must be evaluated with ground truth explanations and quantitative metrics that consider all possible explanations. Our method, dataset, and metrics allow researchers to do so, and to develop new explanation methods and quantitatively evaluate their explanations in a way they were previously unable to.</p></div>
+<div><head n="5">CONCLUSION</head><p>On the task of explainable link prediction, there is no standard dataset available with non-unique explanations for quantitative comparisons, as no standard method exists to generate datasets with all possible explanations. Additionally, there is no standard evaluation metric to compare a predicted explanation with all possible ground truths. In this work, we propose a method, including a dataset, FrenchRoyalty-200k, to compare predicted and ground truth explanations when there are multiple ground truths. Furthermore, we propose the use of several evaluation metrics, leveraging the use of graded precision and recall for quantitative comparisons across explanation methods. Lastly, we benchmark two state-ofthe-art explanation methods, <software>ExplaiNE</software> and <software ContextAttributes="used">GNNExplainer</software> using the proposed dataset and scoring metrics. Our method can be used to generate other Knowledge Graphs with a variety of different domains, size, density, etc., to support the qualitative and quantitative evaluation of explanations for Relational Graph Convolutional Network link prediction.</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A candidate triple (Louis VII of France, hasChild, Agnes of France) plotted in red with its non-unique explanations in green: {(Agnes of France, hasGrandparent, Louis VI of France), (Louis VII of France, hasParent, Louis VI of France)}, {(Adela of Champagne, hasChild, Agnes of France), (Louis VII of France, hasSpouse, Adela of Champagne)}, and neighboring triples.</figDesc><graphic coords="4,66.41,83.69,479.18,86.84" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: ExplaiNE-Spouse: Most frequently predicted predicates amongst incomplete attempts.</figDesc></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 ,</head><label>2</label><figDesc>we can see the generalized precision, recall and 𝐹 1 scores generally decreased. These</figDesc><table><row><cell /><cell /><cell /><cell cols="5">Statistics in separated subsets focused on one predicate</cell><cell /></row><row><cell>Models</cell><cell>Metrics</cell><cell cols="7">Spouse Brother Sister Grandparent Child Parent Full data</cell></row><row><cell>RGCN</cell><cell>Accuracy</cell><cell>0.903</cell><cell>0.877</cell><cell>0.825</cell><cell>0.787</cell><cell>0.767</cell><cell>0.805</cell><cell>0.81</cell></row><row><cell /><cell>Generalized Precision</cell><cell>0.261</cell><cell>0.366</cell><cell>0.281</cell><cell>0.17</cell><cell>0.137</cell><cell>0.123</cell><cell>0.11</cell></row><row><cell>GNN</cell><cell>Generalized Recall</cell><cell>0.434</cell><cell>0.395</cell><cell>0.31</cell><cell>0.17</cell><cell>0.158</cell><cell>0.152</cell><cell>0.121</cell></row><row><cell>Explainer</cell><cell>Generalized 𝐹 1</cell><cell>0.318</cell><cell>0.376</cell><cell>0.291</cell><cell>0.17</cell><cell>0.144</cell><cell>0.133</cell><cell>0.114</cell></row><row><cell /><cell>Max-Jaccard</cell><cell>0.275</cell><cell>0.372</cell><cell>0.373</cell><cell>0.137</cell><cell>0.166</cell><cell>0.161</cell><cell>0.11</cell></row><row><cell /><cell cols="2">Generalized Precision 0.296</cell><cell>0.407</cell><cell>0.353</cell><cell>0.21</cell><cell cols="2">0.181 0.202</cell><cell>0.173</cell></row><row><cell>ExplaiNE</cell><cell>Generalized Recall Generalized 𝐹 1</cell><cell>0.546 0.378</cell><cell>0.458 0.424</cell><cell>0.459 0.388</cell><cell>0.21 0.21</cell><cell cols="2">0.223 0.243 0.195 0.216</cell><cell>0.2 0.182</cell></row><row><cell /><cell>Max-Jaccard</cell><cell>0.315</cell><cell>0.447</cell><cell>0.417</cell><cell>0.179</cell><cell>0.22</cell><cell>0.252</cell><cell>0.174</cell></row><row><cell /><cell /><cell cols="6">Individual predicate statistics on the full dataset</cell><cell /></row><row><cell>Models</cell><cell>Metrics</cell><cell cols="7">Spouse Brother Sister Grandparent Child Parent Full data</cell></row><row><cell>RGCN</cell><cell>Accuracy</cell><cell>0.786</cell><cell>0.878</cell><cell>0.826</cell><cell>0.822</cell><cell>0.804</cell><cell>0.8</cell><cell>0.81</cell></row><row><cell /><cell>Generalized Precision</cell><cell>0.071</cell><cell>0.174</cell><cell>0.117</cell><cell>0.129</cell><cell>0.109</cell><cell>0.091</cell><cell>0.11</cell></row><row><cell>GNN</cell><cell>Generalized Recall</cell><cell>0.106</cell><cell>0.192</cell><cell>0.142</cell><cell>0.129</cell><cell>0.125</cell><cell>0.102</cell><cell>0.121</cell></row><row><cell>Explainer</cell><cell>Generalized 𝐹 1</cell><cell>0.083</cell><cell>0.18</cell><cell>0.126</cell><cell>0.129</cell><cell>0.114</cell><cell>0.095</cell><cell>0.114</cell></row><row><cell /><cell>Max-Jaccard</cell><cell>0.066</cell><cell>0.2</cell><cell>0.151</cell><cell>0.102</cell><cell>0.125</cell><cell>0.12</cell><cell>0.11</cell></row><row><cell /><cell cols="2">Generalized Precision 0.138</cell><cell>0.25</cell><cell>0.194</cell><cell>0.177</cell><cell cols="2">0.166 0.182</cell><cell>0.173</cell></row><row><cell>ExplaiNE</cell><cell>Generalized Recall Generalized 𝐹 1</cell><cell>0.221 0.165</cell><cell>0.263 0.253</cell><cell>0.214 0.2</cell><cell>0.177 0.177</cell><cell cols="2">0.207 0.222 0.18 0.195</cell><cell>0.2 0.182</cell></row><row><cell /><cell>Max-Jaccard</cell><cell>0.133</cell><cell>0.27</cell><cell>0.237</cell><cell>0.145</cell><cell cols="2">0.187 0.225</cell><cell>0.174</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Benchmark results on FrenchRoyalty-200k: Link prediction results for RGCN, and explanation evaluation for GN-NExplainer and ExplaiNE. Highest scores per predicate denoted in bold.</figDesc><table><row><cell /><cell /><cell /><cell /><cell /><cell cols="2">User Scores</cell><cell /><cell /></row><row><cell>Models</cell><cell>Rule</cell><cell cols="5">0.2 0.3 0.4 0.5 0.6</cell><cell>0.7</cell><cell>0.8</cell><cell>0.9</cell></row><row><cell /><cell>Spouse</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>50</cell><cell>0</cell><cell>0</cell><cell>276</cell><cell>59</cell></row><row><cell /><cell>Brother</cell><cell>0</cell><cell>21</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>2</cell><cell>10</cell><cell>23</cell></row><row><cell>GNN Explainer</cell><cell cols="2">Sister Grandparent 0 19</cell><cell>0 0</cell><cell>0 0</cell><cell>0 0</cell><cell>0 61</cell><cell>3 504</cell><cell>13 0</cell><cell>7 1104</cell></row><row><cell /><cell>Child</cell><cell>0</cell><cell>0</cell><cell cols="2">353 0</cell><cell>0</cell><cell>585</cell><cell>0</cell><cell>91</cell></row><row><cell /><cell>Parent</cell><cell cols="2">0 192</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>515</cell><cell>0</cell><cell>152</cell></row><row><cell /><cell>Full data</cell><cell cols="8">11 195 312 59 47 1668 301 1499</cell></row><row><cell /><cell>Spouse</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>17</cell><cell>0</cell><cell>0</cell><cell>327</cell><cell>47</cell></row><row><cell /><cell>Brother</cell><cell>0</cell><cell>20</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>5</cell><cell>7</cell><cell>19</cell></row><row><cell /><cell>Sister</cell><cell>13</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>6</cell><cell>13</cell><cell>10</cell></row><row><cell>ExplaiNE</cell><cell cols="2">Grandparent 0</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell cols="2">32 850</cell><cell>0</cell><cell>788</cell></row><row><cell /><cell>Child</cell><cell>0</cell><cell>0</cell><cell cols="2">389 0</cell><cell>0</cell><cell>516</cell><cell>0</cell><cell>118</cell></row><row><cell /><cell>Parent</cell><cell cols="2">0 264</cell><cell>0</cell><cell>0</cell><cell>0</cell><cell>437</cell><cell>0</cell><cell>154</cell></row><row><cell /><cell>Full data</cell><cell cols="8">16 274 336 62 30 1765 267 1333</cell></row></table></figure>
+<figure type="table" xml:id="tab_3"><head>Table 3 :</head><label>3</label><figDesc>Distributions of user scores amongst incomplete attempts. For example, of ExplainE's incorrect predictions on the hasSpouse predicate, ExplaiNE unsuccessfully attempted to predict an explanation with a user score of 0.8 on 327 observations.</figDesc><table /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Translating Embeddings for Modeling Multi-relational Data</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Bordes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Usunier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alberto</forename><surname>García-Durán</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oksana</forename><surname>Yakhnenko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">KGRAM Versatile Inference and Query Engine for the Web of Linked Data</title>
+		<author>
+			<persName><forename type="first">Olivier</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alban</forename><surname>Gaignard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><forename type="middle">Faron</forename><surname>Zucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Johan</forename><surname>Montagnat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/WIC/ACM Int. Conference on Web Intelligence</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">How Can I Explain This to You? An Empirical Study of Deep Neural Network Explanation Methods</title>
+		<author>
+			<persName><forename type="first">Jeya</forename><surname>Vikranth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeyakumar</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Noor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yu-Hsi</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mani</forename><forename type="middle">B</forename><surname>Srivastava</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">A Survey on Knowledge Graphs: Representation, Acquisition and Applications</title>
+		<author>
+			<persName><forename type="first">Shaoxiong</forename><surname>Ji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shirui</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Cambria</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pekka</forename><surname>Marttinen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2002.00388</idno>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">ExplaiNE: An Approach for Explaining Network Embedding-based Link Predictions</title>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jefrey</forename><surname>Lijffijt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tijl</forename><surname>De</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bie</forename></persName>
+		</author>
+		<idno>CoRR abs/1904.12694</idno>
+		<imprint>
+			<date type="published" when="2019">2019. 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Using graded relevance assessments in IR evaluation</title>
+		<author>
+			<persName><forename type="first">Jaana</forename><surname>Kekäläinen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kalervo</forename><surname>Järvelin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Assoc. Inf. Sci. Technol</title>
+		<imprint>
+			<date type="published" when="2002">2002. 2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Semi-Supervised Classification with Graph Convolutional Networks</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">N</forename><surname>Kipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Welling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Learning Representations</title>
+		<imprint>
+			<publisher>ICLR</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">DBpedia -A large-scale, multilingual knowledge base extracted from Wikipedia</title>
+		<author>
+			<persName><forename type="first">Jens</forename><surname>Lehmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Isele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Jakob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anja</forename><surname>Jentzsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitris</forename><surname>Kontokostas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pablo</forename><forename type="middle">N</forename><surname>Mendes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Hellmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><surname>Morsey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Van Kleef</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sören</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Bizer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<date type="published" when="2015">2015. 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Modeling Relational Data with Graph Convolutional Networks</title>
+		<author>
+			<persName><forename type="first">Sejr</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><forename type="middle">N</forename><surname>Schlichtkrull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Kipf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rianne</forename><surname>Bloem</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ivan</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Titov</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Welling</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Semantic Web Conference</title>
+		<imprint>
+			<publisher>ESWC</publisher>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Evaluating the effectiveness of explanations for recommender systems</title>
+		<author>
+			<persName><forename type="first">Nava</forename><surname>Tintarev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Judith</forename><surname>Masthoff</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">User Modeling and User-Adapted Interaction</title>
+		<imprint>
+			<date type="published" when="2012">2012. 2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Embedding Entities and Relations for Learning and Inference in Knowledge Bases</title>
+		<author>
+			<persName><forename type="first">Bishan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wen-Tau</forename><surname>Yih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaodong</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianfeng</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Deng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">3rd International Conference on Learning Representations</title>
+		<imprint>
+			<publisher>ICLR</publisher>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">GNNExplainer: Generating Explanations for Graph Neural Networks</title>
+		<author>
+			<persName><forename type="first">Zhitao</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dylan</forename><surname>Bourgeois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxuan</forename><surname>You</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marinka</forename><surname>Zitnik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

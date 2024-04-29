@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Integrating Writing Dynamics in CNN for Online Children Handwriting Recognition</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Simon</forename><surname>Corbillé</surname></persName>
+							<email>simon.corbille@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IRISA lab</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Élisa</forename><surname>Fromont</surname></persName>
+							<email>elisa.fromont@irisa.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IUF</orgName>
+								<orgName type="institution" key="instit3">IRISA lab</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Éric</forename><surname>Anquetil</surname></persName>
+							<email>eric.anquetil@irisa.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IRISA lab</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pauline</forename><surname>Nerdeux</surname></persName>
+							<email>pauline.nerdeux@irisa.fr</email>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IRISA lab</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Integrating Writing Dynamics in CNN for Online Children Handwriting Recognition</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">C709E8D07480275C1E5E390766962DF5</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Online handwriting recognition</term>
+					<term>Convolutional neural network</term>
+					<term>Digital learning</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Online handwriting recognition is challenging but an already well-studied topic. However, recent advances in the development of convolutional neural networks (CNN) make us believe that these networks could still improve the state of the art especially in the much more challenging context of online children handwritten letters recognition. This is because, children handwriting is, at an early stage of learning, approximate and includes deformed letters. To evaluate the potential of these networks, we study the early and late fusions of different input channels that can provide a CNN with information about the handwriting dynamics in addition to the static image of the characters. The experiments on a real children handwriting dataset with 27 000 characters acquired in primary schools, show that using multiple channels with CNN, improves the accuracy performance of different CNN architectures and different fusion settings for character recognition.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Digital learning is about associating learning experiences with numerical technology. It is especially popular in the business world as well as in the educational environment. With digital learning, one can benefit both from the traditional active learning methods and from the digital tools which can take various modalities. Our end goal is to recognize and analyse online children's handwriting and, in particular, the letters they draw when starting to learn how to write, to be able to help them in this crucial step of their development where they have a very approximate graphomotor gesture. In particular, we would like, ultimately, to improve an existing software <ref type="bibr" target="#b0">[1]</ref> that has already been deployed in primary schools and allowed us to record a large (27 000 characters) number of children handwriting sequences. This target software gives us a number of constraints: our method should be usable on tablets, work in real-time and be dedicated, for now, to the Latin alphabet. Children handwriting differs from the traditional (adult) handwriting analysis problem, since it is often difficult, even for a human eye, to recognize the children letters as depicted in Fig. <ref type="figure">1</ref>.</p><p>A decade ago, Hidden Markov Model based on hand-crafted features <ref type="bibr" target="#b1">[2]</ref> were state-of-the-art methods to perform online handwriting recognition. Nowadays, deep neural networks are trained end-to-end and include feature extraction layers mainly based on convolutions filters. The current state-of-art results Fig. <ref type="figure">1</ref>: Examples of deformed children handwritten letters. In black, the drawing corresponding with the real orange letter in online handwriting recognition are obtained by recurrent neuronal networks <ref type="bibr" target="#b2">[3]</ref>  <ref type="bibr" target="#b3">[4]</ref>. These networks often combine many different sub parts which make them relatively big (in space), slow (at inference time) and sometimes difficult to train. We would like to study how, simpler convolutional neural networks (CNN), already known to give excellent results on image analysis, could be used in this context.</p><p>In this work, we study three well-known CNN architectures: LeNet-5 <ref type="bibr" target="#b4">[5]</ref> (the first well-known CNN, specialized for digit recognition), ResNet-18 <ref type="bibr" target="#b5">[6]</ref> and VGG-11 <ref type="bibr" target="#b6">[7]</ref>. In particular, we would like to evaluate if using different types of input channels which provide information about the handwriting dynamics like in <ref type="bibr" target="#b7">[8]</ref>, can improve the performance of the CNN compared to a vanilla setting using only the image channels (3 channels R/G/B). We evaluate an early and a late fusion. The early fusion consists in combining different channels at the input of a single network. The late one consists in using a combination of neural network classifiers trained on the different channels separately to improve the classification performance.</p><p>The main contributions of this article are:</p><p>• Conversion of online data to image with dynamics information; • Comparison of three famous CNN architectures and two usual types of fusion. The paper is organized as follows. The related work is presented in section II. Then, we describe in details in section III our strategy to encode the dynamics of a handwriting sequence Fig. <ref type="figure">2</ref>: Transformation of online handwritten characters to static and dynamic channels to product an image. When there is no pencil line, the corresponding value in the matrix is zero. into a single image. Section IV details the two proposed fusion methods to take into account these complementary inputs. Section V presents the results and show how the use of multiple channels can indeed improve children handwriting recognition. Conclusion and perspectives are given in section VI.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORK</head><p>Many recent work ( <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b12">[13]</ref> and <ref type="bibr" target="#b13">[14]</ref>) use deep learning to automatically recognize offline handwritten texts in, respectively, Amharic, Mongolian, Latin, Bengla and Chinese languages. They mainly use convolutional and recurrent networks or a combination of both to perform the recognition task. The usual performance metrics when dealing with character or word recognition are the CER (Character Error Rate) and the WER (Word Error Rate) which give respectively the percentage of errors in classification (at the level of the character or at the word level) on a given test set.</p><p>CNN are preferred to perform offline handwriting recognition. They can be coupled with a text model to increase the performance such as in <ref type="bibr" target="#b14">[15]</ref> where a CNN is coupled to a Ngram model. They achieved 3.44% CER and 6.45% WER on the well-known IAM dataset <ref type="bibr" target="#b15">[16]</ref> and 1.90% CER and 3.90% WER on RIMES dataset <ref type="bibr" target="#b16">[17]</ref>.</p><p>The current best results in online handwriting recognition are obtained with recurrent neural network (see e.g. <ref type="bibr" target="#b2">[3]</ref> and its extension <ref type="bibr" target="#b3">[4]</ref>). The networks presented in <ref type="bibr" target="#b2">[3]</ref> and <ref type="bibr" target="#b3">[4]</ref> give, respectively 4.3% CER and 10.4% WER and 2.5% CER and 6.5% WER on IAM-OnDB <ref type="bibr" target="#b17">[18]</ref>, the online version of the IAM database.</p><p>The use of CNN for online signal recognition had been studied for the task of action recognition in <ref type="bibr" target="#b18">[19]</ref> and <ref type="bibr" target="#b19">[20]</ref>. In <ref type="bibr" target="#b18">[19]</ref>, the authors use three types of inputs relative to gesture as input to a CNN. Each input is treated separately (in a branch) of the network and the features extracted are concatenated before being given as input to a last CNN which performs the classification. They used three different channels to represent dynamic information contained in the online signal as input for the CNN. The idea is to used this approach for mixing dynamic information with static ones, which represent the online handwriting, as input for CNN.</p><p>Our end goal is to help children learn how to write at school. To fulfill this goal, real-time and modularity are strong requirements for any part of an analysis pipeline. This is the reason why, in this paper, we focus on CNN which are deemed more efficient than recurrent neural network at inference time and easier to integrate in a complex pipeline. Besides, we would like to evaluate how the dynamical information provided by the online recording of the handwriting can be successfully taken into account in such CNN. We thus explore two fusion schemes: an early and a late one that are developed in the following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. ONLINE HANDWRITING ENCODING INTO CHANNELS</head><p>Online handwriting can be modelled with a time series where each point is represented by a 4D vectors which encodes the 2D coordinates of the point (x, y), a pressure value and a timestamp. We do not use pressure data in our study. Our goal is to convert the online signal (i.e. the time series) into a set of multichannel images where each channel represents either static or dynamical information about the original signal. Images are mostly represented in black and white, grey-scale or color (R/G/B). In character or word recognition, the color information is not particularly relevant to the recognition process compared to the shape so, the letters are usually encoded into a grey-scale image matrix in a single input channel. In this paper, we explore what additional information that characterize the dynamics of the online signal could bring to the recognition performance of a network. This section describes how each type of information is extracted and encoded in the different channels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Shape information encoding</head><p>A few pre-processing steps are necessary to convert an online signal represented by a times series into an image represented by a matrix of values. The whole pipeline of conversion is illustrate in Fig. <ref type="figure">3</ref>.</p><p>First, a linear normalisation step sets the coordinates values between a min and max value which represent the bounds of a 32 × 32 image. Then, a spatial sampling step allows to fill in a gap between two points to link them. We Fig. <ref type="figure">3</ref>: Data pre-processing of online time series to obtain static images.</p><p>center the points to avoid a top right alignment then convert these points to a black and white image. The white value corresponds to a point of handwriting, and the black value corresponds to the background (i. e. one when there is a handwriting, zero if there is not). Thereby, we have converted the list of points to a one channel image.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Orientation information encoding</head><p>The letter represented by an online signal can be split into ascending and descending lines as shown in Fig. <ref type="figure" target="#fig_0">4</ref>. An ascending line represents a handwritten line which has been created bottom up. As soon as the pencil or stylus move downwards, it becomes a descending line. This decomposition provides information about the ductus of the handwritten character. In the following, we only use the information about the descending strokes because this characteristic is more discriminating than the other one <ref type="bibr" target="#b20">[21]</ref>. The value is one if the descending stroke passes by this point; else it is set to zero. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Direction information encoding</head><p>To add some information about the direction of the signal, we use the angle between one point and the next point in the time series. To model the angle, we both use its cosine and sinus. The image is representing by a matrix of pixels. Therefore, the next point can be in one of the 8 boxes next to the point which gives us 8 possible angle values as is illustrated in Fig. <ref type="figure">5</ref>. The cosine and the sinus have values between -1 and 1. Since we already assigned the zero value to indicate the absence of a stroke, we re-normalized the cosine and sinus between 0.2 and 1 to avoid any confusion and multiplied this value by 255 to have values in the color domain. We use the following formula to normalise the value x to We study two different fusion schemes to take into account the online information provided in the channels described in section III: an early fusion where the channels are given as input to a single CNN and a late fusion where each channel is provided separately to different networks and the predictions are combined a posteriori.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Early fusion in different CNN architectures</head><p>We compare the impact of using different channels on the handwritten character classification performance of three classical CNN architectures: LeNet-5 <ref type="bibr" target="#b4">[5]</ref>, VGG with 11 layers <ref type="bibr" target="#b6">[7]</ref> and ResNet with 18 layers <ref type="bibr" target="#b5">[6]</ref>. LeNet-5 is one of the first wellknown convolutional neural networks which brought good performance on digit recognition. LeNet-5 is compact (around 60000 parameters) compared to more recent architectures but it is not sufficiently deep to tackle very complex tasks in computer vision. VGG and ResNet are more recent and deeper networks that have achieved very good performance in the very challenging ImageNet classification challenge <ref type="bibr" target="#b21">[22]</ref>. ResNet introduced the residual connections that proved to be key to successfully train very deep networks. We choose a shallow version of both VGG (11 layers for about 28 millions parameters) and ResNet (18 layers for about 11 millions parameters) because we believe that larger ones would be more prone to over-fitting on our, comparatively to ImageNet, rather a small dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Late fusion with ensembles</head><p>We compare our early fusion approach with a late fusion one where each channel is provided to a different instance of the same architecture (either LeNet, VGG or ResNet). We then build three different ensembles of neural network classifiers which architecture is presented in Fig. <ref type="figure">6</ref> and compare their classification and time performance. Each ensemble consists in a set of four networks, one for each type of channel presented before. The predictions of these networks are merged to obtain a global prediction. We tested a naive approach where an equal weight is given to each individual classifier in the ensemble. Fig. <ref type="figure">6</ref>: Ensemble architecture: there is one network per input channel.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTS</head><p>We use accuracy (1-CER) as our performance metric in this section. We also provide inference time (in ms) measures for each configuration (fusion type and architecture). All experiments were made on a computing grid composed of several GPU nodes except the inference time measures that were measured on a CPU. We fixed the batch size hyper-parameter to 128, choose ADAM optimizer and set the learning rate to 10 -4 for all training procedures. The networks were all implemented in Python using Keras 1 . For each configuration of input, we tune the early stopping hyper-parameter of each network.</p><p>1 https://keras.io</p><p>We tested the four following combinations of channels:</p><p>• Config A (baseline) : this configuration uses a single channel which encodes the static pencil line i.e. the shape of the letter (type 1). • Config B : we add two channels to the previous baseline (A) which encode the dynamic information about the direction of the signal in the form of cosine and sinus values (type 1 + type 3 + type 4). • Config C : we add one channel to the baseline (A) which encodes the orientation of the signal (type 1 + type 2). • Config D : we use all four available channels (type 1 + type 2 + type 3 + type 4). Note that the last configuration (D) is the one that contains the most information about the dynamics of handwriting. Configurations B and C subsume the configuration A but are not comparable since one (C) is using the orientation information but not the direction whereas the other (B) only uses the direction without orientation information.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Dataset acquisition</head><p>As explained in the previous section, there are some known benchmark datasets for online handwriting recognition <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b22">[23]</ref>, but they all provide examples of adult handwriting. Because our work is part of a much bigger project which aims at providing feedback to children learning to write, we designed a new dataset with examples of children handwriting. To do so, we have used an existing platform <ref type="bibr" target="#b0">[1]</ref>, which is already deployed in some primary schools and has allowed us to collect diverse handwriting sequences made by children writing with a pen on digital tablets<ref type="foot" target="#foot_0">2</ref> . This dataset is private since children handwriting are considered protected personal data. Each handwritten letter (and the entire word if applicable) is recorded as a multivariate time series. This new dataset contains letters naturally distorted on several aspects which may fool a classifier trained on adult handwriting. However, since neural networks are data greedy, we use data augmentation techniques to increase the size of our children handwriting training dataset. Our data augmentation strategy consists in deforming the original letters to create more examples of plausible children handwriting sequences. First, we apply some usual operations such as stretching, inclination and rotation. Then, we use two techniques which are described in <ref type="bibr" target="#b23">[24]</ref> which modify the curvature of the stroke and the speed with which the stroke was drawn. We also used other techniques such as stretching and translation at the stroke level. Fig. <ref type="figure" target="#fig_2">7</ref> illustrates some of these techniques.</p><p>To create our training dataset, we started from a base of the initial examples from the first version of IntuiScript <ref type="bibr" target="#b0">[1]</ref> dataset which contains about 27 000 handwritten characters written by 147 children. Then, we augmented it in order to obtain 5 000 examples per class (10 000 for the "e" and "x" letters because we considered two ways to draw them). Since we focus on the Latin alphabet, our training dataset contains 140 000 elements. In our test dataset, we do not use augmentation set aside 9 686 letters with no class balancing. We extracted from it 100 examples per class to build a validation set. Our test dataset is composed of 7 096 samples and our validation dataset of 2 600 samples.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Early fusion</head><p>The results obtained using the different input configurations (A, B, C, D) for the three network architectures (LeNet, VGG and ResNet) are given in Table <ref type="table" target="#tab_1">I</ref>  These results show first that the best test accuracy (95%) can be obtained with the VGG-11 network which is the one with the highest number of parameters. This accuracy is suitable and very promising for a real-time deployment in an existing platform. Whatever the architecture, when adding some information about the dynamics of the drawing in the network (B,C,D), the results are better than with only the static information (A). With the highest amount of information (D), the results are the best and even more stable (low variance). This shows that it is important to finely encode the dynamical information to improve the performance of a CNN.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Late fusion</head><p>We use in these experiments the same early-stopping criteria and values as for the early fusion experiments. For each type of architecture, we trained one neural network for each of the 4 channels (type 1 to 4) and merge their probabilities predictions with the mean function with an equal weight to each network an select the prediction with the higher probability. The results are given in Table <ref type="table" target="#tab_3">II</ref>.  As also noticed for the early fusion, using a late fusion of multiple channels gives better results than all the channels taken separately. Interestingly, we can see that using only the descendant stroke information in a network (type 2) gives very bad performance for all architectures so this feature is not sufficient in itself for classification. The ensemble accuracy results are similar to the ones obtained with an early fusion approach which shows that the fusion scheme is less important than the expert dynamical information that can be encoded in each channel. We can however note that with ensembles of LeNet and ResNet classifiers, we obtain slightly better results than with the early fusion which is not the case for the VGG ensemble even it is again the architecture with the best overall results.</p><p>Note that we also tried to learn a weight associated to each classifier in the ensemble but the results were not better than the ones presented in Table II and are thus not shown here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Inference time</head><p>We computed the inference time on the test dataset (7086 samples) for the configurations introduced before. The measurements were done without GPU and a Intel i7-7600U, 2.80GHz CPU. We used a batch size of 1 and report in Table <ref type="table" target="#tab_5">III</ref>   This table shows that the inference time is low and meets the real-time requirement of our target software for all early fusion configurations. Unsurprisingly, the inference time for LeNet is much lower than for the two other architectures. The late fusion approach takes much more time than the early fusion one and might not meet the real-time requirement in a more complex pipeline. Adding channels that encode the dynamics in the early fusion scheme does not significantly increase the inference time. There is a clear trade-off between the complexity of the deep learning model and the inference time. We believe that the ResNet architecture, which is a little bit less accurate than the VGG one, might still be preferred for its better inference time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION AND PERSPECTIVES</head><p>We studied the early and late fusions of multiple channels with different convolutional neural networks for online children handwriting recognition. We showed that we can improve the performance of CNN in terms of accuracy by adding dynamic information in the input channels of the networks for both the early and late fusion approaches. We achieved 95.00% of accuracy and nearly 20ms of inference time when predicting one letter with the VGG architecture and an early fusion scheme. This is very promising to integrate such a network in a complete analysis pipeline.</p><p>Converting the online signal into multiple image channels was one way of using the dynamical information to improve the performance of a CNN. We would like to explore the use of CNN directly on the time series signal as done for example in <ref type="bibr" target="#b24">[25]</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Decomposition of ascending and descending lines.</figDesc><graphic coords="3,48.96,543.18,251.06,97.07" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>1 Fig. 5 :</head><label>15</label><figDesc>Fig. 5: Example of angle α representation between points in the series. The cosine and sinus are treated independently in different channels. The different combinations of inputs that we tested are presented in Section V. To summarize, the four types of channel which represent static and dynamical information we use are: • type 1 : shape of the letter (static information) • type 2 : orientation represented by descending stroke (dynamical information) • type 3 : direction represented by cosine value of the angle with the next point (dynamical information) • type 4 : direction represented by sinus value of the angle with the next point (dynamical information) IV. MULTICHANNEL FUSION IN CONVOLUTIONAL NEURAL NETWORKS</figDesc><graphic coords="3,329.66,230.53,215.70,85.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Example of image and online deformations.</figDesc><graphic coords="5,48.96,50.54,251.05,152.70" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="2,48.96,50.54,514.10,134.24" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>. Each experiment is run twice and both results are averaged in the table and presented with their variance.</figDesc><table><row><cell></cell><cell>Static</cell><cell cols="3">Static + Dynamic</cell></row><row><cell>Input Config</cell><cell>A</cell><cell>B</cell><cell>C</cell><cell>D</cell></row><row><cell></cell><cell></cell><cell>LeNet-5</cell><cell></cell><cell></cell></row><row><cell>Accuracy</cell><cell>90.62</cell><cell>91.35</cell><cell>91.93</cell><cell>92.66</cell></row><row><cell>Variance</cell><cell>0.0240</cell><cell>0.1599</cell><cell>0.0121</cell><cell>0.0049</cell></row><row><cell></cell><cell cols="2">ResNet-18</cell><cell></cell><cell></cell></row><row><cell>Accuracy</cell><cell>94.05</cell><cell>94.06</cell><cell>94.33</cell><cell>94.64</cell></row><row><cell>Variance</cell><cell>0.0100</cell><cell>0.1764</cell><cell>0.0030</cell><cell>0.0030</cell></row><row><cell></cell><cell cols="2">VGG-11</cell><cell></cell><cell></cell></row><row><cell>Accuracy</cell><cell>94.54</cell><cell>94.64</cell><cell>94.84</cell><cell>95.00</cell></row><row><cell>Variance</cell><cell>0.0066</cell><cell>0.0580</cell><cell>0.0323</cell><cell>0.0042</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE I :</head><label>I</label><figDesc>Classification results (accuracy) for each architecture and input configuration</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>TABLE II :</head><label>II</label><figDesc>Classification results (accuracy) for each architecture and input configuration</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head></head><label></label><figDesc>the average processing time for the entire test set.</figDesc><table><row><cell>Architecture</cell><cell>Input</cell><cell>A</cell><cell>B</cell><cell>C</cell><cell>D</cell><cell>Ensemble</cell></row><row><cell>LeNet</cell><cell></cell><cell>0.68</cell><cell>0.71</cell><cell>0.77</cell><cell>0.76</cell><cell>2.80</cell></row><row><cell>ResNet</cell><cell></cell><cell>13.33</cell><cell>13.96</cell><cell>14.35</cell><cell>15.33</cell><cell>59.39</cell></row><row><cell>VGG</cell><cell></cell><cell>18.89</cell><cell>18.51</cell><cell>18.94</cell><cell>19.46</cell><cell>76.43</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>TABLE III :</head><label>III</label><figDesc>Inference time (in ms) for each architecture each input configuration (A,B,C,D) and for the late fusion (Ensemble).</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>See https://www-intuidoc.irisa.fr/children-handwritings-database/ for more information about the dataset.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Evaluation of children cursive handwritten words for e-education</title>
+		<author>
+			<persName><forename type="first">Damien</forename><surname>Simonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathalie</forename><surname>Girard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Éric</forename><surname>Anquetil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mickaël</forename><surname>Renault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Thomas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognit. Lett</title>
+		<imprint>
+			<biblScope unit="volume">121</biblScope>
+			<biblScope unit="page" from="133" to="139" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">HBF49 feature set: A first unified baseline for online symbol recognition</title>
+		<author>
+			<persName><forename type="first">Adrien</forename><surname>Delaye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Éric</forename><surname>Anquetil</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognit</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="117" to="130" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Carbune. Multi-language online handwriting recognition</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Keysers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Deselaers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henry</forename><forename type="middle">A</forename><surname>Rowley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Lun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Victor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1180" to="1194" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Fast multi-language lstm-based online handwriting recognition</title>
+		<author>
+			<persName><forename type="first">Pedro</forename><surname>Victor Carbune</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Gonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Henry</forename><surname>Deselaers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Rowley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcos</forename><surname>Daryin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Lun</forename><surname>Calvo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sandro</forename><surname>Keysers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philippe</forename><surname>Feuz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Gervais</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal on Document Analysis and Recognition</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<publisher>IJDAR</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Gradientbased learning applied to document recognition</title>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Lecun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Bottou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Haffner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE</title>
+		<meeting>the IEEE</meeting>
+		<imprint>
+			<date type="published" when="1998">12 1998</date>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="page" from="2278" to="2324" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Very deep convolutional networks for large-scale image recognition</title>
+		<author>
+			<persName><forename type="first">Karen</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">A study on the use of 8-directional features for online handwritten chinese character recognition</title>
+		<author>
+			<persName><forename type="first">Zhen-Long</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Huo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Eighth International Conference on Document Analysis and Recognition (IC-DAR 2005)</title>
+		<meeting><address><addrLine>Seoul, Korea</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2005-09-01">29 August -1 September 2005. 2005</date>
+			<biblScope unit="page" from="262" to="266" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Amharic text image recognition: Database, algorithm, and analysis</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">H</forename><surname>Belay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Habtegebirial</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Liwicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Belay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Stricker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1268" to="1273" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Woodblockprinting mongolian words recognition by bi-lstm with attention mechanism</title>
+		<author>
+			<persName><forename type="first">Yanke</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongxi</forename><surname>Wei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hui</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guanglai</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="910" to="915" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">No padding please: Efficient neural handwriting recognition</title>
+		<author>
+			<persName><forename type="first">Gideon Maillette De Buy</forename><surname>Wenniger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lambert</forename><surname>Schomaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Way</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="355" to="362" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Segmentation-free bangla offline handwriting recognition using sequential detection of characters and diacritics with a faster r-cnn</title>
+		<author>
+			<persName><forename type="first">Nishatul</forename><surname>Majid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisa</forename><forename type="middle">H Barney</forename><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="228" to="233" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A handwritten chinese text recognizer applying multi-level multimodal fusion network</title>
+		<author>
+			<persName><forename type="first">Yuhuan</forename><surname>Xiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingqing</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongjian</forename><surname>Zhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Man</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Lu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1464" to="1469" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A fast and accurate fully convolutional network for end-to-end handwritten chinese text segmentation and recognition</title>
+		<author>
+			<persName><forename type="first">Dezhi</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lianwen</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yaqiang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhepeng</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxiang</forename><surname>Cai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="25" to="30" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Cnn-n-gram for handwriting word recognition</title>
+		<author>
+			<persName><forename type="first">Arik</forename><surname>Poznanski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lior</forename><surname>Wolf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2016-06">June 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The iam-database: an english sentence database for offline handwriting recognition</title>
+		<author>
+			<persName><forename type="first">Urs-Viktor</forename><surname>Marti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horst</forename><surname>Bunke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IJDAR</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="39" to="46" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Results of the rimes evaluation campaign for handwritten mail processing</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Grosicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Carré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Brodin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Geoffrois</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">10th International Conference on Document Analysis and Recognition (ICDAR)</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="941" to="945" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Iam-ondb -an on-line english sentence database acquired from handwritten text on a whiteboard</title>
+		<author>
+			<persName><forename type="first">Marcus</forename><surname>Liwicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Horst</forename><surname>Bunke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="956" to="961" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Make skeleton-based action recognition model smaller, faster and better</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sakriani</forename><surname>Sakti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Satoshi</forename><surname>Nakamura</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Multimedia Asia</title>
+		<meeting>the ACM Multimedia Asia</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Skeleton-based online action prediction using scale selection network</title>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Shahroudy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ling-Yu</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Kot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="page">2</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Integration of an on-line handwriting recognition system in a smart phone device</title>
+		<author>
+			<persName><forename type="first">Éric</forename><surname>Anquetil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bouchereau</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">16th International Conference on Pattern Recognition (ICPR)</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="192" to="194" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">ImageNet Large Scale Visual Recognition Challenge</title>
+		<author>
+			<persName><forename type="first">Olga</forename><surname>Russakovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Su</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Krause</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjeev</forename><surname>Satheesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sean</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiheng</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrej</forename><surname>Karpathy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aditya</forename><surname>Khosla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Vision (IJCV)</title>
+		<imprint>
+			<biblScope unit="volume">115</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="211" to="252" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">UNIPEN project of on-line data exchange and recognizer benchmarks</title>
+		<author>
+			<persName><forename type="first">Isabelle</forename><surname>Guyon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lambert</forename><surname>Schomaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rejean</forename><surname>Plamondon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Liberman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stan</forename><surname>Janet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">12th IAPR International Conference on Pattern Recognition (ICPR)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="page" from="29" to="33" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Synthetic On-line Handwriting Generation by Distortions and Analogy</title>
+		<author>
+			<persName><forename type="first">Harold</forename><surname>Mouchère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sabri</forename><surname>Bayoudh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Anquetil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Laurent</forename><surname>Miclet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">13th Conference of the International Graphonomics Society (IGS)</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="10" to="13" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Deep learning for time series classification: a review</title>
+		<author>
+			<persName><forename type="first">Hassan</forename><surname>Ismail Fawaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Germain</forename><surname>Forestier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jonathan</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lhassane</forename><surname>Idoumghar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre-Alain</forename><surname>Muller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Min. Knowl. Discov</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="917" to="963" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

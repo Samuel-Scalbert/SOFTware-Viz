@@ -1,0 +1,1469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">An Experimental Study of the Treewidth of Real-World Graph Data</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Silviu</forename><surname>Maniu</surname></persName>
+							<email>silviu.maniu@lri.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+							<email>pierre@senellart.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Suraj</forename><surname>Jog</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="laboratory">LRI</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">Université Paris-Sud</orgName>
+								<orgName type="institution" key="instit3">Université Paris-Saclay</orgName>
+								<address>
+									<settlement>Orsay</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">ENS</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">PSL University</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="laboratory">LTCI</orgName>
+								<orgName type="institution">Inria Paris</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">Télécom ParisTech</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="institution">University of Illinois at Urbana-Champaign</orgName>
+								<address>
+									<settlement>Urbana-Champaign</settlement>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">An Experimental Study of the Treewidth of Real-World Graph Data</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">BA4F3ED2DD9E09CCCC651B7749A9082F</idno>
+					<idno type="DOI">10.4230/LIPIcs.ICDT.2019.12</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>2012 ACM Subject Classification Theory of computation → Logic and databases Treewidth</term>
+					<term>Graph decompositions</term>
+					<term>Experiments</term>
+					<term>Query processing Digital Object Identifier 10.4230/LIPIcs.ICDT.2019.12</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Treewidth is a parameter that measures how tree-like a relational instance is, and whether it can reasonably be decomposed into a tree. Many computation tasks are known to be tractable on databases of small treewidth, but computing the treewidth of a given instance is intractable. This article is the first large-scale experimental study of treewidth and tree decompositions of real-world database instances (25 datasets from 8 different domains, with sizes ranging from a few thousand to a few million vertices). The goal is to determine which data, if any, can benefit of the wealth of algorithms for databases of small treewidth. For each dataset, we obtain upper and lower bound estimations of their treewidth, and study the properties of their tree decompositions. We show in particular that, even when treewidth is high, using partial tree decompositions can result in data structures that can assist algorithms.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction and Related Work</head><p>A number of data management tasks related to query evaluation are computationally intractable when rich query languages or complex tasks are involved, even when the query is assumed to be fixed (that is, when we consider data complexity <ref type="bibr" target="#b60">[60]</ref>). For example: query evaluation of Boolean monadic second-order (MSO) queries is hard for every level of the polynomial hierarchy <ref type="bibr" target="#b3">[4]</ref>; unless P = NP, there is no polynomial-time enumeration or counting algorithm for first-order (FO) queries with free second-order variables <ref type="bibr" target="#b57">[57,</ref><ref type="bibr" target="#b28">29]</ref>; computing the probability of conjunctive queries (CQs) over tuple-independent databases, a very simple model of probabilistic databases, is #P-hard <ref type="bibr" target="#b24">[25]</ref>;</p><p>unless P = NP, there is no polynomial-time algorithm to construct a deterministic decomposable negation normal form (d-DNNF) representation of the Boolean provenance of some CQ <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b40">40]</ref>; furthermore, there is no polynomial bound on the size of a structured d-DNNF representation of the Boolean provenance of unions of conjunctive queries with disequalities <ref type="bibr" target="#b10">[11,</ref><ref type="bibr">Theorem 33]</ref>.</p><p>Other problems yield complexity classes usually considered tractable, such as AC 0 for Boolean FO query evaluation <ref type="bibr" target="#b0">[1]</ref>, but may still result in impractical running times on large database instances.</p><p>To face this intractability and practical inefficiency, one possible approach has been to determine conditions on the structure of databases that ensure tractability, often through a series of algorithmic meta-theorems <ref type="bibr" target="#b44">[44]</ref>. This has led, for instance, to the introduction of the notions of locally tree-decomposable structures for near-linear-time evaluation of Boolean FO queries <ref type="bibr" target="#b32">[33]</ref>, or to that of structures of bounded expansion for constant-delay enumeration of FO queries <ref type="bibr" target="#b41">[41]</ref>.</p><p>Treewidth. A particularly simple and widely used way to restrict database instances that ensures a wide class of tractability results is to bound the treewidth of the instance (this is actually a special case of both notions of locally tree-decomposable and bounded expansion). Treewidth <ref type="bibr" target="#b56">[56]</ref> is a graph-theoretic parameter that characterizes how tree-like a graph, or more generally a relational instance, is, and hence whether it can be reasonably transformed into a tree structure (a tree decomposition). Indeed: query evaluation of MSO queries is linear-time over bounded-treewidth structures <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b31">32]</ref>; counting <ref type="bibr" target="#b12">[13]</ref> and enumeration <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b6">7]</ref> of MSO queries on bounded-treewidth structures is linear-time; computing the probability of MSO queries over a bounded-treewidth tuple-independent database is linear-time assuming constant-time rational arithmetic <ref type="bibr" target="#b7">[8]</ref>; a linear-sized structured d-DNNF representation of the provenance of any MSO query over bounded-treewidth databases can be computed in linear-time <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b10">11]</ref>. These results mostly stem from the fact that, on trees, MSO queries can be rewritten to tree automata <ref type="bibr" target="#b58">[58]</ref>, though this process is non-elementary in general (which impacts the combined complexity <ref type="bibr" target="#b60">[60]</ref>, but not the data complexity). We can see these results as fixed-parameter tractability, with a complexity in O(f (|Q|, k) × |D|) where |D| is the size of the database, k its treewidth, |Q| the size of the query, and f some computable function. Note that another approach for tractability, out of the scope of this paper, is to restrict the queries instead of the instances, e.g., by enforcing low treewidth on the queries <ref type="bibr" target="#b36">[37]</ref> or on the provenance of the queries <ref type="bibr">[39]</ref>.</p><p>Such results have been, so far, of mostly theoretical interest -mainly due to the high complexity of the function f of |Q| and k. However, algorithms that exploit the low treewidth of instances have been proposed and successfully applied to real-world and synthetic data: for shortest path queries in graphs <ref type="bibr" target="#b62">[62,</ref><ref type="bibr" target="#b54">54]</ref>, distance queries in probabilistic graphs <ref type="bibr" target="#b47">[47]</ref>, or ad-hoc queries compiled to tree automata <ref type="bibr" target="#b50">[50]</ref>. In other domains, low treewidth is an indicator for efficient evaluation of quantified Boolean formulas <ref type="bibr" target="#b55">[55]</ref>.</p><p>Sometimes, treewidth even seems to be the sole criterion that may render an intractable problem tractable, under some technical assumptions: <ref type="bibr" target="#b45">[45]</ref> shows that, unless the exponentialtime hypothesis is false, MSO 2 query evaluation is intractable over subinstance-closed families of instances of treewidth strongly unbounded poly-logarithmically; <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b8">9]</ref> show that MSO query evaluation is intractable over subinstance-closed families of instances of treewidth that are densely unbounded poly-logarithmically (a weaker notion); <ref type="bibr" target="#b8">[9]</ref> shows that counting MSO query 12:3 results is intractable over subinstance-closed families of instances of unbounded treewidth that are treewidth-constructible (an even weaker notion, simply requiring large-treewidth instances to be efficiently constructible, see <ref type="bibr" target="#b8">[9,</ref><ref type="bibr">Definition 4.1]</ref>); finally, <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b8">9]</ref> shows that one can exhibit FO queries whose probability evaluation is polynomial-time on structures of bounded treewidth, but #P-hard on any treewidth-constructible family of instances of unbounded treewidth.</p><p>For this reason, and because of the wide variety of problems that become tractable on bounded-treewidth instances, treewidth is an especially important object of study.</p><p>Treewidth of real-world databases. If there is hope for practical applicability of treewidthbased approaches, one needs to answer the following two questions: Can one efficiently compute the treewidth of real-world databases? and What is the treewidth of real-world data? The latter question is the central problem addressed in this paper.</p><p>The answer to the former is that, unfortunately, treewidth cannot reliably be computed efficiently in practice. Indeed, computing the treewidth of a graph is an NP-hard problem <ref type="bibr" target="#b12">[13]</ref> and, in practice, exact computation of treewidth is possible only for very small instances, with no more than dozens of vertices <ref type="bibr" target="#b17">[18]</ref>. An additional theoretical result is that, given a width w, it is possible to check whether a graph has treewidth w and produce a tree decomposition of the graph in linear time <ref type="bibr" target="#b16">[17]</ref>; however, the large constant terms make this procedure impractical. Known exact treewidth computation algorithms <ref type="bibr" target="#b17">[18]</ref> may be usable on small graphs, but they are impossible to apply for our purposes. Indeed, in <ref type="bibr" target="#b17">[18]</ref>, the largest graph for which algorithms finished running had a mere 40 vertices.</p><p>A more realistic approach is to compute estimations of treewidth, i.e., an interval formed of a lower bound and an upper bound on the treewidth. Upper bound algorithms (surveyed in <ref type="bibr" target="#b18">[19]</ref>) use multiple approaches for estimation, which all output a tree decomposition. One particularly important class of methods for generating tree decompositions relies on elimination orderings, that also appear in junction tree algorithms used in belief propagation <ref type="bibr" target="#b46">[46]</ref>. For lower bounds (surveyed in <ref type="bibr" target="#b19">[20]</ref>), where no decomposition can be obtained, one can use degree-based or minor-based measures on graphs, which themselves act as proxies for treewidth.</p><p>Some upper bound and lower bound algorithms have been implemented and experimented with in <ref type="bibr" target="#b59">[59,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b19">20]</ref>. However, in all cases these algorithms were evaluated on graphs that are either very small (of the order of dozens of vertices), as in <ref type="bibr" target="#b59">[59]</ref>, or on slightly larger synthetic graphs (with up to 1 000 vertices) generated with exact treewidth values in mind, as in <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b19">20]</ref>. The main purpose of these experiments was to evaluate the estimators' performance. Recently, the PACE challenge has had a track dedicated to the estimation of treewidth <ref type="bibr" target="#b25">[26]</ref>: exact treewidth on relatively small graphs, upper bounds on treewidth on larger graphs. Local improvements of upper bounds have been also evaluated on small graphs in <ref type="bibr" target="#b30">[31]</ref>. Since all these works aim at comparing estimation algorithms, they do not investigate the actual treewidth of real-world data.</p><p>Another relevant work is <ref type="bibr" target="#b2">[3]</ref>, which studied the core-periphery structure of social networks, by building tree decompositions via node elimination ordering heuristics, but without establishing any treewidth bounds. In this work, we use the same heuristics to compute bounds on treewidth.</p><p>Finally, there have been some work on analyzing properties of real-world queries. Queries are usually much smaller than database instances, but it turns out that they are also much simpler in structure: <ref type="bibr" target="#b53">[53]</ref> shows that an astounding 99.99% of conjunctive patterns present in a SPARQL query log are acyclic, i.e., of treewidth 1. <ref type="bibr" target="#b21">[22]</ref> similarly showed that the I C D T 2 0 1 9</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>12:4</head><p>An Experimental Study of the Treewidth of Real-World Graph Data overwhelming majority of graph pattern queries in SPARQL query logs had treewidth 1, less than 0.003% had treewidth 2, and a single one (out of more than 15 million) had treewidth 3. We shall see that the situation is much different with the treewidth of database instances. Note that, in many settings, low-treewidth of queries does not suffice for tractability: in probabilistic databases, for instance, #P-hardness holds even for acyclic queries <ref type="bibr" target="#b24">[25]</ref>.</p><p>Contributions. In this experimental study, our contributions are twofold.</p><p>First, using previously studied algorithms for treewidth estimation, we set out to find classes of real-world data that may exhibit relatively low values of treewidth, thus identifying potential cases in which treewidth-based approaches are of practical interest. For this, after formally defining tree decompositions and treewidth (Section 2), we select the algorithms that are able to deal with large-scale data instances, for both lower-and upper-bound estimations (Section 3). Our aim here is not to propose new algorithms for treewidth estimation, and not to exhaustively evaluate existing treewidth estimation algorithms, but rather to identify algorithms that can give acceptable treewidth estimation values in reasonable time, in order to apply them to real-world data. Then, we use these algorithms to obtain lower and upper bound intervals on treewidth for 25 databases from 8 different domains (Section 4). We mostly consider graph data, for which the notion of treewidth was initially designed (the treewidth of an arbitrary relational instance is simply defined as that of its Gaifman graph). The graphs we consider, all obtained from real-world applications, have between several thousands and several millions of vertices. To the best of our knowledge, this is the first comprehensive study of the treewidth of real-world data of large scale from a variety of application domains.</p><p>Our finding is that, generally, the treewidth is too large to be able to use treewidth-based algorithms directly with any hope of efficiency.</p><p>Second, from this finding, we investigate how a relaxed (or partial) decomposition can be used on real-world graphs. In short, we no longer look for complete tree decompositions; instead, we allow the graph to be only partially decomposed. In complex networks, there often exists a dense core together with a tree-like fringe structure <ref type="bibr" target="#b52">[52]</ref>; it is hence possible to decompose the fringe into a tree, and to place the rest of the graph in a dense "root". It has been shown that this approach can improve the efficiency of some graph algorithms <ref type="bibr" target="#b62">[62,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b47">47]</ref>. In Section 5, we analyze its behavior on real-world graphs. We conclude the paper in Section 6 with a discussion of lessons learned, as to which real-world data admit (full or partial) low-treewidth tree decompositions, and how this impacts query evaluation tasks.</p><p>Due to lack of space, some details and additional experiments can be found in an extended version of this article <ref type="bibr" target="#b48">[48]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries on Treewidth</head><p>To make the concepts in the following clear, we start by formally introducing the concept of treewidth. Following the original definitions in <ref type="bibr" target="#b56">[56]</ref>, we first define a tree decomposition:</p><p>Definition 1 ((Tree Decomposition)). Given an undirected graph G = (V, E), where V represents the set of vertices (or nodes) and E ⊆ V × V the set of edges, a tree decomposition is a pair (T, B) where T = (I, F ) is a tree and B : I → 2 V is a labeling of the nodes of T by subsets of V (called bags), with the following properties:  </p><formula xml:id="formula_0">1. i∈I B(i) = V ; 2. ∀(u, v) ∈ E, ∃i ∈ I s.t. {u, v} ⊆ B(i);</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">∀v ∈</head><formula xml:id="formula_1">V , {i ∈ I | v ∈ B(i)} induces a subtree of T .</formula><p>Intuitively, a tree decomposition groups the vertices of a graph into bags so that they form a tree-like structure, where a link between bags is established when there exists common vertices in both bags.</p><p>Example 2. Figure <ref type="figure" target="#fig_1">1</ref> illustrates such a decomposition. The resulting decomposition is formed of 4 bags, each containing a subset of the nodes in the graph. The bags containing node 3 (in bold) form a connected subtree of the tree decomposition.</p><p>Based on the number of vertices in a bag, we can define the concept of treewidth:</p><formula xml:id="formula_2">Definition 3 ((Treewidth)). Given a graph G = (V, E) the width of a tree decomposition (T, B) is equal to max i∈I (|B(i)| -1). The treewidth of G, w(G), is equal to the minimal width of all tree decompositions of G.</formula><p>It is easy to see that an isolated point has treewidth 0, a tree treewidth 1, a cycle treewidth 2, and a (k + 1)-clique (a complete graph of k nodes) treewidth k.</p><p>Example 4. The width of the decomposition in Figure <ref type="figure" target="#fig_1">1</ref> is 3. This tells us the graph has a treewidth of at most 3. The treewidth of this graph is actually exactly 3: indeed, the 4-clique, which has treewidth 3, is a minor of the graph in Figure <ref type="figure" target="#fig_1">1</ref> (it is obtained by removing nodes 1 and 7, and by contracting the edges between 3 and 6 and 5 and 6), and treewidth never increases when taking a minor (see, for instance, <ref type="bibr" target="#b37">[38]</ref>).</p><p>As previously mentioned, the treewidth of an arbitrary relational instance is defined as that of its Gaifman graph, the graph whose vertices are constants of the instances and where there is an edge between two vertices if they co-occur in the same fact. We will therefore implicitly represent relational database instances by their Gaifman graphs in what follows.</p><p>We are now ready to present algorithms for lower and upper bounds on treewidth.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Treewidth Estimation</head><p>The objective of our experimental evaluation is to obtain reasonable estimations of treewidth, using algorithms with reasonable execution time on real-world graphs.</p><p>Once we know we do not have the luxury of an exact computation of the treewidth, we are left with estimations of the range of possible treewidths, between a lower bound and an upper bound. For the purposes of this experimental survey, we restrict ourselves to the most efficient estimation algorithms from the literature. We refer the reader to <ref type="bibr" target="#b18">[19]</ref> and <ref type="bibr" target="#b19">[20]</ref>, respectively, for a more complete survey of treewidth upper and lower bound estimation algorithms on synthetic data. Treewidth Upper Bounds. As we have defined, the treewidth is the smallest width among all possible tree decompositions. In other words, the width of any decomposition of a graph is an upper bound of the actual treewidth of that graph. A treewidth upper bound estimation algorithm can thus be seen as an algorithm to find a decomposition whose width is as close as possible to the treewidth of the graph. To understand how one can do that, we need to introduce the classical concept of elimination ordering and to explain its connection to treewidth.</p><p>We start by introducing triangulations of graphs, which transform a graph G into a graph G ∆ that is chordal:</p><formula xml:id="formula_3">Definition 5. A chordal graph is a graph G such that</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>every cycle in G of at least four vertices has a chord -an edge between two non-successive vertices in the cycle.</head><p>A triangulation (or chordal completion) of a graph G is a minimal chordal supergraph G ∆ of G: a graph obtained from G by adding a minimal set of edges to obtain a chordal graph.</p><p>Example 6. The graph in Figure <ref type="figure" target="#fig_1">1</ref> is not chordal, since, for example, the cycle 3-4-5-6-3 does not have a chord. If one adds an edge between 3 and 5, as in Figure <ref type="figure" target="#fig_2">2</ref> (left), one can verify that the resulting graph is chordal, and thus a triangulation of the graph of Figure <ref type="figure" target="#fig_1">1</ref>.</p><p>One way to obtain triangulations of graphs is elimination orderings. An elimination ordering ω of a graph G = (V, E) of n nodes is an ordering of the vertices of G, i.e., it can be seen as a bijection from V onto {1, . . . , n}. From this ordering, one obtains a triangulation by applying sequentially the following elimination procedure for each vertex v: first, edges are added between remaining neighbors of v as needed so that they form a clique, then v is eliminated (removed) from the graph. For every elimination ordering ω, G along with all edges added to G in the elimination procedure forms a graph, denoted G ∆ ω . This graph is chordal (indeed, we know that the two neighbors of the first node of any cycle we encounter in the elimination ordering have been connected by a chord by the elimination procedure). It is also a supergraph of G, and it can be shown it is a minimal chordal supergraph, i.e., a triangulation of G. Example 7. Figure <ref type="figure" target="#fig_2">2</ref> (right) shows a possible elimination ordering (7, 1, 6, 3, 5, 2, 4) of the graph of Figure <ref type="figure" target="#fig_1">1</ref>. The elimination procedure adds a single edge, when processing node 6, between nodes 3 and 5. The resulting triangulation is the graph on the left of Figure <ref type="figure" target="#fig_2">2</ref>.</p><p>Elimination orderings are connected to treewidth by the following result: Theorem 8. <ref type="bibr" target="#b18">[19]</ref> Let G = (V, E) a graph, and k n. The following are equivalent: 1. G has treewidth k. 2. G has a triangulation G ∆ , such that the maximum clique in G ∆ has size k + 1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">There exists an elimination ordering ω such that the maximum clique size in</head><formula xml:id="formula_4">G ∆ ω is k + 1.</formula><p>Obtaining the treewidth of the graph is thus equivalent to finding an optimal elimination ordering. Moreover, constructing a tree decomposition from an elimination ordering is a natural process: each time a vertex is processed, a new bag is created containing the vertex and its neighbors. Note that, in practice, we do not need to compute the full elimination ordering: we can simply stop when we know that the number of remaining vertices is lower that the largest clique found thus far.</p><p>Example 9. In the triangulation of Figure <ref type="figure" target="#fig_2">2</ref> (left), corresponding to the elimination ordering on the right, the maximum clique has size 4: it is induced by the vertices 2, 3, 4, 5. This proves the existence of a tree decomposition of width 3. Indeed, it is exactly the tree decomposition in Figure <ref type="figure" target="#fig_1">1</ref> (right): bag d is constructed when 7 is eliminated, bag a when 1 is eliminated, bag c when 6 is eliminated, and finally bag b when 3 is eliminated.</p><p>Finding a "good" upper bound on the treewidth can thus be done by finding a "good" elimination ordering. This is still an intractable problem, of course, but there are various heuristics for generating elimination orderings leading to good treewidth upper bounds. One important class of such elimination ordering heuristics are the greedy heuristics. Intuitively, the elimination ordering is generated in an incremental manner: each time a new node has to be chosen in the elimination procedure, it is chosen using a criterion based on its neighborhood. In our study, we have implemented the following greedy criteria (with ties broken arbitrarily):</p><p>Degree. The node with the minimum degree is chosen. <ref type="bibr" target="#b49">[49,</ref><ref type="bibr" target="#b15">16]</ref> FillIn. The node with the minimum needed "fill-in" (i.e., the minimum number of missing edges for its neighbors to form a clique) is chosen. <ref type="bibr" target="#b18">[19]</ref> Degree+FillIn. The node with the minimum sum of degree and fill-in is chosen.</p><p>Example 10. The elimination ordering of Figure <ref type="figure" target="#fig_2">2</ref> (right) is an example of the use of Degree+FillIn. Indeed, 7 is first chosen, with value 1, then 1 with value 2, then 6 with value 2 + 1 = 3. After that, the order is arbitrary since 2, 3, 4, and 5 form a clique (and thus have initial value 3).</p><p>Previous studies <ref type="bibr" target="#b59">[59,</ref><ref type="bibr" target="#b42">42,</ref><ref type="bibr" target="#b18">19]</ref> have found these greedy criteria give the closest estimations of the real treewidth. An alternative way of generating an elimination ordering is based on maximum cardinality search <ref type="bibr" target="#b42">[42,</ref><ref type="bibr" target="#b18">19]</ref>; however, it is both less precise than the greedy algorithms -due to its reliance on how the first node in the ordering is chosen -and slower to run.</p><p>Treewidth Lower Bounds. In contrast to upper bounds, obtaining treewidth lower bounds is not constructive. In other words, lower bounds do not generate decompositions; instead, the estimation of a lower bound is made by computing other measures on a graph, that are a proxy for treewidth. In this study, we implement algorithms using three approaches: subgraph-based bounds, minor-based bounds, and bounds obtained by constructing improved graphs.</p><p>Given a graph G = (V, E), let δ(G) be its lowest degree, and δ 2 (G) δ(G) its second lowest degree (i.e., the degree of the second vertex when ordered by degree). It is known that δ 2 (G) is itself a lower bound on the treewidth <ref type="bibr" target="#b43">[43]</ref>. This, however, is too coarse an estimation, and we need better bounds. We shall use two degeneracy measures of the graphs. The first, the degeneracy of G, δD(G), is the maximum value of δ(H) over all subgraphs H of G. Similarly, the δ 2 -degeneracy, δ 2 D(G), of a graph is the maximum value of δ 2 (H) over all subgraphs H.</p><p>We have the following lemma:</p><p>Lemma 11. <ref type="bibr" target="#b19">[20]</ref> Let G = (V, E) be a graph, and W ⊆ V be a set of vertices. The treewidth of the subgraph of G induced by W is at most the treewidth of G.</p><p>A corollary of the above lemma is that the values δD(G) and δ 2 D(G) are themselves lower bounds of treewidth: Corollary 12. <ref type="bibr" target="#b19">[20]</ref> For every graph G, the treewidth of G is at least δ 2 D(G) δD(G).</p><p>To compute δD(G) and δ 2 D(G) exactly, the following natural algorithms can be used <ref type="bibr" target="#b43">[43,</ref><ref type="bibr" target="#b19">20]</ref>: repeatedly remove a vertex of smallest degree -or smallest except for some fixed node v, respectively -from the graph, and keep the maximum value thus encountered. As in <ref type="bibr" target="#b19">[20]</ref>, we refer to these algorithms as Mmd (Maximum Minimum Degree) and Delta2D, respectively. Ties are broken arbitrarily.</p><p>Example 13. Let us apply the Mmd algorithm to the graph of Figure <ref type="figure" target="#fig_1">1</ref> (left). The algorithm may remove, in order, 7 (degree 1), 1 (degree 2), 6 (degree 2), 3 (degree 2), 5 (degree 2), 4 (degree 1), 2 (degree 0). This gives a lower bound of 2 on the treewidth, which is not tight as we saw.</p><p>An equivalent of Lemma 11 on treewidth also holds for minors of a graph G: if H is a minor of G, then the treewidth of H is at most the treewidth of G <ref type="bibr" target="#b37">[38]</ref>. A minor H of a graph G is a graph obtained by allowing, in addition to edge and node deletion as when taking subgraphs, edge contractions. Then the concepts of contraction degeneracy, δC(G), and δ 2 -contraction degeneracy, δ 2 C(G), are defined analogously to δD(G) and δ 2 D(G) by considering all minors instead of all subgraphs: Lemma 14. <ref type="bibr" target="#b19">[20]</ref> For every graph G, the treewidth of G is at least δ 2 C(G) δC(G).</p><p>Unfortunately, computing δC(G) or δ 2 C(G) is NP-hard <ref type="bibr" target="#b20">[21]</ref>; hence, only heuristics can be used. One such heuristic for δC(G) is a simple change to the Mmd algorithm, called Mmd+ <ref type="bibr" target="#b20">[21,</ref><ref type="bibr" target="#b35">36]</ref>: at each step, instead of removing a vertex, a neighbor is chosen and the corresponding edge is contracted. Choosing a neighbor node to contract requires some heuristic also; in line with previous studies, in this study we choose the neighbor node that has the least overlap in neighbors -this is called the least-c heuristic <ref type="bibr" target="#b63">[63]</ref>.</p><p>Finally, another approach to treewidth lower bounds that we consider are improved graphs, an approach that can be used in combination with any of the lower bound estimation algorithms presented so far. Consider a graph G and an integer k and the following operation: while there are non-adjacent vertices v and w that have at least k + 1 common neighbors, add the edge (v, w) to the improved graph G . The resulting graph G is the (k + 1)-neighbor improved graph of G. Using these improved graphs can lead to a lower bound on treewidth: the (k + 1)-neighbor improved graph G of a graph G having at most treewidth k also has treewidth at most k.</p><p>To use this property, one can start from an already computed estimation k of a lower bound (by using Mmd, Mmd+, or Delta2D for example) and then repeatedly generate a (k + 1)-neighbor improved graph, estimate a new lower bound on treewidth, and repeat the process until the graph cannot be improved. This algorithm is known as Lbn in the literature <ref type="bibr" target="#b22">[23]</ref>, and can be combined with any other lower bound estimation algorithm. A refinement of Lbn, that alternates improvement and contraction steps, Lbn+, has also been proposed <ref type="bibr" target="#b20">[21]</ref>.</p><p>Example 15. Let us illustrate the use of Lbn together with Mmd on the graph of Figure <ref type="figure" target="#fig_1">1</ref> (left). As shown in Example 13, a first run of Mmd yields k = 2. We compute a 3-neighbor improved graph for G by adding an edge between nodes 3 and 5 (that share neighbors 2, 4, 6). Now, running Mmd one more time yields the possible sequence 7 (degree 1), 1 (degree 2), 6 (degree 2), 3 (degree 3), 5 (degree 2), 4 (degree 1), 2 (degree 0). We thus obtain a lower bound of 3 on the treewidth, which is this time tight.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Estimation Results</head><p>We now present our main experimental study, first introducing the 25 datasets we are considering, then upper and lower bound results, running time and estimators, and an aside discussion of the treewidth of synthetic networks. All experiments were made on a server using an 8-core Intel Xeon 1.70GHz CPU, having 32GB of RAM, and using 64bit Debian Linux. All datasets were given at least two weeks to finish, after which the algorithms were stopped and the best lower and upper bounds were recorded.</p><p>Datasets. For our study, we have evaluated the treewidth estimation algorithms on 25 datasets from 8 different domains (see Appendix A of <ref type="bibr" target="#b48">[48]</ref> for descriptions of how they were obtained): infrastructure networks (road networks, public transportation, power grid), social networks (explicit as in social networking sites, or derived from interaction patterns), web-like networks, a communication network, data with a hierarchical structure (genealogy trees), knowledge bases, traditional OLTP data, as well as a biological interaction network. Table <ref type="table" target="#tab_0">1</ref> summarizes the datasets, their size, and the best treewidth estimations we have been able to compute. For reproducibility purposes, all datasets, along with the code that has been used to compute the treewidth estimations, can be freely downloaded from https://github.com/smaniu/treewidth/.</p><p>Upper Bounds. We show in Figure <ref type="figure" target="#fig_6">3</ref> the results of our estimation algorithms. Lower values mean better treewidth estimations. Focusing on the upper bounds only (red circular points), we notice that, in general, FillIn does give the smallest upper bound of treewidth, in line with previous findings <ref type="bibr" target="#b19">[20]</ref>. Interestingly, the Degree heuristic is quite competitive with the other heuristics. This fact, coupled with its lower running time, means that it can be used more reliably in large graphs. Indeed, as can be seen in the figure, on some large graphs only the Degree heuristic actually finished at all; this means that, as a general rule, Degree seems the best fit for a quick and relatively reliable estimation of treewidth.</p><p>We plot both the absolute values of the estimations in Figure <ref type="figure" target="#fig_6">3a</ref>, but also their relative values (in Figure <ref type="figure" target="#fig_6">3b</ref>, representing the ratio of the estimation over the number of nodes in the graph), to allow for an easier comparison between networks. The absolute value, while interesting, does not yield an intuition on how the bounds can differ between network types. If we look at the relative values of treewidth, it becomes clear that infrastructure networks have a treewidth that is much lower than other networks; in general they seem to be consistently under one thousandth of the original size of the graph. This suggests that, indeed, this type of network may have properties that make them have a lower treewidth. For the other types of networks, the estimations can vary considerably: they can go from one hundredth (e.g., Math) to one tenth (e.g., WikiTalk) of the size of the graph.  As further explained in Appendix B of <ref type="bibr" target="#b48">[48]</ref>, the bounds obtained here on infrastructure networks are consistent with a conjectured O( <ref type="formula">3</ref>√ n) bound on the treewidth of road networks <ref type="bibr" target="#b26">[27]</ref>. One relevant property is their low highway dimension <ref type="bibr" target="#b1">[2]</ref>, which helps with routing queries and decomposition into contraction hierarchies. Even more relevant to our results is the fact that they tend to be "almost planar". More specifically, they are k-planar: each edge can allow up to k crossing in their plane embedding. It has been shown in <ref type="bibr" target="#b27">[28]</ref> that k-planar graphs have treewidth O( (k + 1)n), a relatively low treewidth that is consistent with our results.</p><p>The treewidth of hierarchical networks is surprisingly high, but not for trivial reasons: in both Royal and Math, largest cliques have size 3. More complex structures (cousin marriages, scientific communities) impact the treewidth, along with the fact that treewidth cannot exploit the property that both networks are actually DAGs.</p><p>In upper bound algorithms, ties are broken arbitrarily which causes a non-deterministic behavior. We show in Appendix C of <ref type="bibr" target="#b48">[48]</ref> that variations due to this non-determinism is of little significance.   Lower Bounds. Figure <ref type="figure" target="#fig_6">3</ref> also reports on the lower bound estimations (blue rectangular points). Now, higher values represent a better estimation. The same differentiation between infrastructure networks and the other networks holds in the case of lower bounds -treewidth lower bounds are much lower in comparison with other networks. We observe that the variation between upper and lower bound estimations can be quite large. Generally, we find that degree-based estimators, Mmd and Delta2D, give bounds that are very weak. The contraction-based estimator, Mmd+, however, consistently seems to give the best bounds of treewidth, and returns lower bounds that are much larger than the degree-based estimations.</p><p>Interestingly, in the case of the networks Ca, Pa, and Tx, the values returned for Mmd+ and Mmd are always 5 and 3, respectively. This has been remarked on in <ref type="bibr" target="#b20">[21]</ref> -there exist instances where heuristics of lower bounds perform poorly, giving very low lower bounds. In our case, this only occurs for some road networks, all coming from the same data source, i.e., the DIMACS challenge on shortest paths.</p><p>In Figure <ref type="figure" target="#fig_6">3</ref>, we have not plotted the estimations resulting from Lbn and Lbn+. The reason is that we have found that these algorithms do not generally give any improvement in the estimation of the lower bounds. Specifically, we have found an improvement only in two datasets for the Delta2D heuristic: for Facebook from 126 originally to 157 for Lbn(Delta2D) and 159 for Lbn+(Delta2D); and for Stack-TCS from 27 originally to 30 for Lbn+(Delta2D). In all cases, however, Mmd+ is always competitive by itself.</p><p>Running Time. The complexity of different estimation algorithms (see Appendix D of <ref type="bibr" target="#b48">[48]</ref>), varies a lot, ranging from quasi-linear for low-treewidth to cubic time. Even if all of the algorithms exhibit polynomial complexity, the cost can become quickly prohibitive, even for I C D T 2 0 1 9 12:12 An Experimental Study of the Treewidth of Real-World Graph Data graphs of relatively small sizes; indeed, not all algorithms finished on all datasets within the time bound of two weeks of computation time: indeed, only the fastest algorithms for each bound -Degree and Mmd respectively -finish processing all datasets. In some cases, for upper bounds, even Degree timed out -in this case, we took the value found at the moment of the time-out; this still represents an upper bound. The datasets for which this occurred are LiveJournal, Yago, DbPedia, and Tpch.<ref type="foot" target="#foot_0">1</ref> </p><p>Phase Transitions in Synthetic Networks. We have seen that graphs other than the infrastructure networks have treewidth values that are relatively high. An interesting question that these results lead to is: is it the case for all relatively complex networks, or is it a particularity of the chosen datasets?</p><p>To give a possible answer to this, we have evaluated the treewidth of a range of synthetic graph models and their parameters:</p><p>Random. This synthetic network model due to Erdős and Rényi <ref type="bibr" target="#b29">[30]</ref> is an entirely random one: given n nodes and a parameter p ∈ (0, 1], each possible edge between the n nodes is added with probability p. We have generated several network of n = 10 000 nodes, and with values of p ranging from 10 -5 to 10 -3 . Preferential Attachment. This network model <ref type="bibr" target="#b5">[6]</ref> is a generative model, and aims to simulate link formation in social networks: each time a new node is added to the network, it attaches itself to m other nodes, each link being formed with a probability proportional to the number of neighbors the existing node already has. We have generated graphs of n = 10 000 nodes, with the parameter m varying between 1 and 20. Small-World. The model <ref type="bibr" target="#b61">[61]</ref> generates a small-world graph by the following process: first, the n nodes are organized in a ring graph where each node is connected with m other nodes on each side; finally, each edge is rewired (its endpoints are changed) with probability p.</p><p>In the experiments, we have generated graphs of n = 10 000, with p = {0.1, 0.2, 0.5} and m ranging between 1 and 20.</p><p>Our objective with evaluating treewidth on these synthetic instances is to evaluate whether some parameters of these models lead to lower treewidth values, and if so, in which model the "phase transition" occurs, i.e., when a low-treewidth regime gives way to a high-treewidth one. For our purpose, and for reasons we explain in Section 5, we consider a treewidth under √ n to be low. Our first finding -see Figure <ref type="figure" target="#fig_10">4</ref> -is that the high-treewidth regime arrives very early, relative to the parameter values. For random graphs, only relatively small value of p allow for a low treewidth; for small-world and preferential attachment only trivial values of m allow low-treewidth -and, even so, it is usually 1 or 2, possibly due to the fact that the graph, in those cases, is composed of several small connected components, i.e., the well-known subcritical regime of random graphs <ref type="bibr" target="#b14">[15]</ref>. The low-treewidth regime for random networks seems to be limited to values immediately after p = 1 n ; after this point, the treewidth is high, in line with findings of a linear dependency between graph size and treewidth in random graphs <ref type="bibr" target="#b34">[35]</ref>. Moreover, we notice that there is no smooth transition for preferential attachment and small world networks; the treewidth jumps from very low values to high treewidth values. This is understandable in scale-free networks -resulting from the preferential attachment 12:13    model -where a few hubs may exist with degrees that are comparable to the number of nodes in the graph. Comparatively, random networks exhibit a smoother progression -one can clearly see the shift from trivial values of treewidth, to relatively low values, and to high treewidth values. Finally, the gap between lower bound and upper bound tends to increase with the parameter; that is, however, not surprising since all three model graphs tend to have more edges with larger parameter values.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Partial Decompositions</head><p>Our results show that, in practice, the treewidths of real networks are quite high. Even in the case of road networks, having relatively low treewidths, their value can go in the hundreds, rendering most algorithms whose time is exponential time in the treewidth (or worse) unusable. In practical applications, however, we can still adapt treewidth-based approaches for obtaining data structures -not unlike indexes -which can help with some important graph queries like shortest distances and paths <ref type="bibr" target="#b62">[62,</ref><ref type="bibr" target="#b4">5]</ref> or probability estimations <ref type="bibr" target="#b47">[47,</ref><ref type="bibr" target="#b9">10]</ref>.</p><p>The manner in which treewidth decomposition can be used starts from a simple observation made in studies on complex graphs, that is, that they tend to exhibit a tree-like fringe and a densely connected core <ref type="bibr" target="#b52">[52,</ref><ref type="bibr" target="#b51">51]</ref>. The tree-like fringe precisely corresponds to boundedtreewidth parts of the network. This yields an easy adaptation of the upper bound algorithms based on node ordering: given a parameter w representing the highest treewidth the fringe can be, we can run any greedy decomposition algorithm (Degree, FillIn, DegreeFillIn) until we only find nodes of degree w + 1, at which point the algorithm stops. At termination, we obtain a data structure formed of a set of treewidth w elements (w-trees) interfacing through cliques that have size at most w + 1 with a core graph. The core graph contains all the nodes not removed in the bag creation process, and has unbounded treewidth. Figure <ref type="figure" target="#fig_11">5</ref> illustrates the notion of partial decompositions.</p><p>The resulting structure can be thought of as a partial decomposition (or relaxed decomposition), a concept introduced in <ref type="bibr" target="#b62">[62,</ref><ref type="bibr" target="#b4">5]</ref> in the context of answering shortest path queries, and used in <ref type="bibr" target="#b47">[47]</ref> for probabilistic distance queries. A partial decomposition can be extremely useful. The tree-like fringe can be used to quickly precompute answers to partial queries (e.g., precompute distances in the graph). Once the precomputation is done, these (partial) answers are added to the core graph, where queries can be answered directly. If the resulting core graph is much smaller than the original graph, the gains in running time can be considerable, as shown in <ref type="bibr" target="#b62">[62,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b47">47]</ref>. Hence, the objective of our experiments in this section is to check how feasible partial decompositions are. An interesting aspect of greedy upper bound algorithms is that they generate at any point a partial decomposition, with width equal to the highest degree encountered in the greedy ordering so far. The algorithm can then be stopped at any width, and the size of the resulting partial decomposition can be measured.</p><p>To evaluate this, we track here the size of the core graph, in terms of edges. We do this because most algorithms on graphs have a complexity that is directly related to the number of edges in the graph. As we discussed in the previous section, we aim that the size of the core graph to be as small as possible. Another aspect to keep in mind is the number of edges that are added by the fill-in process during the decomposition: each time a node of degree w is removed, at most w(w-1) 2 edges are added to the graph. Finally, for a graph of treewidth k, the decomposition contains a root of size at most k 2 edges. Hence, to ensure that the core graph is smaller than the original graph we aim for the treewidth to be √ n. As we saw in Section 4, this is only rarely the case, and it is more likely to occur in infrastructure networks.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 6</head><p>Relative sizes of core graphs in partial decompositions, after all bags of a given size have been removed in the decomposition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>12:15</head><p>Indeed, if we plot the core graph size in the partial decompositions of infrastructure networks (Figures <ref type="figure">6a,</ref><ref type="figure">6b</ref>), we see that their size is only a fraction of the original size. We see a large drop in the size for low widths; this is logical, since the fill-in process does not add edges for w = 1 and w = 2. After this point, the size is relatively stable, and can go as low as 10% of the original size. In this sense, infrastructure networks seem the best fit for indexes based on decompositions, and represents further confirmation of the good behavior of these networks for hierarchical decompositions.</p><p>This desired decomposition behavior no longer occurs for social networks (Figures <ref type="figure">6c,</ref><ref type="figure">6d</ref>) and the other networks in our dataset (Figures <ref type="figure">6e,</ref><ref type="figure">6f</ref>). In this case, the decomposition becomes too large and even unwieldy -for some networks, the decomposition started filling the main memory of our computers (32 GB of RAM); for other networks, they did not finish in reasonable time (i.e., a few days of computation). For most of these networks, the resulting treewidth is much larger than our desired bound of at most √ n); this results in core graph sizes that can be hundreds of times larger than the original size. The only exceptions are hierarchical networks, Royal and Math (Figures <ref type="figure">6g,</ref><ref type="figure">6h</ref>), which are after all supposed to be close to a tree -despite having a relatively high treewidth (remember Figure <ref type="figure" target="#fig_6">3b</ref>), partial decompositions work well on them. See Appendix E of <ref type="bibr" target="#b48">[48]</ref> for full results.</p><p>In practice, however, we do not need to compute full decompositions. For usable indexes, we may want to stop at low treewidths, which allow exact computing. This may be useful for graphs whose decompositions have large core graphs. Indeed (see Appendix G of <ref type="bibr" target="#b48">[48]</ref> for details), by stopping at width between 5 and 10, it is often possible to significantly reduce the original size of the graph, even in cases where core graphs are large, such as the Google graph.</p><p>Such partial decompositions are an extremely promising tool: on databases where partial decomposition result in a core graph of reduced size, efficient algorithms can be run on the fringe, exploiting its low treewidth, while more costly algorithms are used on the core, which has reduced size. Combining results from the fringe and the core graph can be a challenging process, however, which is worth investigating for separate problems. As a start, we have shown in <ref type="bibr" target="#b47">[47]</ref> how to exploit partial decompositions to significantly improve the running time of source-to-target queries in probabilistic graphs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Discussion</head><p>In this article, we have estimated the treewidth of a variety of graph datasets from different domains, and we have studied the running time and effectiveness of estimation algorithms. This study was motivated by the central role treewidth plays in many theoretical work attacking query evaluation tasks that are otherwise intractable, where low treewidths are an indicator for low complexity.</p><p>Our study on the algorithms for estimation leads to results that may seem surprising. For upper bounds, we discovered that greedy treewidth estimators, based on elimination orderings, provide the best cost-estimation trade-off; they also have the advantage of outputting readilyusable tree decompositions. In the case of lower bounds, we discovered that degeneracy-based bounds display the best behavior; moreover, the algorithms which aim to improve the bounds (LBN and LBN+) only very rarely do so.</p><p>In terms of treewidth estimations, we have discovered that, generally, the treewidth of real-world graphs is quite large. With few exceptions, most of the graphs we have tested in this study are scale-free. This may partly explain our findings -scale-free networks exhibit a number of high-degree, or hub, nodes that force high values for the treewidth. The few I C D T 2 0 1 9 exceptions to this rule are infrastructure networks, where treewidths are comparatively lower. Indeed, we were able to reproduce a O( <ref type="formula">3</ref>√ n) bound on the treewidth of road networks. We conjecture these relatively low bounds are explained by characteristics of infrastructure networks: specifically, they are similar to very sparse random networks.</p><p>Even in the case of infrastructure networks, the absolute value of treewidth still renders algorithms that are exponential in the treewidth impractical. However, one of the main lesson of this work is that it is still possible to exploit the structure of such datasets, by computing partial tree decompositions: following the approach of Section 5, it is often possible to decompose a dataset into a fringe of low treewidth and a smaller core of high treewidth. This has been used in <ref type="bibr" target="#b47">[47]</ref>, but for a very specific (and limited) application: connectivity queries in probabilistic graphs.</p><p>In brief, though low-treewidth data guarantees a wealth of theoretical results on the tractability of various data management tasks, this is unexploitable in most real-world datasets, which do not have low enough treewidth. One direction is of course to find relaxations of the treewidth notion, such as in <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b41">41]</ref>. But since low treewidth is sometimes the only notion that ensures tractability <ref type="bibr" target="#b45">[45,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b8">9]</ref>, other approaches are needed; a promising one lies in the notion of partial tree decompositions. We believe future work in database theory should study in more detail the nature of partial tree decompositions, how to obtain optimal or near-optimal partial decompositions, and how to exploit them for improving the efficiency of a wide range of data management problems, from query evaluation, to enumeration, probability estimation, or knowledge compilation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>and</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1</head><label>1</label><figDesc>Figure 1 Example undirected, unlabeled, graph (left) and decomposition of width 3 (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Graph triangulation for the graph of Figure 1 (left) and its elimination ordering (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>I C D T 2 0 1 9 12: 10</head><label>910</label><figDesc>An Experimental Study of the Treewidth of Real-World Graph Data</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 3</head><label>3</label><figDesc>Figure 3 Treewidth estimation of different algorithms (logarithmic scale).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 4</head><label>4</label><figDesc>Figure<ref type="bibr" target="#b3">4</ref> Lower and upper bounds of treewidth in synthetic networks, as a function of generator parameters. The blue line represent the low width regime, where treewidth is less than 100.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Figure 5</head><label>5</label><figDesc>Figure<ref type="bibr" target="#b4">5</ref> An abstract view of partial decompositions. Partial decompositions are formed of a core graph, which interfaces with w-trees through w-cliques (the fringe).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1</head><label>1</label><figDesc>Datasets and summary of lower and upper bounds. Bounds with a * are partial (the decomposition process was interrupted before it finished).</figDesc><table><row><cell></cell><cell>Dataset</cell><cell></cell><cell></cell><cell>Lower</cell><cell>Upper</cell></row><row><cell>type</cell><cell>name</cell><cell>nodes</cell><cell>edges</cell><cell>width</cell><cell>width</cell></row><row><cell>infrastructure</cell><cell>Ca</cell><cell>1 965 206</cell><cell>2 766 607</cell><cell>5</cell><cell>252</cell></row><row><cell></cell><cell>Pa</cell><cell>1 088 092</cell><cell>1 541 898</cell><cell>5</cell><cell>333</cell></row><row><cell></cell><cell>Tx</cell><cell>1 379 917</cell><cell>1 921 660</cell><cell>5</cell><cell>189</cell></row><row><cell></cell><cell>Bucharest</cell><cell>189 732</cell><cell>223 143</cell><cell>21</cell><cell>139</cell></row><row><cell></cell><cell>HongKong</cell><cell>321 210</cell><cell>409 038</cell><cell>32</cell><cell>145</cell></row><row><cell></cell><cell>Paris</cell><cell>4 325 486</cell><cell>5 395 531</cell><cell>55</cell><cell>521</cell></row><row><cell></cell><cell>London</cell><cell>2 099 114</cell><cell>2 588 544</cell><cell>57</cell><cell>507</cell></row><row><cell></cell><cell>Stif</cell><cell>17 720</cell><cell>31 799</cell><cell>28</cell><cell>86</cell></row><row><cell></cell><cell>USPowerGrid</cell><cell>4 941</cell><cell>6 594</cell><cell>10</cell><cell>18</cell></row><row><cell>social</cell><cell>Facebook</cell><cell>4 039</cell><cell>88 234</cell><cell>142</cell><cell>247</cell></row><row><cell></cell><cell>Enron</cell><cell>36 692</cell><cell>183 831</cell><cell>257</cell><cell>1 989</cell></row><row><cell></cell><cell>WikiTalk</cell><cell>2 394 385</cell><cell>4 659 565</cell><cell>1 113</cell><cell>12 843</cell></row><row><cell></cell><cell>CitHeph</cell><cell>34 546</cell><cell>420 877</cell><cell>469</cell><cell>9 498</cell></row><row><cell></cell><cell>Stack-TCS</cell><cell>25 232</cell><cell>69 026</cell><cell>143</cell><cell>717</cell></row><row><cell></cell><cell>Stack-Math</cell><cell>1 132 468</cell><cell>2 853 815</cell><cell>850</cell><cell>11 100</cell></row><row><cell></cell><cell>LiveJournal</cell><cell>3 997 962</cell><cell>34 681 189</cell><cell>360</cell><cell>919 532  *</cell></row><row><cell>web</cell><cell>Wikipedia</cell><cell>252 335</cell><cell>2 427 434</cell><cell>1 007</cell><cell>19 876</cell></row><row><cell></cell><cell>Google</cell><cell>875 713</cell><cell>4 322 051</cell><cell>621</cell><cell>17 571</cell></row><row><cell>communication</cell><cell>Gnutella</cell><cell>65 586</cell><cell>147 892</cell><cell>244</cell><cell>9 374</cell></row><row><cell>hierarchy</cell><cell>Royal</cell><cell>3 007</cell><cell>4 862</cell><cell>11</cell><cell>24</cell></row><row><cell></cell><cell>Math</cell><cell>101 898</cell><cell>105 131</cell><cell>56</cell><cell>515</cell></row><row><cell>ontology</cell><cell>Yago</cell><cell>2 635 315</cell><cell>5 216 293</cell><cell>836</cell><cell>79 059  *</cell></row><row><cell></cell><cell>DbPedia</cell><cell>7 697 211</cell><cell>30 622 392</cell><cell>28</cell><cell>538 805  *</cell></row><row><cell>database</cell><cell>Tpch</cell><cell>1 381 291</cell><cell>79 352 127</cell><cell>699</cell><cell>124 316  *</cell></row><row><cell>biology</cell><cell>Yeast</cell><cell>2 284</cell><cell>6 646</cell><cell>54</cell><cell>255</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We show in Figure9Appendix D of<ref type="bibr" target="#b48">[48]</ref> the full running time results for the upper and lower bound algorithms.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We are grateful to <rs type="person">Antoine Amarilli</rs> and <rs type="person">Mikaël Monet</rs> for feedback on parts of this paper.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Foundations of databases</title>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Abiteboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Hull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Vianu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<publisher>Addison-Wesley</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Highway dimension, shortest paths, and provably efficient algorithms</title>
+		<author>
+			<persName><forename type="first">Ittai</forename><surname>Abraham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amos</forename><surname>Fiat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><forename type="middle">V</forename><surname>Goldberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Renato</forename><forename type="middle">F</forename><surname>Werneck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SODA</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Tree decompositions and social graphs</title>
+		<author>
+			<persName><forename type="first">Aaron</forename><forename type="middle">B</forename><surname>Adcock</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Blair</forename><forename type="middle">D</forename><surname>Sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><forename type="middle">W</forename><surname>Mahoney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Internet Mathematics</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">The Closure of Monadic NP</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ajtai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">J</forename><surname>Stockmeyer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JCSS</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Shortest-Path Queries for Complex Networks: Exploiting Low Tree-width Outside the Core</title>
+		<author>
+			<persName><forename type="first">Takuya</forename><surname>Akiba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Sommer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ken-Ichi</forename><surname>Kawarabayashi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EDBT</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Statistical mechanics of complex networks</title>
+		<author>
+			<persName><forename type="first">Réka</forename><surname>Albert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Albert-László</forename><surname>Barabási</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Rev. Mod. Phys</title>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">A Circuit-Based Approach to Efficient Enumeration</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Bourhis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Louis</forename><surname>Jachiet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Mengel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICALP</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Provenance Circuits for Trees and Treelike Instances</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Bourhis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICALP</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Tractable Lineages on Treelike Instances: Limits and Extensions</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Bourhis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Challenges for Efficient Query Evaluation on Structured Probabilistic Data</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Maniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikaël</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SUM</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Connecting Width and Structure in Knowledge Compilation</title>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Amarilli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mikaël</forename><surname>Monet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2018.6</idno>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Approximation Algorithms for Treewidth</title>
+		<author>
+			<persName><forename type="first">Eyal</forename><surname>Amir</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Algorithmica</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="448" to="479" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Complexity of finding embeddings in a k-tree</title>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Arnborg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Derek</forename><forename type="middle">G</forename><surname>Corneil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrzej</forename><surname>Proskuworski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM Journal on Algebraic and Discrete Methods</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">MSO queries on tree decomposable structures are computable with linear delay</title>
+		<author>
+			<persName><forename type="first">Guillaume</forename><surname>Bagan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">CSL</title>
+		<imprint>
+			<biblScope unit="volume">4207</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page">17</biblScope>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">Albert-László</forename><surname>Barabási</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Márton</forename><surname>Pósfai</surname></persName>
+		</author>
+		<title level="m">Network science</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">The Minimum Degree Heuristic and the Minimal Triangulation Process</title>
+		<author>
+			<persName><forename type="first">Anne</forename><surname>Berry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pinar</forename><surname>Heggernes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geneviève</forename><surname>Simonet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Graph-Theoretic Concepts in Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">2880</biblScope>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+	<note>Chapter 6</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A Linear-Time Algorithm for Finding Tree-Decompositions of Small Treewidth</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hans</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodlaender</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM J. Comput</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">On exact algorithms for treewidth</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hans</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodlaender</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arie</forename><surname>Fedor V Fomin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M C A</forename><surname>Koster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dieter</forename><surname>Kratsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitrios</forename><forename type="middle">M</forename><surname>Thilikos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TALG</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Treewidth Computations I. Upper Bounds</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arie M C A</forename><surname>Bodlaender</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Koster</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">208</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Treewidth Computations II. Lower Bounds</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arie M C A</forename><surname>Bodlaender</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Koster</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">209</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Contraction and Treewidth Lower Bounds</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Arie</forename><forename type="middle">M C A</forename><surname>Bodlaender</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Koster</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wolle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESA</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">An Analytical Study of Large SPARQL Query Logs</title>
+		<author>
+			<persName><forename type="first">Angela</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wim</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Timm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<monogr>
+		<title level="m" type="main">New Lower and Upper Bounds for Graph Treewidth</title>
+		<author>
+			<persName><forename type="first">François</forename><surname>Clautiaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jacques</forename><surname>Carlier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aziz</forename><surname>Moukrim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stéphane</forename><surname>Nègre</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<publisher>WEA</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The Monadic Second-Order Logic of Graphs. I. Recognizable Sets of Finite Graphs</title>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Courcelle</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Comput</title>
+		<imprint>
+			<biblScope unit="volume">85</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The dichotomy of conjunctive queries on probabilistic structures</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Nilesh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Dalvi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">The PACE 2017 Parametrized Algorithms and Computation Experiments Challenge: The Second Iteration</title>
+		<author>
+			<persName><forename type="first">Holger</forename><surname>Dell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Komusiewicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nimrod</forename><surname>Talmon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathias</forename><surname>Weller</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>IPEC</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Customizable Contraction Hierarchies</title>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Dibbelt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ben</forename><surname>Strasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dorothea</forename><surname>Wagner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Experimental Algorithmics</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Structure of Graphs with Locally Restricted Crossings</title>
+		<author>
+			<persName><forename type="first">Vida</forename><surname>Dujmović</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Eppstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><forename type="middle">R</forename><surname>Wood</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM J. Discrete Maths</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Enumeration Complexity of Logical Query Problems with Second-order Variables</title>
+		<author>
+			<persName><forename type="first">Arnaud</forename><surname>Durand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Strozecki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CSL</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">On Random Graphs I</title>
+		<author>
+			<persName><forename type="first">Paul</forename><surname>Erdős</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alfréd</forename><surname>Rényi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Publicationes Mathematicae</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<date type="published" when="1959">1959</date>
+			<pubPlace>Debrecen)</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">SAT-Based Local Improvement for Finding Tree Decompositions of Small Width</title>
+		<author>
+			<persName><forename type="first">Johannes</forename><forename type="middle">K</forename><surname>Fichte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Neha</forename><surname>Lodha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Szeider</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Theory and Applications of Satisfiability Testing -SAT</title>
+		<editor>
+			<persName><forename type="first">Serge</forename><surname>Gaspers</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Toby</forename><surname>Walsh</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Query evaluation via tree-decompositions</title>
+		<author>
+			<persName><forename type="first">Jörg</forename><surname>Flum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Frick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Grohe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">49</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Deciding first-order properties of locally tree-decomposable structures</title>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Frick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Grohe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Lower bounds on the complexity of MSO1 model-checking</title>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Ganian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Petr</forename><surname>Hliněnỳ</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><surname>Langer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jan</forename><surname>Obdržálek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Rossmanith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Somnath</forename><surname>Sikdar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JCSS</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">80</biblScope>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Treewidth of Erdős-Rényi random graphs, random intersection graphs, and scale-free random graphs</title>
+		<author>
+			<persName><forename type="first">Yong</forename><surname>Gao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Discrete Applied Mathematics</title>
+		<imprint>
+			<biblScope unit="volume">160</biblScope>
+			<biblScope unit="issue">4-5</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">A Complete Anytime Algorithm for Treewidth</title>
+		<author>
+			<persName><forename type="first">Vibhav</forename><surname>Gogate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rina</forename><surname>Dechter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">UAI</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">When is the Evaluation of Conjunctive Queries Tractable?</title>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Grohe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Schwentick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Segoufin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">STOC</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<title level="m" type="main">On Treewidth and Graph Minors</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>John</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Harvey</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+		<respStmt>
+			<orgName>The University of Melbourne</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">9 12:18 An Experimental Study of the Treewidth of Real-World Graph Data</title>
+		<author>
+			<persName><forename type="first">I C D T</forename></persName>
+		</author>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">On the Tractability of Query Compilation and Bounded Treewidth</title>
+		<author>
+			<persName><forename type="first">Abhay</forename><surname>Jha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Knowledge Compilation Meets Database Theory: Compiling Queries to Decision Diagrams</title>
+		<author>
+			<persName><forename type="first">Abhay</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jha</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theory Comput. Syst</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Enumeration of first-order queries on classes of structures with bounded expansion</title>
+		<author>
+			<persName><forename type="first">Wojciech</forename><surname>Kazana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Segoufin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title level="m" type="main">Probabilistic Graphical Models: Principles and Techniques</title>
+		<author>
+			<persName><forename type="first">Daphne</forename><surname>Koller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nir</forename><surname>Friedman</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>The MIT Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<monogr>
+		<title level="m" type="main">Degree-Based Treewidth Lower Bounds</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C A</forename><surname>Arie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Koster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hans</forename><forename type="middle">L</forename><surname>Wolle</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Bodlaender</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>WEA</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Algorithmic Meta-Theorems</title>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Kreutzer</surname></persName>
+		</author>
+		<idno>CoRR, abs/0902.3616</idno>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Lower bounds for the complexity of monadic second-order logic</title>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Kreutzer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Siamak</forename><surname>Tazari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LICS</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Local Computations with Probabilities on Graphical Structures and Their Application to Expert Systems</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">L</forename><surname>Lauritzen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Spiegelhalter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society Series B (Methodological)</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">An Indexing Framework for Queries on Probabilistic Graphs</title>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Maniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reynold</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<monogr>
+		<title level="m" type="main">An Experimental Study of the Treewidth of Real-World Graph Data (Extended Version)</title>
+		<author>
+			<persName><forename type="first">Silviu</forename><surname>Maniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suraj</forename><surname>Jog</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1901.06862</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">The Elimination Form of the Inverse and Its Application to Linear Programming</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Harry</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Markowitz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Management Science</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="1957">1957</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Probabilistic Evaluation of Expressive Queries on Bounded-Treewidth Instances</title>
+		<author>
+			<persName><forename type="first">Mikaël</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD PhD Symposium</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Random graph models of social networks</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E J</forename><surname>Newman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Watts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Strogatz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the National Academy of Sciences</title>
+		<meeting>the National Academy of Sciences</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Random graphs with arbitrary degree distributions and their applications</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">J</forename><surname>Mark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><forename type="middle">H</forename><surname>Newman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duncan</forename><forename type="middle">J</forename><surname>Strogatz</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Watts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Phys. Rev. E</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<date type="published" when="2001-07">July 2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<monogr>
+		<title level="m" type="main">What are real SPARQL queries like? In SWIM</title>
+		<author>
+			<persName><forename type="first">François</forename><surname>Picalausa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stijn</forename><surname>Vansummeren</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Computing All-Pairs Shortest Paths by Leveraging Low Treewidth</title>
+		<author>
+			<persName><forename type="first">Léon</forename><surname>Planken</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mathijs</forename><surname>De Weerdt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roman</forename><surname>Van Der Krogt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">An Empirical Study of QBF Encodings: from Treewidth Estimation to Useful Preprocessing</title>
+		<author>
+			<persName><forename type="first">Luca</forename><surname>Pulina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Armando</forename><surname>Tacchella</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Fundamenta Informaticae</title>
+		<imprint>
+			<biblScope unit="volume">102</biblScope>
+			<biblScope unit="page" from="391" to="427" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Graph minors. III. Planar tree-width</title>
+		<author>
+			<persName><forename type="first">Neil</forename><surname>Robertson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paul</forename><forename type="middle">D</forename><surname>Seymour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Comb. Theory, Ser. B</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Descriptive Complexity of #P Functions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Saluja</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">V</forename><surname>Subrahmanyam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Thakur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JCSS</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Generalized Finite Automata Theory with an Application to a Decision Problem of Second-Order Logic</title>
+		<author>
+			<persName><forename type="first">James</forename><forename type="middle">W</forename><surname>Thatcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jesse</forename><forename type="middle">B</forename><surname>Wright</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Math. Systems Theory</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="1968">1968</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<monogr>
+		<title level="m" type="main">Computing treewidth with LibTW</title>
+		<author>
+			<persName><forename type="first">Jan-Pieter</forename><surname>Thomas Van Dijk</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Van Den</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wouter</forename><surname>Heuvel</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Slob</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Utrecht</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical report</note>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">The Complexity of Relational Query Languages (Extended Abstract)</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">STOC</title>
+		<imprint>
+			<date type="published" when="1982">1982</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Collective dynamics of small-world networks</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Watts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Strogatz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">393</biblScope>
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">TEDI: efficient shortest path query answering on graphs</title>
+		<author>
+			<persName><forename type="first">Fang</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<monogr>
+		<title level="m" type="main">Computational aspects of treewidth: Lower bounds and network reliability</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Wolle</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+		<respStmt>
+			<orgName>Utrecht University</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">PhD thesis</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

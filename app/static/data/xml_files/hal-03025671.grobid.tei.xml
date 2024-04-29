@@ -1,0 +1,962 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Adversarial regularization for explainable-by-design time series classification</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Yichang</forename><surname>Wang</surname></persName>
+							<email>yichang.wang@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">IRISA UMR 6074</orgName>
+								<orgName type="institution">Univ Rennes</orgName>
+								<address>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Rémi</forename><surname>Emonet</surname></persName>
+							<email>remi.emonet@univ-st-etienne.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">Lab Hubert Curien UMR 5516</orgName>
+								<orgName type="institution">Univ Lyon</orgName>
+								<address>
+									<settlement>Saint-Etienne</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+							<email>elisa.fromont@irisa.fr</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">IRISA UMR 6074</orgName>
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IUF</orgName>
+								<address>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Simon</forename><surname>Malinowski</surname></persName>
+							<email>simon.malinowski@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">IRISA UMR 6074</orgName>
+								<orgName type="institution">Univ Rennes</orgName>
+								<address>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Romain</forename><surname>Tavenard</surname></persName>
+							<email>romain.tavenard@univ-rennes2.fr</email>
+							<affiliation key="aff3">
+								<orgName type="laboratory">UMR 6554</orgName>
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">LETG</orgName>
+								<address>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Adversarial regularization for explainable-by-design time series classification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">0C82E9B2A59BCE6A924468653E615370</idno>
+					<note type="submission">Submitted on 26 Nov 2020</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:54+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Time Series</term>
+					<term>Shapelets</term>
+					<term>Adversarial Networks</term>
+					<term>Explainable AI</term>
+					<term>Convolutional Neural Networks</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>de niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>A time series (TS) Z is a series of time-ordered values, Z = {z (1) , z (2) , . . . , z (T ) } where z (t) ∈ R d , T is the length of our time series and d is the dimension of the feature vector describing each data point. If d = 1, Z is said univariate, otherwise it is said multivariate. In this paper, we are interested in classifying univariate time series. We are given a training set T = {(Z 1 , y 1 ), . . . , (Z n , y n )}, composed of n time series Z i and their associated labels y i . Our aim is to learn a function h such that h(Z i ) = y i , in order to predict the labels of new incoming time series. The time series classification problem has been studied in countless applications (see for example <ref type="bibr" target="#b0">[1]</ref>) ranging from stock exchange evolution, daily energy consumption, medical sensors, videos, etc.</p><p>Many methods have been developed to tackle this problem (see <ref type="bibr" target="#b1">[2]</ref> for a review). One very successful category of methods consists in "finding" discriminative phase-independent subsequences, called shapelets, that can be used to classify the series. In the first papers about shapelet-based time series classification <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b3">[4]</ref>, the shapelets were directly extracted from the training set and the selected shapelets could be used a posteriori to explain the classifier's decision. However, the shapelet enumeration and selection processes were either very costly or the selection was fast but did not yield good performance (as discussed in Section II). Jointly learning a Elisa Fromont is supported by the HyAIAI (Hybrid Approaches for Interpretable AI) Inria "Défis" project. Romain Tavenard is partly funded by ANR through project MATS (ANR-18-CE23-0006). shapelet-based representation of the series in the dataset and classifying the series according to this representation <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref> allowed to obtain discriminative shapelets in a much more efficient way. An example of such learned shapelets, obtained with the method from <ref type="bibr" target="#b5">[6]</ref>, is given in blue in Figure <ref type="figure" target="#fig_0">1</ref> (left). However, if the learned shapelets are definitively discriminative, they are often very different (visually) from actual pieces of a real series in the dataset. As such, these shapelets might not be suited to explain a particular classifier's decision. Note that the same interpretability issue arises with ensemble classifiers such as <ref type="bibr" target="#b6">[7]</ref> where one decision depends on the presence of multiple shapelets. One of the main challenges nowadays is to provide Machine Learning (ML) methods that are both accurate and self-explanatory, i.e. provide mechanisms to explain their decisions to human users since, in many scenarios, it may be risky, unacceptable, or simply illegal, to let artificial intelligent systems make decisions without any human supervision <ref type="bibr" target="#b7">[8]</ref>.</p><p>In this paper, we make use of a simple convolutional network to classify time series and we show how one can leverage the principle of adversarial learning to regularize the parameters of this network such that it learns shapelets that could be more useful to interpret the classifier's decision. Section II presents the most related work. We detail our XCNN method in Section III. In Section IV, we show quantitative and qualitative results on the usual time series benchmarks <ref type="bibr" target="#b8">[9]</ref>: XCNN performance are on par with comparable state-of-the-art methods and our explainable-by-design method provides new types of explanations for neural network's predictions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORK</head><p>In this section we review the literature on shapelet-based Time Series Classification (TSC) and on tools for understanding black box model predictions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Time Series Classification</head><p>Shapelets are discriminative subseries that can either be extracted from a set of time series or learned so as to minimize an objective function. They have been introduced in <ref type="bibr" target="#b2">[3]</ref> but in this work, the search space of all possible shapelets is explored exhaustively which makes the method intractable in practice. This high time complexity has led to the use of heuristics in order to select the shapelets more efficiently. In Fast Shapelets (FS) <ref type="bibr" target="#b3">[4]</ref>, the authors rely on quantized time series and random projections in order to accelerate the shapelet search but they sacrifice the accuracy, as reported in <ref type="bibr" target="#b1">[2]</ref>. The Shapelet Transform (ST) <ref type="bibr" target="#b4">[5]</ref> consists in transforming time series into a feature vector whose coordinates represent distances between the time series and the shapelets selected beforehand. However as in <ref type="bibr" target="#b2">[3]</ref>, the shapelets selection step makes the method unfit for large scale learning.</p><p>In order to face the high complexity that comes with searchbased methods, other strategies have been designed for shapelet selection. On the one hand, some attention has been paid to random sampling of shapelets from the training set <ref type="bibr" target="#b9">[10]</ref>. On the other hand, <ref type="bibr" target="#b5">[6]</ref> showed that shapelets could be learned using a gradient-descent-based optimization algorithm. The method, referred to as Learning Shapelets (LS) in the following, jointly learns the shapelets and the parameters of a logistic regression classifier. This makes the method very similar in spirit to a neural network with a single convolutional layer followed by a fully connected classification layer and where the convolution operation is replaced by a sliding-window local distance computation. A min-pooling aggregator should then be used for temporal aggregation.</p><p>Closely related to shapelet-based methods (as stated above), variants of Convolutional Neural Networks (CNN) have been introduced for the TSC task <ref type="bibr" target="#b10">[11]</ref>. These are mostly monodimensional variants of CNN models developed in the Computer Vision field. Note however that most models are rather shallow, which is likely to be related to the moderate sizes of the benchmark datasets present in the UCR/UEA archive <ref type="bibr" target="#b8">[9]</ref>. A review of these models can be found in <ref type="bibr" target="#b1">[2]</ref>.</p><p>Finally, ensemble-based methods, such as COTE <ref type="bibr" target="#b6">[7]</ref> or HIVE-COTE <ref type="bibr" target="#b11">[12]</ref>, that rely on several of the above-presented standalone classifiers are now considered state-of-the-art for the TSC task. Note however that these methods tend to be computationally expensive, with high memory usage and difficult to interpret (as stated in Section I) due to the combination of many different core classifiers.</p><p>In this paper, we propose a method that is scalable (compared to methods such as Shapelets <ref type="bibr" target="#b2">[3]</ref> or ST <ref type="bibr" target="#b4">[5]</ref>), yields interpretable results which can be used to explain the classifier's decisions (compared to ensemble approaches or unconstrained approaches such as <ref type="bibr" target="#b5">[6]</ref> or <ref type="bibr" target="#b11">[12]</ref>), and exhibits good classification accuracy (compared to FS <ref type="bibr" target="#b3">[4]</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Model Interpretability</head><p>Among the vast number of existing classifiers, some are considered self-explanatory (e.g. decision trees, classification rules), while others are difficult to interpret (e.g. ensemble methods, neural networks that can be considered as blackboxes). Interpretation of black box classifiers usually consists in designing an interpretation layer between the classifier and the human level. Two criteria refine the category of methods to interpret classifiers: global versus local (i.e. dedicated to one sample) explanations, and black-box dependent versus agnostic. In this category, state-of-the-art methods are Local Interpretable Model-agnostic Explanations (LIME and Anchors) <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref> and SHapley Additive exPlanations (SHAP) <ref type="bibr" target="#b14">[15]</ref>. SHAP values come with the black-box local estimation advantages of LIME, but also with theoretical guarantees. A higher absolute SHAP value of an attribute compared to another means that it has a higher predictive or discriminative power. However, these methods, contrarily to XCNN, are not able to show what has been learned and is used by the classifier to explain a particular decision.</p><p>GradCAM <ref type="bibr" target="#b15">[16]</ref> is a popular local visualization method designed to explain neural networks decisions on image classification tasks. It uses gradient-based methods to highlight (with a heat map) the discriminative pixels on a given input test image. This method was adapted in MTEX-CNN <ref type="bibr" target="#b16">[17]</ref> as an explanation and feature selection tool for multivariate time series (MTS) classification tasks which is a closer setting to ours. In <ref type="bibr" target="#b16">[17]</ref>, the authors proposed to stack 2D and 1D convolution sequentially to capture the important feature(s) and the important time stamp(s) for the time series. The prediction results are explained by inspecting the input MTS using GradCAM on both the variable and temporal dimensions.</p><p>[18] has a similar goal as ours (to produce interpretable discriminative shapelets) and build on both the work from <ref type="bibr" target="#b4">[5]</ref> (in this case the candidate shapelets are extracted with a piecewise aggregate approximation) and from <ref type="bibr" target="#b5">[6]</ref> to automatically refine the "handcrafted" shapelets. Contrarily to our method, there is no explicit constraint on the learning process that ensures the interpretability of the shapelets. Besides, their experimental validation makes it hard to fully grasp the benefits and limitations of the proposed method since the algorithm is evaluated on a small subset of UCR/UEA datasets <ref type="bibr" target="#b8">[9]</ref> and they provide visualizations for only a couple of the learned shapelets.</p><p>The work from <ref type="bibr" target="#b18">[19]</ref> is the closest to ours. Contrarily to ours, they decouple the shapelet learning phase and the classification process resulting in a quite different adversarial architecture. Their classification process is made using the shapelet transform method <ref type="bibr" target="#b4">[5]</ref> but, in this case, the candidate shapelets are dynamically generated for each input time series. In our case, this is learned by a simple CNN for all the dataset. In <ref type="bibr" target="#b18">[19]</ref>, an adversarial regularization is also used to constrain the generated shapelets to be similar to real pieces of the series. However, the regularization is imposed on the result of the convolutions (i.e. the feature maps) and not on the convolutions themselves as we propose to do in this paper. This is a different philosophy: we believe that the pattern detectors, i.e. the convolutions, are the shapelets. They believe that the shapelets are the series output by the convolution operation which might, in our opinion, have a very different shape than the original input signal. This difference of regularization may hinder the interpretability of the learned shapelets but this aspect is not studied in details in <ref type="bibr" target="#b18">[19]</ref>. Besides, the proposed method does not allow global explanations (in addition to local ones) as can be done with our method. However, according to the results reported in <ref type="bibr" target="#b18">[19]</ref>, their method is more accurate than ours since it gives better results than LS <ref type="bibr" target="#b5">[6]</ref>, which gives similar results to our method, as shown in the experiments. The work proposed in <ref type="bibr" target="#b18">[19]</ref> thus has a different trade-off explainability/accuracy than us.</p><p>Finally <ref type="bibr" target="#b19">[20]</ref> also proposes a time series classification method. The authors propose to extract various symbolic representations from the time series and train a logistic regression model on top of these representations. The logistic regression weights are then inspected (using GradCAM) to extract the most discriminative features and localize the most important time series subparts. This method necessitates to discretize the original signal (and thus lose some information), it is not self-explanatory (the explanations are post-hoc) and we believe that showing the shapelets, as we can do in our method, is an important feature for explaining decisions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. TS CLASSIFICATION WITH REGULARIZED SHAPELETS</head><p>In this section, we present our architecture, XCNN, to learn interpretable discriminative shapelets for time series classification. Our base time series classifier is a Convolutional Neural Network (CNN). As explained in Section II, this model is very similar in spirit to the Learning Shapelet (LS) model presented in <ref type="bibr" target="#b5">[6]</ref>. Both LS and CNN slide the shapelets on the series to compute local (dis)similarities. LS uses a squared Euclidean distance between a portion of the time series Z starting at index i and a shapelet S of length L:</p><formula xml:id="formula_0">D(z i:i+L , S) = L l=1 z (i+l-1) -S (l) 2 .</formula><p>The smaller this distance, the closer the shapelet is to the considered subseries. In a CNN, the feature map is obtained from a convolution, and hence encodes cross-correlation between a series and a shapelet:</p><formula xml:id="formula_1">D(z i:i+L , S) = L l=1 z (i+l-1) • S (l) .</formula><p>Note that here, the higher D(z i:i+L , S), the more similar the shapelet is to the subseries. We will loosely refer to the convolution filters of our classifier as Shapelets in the following.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. XCNN Architecture</head><p>Inspired by previous work on adversarial training (e.g. <ref type="bibr" target="#b20">[21]</ref>), in addition to our CNN classifier, we make use of an adversarial neural network (the discriminator at the top of Figure <ref type="figure" target="#fig_1">2</ref>) to regularize the convolution parameters of our classifier. This regularization acts as a soft constraint for the classifier to learn shapelets as similar to real pieces of the training time series as possible. To obtain the best trade-off between the discriminative power of the shapelets (i.e. the final classification performance) and their interpretability, our training procedure alternates between training the discriminator and the classifier. The training procedures are explained in the next subsection.</p><p>Contrarily to GANs, our adversarial architecture does not rely on a generator to produce fake samples from a latent space. XCNN iteratively modifies the shapelets (i.e. the convolution filters of the classifier) such that they become close to subseries from the training set. The type of data given as input to the discriminator is another major difference between a GAN and XCNN: in a GAN, the discriminator is fed with complete instances, while in XCNN, the discriminator takes subseries as input. These subseries can either be shapelets from the classifier model (denoted as x in Figure <ref type="figure" target="#fig_1">2</ref>), portions of training time series (denoted as x) or interpolations between shapelets and training time series portions (x, see the following section for more details on those). This process allows the discriminator to alter the shapelets for better interpretability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Loss Function</head><p>As for GANs, our optimization process alternates between losses attached to the subparts of our model. Here, each training epoch consists of three main steps that are (i) optimizing the classifier parameters for correct classification, (ii) optimizing the discriminator parameters to better distinguish between real subseries and shapelets and (iii) optimizing shapelets to fool the discriminator, so that the regularized-shapelets become similar to a subsequence of time series. Each of these steps is attached to a loss function that we describe in the following.</p><p>Firstly, a multi-class cross entropy loss is used for the classifier. It is denoted by L c (θ c ) where θ c is the set of all classifier parameters. Secondly, our discriminator is trained using a loss function derived from the Wasserstein GANs with Gradient Penalty (WGAN-GP) <ref type="bibr" target="#b21">[22]</ref>:</p><formula xml:id="formula_2">L d (θ d ) = E x∼P S [D(x)] -E x∼Px [D(x)] + λ E x∼P x (||∇ xD(x)|| 2 -1) 2</formula><p>where P S is the empirical distribution over the shapelets, P x is the empirical distribution over the training subseries, and x = x + (1 -)x, where is drawn uniformly at random from the interval [0, 1].</p><p>Thirdly, shapelets are updated to fool the discriminator by optimizing on the loss L r (θ s ) where θ s ⊂ θ c is the set of shapelet coefficients:</p><formula xml:id="formula_3">L r (θ s ) = -E x∼P S [D(x)]<label>(1)</label></formula><p>IV. EXPERIMENTS</p><p>In this section, we will detail the training procedure for XCNN and present both quantitative and qualitative experimental results. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experimental Setting 1) Competitors:</head><p>We provide experiments about the quality (for explanations) of our learned shapelets as well as their quality for classification. As explained in Section II, our most relevant competitor is Learning Shapelets (LS) from <ref type="bibr" target="#b5">[6]</ref> as it also describes a shapelet-based model where the shapelets are learned and where a single model is used for classification. The quality (for explanations) of the shapelets produced by <ref type="bibr" target="#b2">[3]</ref> and <ref type="bibr" target="#b3">[4]</ref> is, by design, perfect since the shapelets are true subpart of the original series so we do not compare with them but only with the shapelets learned by <ref type="bibr" target="#b5">[6]</ref>. However, we compare our classification performance to <ref type="bibr" target="#b2">[3]</ref>, Fast Shapelets <ref type="bibr" target="#b3">[4]</ref> and the recent ELIS <ref type="bibr" target="#b17">[18]</ref>.</p><p>2) Datasets: We use the 85 univariate time series datasets from the UCR/UEA repository <ref type="bibr" target="#b8">[9]</ref> for which most of our baselines results are already available. <ref type="foot" target="#foot_0">1</ref>Note that our CNN-based method may also be suited for multivariate time series but giving "intuitive" explanations for multivariate data is far from obvious and we decided to focus only on univariate ones in this paper. The datasets are significantly different from one to another, including seven types of data with various number of instances, lengths, and classes. The splits between training and test sets are provided in the repository.</p><p>3) Architecture details and parameter setting: We have implemented the XCNN model using TensorFlow <ref type="bibr" target="#b22">[23]</ref> following the general architecture illustrated in Fig. <ref type="figure" target="#fig_1">2</ref>. The classifier is composed of one 1D convolution layer with ReLU activation, followed by a max-pooling layer along the temporal dimension and a fully connected layer with a soft-max activation. The shapelets use a Glorot uniform initializer <ref type="bibr" target="#b23">[24]</ref> while the other weights are initialized uniformly (using a fixed range). For each dataset, three different shapelet lengths are considered, inspired by the heuristic from <ref type="bibr" target="#b5">[6]</ref> but without resorting to hyperparameter search: we consider 3 groups of 20 × n cl shapelets of length 0.2T , 0.4T and 0.6T , where n cl is the number of classes in the dataset and T is the length of the time series at stake.</p><p>The convolution filters of the classifier, i.e. the shapelets, are given as input to the discriminator which has the same structure as the classifier, but with shorter convolution filters (100 filters of size 0.06T , 0.12T and 0.18T ) and a singleneuron tanh activation instead of the soft-max in the last layer. For optimization, we use Adam optimizer with a standard parameterization (α = 10 -3 , β 1 = 0.9 and β 2 = 0.999) and each epoch consists in n c = 15 (resp. n d = 20 and n r = 17) mini-batches of optimization for the classifier loss (resp.</p><p>discriminator and regularizer losses).</p><p>Experimental results are reported in terms of test accuracy and aggregated over five random initializations. All experiments are run for 8, 000 training epochs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Qualitative results for explainability</head><p>We first illustrate the evolution of a shapelet during the training process. Then we describe how we compute the shapelet contributions to the classification of one (or multiple) example(s) and validate that our adversarial regularization actually ensures that shapelets are visually similar to the training data. And finally we show, in three different ways, how shapelets that look like subseries are better suited to explain decisions.</p><p>We believe that the Euclidean distance is the most understandable distance for human eyes so all the figures that show shapelets and series will be displayed using this distance even though it is not the one optimized during XCNN training.</p><p>1) Evolution of a shapelet during training process: We illustrate our training process and its impact on a single shapelet in Figure <ref type="figure" target="#fig_2">3</ref>. In this figure, we show the evolution of a given shapelet for the Wine dataset at epochs 20, 200, 800 and 8,000. One can see from the loss values reported in Figures <ref type="figure" target="#fig_2">3a</ref> and<ref type="figure" target="#fig_2">3d</ref> that these correspond to different stages in our learning process. At epoch 20, the Wasserstein loss is far from the 0 value (L d = 0 corresponds to a case where the discriminator cannot distinguish between shapelets and real subseries), and this indeed corresponds to a shapelet that looks very different from an actual subseries. As epochs go, both the Wasserstein loss L d and the cross-entropy one L c get closer to 0, leading to both realistic and discriminative shapelets.</p><p>2) Shapelet contributions: The computation of the contribution of a shapelet to a decision is based on GradCAM ("Gradient-weighted Class Activation Mapping") <ref type="bibr" target="#b15">[16]</ref>. Grad-CAM is a very popular method used in computer vision to understand which parts of an original image is used by a trained neural network to make a particular classification decision. The "interesting" parts are shown using a heat map on the original image. We recall that in a convolutional neural network, a feature map is the output of a particular layer of neurons. It somehow (ignoring the activation function) shows the response of a given convolution filter to the output of the previous layer. GradCAM computes the feature importance α c k of the feature map A k on the classification decision c. This is computed after the final pooling layer which transforms all spatial positions (for images) A k ij of the k th feature map to a single value F k . The filter importance weight α c k , for a given input image (omitted for conciseness), is calculated with: α c k = ∂y c ∂F k where y c is the output of the network for class c.</p><p>Compared to the image classifiers used in <ref type="bibr" target="#b15">[16]</ref>, in our time series classification problem (1-dimensional) we are interested in both the positive and negative contributions of each learned shapelet on the classification of the (set of) series (whereas in <ref type="bibr" target="#b15">[16]</ref> only the positive contributions matter). Those contributions are defined for a trained network and a given time series Z i (implicitly present in the partial derivatives) as:</p><formula xml:id="formula_4">p k (Z i ) = ReLU ∂y c ∂F k and n k (Z i ) = -ReLU -∂y c ∂F k</formula><p>As F k is obtained from a global max pooling (F k = max t A k t ), each shapelet contribution can be associated to a timestamp t = arg max t A k t , allowing us to localize the contribution. To produce a heat map with the positive contributions, we follow the same principle as in <ref type="bibr" target="#b15">[16]</ref>:</p><formula xml:id="formula_5">L mask (Z i ) = k p k (Z i ) Ãk (Z i ).</formula><p>where Ãk is a vector of all zeros but at position t = arg max t A k t (where A k t is stored). To obtain the global positive contribution of a shapelet k given a set of n time series examples, we compute</p><formula xml:id="formula_6">gp k = 1 n n i=1 p k (Z i ).<label>(2)</label></formula><p>The shapelets shown in Fig. <ref type="figure">4</ref> are the 3 most contributing shapelets, according to this global criterion. In Fig. <ref type="figure">4</ref>, the shapelets learned by XCNN seem visually closer to the time series than the shapelets learned by LS. We then computed the average L 2 between a shapelet and a subpart of a time series over all the shapelets learned by XCNN and by LS for a given dataset, computed at the best matching point of the closest time series in the dataset (also in terms of L 2 ). The results are given in Fig. <ref type="figure" target="#fig_3">5</ref>. This scatter-plot shows that, even if the optimized distance between the shapelets and the input series in the neural network is not the L 2 one (it is the dot product), our adversarial regularization allows XCNN to obtain closer (in terms of L2) shapelets than LS which are deemed more suited for explanations.</p><p>3) Gradient-based explanations with XCNN shapelets: Since we use a neural network classifier, we could directly benefit from the standard gradient-based explanations, as also discussed in <ref type="bibr" target="#b24">[25]</ref>, to show what parts of a given time series example is important for the classifier to take its classification decision. These explanations would also be the ones produced by posthoc methods such as LIME <ref type="bibr" target="#b12">[13]</ref>. For lack of space, we do not show examples of such explanations but the interested reader can find many examples in <ref type="bibr" target="#b24">[25]</ref> or in <ref type="bibr" target="#b19">[20]</ref>.</p><p>These, nowadays standard, gradient-based explanations are interesting but do not show the inner working of the classifier and, in particular, the reason why some parts of the input series were particularly useful for the classification. We believe that our ability, with XCNN, to show the shapelets that were learned and used to make the classification gives a different type of information than the gradient-based one. To illustrate this, we overlay in Fig. <ref type="figure">6</ref> and<ref type="figure">7</ref> the three most positively (resp. negatively on the right) contributing shapelets on the time series at their best matching location (using L2 distance), with number of total positively and negatively shapelets noted in the captions. Note that on the left side, the horizontal axis gives the length of the series (in black) while on the right, it gives the length of the shapelets which is at most 60% of the length of the series. We do not show the original series for the negative shapelets since, by definition, they are very far from the original series. In Fig. <ref type="figure">7</ref> there is no negative shapelet used to discriminate the series of this dataset. This is due to the fact Fig. <ref type="figure">4</ref>: Three most discriminative shapelets obtained for the datasets Beef, ECG200, GunPoint, Herring, OliveOil (rows 1 to 5, resp.) using (left column) LS or (right column) XCNN.</p><p>The average discriminative power of the shapelets is evaluated using Eq. 2 and each shapelet is superimposed over its best matching time series in the test set.</p><p>that the series for all the classes are very similar except for very small changes in the slope of the bump or in the size of the plateau at the top of the bump. These small changes can be captured by the positive shapelets but many of them are used to succeed in discriminating the classes. We can also use our method to show the shapelets that </p><formula xml:id="formula_7">rp k (c) = ReLU     1 N c N c i=1     p c k (Z i ) - 1 n cl -1 ncl-1 j=1 j =c p j k (Z i )        </formula><p>where N c is the number of examples in class c, and n cl is the total number of classes in the dataset. One can compute rn k (c) similarly by replacing p j k with n j k . The time series shown in black in Fig. <ref type="figure">8</ref> and<ref type="figure">9</ref> is the average over all examples of a given class. With these figures, we can draw similar conclusions as the previous ones but for an entire class.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Quantitative Results</head><p>XCNN is able to learn, by design, shapelets that are discriminative and suited for explanations. We want to quantify if this is achieved at the expense of classification accuracy and/or computation time. Our goal is to be much faster than exhaustive shapelet search methods (our baseline is Fig. <ref type="figure">6</ref>: Three most positively (left) and negatively (right) contributing shapelets for a random series (in black) of some of the classes (class 0, 1, 2, resp.) of the Car test set. Note that there were different positive and negative for different series, e.g. there were in total 92 positive shapelets used for the decision of the first test series and 148 negative ones. Fig. <ref type="figure">7</ref>: Three most positively (left) and negatively (right) contributing shapelets for a random series (in black) of some of the classes (class 0, 1, 2, resp.) of the DiatomSizeReduction test set. Note that there were different positive and negative for different series, e.g. there were in total 240 positive shapelets used for the decision of the first test series and 0 negative ones. Shapelets <ref type="bibr" target="#b2">[3]</ref>), much more accurate than very fast random shapelet selection-based methods (our baseline is FS <ref type="bibr" target="#b3">[4]</ref>) and as accurate and as fast as single model shapelet learning methods (our baselines are LS <ref type="bibr" target="#b5">[6]</ref> and ELIS <ref type="bibr" target="#b17">[18]</ref>).</p><p>1) Accuracy: We analyze the accuracies obtained by FS, LS, ELIS and our XCNN method on the 85 datasets using scatter plots. We compare FS versus XCNN in Fig. <ref type="figure" target="#fig_0">10</ref>, LS versus XCNN in Fig. <ref type="figure" target="#fig_0">11</ref> and ELIS versus XCNN in Fig. <ref type="figure" target="#fig_1">12</ref>.</p><p>We also show how a simple CNN (without the adversarial regularization) compares against LS in Fig. <ref type="figure" target="#fig_2">13</ref>. We indicate the number of win/tie/loss for our method and we provide a Wilcoxon significance test <ref type="bibr" target="#b25">[26]</ref> with the resulting p-value (&gt; 0.01: none of the two methods is significantly better than the other). The points on the diagonal are datasets for which the accuracy is identical for both competitors. Fig. <ref type="figure" target="#fig_0">10</ref> shows that, as expected, our method yields significantly better performance than FS. Fig. <ref type="figure" target="#fig_0">11</ref>: Accuracy comparison between Learning Shapelets (LS) and XCNN on 85 datasets (each point is a dataset) of the UCR/UEA repository <ref type="bibr" target="#b8">[9]</ref>. LS, for most datasets, the difference in accuracy is low, with a small edge (significant) for LS. On three datasets (namely HandOutlines, NonInvasiveFetalECGThorax1 and OliveOil), our XCNN method and its regularization seems to be strongly positive (and detrimental on one dataset), in terms of generalization. A simple CNN that would correspond to the classifier of our XCNN alone seems to give slightly better (non significant) results than LS (and thus than our XCNN). This means that our backbone neural network architecture is a good candidate to jointly learn interpretable shapelets and classify time series with little loss on accuracy. </p><formula xml:id="formula_8">(n 2 • T 4 ) O(n • T 2 ) O(n • (T 2 n shap + n shap • n cl ))</formula><p>2) Training Time: We provide a theoretical complexity study (see Table <ref type="table" target="#tab_1">I</ref>) of all the baselines and of our XCNN method. Our method is based on a classifier and a discriminator, and both of them are simple CNNs. So the complexity of our algorithm (O(n • (T  the average length of the time series (T ), and the number of classes (n cl ), since the latter is used to decide the number of shapelets to be learned. Note that for both LS and XCNN, the provided complexity is the one for a single iteration of the algorithm since the number of iterations required for such algorithms to converge is highly data dependent.</p><p>To have a better grasp on the actual training time of all methods, we ran the methods on a single dataset (ElectricDevices) and recorded the CPU time. The experiments were conducted on a Debian Cluster using Intel(R) Xeon(R) CPU E5-2650 v4 Processor (12 core 2.20 GHz CPU) with 32GB memory. The results are averaged over five runs. The implementation code of our baselines is taken from <ref type="bibr" target="#b1">[2]</ref> (as for the accuracy results). As expected, the original Shapelet <ref type="bibr" target="#b2">[3]</ref> method does not finish in 48 hours for this medium size dataset. FS finishes in 12.1 minutes, LS finishes in 2323 minutes, and our method takes 142 minutes. The theoretical complexity of LS and XCNN is identical so these results were surprising. We suspected that the JAVA implementation of LS was not well optimized and we used the implementation of LS method from tslearn <ref type="bibr" target="#b26">[27]</ref> using Keras 2 with TensorFlow as backend. With this implementation, the training phase took only 71 minutes for LS on this dataset (compared to 142 for XCNN) which shows that the time difference between the two algorithms is mainly related to the implementation (and the hyper-parameters related to the number of epochs).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. CONCLUSION</head><p>We have presented a new shapelet-based time series classification method that produces shapelets that are, by design, better suited to explain decisions. The method is based on a novel adversarial architecture where one convolutional neural network is used to classify the series and another one is used to constrain the first network to learn both discriminative but also meaningful shapelets. Our results show that the expected trade-off between accuracy and interpretability is satisfactory: our classification results are comparable with similar state-ofthe-art methods but with shapelets that can be used in many different way to explain the decisions.</p><p>In future work, we would like to first investigate the use of an additional regularization term to be able to determine automatically a minimal set of necessary shapelets. We also want to use our regularization on other types of data (such as multivariate time series, spatial data, graphs) and in a deep(er) CNN. Furthermore, we would like to adapt our approach to explain anomaly detections using neural network architectures such as convolutional auto-encoders or generative networks.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: The three most discriminative shapelets obtained for the dataset DiatomSizeReduction using (left column) Learning Shapelets or (right column) our XCNN architecture.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Adversarial architecture of our proposed explainable CNN (XCNN).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Illustration of the evolution of a shapelet during training (for the Wine dataset).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 5 :</head><label>5</label><figDesc>Fig.5: Average over all the shapelets learned by XCNN and by LS for a given dataset, of the L 2 distances between a shapelet and a subpart of a time series at the best matching point of the closest time series in the dataset.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>2 Fig. 8 :Fig. 9 :</head><label>289</label><figDesc>Fig. 8: Three most positively (left) and negatively (right) globally contributing shapelets for some of the classes (class 0, 1, 3, resp.) of the Car test set.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 12 :Fig. 13 :</head><label>1213</label><figDesc>Fig.12: Accuracy comparison between ELIS and XCNN on 85 of the UCR/UEA<ref type="bibr" target="#b8">[9]</ref> datasets.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE I :</head><label>I</label><figDesc>Complexity of four different shapelet-based TSC algorithms (Shapelet<ref type="bibr" target="#b2">[3]</ref>, FS<ref type="bibr" target="#b3">[4]</ref>, LS<ref type="bibr" target="#b5">[6]</ref> and XCNN). n is the number of examples in the training set, T is the average length of the time series, n shap is the number of selected shapelets (if set a priori), and n cl is the number of classes.</figDesc><table><row><cell>Shapelet</cell><cell>FS</cell><cell>LS and XCNN (per epoch)</cell></row><row><cell>O</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>2 n shap + n shap • n cl ))) is related to training a CNN and should depend mainly on the number of examples (n),</figDesc><table><row><cell></cell><cell>1.0</cell><cell cols="2">win: 23</cell><cell></cell></row><row><cell></cell><cell></cell><cell cols="2">tie: 0</cell><cell></cell></row><row><cell>Accuracy for ELIS</cell><cell>0.2 0.4 0.6 0.8</cell><cell cols="3">loss: 29 p-value: 8.63e-01</cell></row><row><cell></cell><cell cols="2">0.00 0.0</cell><cell>0.25</cell><cell>0.50</cell><cell>0.75</cell><cell>1.00</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="3">Accuracy for XCNN</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>See http://www.timeseriesclassification.com/singleTrainTest.csv for all used datasets and baseline results.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>https://keras.io/</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>The authors would like to thank the archivists of the <rs type="institution">UCR/UEA</rs> time series classification repository for all the resources they made available which greatly help all the researchers working on the analysis of time series.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">H</forename><surname>Shumway</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Stoffer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Time Series Analysis and Its Applications</title>
+		<title level="s">Springer Texts in Statistics</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The great time series classification bake off: a review and experimental evaluation of recent algorithmic advances</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bostrom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Large</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="606" to="660" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Time series shapelets: a new primitive for data mining</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</title>
+		<meeting>the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="947" to="956" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Fast shapelets: A scalable algorithm for discovering time series shapelets</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rakthanmanon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">proceedings of the 2013 SIAM International Conference on Data Mining</title>
+		<meeting>the 2013 SIAM International Conference on Data Mining</meeting>
+		<imprint>
+			<publisher>SIAM</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="668" to="676" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A shapelet transform for time series classification</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</title>
+		<meeting>the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="289" to="297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Learning time-series shapelets</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grabocka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Schilling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wistuba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Schmidt-Thieme</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</title>
+		<meeting>the ACM SIGKDD Int. Conf. on Knowledge Discovery and Data mining</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="392" to="401" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Time-series classification with cote: the collective of transformation-based ensembles</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hills</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bostrom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Knowledge and Data Engineering</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="2522" to="2535" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">A survey of methods for explaining black box models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Guidotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Monreale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruggieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Turini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giannotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pedreschi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Survey</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">The ucr time series classification archive</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Begum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mueen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Batista</surname></persName>
+		</author>
+		<ptr target="www.cs.ucr.edu/∼eamonn/timeseriesdata/" />
+		<imprint>
+			<date type="published" when="2015-07">July 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Generalized random shapelet forests</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Papapetrou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bostrom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1053" to="1085" />
+			<date type="published" when="2016-09">Sep 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Time series classification from scratch with deep neural networks: A strong baseline</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Oates</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Joint Conference on Neural Networks</title>
+		<meeting>the International Joint Conference on Neural Networks</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1578" to="1585" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Time series classification with hivecote: The hierarchical vote collective of transformation-based ensembles</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Knowledge Discovery from Data (TKDD)</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page">52</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">why should I trust you?&quot;: Explaining the predictions of any classifier</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGKDD Int. Conference on Knowledge Discovery and Data Mining</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1135" to="1144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Anchors: High-precision modelagnostic explanations</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence</title>
+		<meeting>the Thirty-Second AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1527" to="1535" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A unified approach to interpreting model predictions</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<publisher>NIPS</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="page" from="4768" to="4777" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Grad-cam: Visual explanations from deep networks via gradient-based localization</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">R</forename><surname>Selvaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cogswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Computer Vision, ICCV</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="618" to="626" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">MTEX-CNN: Multivariate Time Series EXplanations for Predictions with Convolutional Neural Networks</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Assaf</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Giurgiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bagehorn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schumann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2019 IEEE International Conference on Data Mining (ICDM)</title>
+		<imprint>
+			<biblScope unit="page" from="952" to="957" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Efficient learning interpretable shapelets for accurate time series classification</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE 34th International Conference on Data Engineering (ICDE)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="497" to="508" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Adversarial dynamic shapelet networks</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhuang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Cottrell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Thirty-Fourth Conference on Artificial Intelligence (AAAI)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="5069" to="5076" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Interpretable time series classification using linear models and multi-resolution multi-domain symbolic representations</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">Le</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gsponer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ilie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>O'reilly</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ifrim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="page" from="1" to="40" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Generative adversarial nets</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pouget-Abadie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mirza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Warde-Farley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ozair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Courville</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="2672" to="2680" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Improved training of wasserstein gans</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Gulrajani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arjovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dumoulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Courville</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<monogr>
+		<title level="m" type="main">TensorFlow: Large-scale machine learning on heterogeneous systems</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brevdo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Citro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Goodfellow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Harp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Isard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jozefowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Kaiser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kudlur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Levenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mané</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Monga</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Murray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Olah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schuster</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shlens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Tucker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vanhoucke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vasudevan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Viégas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Warden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wattenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zheng</surname></persName>
+		</author>
+		<ptr target="http://tensorflow.org/" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Understanding the difficulty of training deep feedforward neural networks</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Glorot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Artificial Intelligence and Statistics</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="249" to="256" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Deep learning for time series classification: a review</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">I</forename><surname>Fawaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Forestier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Idoumghar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-A</forename><surname>Muller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="917" to="963" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Statistical comparisons of classifiers over multiple data sets</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Demšar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1" to="30" />
+			<date type="published" when="2006-12">Dec. 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Tslearn, a machine learning toolkit for time series data</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tavenard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Faouzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Vandewiele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Divo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Androz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Holtz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Payne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Yurchak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rußwurm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kolar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Woods</surname></persName>
+		</author>
+		<ptr target="http://jmlr.org/papers/v21/20-091.html" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">118</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

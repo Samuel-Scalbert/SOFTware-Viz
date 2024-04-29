@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Modal sense classification with task-specific context embeddings</title>
+				<funder ref="#_8aZC9AF">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Bo</forename><surname>Li</surname></persName>
+							<email>bo.li@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">UMR 8163</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">STL -Savoirs Textes Langage</orgName>
+								<address>
+									<postCode>59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">-Magnet</orgName>
+								<orgName type="institution">INRIA Lille -Nord Europe</orgName>
+								<address>
+									<postCode>59650</postCode>
+									<settlement>Villeneuve d&apos;Ascq</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mathieu</forename><surname>Dehouck</surname></persName>
+							<email>mathieu.dehouck@inria.fr</email>
+							<affiliation key="aff1">
+								<orgName type="department">-Magnet</orgName>
+								<orgName type="institution">INRIA Lille -Nord Europe</orgName>
+								<address>
+									<postCode>59650</postCode>
+									<settlement>Villeneuve d&apos;Ascq</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pascal</forename><surname>Denis</surname></persName>
+							<email>pascal.denis@inria.fr</email>
+							<affiliation key="aff1">
+								<orgName type="department">-Magnet</orgName>
+								<orgName type="institution">INRIA Lille -Nord Europe</orgName>
+								<address>
+									<postCode>59650</postCode>
+									<settlement>Villeneuve d&apos;Ascq</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Modal sense classification with task-specific context embeddings</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">6253CDD167BDDE999771DFABC6A80E82</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Sense disambiguation of modal constructions is a crucial part of natural language understanding. Framed as a supervised learning task, this problem heavily depends on an adequate feature representation of the modal verb context. Inspired by recent work on general word sense disambiguation, we propose a simple approach of modal sense classification in which standard shallow features are enhanced with task-specific context embedding features. Comprehensive experiments show that these enriched contextual representations fed into a simple SVM model lead to significant classification gains over shallow feature sets.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Modal sense analysis plays an important role in NLP tasks such as sentiment analysis <ref type="bibr" target="#b0">[1]</ref>, hedge detection <ref type="bibr" target="#b1">[2]</ref> and factuality recognition <ref type="bibr" target="#b2">[3]</ref>. As an important part of modality analysis, sense classification of modal verbs has attracted notable interest of researchers in recent years. Modal sense classification (MSC) can be treated as a special type of Word Sense Disambiguation (WSD) <ref type="bibr" target="#b3">[4]</ref>, but differs from general WSD tasks in that MSC deals with a small set of modal verbs with a limited set of senses. For instance, the English modal verb can has a limited sense set containing dynamic, deontic, and epistemic senses.</p><p>MSC is typically modeled in a supervised learning framework, which in turn raises the question of how to build the most effective feature representation of the modal context. Existing studies have proposed various context representations. A first set of approaches rely on manually engineered features derived from sophisticated linguistic pre-processing. For instance, <ref type="bibr" target="#b4">[5]</ref> uses syntax-based features in addition to shallow features such as POS and lemma. Pushing this line of research even further, <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref> propose to use semantic-rich features that are related to lexical, proposition-level and discourse-level semantic factors. Taking a drastically different approach, <ref type="bibr" target="#b7">[8]</ref> employs Convolution Neural Networks (CNNs) to automatically extract modal sense features, and show that their approach is competitive with hand-crafted feature-based classifiers.</p><p>In this paper, we explore an intermediate line of research, attempting to leverage both shallow feature sets and pre-trained embeddings for the context words in a very simple learning architecture. That is, we propose to enrich a very simple feature set (basically, POS tags, uni-, bi-and tri-grams), known to be very effective for WSD, with embeddings for the context words. Inspired by the recent work <ref type="bibr" target="#b8">[9]</ref> for general WSD, we propose several weighting schemes, including a new task-specific one, for constructing context embeddings from pre-trained word embeddings. Experimental results prove that this approach outperforms state-of-the-art methods over two standard MSC datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related work</head><p>Modal sense classification. Similar to WSD, MSC has been framed as a supervised learning problem. <ref type="bibr" target="#b4">[5]</ref> presents an annotation schema for modal verbs in the MPQA corpus and represent modal senses with word-based and syntactic features. On top of feature sets, they perform machine learning with a maximum entropy classifier. Since the corpus used in <ref type="bibr" target="#b4">[5]</ref> is relatively small and unbalanced, <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref> develop a paraphrase-driven, cross-lingual projection approach to create large and balanced corpora automatically. In addition, they develop semantically grounded features such as lexical features of the modified verb and subjectrelated features for sense representation. <ref type="bibr" target="#b7">[8]</ref> casts modal sense classification as a novel semantic sentence classification task using CNNs to model propositions.</p><p>Word sense disambiguation. Word sense disambiguation is a long-standing challenge in natural language processing <ref type="bibr" target="#b3">[4]</ref>. We focus here on most recent advances in WSD which come from the use of neural networks. One category of neural WSD works use neural networks to learn word embeddings <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b8">9]</ref> or context representation <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref> that can be further used separately or as additional features to shallow sense features. The other category of approaches <ref type="bibr" target="#b12">[13]</ref> model WSD as an end-to-end sequence learning problem. These two categories of approaches show similar performance as reported in <ref type="bibr" target="#b12">[13]</ref>. Our work is inspired by <ref type="bibr" target="#b8">[9]</ref> which has shown state-of-the-art performance in WSD and which is convenient for adaptation to MSC.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Approach</head><p>Following <ref type="bibr" target="#b8">[9]</ref> , we will use word embeddings trained on unlabeled data to enrich shallow features used in general WSD tasks. As far as we can tell, such a combination has never been investigated for MSC.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Shallow features (SF)</head><p>We refer to standard features used in WSD tasks and make use of three shallow feature sets as general features for MSC. For all feature sets, we compute with the same context window surrounding a target modal verb with size 2n (n left, n right). The first feature set is POS tags of context words. The second feature set is context words excluding stop words. The third feature set is the local collocations of a target word which are ordered sequences of words appearing in the context window. We use several uni-gram, bi-gram and tri-gram patterns as the collocation patterns in the context window. We use these simple yet efficient features to do away with heavy feature engineering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Word embedding features</head><p>Embeddings of context words can be combined in a way such that a comprehensive context embedding vector can be obtained to represent the modal context. The context vector can then be combined with those shallow features. Inspired by <ref type="bibr" target="#b8">[9]</ref>, we obtain context representation by taking a weighted sum of embedding vectors of all context words. Given a target modal verb w 0 and a context window size 2n, let us denote the context word at the relative position i(i ∈ [-n, 0) ∪ (0, n]) as w i . The context embedding of w 0 (denoted as w c ∈ R d ) can be written as the weighted sum of embedding vector w i ∈ R d of each context word w i , which is:</p><formula xml:id="formula_0">w c = n i=-n&amp;i =0 f (w i )w i<label>(1)</label></formula><p>where f (w i ) is a weighting function measuring the importance of each context word w i w.r.t. the modal verb w 0 . For simplicity, we assume that f (w i ) only depends on i (i.e., the relative position of w i w.r.t. w 0 ). Average weighting (WE av ). The most intuitive weighting schema simply treats all the context words equally, which corresponds to:</p><formula xml:id="formula_1">f (w i ) = 1 2n<label>(2)</label></formula><p>Linear weighting (WE li ). In a linear manner, the importance of a word is assumed to be inversely proportional to its distance from the target word, which can be formulated as:</p><formula xml:id="formula_2">f (w i ) = 1 - |i -1| n<label>(3)</label></formula><p>Exponential weighting (WE ex ). Compared to linear manner, the exponential weighting schema put more emphasis on the nearest context words. The importance of a word decreases exponentially w.r.t. its distance from the target word, which is:</p><formula xml:id="formula_3">f (w i ) = α i-1 n-1<label>(4)</label></formula><p>where α is a hyper-parameter. The above weighting schema have been investigated in <ref type="bibr" target="#b8">[9]</ref>. Modal-specific weighting. In order to adapt the weighting function f (w i ) to MSC, we want to assign more weights to context words which have closer connections to modal senses. Inspired by findings in <ref type="bibr" target="#b5">[6]</ref>, we note that the embedded verb in the scope of the modal and the subject noun phrase are two components acting as strong hints to determine the modal verb sense. Let us consider as an example the sentence the springbok can jump very high. When the embedded verb jump appears, we prefer a dynamic reading of can. Based on the intuition above, we assign more weights to context word which is the embedded verb or which is the head in the subject noun phrase. Formally, we define a modal-specific weighting function g such that:</p><formula xml:id="formula_4">g(w i ) =    β 1 f (w i ), w i is embedded verb β 2 f (w i ), w i is the head in the subj noun phrase f (w i ), else</formula><p>where β 1 and β 2 are hyper-parameters indicating that words that are more relevant to modal verb senses take more responsibility, and f is one of the weighting schema defined above. We can obtain a context representation w c that is optimized for MSC task by replacing f in equation 1 with g defined here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>In this section, we perform comprehensive experiments in order to evaluate the usefulness of word embedding features in MSC.</p><p>Datasets. We make use here of two representative corpora for MSC. One is the small and unbalanced corpus annotated manually based on the MPQA corpus in <ref type="bibr" target="#b4">[5]</ref>. The other one is the larger and balanced corpus EPOS which is constructed automatically via paraphrase-driven modal sense projection in <ref type="bibr" target="#b5">[6]</ref>. We use two training/testing settings: (1) both training and testing sets picked from MPQA. ( <ref type="formula" target="#formula_1">2</ref>) training set from EPOS and testing set from MPQA. Characteristics of training/testing sets are not given here due to space reasons.</p><p>Experimental settings. We have used Stanford parser to pre-process the original corpora. For classification, we employ SVM implemented in LibSVM <ref type="bibr" target="#b13">[14]</ref>. The context window size 2n is picked from {2, 6, 10, 20}. The parameter α is set to {0.1, 0.2, 0.5, 0.8}, and the parameters β 1 and β 2 are selected from {1, 2, 5, 10}. The word embeddings are trained with word2vec <ref type="bibr" target="#b14">[15]</ref> on Wikipedia. The hyper-parameters are optimized via 5-fold cross validation. We employ accuracy as the performance measure and McNemar's test (p &lt; 0.05) to test significance.</p><p>Competing Systems. we use max frequent sense (MFS) baseline for unbalanced classifier and random sense (RS) baseline for balanced classifier. The other baseline systems are RR <ref type="bibr" target="#b4">[5]</ref> and ZH <ref type="bibr" target="#b5">[6]</ref>. In addition, we compare different combinations of features presented in section 3. SF is the shallow features, and +WE * * denotes the concatenation of word embedding features WE * * to SF. +WE * * stands for the modal specific weighting version.</p><p>Results on unbalanced corpus. We firstly show the results on the unbalanced MPQA corpus in table 1. The performance of SF is comparable to RR and slightly inferior to ZH, given that SF contains similar features as RR. Furthermore, when we consider word embeddings as extra features, we obtain results that are at least as good as SF. The best performance comes from +WE ex where, compared to SF, we have gotten significant improvement on can and insignificant improvement on could, and slightly decrease that is not significant on should. However, with any of +WE av , +WE li and +WE ex , we cannot achieve any significant improvement. We further note that MFS is a strong baseline on the unbalanced corpus. Neither RR nor ZH is able to beat the MFS baseline with ZH being slightly better than RR, which is coincident with conclusions in previous work <ref type="bibr" target="#b5">[6]</ref>. Results on balanced corpus. Since the MPQA training set is small in size and unbalanced in sense distribution, machine learning algorithms tend to over fit the training set. To circumvent this problem, we perfom additional experiments and train on the balanced EPOS corpus. The results are reported in table 2. Not surprisingly, the RS baseline is inferior to any other system in the table. When word embedding features are combined to SF, we note improvement on most of the six modal verbs, and the best results are obtained with +WE ex . The improvements of +WE ex over SF are significant on can. Both results on balanced and unlabeled corpora reveal that task-specific embedding features on top of WE ex are superior to their counterparts without task-specific information, which shows the best performance overall. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this paper, we make use of word embeddings learned from unlabeled data as additional features to more adequately represent the context of modal verbs. Our main experimental result is that the best weighting scheme for combining pre-trained word embeddings into context embeddings is a corrected version of exponentially decaying weighting which attributes higher weights to the verb modified by the modal and its subject.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Accuracy with various features on MPQA. + or -indicates that the improvements or degradations with respect to SF are statistically significant. The highest value in each row is marked in bold.</figDesc><table><row><cell></cell><cell>MFS</cell><cell>RR</cell><cell>ZH</cell><cell>SF</cell><cell cols="4">+WE av +WE li +WE ex +WE ex</cell></row><row><cell>can</cell><cell>69.9</cell><cell cols="2">66.6 66.1</cell><cell>63.5</cell><cell>66.2</cell><cell>66.7</cell><cell>67.1</cell><cell>70.1 +</cell></row><row><cell>could</cell><cell>65.0</cell><cell cols="2">62.5 67.9</cell><cell>67.5</cell><cell>67.8</cell><cell>68.9</cell><cell>70.4</cell><cell>70.5</cell></row><row><cell>may</cell><cell cols="4">93.6 93.6 93.6 93.6</cell><cell>93.6</cell><cell>93.6</cell><cell>93.6</cell><cell>93.6</cell></row><row><cell>must</cell><cell cols="4">94.3 94.3 94.3 94.3</cell><cell>94.3</cell><cell>94.3</cell><cell>94.3</cell><cell>94.3</cell></row><row><cell>shall</cell><cell cols="3">84.6 83.3 83.3</cell><cell>83.3</cell><cell>83.3</cell><cell>83.3</cell><cell>83.3</cell><cell>83.3</cell></row><row><cell cols="2">should 90.8</cell><cell cols="3">90.8 92.9 91.1</cell><cell>90.9</cell><cell>90.8</cell><cell>90.8</cell><cell>90.8</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Accuracy with various features on EPOS+MPQA. + or -indicates that the improvements or degradations with respect to SF are statistically significant. The highest value in each row is marked in bold.</figDesc><table><row><cell></cell><cell>RS</cell><cell>RR</cell><cell>ZH</cell><cell>SF</cell><cell cols="3">+WE av +WE li +WE ex +WE ex</cell></row><row><cell>can</cell><cell cols="3">33.3 57.8 60.4</cell><cell>65.6</cell><cell>64.4</cell><cell>64.7</cell><cell>64.7</cell><cell>67.3 +</cell></row><row><cell cols="4">could 33.3 49.2 56.3</cell><cell>56.7</cell><cell>57.9</cell><cell>57.9</cell><cell>60.0</cell><cell>59.6</cell></row><row><cell>may</cell><cell cols="3">50.0 92.1 92.1</cell><cell>93.6</cell><cell>94.2</cell><cell>93.6</cell><cell>94.2</cell><cell>95.0</cell></row><row><cell>must</cell><cell cols="4">50.0 71.7 85.6 76.8</cell><cell>78.7</cell><cell>79.3</cell><cell>79.9</cell><cell>80.6</cell></row><row><cell>shall</cell><cell cols="4">50.0 53.9 53.9 61.5</cell><cell>46.2</cell><cell>46.2</cell><cell>46.2</cell><cell>53.8</cell></row><row><cell cols="5">should 50.0 76.3 88.3 90.8</cell><cell>90.8</cell><cell>90.8</cell><cell>90.8</cell><cell>90.8</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="funding">
+<div><p>* This work was supported by the <rs type="grantNumber">ANR-16-CE93-0009 REM</rs> project.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_8aZC9AF">
+					<idno type="grant-number">ANR-16-CE93-0009 REM</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Sentiment analysis of sentences with modalities</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaohui</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhongshuai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bing</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2013 International Workshop on Mining Unstructured Big Data Using Natural Language Processing, UnstructureNLP &apos;13</title>
+		<meeting>the 2013 International Workshop on Mining Unstructured Big Data Using Natural Language Processing, UnstructureNLP &apos;13</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="39" to="44" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Learning the scope of hedge cues in biomedical texts</title>
+		<author>
+			<persName><forename type="first">Roser</forename><surname>Morante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Walter</forename><surname>Daelemans</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Workshop on Current Trends in Biomedical Natural Language Processing, BioNLP &apos;09</title>
+		<meeting>the Workshop on Current Trends in Biomedical Natural Language Processing, BioNLP &apos;09</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="28" to="36" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Are you sure that this happened? assessing the factuality degree of events in text</title>
+		<author>
+			<persName><forename type="first">Roser</forename><surname>Sauri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Pustejovsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="261" to="299" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Word sense disambiguation: A survey</title>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Navigli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="10" />
+			<date type="published" when="2009-02">February 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Yes we can!? annotating english modal verbs</title>
+		<author>
+			<persName><forename type="first">Josef</forename><surname>Ruppenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ines</forename><surname>Rehbein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eight International Conference on Language Resources and Evaluation (LREC)</title>
+		<meeting>the Eight International Conference on Language Resources and Evaluation (LREC)<address><addrLine>Istanbul, Turkey</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="1538" to="1545" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Semantically Enriched Models for Modal Sense Classification</title>
+		<author>
+			<persName><forename type="first">Mengfei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anette</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Annemarie</forename><surname>Friedrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexis</forename><surname>Palmer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the EMNLP Workshop LSDSem: Linking Models of Lexical, Sentential and Discourse-level Semantics</title>
+		<meeting>the EMNLP Workshop LSDSem: Linking Models of Lexical, Sentential and Discourse-level Semantics<address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="44" to="53" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Modal sense classification at large: Paraphrase-driven sense projection, semantically enriched classification models and cross-genre evaluations</title>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Marasovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengfei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexis</forename><surname>Palmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anette</forename><surname>Frank</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Linguistic Issues in Language Technology, Special issue on Modality in Natural Language Understanding</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="58" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Multilingual modal sense classification using a convolutional neural network</title>
+		<author>
+			<persName><forename type="first">Ana</forename><surname>Marasovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anette</forename><surname>Frank</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 1st Workshop on Representation Learning for NLP</title>
+		<meeting>the 1st Workshop on Representation Learning for NLP<address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="111" to="120" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Embeddings for word sense disambiguation: An evaluation study</title>
+		<author>
+			<persName><forename type="first">Ignacio</forename><surname>Iacobacci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Taher Pilehvar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Navigli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics, ACL &apos;16</title>
+		<meeting>the 54th Annual Meeting of the Association for Computational Linguistics, ACL &apos;16</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="897" to="907" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Semi-supervised word sense disambiguation using word embeddings in general and specific domains</title>
+		<author>
+			<persName><forename type="first">Kaveh</forename><surname>Taghipour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hwee Tou</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 Annual Conference of the North American Chapter of the ACL, NAACL &apos;15</title>
+		<meeting>the 2015 Annual Conference of the North American Chapter of the ACL, NAACL &apos;15</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="314" to="323" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Semisupervised word sense disambiguation with neural models</title>
+		<author>
+			<persName><forename type="first">Dayu</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Richardson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ryan</forename><surname>Doherty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Altendorf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th International Conference on Computational Linguistics, COLING &apos;16</title>
+		<meeting>the 26th International Conference on Computational Linguistics, COLING &apos;16</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1374" to="1385" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Word sense disambiguation using a bidirectional lstm</title>
+		<author>
+			<persName><forename type="first">Mikael</forename><surname>Kågebäck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hans</forename><surname>Salomonsson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 5th Workshop on Cognitive Aspects of the Lexicon</title>
+		<meeting>the 5th Workshop on Cognitive Aspects of the Lexicon</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="51" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Neural sequence learning models for word sense disambiguation</title>
+		<author>
+			<persName><forename type="first">Alessandro</forename><surname>Raganato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><forename type="middle">Delli</forename><surname>Bovi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roberto</forename><surname>Navigli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing, EMNLP &apos;17</title>
+		<meeting>the 2017 Conference on Empirical Methods in Natural Language Processing, EMNLP &apos;17</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1156" to="1167" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Libsvm: A library for support vector machines</title>
+		<author>
+			<persName><forename type="first">Chih-Chung</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chih-Jen</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Intelligent Systems and Technology</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1" to="27" />
+			<date type="published" when="2011-05">May 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Distributed representations of words and phrases and their compositionality</title>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="3111" to="3119" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

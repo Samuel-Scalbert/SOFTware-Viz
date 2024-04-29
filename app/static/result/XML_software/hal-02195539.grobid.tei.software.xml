@@ -1,0 +1,1367 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">BelMan: An Information-Geometric Approach to Stochastic Bandits</title>
+				<funder>
+					<orgName type="full">Singapore Ministry of Education</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">National University of Singapore Institute for Data Science project WATCHA</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">WASP-NTU</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Debabrota</forename><surname>Basu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Data Science and AI Division</orgName>
+								<orgName type="institution">Chalmers University of Technology</orgName>
+								<address>
+									<settlement>Göteborg</settlement>
+									<country key="SE">Sweden</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Senellart</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">ENS</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">PSL University</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Inria</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Stéphane</forename><surname>Bressan</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="department">School of Computing</orgName>
+								<orgName type="institution">National University of Singapore</orgName>
+								<address>
+									<country key="SG">Singapore</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">BelMan: An Information-Geometric Approach to Stochastic Bandits</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">4D736E40B93D9D4233638174723E7597</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>We propose a Bayesian information-geometric approach to the exploration-exploitation trade-off in stochastic multi-armed bandits. The uncertainty on reward generation and belief is represented using the manifold of joint distributions of rewards and beliefs. Accumulated information is summarised by the barycentre of joint distributions, the pseudobelief-reward. While the pseudobelief-reward facilitates information accumulation through exploration, another mechanism is needed to increase exploitation by gradually focusing on higher rewards, the pseudobelief-focal-reward. Our resulting algorithm, <software>BelMan</software>, alternates between projection of the pseudobelief-focal-reward onto belief-reward distributions to choose the arm to play, and projection of the updated belief-reward distributions onto the pseudobelief-focal-reward. We theoretically prove <software ContextAttributes="used">BelMan</software> to be asymptotically optimal and to incur a sublinear regret growth. We instantiate <software ContextAttributes="used">BelMan</software> to stochastic bandits with Bernoulli and exponential rewards, and to a real-life application of scheduling queueing bandits. Comparative evaluation with the state of the art shows that <software ContextAttributes="used">BelMan</software> is not only competitive for Bernoulli bandits but in many cases also outperforms other approaches for exponential and queueing bandits.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>The multi-armed bandit problem <ref type="bibr">[30]</ref> is a sequential decision-making problem <ref type="bibr">[11]</ref> in which a gambler plays a set of arms to obtain a sequence of rewards. In the stochastic bandit problem <ref type="bibr">[7]</ref>, the rewards are obtained from reward distributions on arms. These reward distributions belong to the same family of distributions but vary in the parameters. These parameters are unknown to the gambler. In the classical setting, the gambler devises a strategy, choosing a sequence of arm draws, that maximises the expected cumulative reward <ref type="bibr">[30]</ref>. In an equivalent formulation, the gambler devises a strategy that minimises the expected cumulative regret <ref type="bibr">[26]</ref>, that is the expected cumulative deficit of reward caused by the gambler not always playing the optimal arm. In order to achieve this goal, the gambler must simultaneously learn the parameters of the reward distributions of arms. Thus, solving the stochastic bandit problem consists in devising strategies that combine both the accumulation of information to reduce the uncertainty of decision making, exploration, and the accumulation of rewards, exploitation <ref type="bibr">[27]</ref>. We refer to the stochastic bandit problem as the exploration-exploitation bandit problem to highlight this trade-off. If a strategy relies on independent phases of exploration and exploitation, it necessarily yields a suboptimal regret bound <ref type="bibr">[15]</ref>. Gambler has to adaptively balance and intertwine exploration and exploitation <ref type="bibr">[3]</ref>.</p><p>In a variant of the stochastic bandit problem, called the pure exploration bandit problem <ref type="bibr">[8]</ref>, the goal of the gambler is solely to accumulate information about the arms. In another variant of the stochastic bandit problem, the gambler interacts with the bandit in two consecutive phases of pure exploration and exploration-exploitation. The authors of <ref type="bibr">[29]</ref> named this variant the two-phase reinforcement learning problem.</p><p>Although frequentist algorithms with optimism in the face of uncertainty such as UCB <ref type="bibr">[3]</ref> and KL-UCB <ref type="bibr">[14]</ref> work considerably well for the explorationexploitation bandit problem, their frequentist nature prevents effective assimilation of a priori knowledge about the reward distributions of the arms <ref type="bibr">[23]</ref>. Bayesian algorithms for the exploration-exploitation problem, such as Thompson sampling <ref type="bibr" target="#b33">[34]</ref> and Bayes-UCB <ref type="bibr">[21]</ref>, leverage a prior distribution that summarises a priori knowledge. However, as argued in <ref type="bibr">[22]</ref>, there is a need for Bayesian algorithms that also cater for pure exploration. Neither Thompson sampling nor Bayes-UCB are able to do so.</p><p>Our contribution. We propose a unified Bayesian approach to address the exploration-exploitation, pure exploration, and two-phase reinforcement learning problems. We address these problems from the perspective of information representation, accumulation, and balanced induction of bias. Here, the uncertainty is two fold. Sampling reward from the reward distributions is inherently stochastic. The other layer is due to the incomplete information about the true paramaters of the reward distributions. Following Bayesian algorithms <ref type="bibr" target="#b33">[34]</ref>, we maintain a parameterised belief distribution for each arm representing the uncertainty on the parameter of its reward distribution. Extending this representation, we use a joint distribution to express the two-fold uncertainty induced by both the belief and the reward distributions of each arm. We refer to these joint distributions as the belief-reward distributions of the arms. We set the learning problem in the statistical manifold <ref type="bibr">[2]</ref> of the belief-reward distributions, which we call the belief-reward manifold. The belief-reward manifold provides a representation for controlling pure exploration and exploration-exploitation, and to design a unifying algorithmic framework.</p><p>The authors of <ref type="bibr">[8]</ref> proved that, for Bernoulli bandits, if an explorationexploitation algorithm achieves an upper-bounded regret, it cannot reduce the expected simple regret by more than a fixed lower bound. This drives us to first devise a pure exploration algorithm, which requires a collective representation of the accumulated knowledge about the arm. From an information-geometric point of view <ref type="bibr">[4,</ref><ref type="bibr">1]</ref>, the barycentre of the belief-reward distributions in the belief-reward manifolds serves as a succinct summary. We refer to this barycentre as the pseudobelief-reward. We prove the pseudobelief-reward to be a unique representation in the manifold. Though pseudobelief-reward facilitates the accumulation of knowledge, it is essential for the exploration-exploitation bandit problem to also incorporate a mechanism that gradually concentrates on higher rewards <ref type="bibr">[27]</ref>.</p><p>We introduce a distribution that induces such an increasing exploitative bias. We refer to this distribution as the focal distribution. We incorporate it into the definition of the pseudobelief-reward distribution to construct the pseudobelieffocal-reward distribution. This pushes the summarised representation towards the arms having higher expected rewards. We implement the focal distribution using an exponential function of the form exp(X/τ (t)), where X is the reward, and a parameter τ (t) dependent on time t and named as exposure. Exposure controls the exploration-exploitation trade-off.</p><p>In Section 2, we apply these information-geometric constructions to develop the <software ContextAttributes="used">BelMan</software> algorithm. <software ContextAttributes="used">BelMan</software> projects the pseudobelief-focal-reward onto beliefrewards to select an arm. As it is played and a reward is collected, <software ContextAttributes="used">BelMan</software> updates the belief-reward distribution of the corresponding arm by projecting of the updated belief-reward distributions onto the pseudobelief-focal-reward. Information geometrically these two projections are studied as information (I-) and reverse information (rI-) projections <ref type="bibr" target="#b9">[10]</ref>, respectively. <software ContextAttributes="used">BelMan</software> alternates I-and rIprojections between belief-reward distributions of the arms and the pseudobelieffocal-reward distribution for arm selection and information accumulation. We prove the law of convergence of the pseudobelief-focal-reward distribution for <software ContextAttributes="used">BelMan</software>, and that <software ContextAttributes="used">BelMan</software> asymptotically converges to the choice of the optimal arm. <software ContextAttributes="used">BelMan</software> can be tuned, using the exposure, to support a continuum from pure exploration to exploration-exploitation, as well as two-phase reinforcement learning.</p><p>We instantiate <software ContextAttributes="used">BelMan</software> for distributions of the exponential family <ref type="bibr">[6]</ref>. These distributions lead to analytical forms that allows derivation of well-defined and unique I-and rI-projections as well as to devise an effective and fast computation. In Section 3, we empirically evaluate the performance of <software ContextAttributes="used">BelMan</software> on different sets of arms and parameters for Bernoulli and exponential distributions, thus showing its applicability to both discrete and continuous rewards. Experimental results validate that <software ContextAttributes="used">BelMan</software> asymptotically achieves logarithmic regret. We compare <software ContextAttributes="used">BelMan</software> with state-of-the-art algorithms: UCB <ref type="bibr">[3]</ref>, KL-UCB, KL-UCB-Exp <ref type="bibr">[14]</ref>, Bayes-UCB <ref type="bibr">[21]</ref>, Thompson sampling <ref type="bibr" target="#b33">[34]</ref>, and Gittins index <ref type="bibr">[17]</ref>, in these different settings. Results demonstrate that <software ContextAttributes="used">BelMan</software> is not only competitive but also outperforms existing algorithms for challenging setups such as those involving many arms and continuous rewards. For the two-phase reinforcement learning, results show that <software ContextAttributes="used">BelMan</software> spontaneously adapts to the explored information, improving the efficiency.</p><p>We also instantiate <software ContextAttributes="used">BelMan</software> to the application of queueing bandits <ref type="bibr">[24]</ref>. Queueing bandits represent the problem of scheduling jobs in a multi-server queueing system with unknown service rates. The goal of the corresponding scheduling algorithm is to minimise the number of jobs in hold while also learning the service rates. A comparative performance evaluation for queueing systems with Bernoulli service rates show that <software ContextAttributes="used">BelMan</software> performs significantly better than the existing algorithms, such as Q-UCB, Q-ThS, and Thompson sampling.</p></div>
+<div><head n="2">Methodology</head><p>Bandit Problem. We consider a finite number K &gt; 1 of independent arms. An arm a corresponds to a reward distribution f a θ (X). We assume that the form of the probability distribution f • (X) is known to the algorithm but the parametrisation θ ∈ Θ is unknown. We assume the reward distributions of all arms to be identical in form but to vary over the parametrisation θ. Thus, we refer to f a θ (X) as f θa (X) for specificity. The agent sequentially chooses an arm a t at each time step t that generates a sequence of rewards [x t ] T t=1 , where T ∈ N is the time horizon. The algorithm computes a policy or strategy that sequentially draws a set of arms depending on her previous actions, observations and intended goal. The algorithm does not know the 'true' parameters of the arms {θ true a } K a=1 a priori. Thus, the uncertainty over the estimated parameters {θ a } K a=1 is represented using a probability distribution B(θ 1 , . . . , θ K ). We call B(θ 1 , . . . , θ K ) the belief distribution. In the Bayesian approach, the algorithm starts with a prior belief distribution B 0 (θ 1 , . . . , θ K ) <ref type="bibr">[19]</ref>. The actions taken and rewards obtained by the algorithm till time t create the history of the bandit process, H t [(a 1 , x 1 ), . . . , (a t-1 , x t-1 )]. This history H t is used to sequentially update the belief distribution over the parameter vector as B t (θ 1 , . . . , θ K ) P(θ 1 , . . . , θ K | H t ). We define the space consisting of all such distributions over {θ a } K a=1 as the belief space B. Following the stochastic bandit literature, we assume the arms to be independent, and perform Bayesian updates of beliefs. Assumption 1 (Independence of Arms). The parameters {θ a } K a=1 are drawn independently from K belief distributions {b a t (.</p><formula xml:id="formula_0">)} K a=1 , such that B t (θ 1 , . . . , θ K ) = K a=1 b a t (θ a ) K a=1 P(θ a | H t )</formula><p>. Though Assumption 1 is followed throughout this paper, we note it is not essential to develop the framework <software>BelMan</software> relies on, though it makes calculations easier. Assumption 2 (Bayesian Evolution). When conditioned over {θ a } K a=1 and the choice of arm, the sequence of rewards [x 1 , . . . , x t ] is jointly independent. Thus, the Bayesian update at the t-th iteration is given by</p><formula xml:id="formula_1">b a t+1 (θ a ) ∝ f θa (x t ) × b a t (θ a )<label>(1)</label></formula><p>if a t = a and a reward x t is obtained. For all other arms, the belief remains unchanged.</p><p>Belief-reward Manifold. We use the joint distributions P(X, θ) on reward X and parameter θ in order to represent the uncertainties of partial information about the reward distributions along with the stochastic nature of reward.</p><p>Definition 1 (Belief-reward distribution). The joint distribution P a t (X, θ) on reward X and parameter θ a for the a th arm at the t th iteration is defined as the belief-reward distribution.</p><formula xml:id="formula_2">P a t (X, θ) b a t (θ)f θ (X) X∈R θ∈Θ b a t (θ)f θ (X)dθdx = 1 Z b a t (θ)f θ (X).</formula><p>If f • (X) is a smooth function of θ a 's, the space of all reward distributions constructs a smooth statistical manifold <ref type="bibr">[2]</ref>, R. We call R the reward manifold. If belief B is a smooth function of its parameters, the belief space B constructs another statistical manifold. We call B the belief manifold of the multi-armed bandit process. Assumption 1 implies that the belief manifold B is a product of K manifolds B a {b a (θ a )}. Here, B a is the statistical manifold of belief distributions for the ath arm. Due to the identical parametrization, the B a 's can be represented by a single manifold B θ .</p><p>Lemma 1 (Belief-Reward Manifold). If the belief-reward distributions P(X, θ) have smooth probability density functions, their set defines a manifold B θ R . We refer to it as the belief-reward manifold. Belief-reward manifold is the product manifold of the belief manifold and the reward manifold, i.e.</p><formula xml:id="formula_3">B θ R = B θ × R.</formula><p>The Bayesian belief update after each of the iteration is a movement on the belief manifold from a point b a t to another point b a t+1 with maximum information gain from the obtained reward. Thus, the belief-reward distributions of the played arms evolve to create a set of trajectories on the belief-reward manifold. The goal of pure exploration is to control such trajectories collectively such that after a long enough time each of the belief-rewards accumulate enough information to resemble the 'true' reward distributions well enough. The goal of explorationexploitation is to gain enough information about the 'true' reward distributions while increasing the cumulative reward in the path, i.e, by inducing a bias towards playing the arms with higher expected rewards.</p><p>Pseudobelief: Summary of Explored Knowledge. In order to control the exploration, the algorithm has to construct a summary of the collective knowledge on the belief-rewards of the arms. Since the belief-reward distribution of each arm is a point on the belief-reward manifold, geometrically their barycentre on the belief-reward manifold represents a valid summarisation of the uncertainty over all the arms <ref type="bibr">[1]</ref>. Since the belief-reward manifold is a statistical manifold, we obtain from information geometry that this barycentre is the point on the manifold that minimises the sum of KL-divergences from the belief-rewards of all the arms <ref type="bibr">[4,</ref><ref type="bibr">2]</ref>. We refer to this minimising belief-reward distribution as the pseudobelief-reward distribution of all the arms. Definition 2 (Pseudobelief-reward distribution). A pseudobelief-reward distribution Pt (X, θ) is a point in the belief-reward manifold that minimises the sum of KL-divergences from the belief-reward distributions P a t (X, θ) of all the arms.</p></div>
+<div><head>Pt (X, θ) arg min</head><formula xml:id="formula_4">P∈B θ R K a=1 D KL (P a t (X, θ) P(X, θ)) .<label>(2)</label></formula><p>We prove existence and uniqueness of the pseudobelief-reward for K given belief-reward distributions. This proves the pseudobelief-reward to be an unambiguous representative of collective knowledge. We also prove that the pseudobeliefreward distribution Pt is the projection of the average belief-reward distribution Pt (X, θ) = a P a t (X, θ) on the belief-reward manifold. This result validates the claim of pseudobelief-reward as the summariser of the belief-rewards of all the arms. Theorem 1. For given set of belief-reward distributions {P a t } K a=1 defined on the same support set and having a finite expectation, Pt is uniquely defined, and is such that its expectation parameter verifies μt (θ) = 1 K K a=1 µ a t (θ). Hereby, we establish as a unique summariser of all the belief-reward distributions. Using this uniqueness proof, we can prove that the pseudobelief-reward distribution P is projection of the average belief-reward distribution P on the belief-reward manifold.</p><p>Corollary 1. The pseudobelief-reward distribution Pt (X, θ) is the unique point on the belief-reward manifold that has minimum KL-divergence from the distribution Pt (X, θ)</p><formula xml:id="formula_5">1 K K a=1 P a</formula><p>t (X, θ). Focal Distribution: Inducing Exploitative Bias. Creating a succinct pseudobelief-reward is essential for both pure exploration and exploration-exploitation but not sufficient for maximising the cumulative reward in case of exploration-exploitation. If a reward distribution having such increasing bias towards higher rewards is amalgamated with the pseudobelief-reward, the resulting belief-reward distribution provides a representation in the belief-reward manifold to balance the exploration-exploitation. Such a reward distribution is called the focal distribution. The product of the pseudobelief-reward and the focal distribution jointly represents the summary of explored knowledge and exploitation bias using a single belief-reward distribution. We refer to this as the pseudobelief-focal-reward distribution-reward distribution In this paper, we use exp X τ (t) with a time dependent and controllable parameter τ (t) as the reward distribution inducing increasing exploitation bias.</p></div>
+<div><head>Definition 3 (Focal Distribution).</head><p>A focal distribution is a reward distribution of the form L t (X) ∝ exp X τ (t) , where τ (t) is a decreasing function of t 1. We term τ (t) the exposure of the focal distribution.</p><p>Thus, the pseudobelief-focal-reward distribution-reward distribution is represented as Q(X, θ)</p><formula xml:id="formula_6">1 Zt P(X, θ) exp X τ (t)</formula><p>, where the normalisation factor Zt = X∈R θ∈Θ P(X, θ) exp X τ (t) dθdx. Following Equation (2), we compute the pseudobelief-focal-reward distribution as Qt (X, θ) arg min</p><formula xml:id="formula_7">Q K a=1 D KL P a t-1 (X, θ) Q(X, θ) .</formula><p>The focal distribution gradually concentrates on higher rewards as the exposure τ (t) decreases with time. Thus, it constrains using KL-divergence to choose distributions with higher rewards and induces the exploitive bias. From Theorem 3, we obtain 1 τ (t) has to grow in the order Ω( 1 √ t ) for exploration-exploitation bandit problem independent of the family of reward distribution. Following the bounds obtained in <ref type="bibr">[14]</ref>, we set the exposure τ (t) = [log(t) + C × log(log(t))] -1 for experimental evaluation, where C is a constant (we choose the value C = 15 in the experiments) . As the exposure τ (t) decreases with t, the focal distribution gets more concentrated on higher reward values. For the pure exploration bandits, </p><formula xml:id="formula_8">Q∈B θ R K a=1 DKL P a t (X, θ) Q(X, θ) .</formula><p>10: end for we set the exposure τ (t) = ∞ to remove any bias towards higher reward values i.e, exploitation.</p><p><software ContextAttributes="used">BelMan</software>: An Alternating Projection Scheme. A bandit algorithm performs three operations in each step-chooses an arm, samples from the reward distribution of the chosen arm and incorporate the sampled reward to update the knowledge-base. <software ContextAttributes="used">BelMan</software> (Algorithm 1) performs the first and the last operations by alternately minimising the KL-divergence D KL (. .) <ref type="bibr">[25]</ref> between the beliefreward distributions of the arms and the pseudobelief-focal-reward distributionreward distribution. <software ContextAttributes="used">BelMan</software> chooses to play the arm whose belief-reward incurs minimum KL-divergence with respect to the pseudobelief-focal-reward distribution. Following that, <software ContextAttributes="used">BelMan</software> uses the reward collected from the played arm to do Bayesian update of the belief-reward and to update the pseudobelieffocal-reward distribution-reward distribution to the point minimising the sum of KL-divergences from the belief-rewards of all the arms. <ref type="bibr" target="#b9">[10]</ref> geometrically formulated such minimisation of KL-divergence with respect to a participating distribution as a projection to the set of the other distributions. For a given t, the belief-reward distributions of all the arms P a t (X, θ) form a set P ⊂ B θ R and the pseudobelief-focal-reward distribution-reward distributions Qt (X, θ) constitute another set Q ⊂ B θ R.</p><p>Definition 4 (I-projection). The information projection (or I-projection) of a distribution Q ∈ Q onto a non-empty, closed, convex set P of probability distributions, P a 's, defined on a fixed support set is defined by the probability distribution P a * ∈ P that has minimum KL-divergence to q: P a * arg min P a ∈P D KL (P a Q).</p><p><software>BelMan</software> decides which arm to pull by an I-projection of the pseudobelief-focalreward distribution onto the beliefs-rewards of each of the arms (Lines 3-4). This operation amounts to computing</p><formula xml:id="formula_9">a t arg min a D KL P a t-1 (X, θ) Qt-1 (X, θ) = arg max a E P a t-1 (X,θ) X τ (t) -D KL b a t-1 (θ) b ηt-1 (θ)</formula><p>The first term symbolises the expected reward of arm a. Maximising this term alone is analogous to greedily exploiting the present information about the arms.</p><p>The second term quantifies the amount of uncertainty that can be decreased if arm a is chosen on the basis of the present pseudobelief. The exposure τ (t) of the focal distribution keeps a weighted balance between exploration and exploitation. Decreasing τ (t) decreases the exploration with time which is quite an intended property of an exploration-exploitation algorithm.</p><p>Following that (Line 5-7), the agent plays the chosen arm a t and samples a reward x t . This observation is incorporated in the belief of the arm using Bayes' rule of Equation <ref type="bibr">(1)</ref>. Definition 5 (rI-projection). The reverse information projection (or rIprojection) of a distribution P a ∈ P onto Q, which is also a non-empty, closed, convex set of probability distributions on a fixed support set, is defined by the distribution Q * ∈ Q that has minimum KL-divergence from P a : Q * arg minQ ∈Q D KL (P a Q). Theorem 2 (Central limit theorem). If μT</p><formula xml:id="formula_10">1 K K a=1 μa t a T is estimator of the expectation parameters of the pseudobelief distribution, √ T ( μT -μ) converges in distribution to a centered normal random vector in N (0, Σ). The covariance matrix Σ = K a=1 λ a Σ a such that T K 2 t a T tends to λ a as T → ∞.</formula><p>Theorem 2 shows that the parameters of pseudobelief can be constantly estimated and their estimation would depend on the accuracy of the estimators of individual arms with a weight on the number of draws on the corresponding arms. Thus, the uncertainty in the estimation of the parameter is more influenced by the arm that is least drawn and less influenced by the arm most drawn. In order to decrease the uncertainty corresponding to pseudobelief, we have to draw the arms less explored.</p><p>We need an additional assumption before moving into the asymptotic consistency claim in Theorem 3. Assumption 3 Bounded log-likelihood ratios. The log-likelihood of the posterior belief distribution at time t with respect to the true posterior belief distribution is bounded such that lim t→∞ log P a (X,θ)</p><formula xml:id="formula_11">P a t (X,θ) C &lt; ∞ for all a.</formula><p>This assumption helps to control the convergence of sample KL divergences in to the true KL-divergences as the number of samples grow infinitely. This is a relaxed version of Assumption 2 employed in <ref type="bibr">[18]</ref> to bound the regret of Thompson sampling. This is also often used in the statistics literature to control the convergence rate of posterior distributions <ref type="bibr" target="#b32">[33]</ref> <ref type="bibr" target="#b34">[35]</ref>. Theorem 3 (Asymptotic consistency). Given τ (t) = 1 log t+c×log log t for any c 0, <software ContextAttributes="used">BelMan</software> will asymptotically converge to choosing the optimal arm in case of a bandit with bounded reward and finite arms. Mathematically, if there exists µ * max a µ(θ a ), lim  We intuitively validate this claim. We can show the KL-divergence between belief-reward of arm a and the pseudobelief-focal-reward is</p><formula xml:id="formula_12">T →∞ 1 T E T t=1 X at = µ * .<label>(3)</label></formula><formula xml:id="formula_13">D KL (P a t (X, θ) Q(X, θ)) = (1 -λ a )h(b a t ) -1 τ (t) µ a t</formula><p>, for λ a computed as per Theorem 2. Here, h(b a t ) denotes the entropy of belief distribution b a t of arm a at time t. As t → ∞, the entropy of belief on each arm reduces to a constant dependent on its internal entropy. Thus, when 1 τ (t) exceeds the entropy term for a large t, <software>BelMan</software> greedily chooses the arm with highest expected reward. Hence, <software ContextAttributes="used">BelMan</software> is asymptotically consistent.</p><p><software ContextAttributes="used">BelMan</software> is applicable to any belief-reward distribution for which KL-divergence is computable and finite. Additionally for reward distributions belonging to the exponential family of distributions, the belief distributions, being conjugate to the reward distributions, also belong to the exponential family <ref type="bibr">[6]</ref>. This makes belief-reward distributions flat with respect to KL-divergence. Thus, both I-and rI-projections in <software ContextAttributes="used">BelMan</software> are well-defined and unique for exponential family reward distributions. Furthermore, if we identify the belief-reward distributions with expectation parameters, we obtain the pseudobelief as an affine sum of them. This allows us to compute belief-reward distribution directly instead of computing its dependence on each belief-reward separately. The exponential family includes the majority of the distributions found in the bandit literature such as Bernoulli, beta, Gaussian, Poisson, exponential, and χ 2 .</p></div>
+<div><head n="3">Empirical Performance Analysis</head><p>Exploration-exploitation bandit problem. We evaluate the performance of <software ContextAttributes="used">BelMan</software> for two exponential family distributions -Bernoulli and exponential. They stand for discrete and continuous rewards respectively. We use the <software ContextAttributes="used">pyma-Bandits</software> library <ref type="bibr">[9]</ref> for implementation of all the algorithms except ours, and run it on <software ContextAttributes="used">MATLAB</software> 2014a. We plot the evolution of the mean and the 75 percentile of cumulative regret and number of suboptimal draws. For each instance, we run experiments for 25 runs each consisting of 1000 iterations. We begin with uniform distribution over corresponding parameters as the initial prior distribution for all the Bayesian algorithms.</p><p>We compare the performance of <software ContextAttributes="used">BelMan</software> with frequentist methods like UCB <ref type="bibr">[3]</ref> and KL-UCB <ref type="bibr">[14]</ref>, and Bayesian methods like Thompson sampling <ref type="bibr" target="#b33">[34]</ref> and Bayes-UCB <ref type="bibr">[21]</ref>. For Bernoulli bandits, we also compare with Gittins index <ref type="bibr">[17]</ref> which is the optimal algorithm for Markovian finite arm independent bandits with discounted rewards. Though we are not specifically interested in the discounted case, Gittins' algorithm is indeed transferable to the finite horizon setting with slight manipulation. Though it is often computationally intractable, we use it as the optimal baseline for Bernoulli bandits. We also plot performance of the uniform sampling method (Random), as a naïve baseline.</p><p>From Figures <ref type="figure" target="#fig_0">1,</ref><ref type="figure">2</ref>, and 3, we observe that at the very beginning the number of suboptimal draws of <software ContextAttributes="used">BelMan</software> grows linearly and then transitions to a state of slow growth. This initial linear growth of suboptimal draws followed by a logarithmic growth is an intended property of any optimal bandit algorithm as can be seen in the performance of competing algorithms and also pointed out by <ref type="bibr">[16]</ref>: an initial phase dominated by exploration and a second phase dominated by exploitation. The phase change indicates the ability of the algorithm to reduce uncertainty by learning after a certain number of iterations, and to find a trade-off between exploration and exploitation. For the 2-arm Bernoulli bandit (θ 1 = 0.8, θ 2 = 0.9), <software ContextAttributes="used">BelMan</software> performs comparatively well with respect to the contending algorithms, achieving the phase of exploitation faster than others, with significantly less variance. Figure <ref type="figure">2</ref> depicts similar features of <software ContextAttributes="used">BelMan</software> for 20-arm Bernoulli bandits (with means 0.25, 0.22, 0.2, 0.17, 0.17, 0.2, 0.13, 0.13, 0.1, 0.07, 0.07, 0.05, 0.05, 0.05, 0.02, 0.02, 0.02, 0.01, 0.01, and 0.01). Since more arms ask for more exploration and more suboptimal draws, all algorithms show higher regret values. On all experiments performed, <software ContextAttributes="used">BelMan</software> outperforms the competing approaches. We also simulated <software ContextAttributes="used">BelMan</software> on exponential bandits: 5 arms with expected rewards {0.2, 0.25, 0.33, 0.5, 1.0}. Figure <ref type="figure">3</ref> shows that <software ContextAttributes="used">BelMan</software> performs more efficiently than state-of-the-art methods for exponential reward  distributions-Thompson sampling, UCBtuned <ref type="bibr">[3]</ref>, KL-UCB, and KL-UCB-exp, a method tailored for exponential distribution of rewards <ref type="bibr">[14]</ref>. This demonstrates <software ContextAttributes="used">BelMan</software>'s broad applicability and efficient performance in complex scenarios.</p><p>We have also run the experiments 50 times with horizon 50 000 for the 20 arm Bernoulli bandit setting of Figure <ref type="figure">2</ref> to verify the asymptotic behaviour of <software ContextAttributes="used">BelMan</software>. Figure <ref type="figure" target="#fig_2">4</ref> shows that <software ContextAttributes="used">BelMan</software>'s regret gradually becomes linear with respect to the logarithmic axis. Figure <ref type="figure" target="#fig_2">4</ref> empirically validates <software ContextAttributes="used">BelMan</software> to achieve logarithmic regret like the competitors which are theoretically proven to reach logarithmic regret.</p><p>Two-phase reinforcement learning problem. In this experiment, we simulate a two-phase setup, as in <ref type="bibr">[29]</ref>: the agent first does pure exploration for a fixed number of iterations, then move to exploration-exploitation. This is possible since <software ContextAttributes="used">BelMan</software> supports both modes and can transparently switch. The setting is that of the 20-arm Bernoulli bandit in Figure <ref type="figure">2</ref>. The two-phase algorithm is exactly <software ContextAttributes="used">BelMan</software> (Algorithm 1) with τ (t) = ∞ for an initial phase of length T EXP followed by the decreasing function of t as indicated previously. Thus, <software ContextAttributes="used">BelMan</software> gives us a single algorithmic framework for three setups of bandit problems-pure exploration, exploration-exploitation, and two-phase learning. We only have to choose a different τ (t) depending on the problem addressed. This supports <software ContextAttributes="used">BelMan</software>'s claim as a generalised, unified framework for stochastic bandit problems.</p><p>We observe a sharp phase transition in Figure <ref type="figure" target="#fig_3">5</ref>. While the pure exploration version acts in the designated window length, it explores almost uniformly to gain more information about the reward distributions. We know for such pure exploration the cumulative regret grows linearly with iterations. Following this, the growth of cumulative regret decreases and becomes sublinear. If we also compare it with the initial growth in cumulative regret and suboptimal draws of <software ContextAttributes="used">BelMan</software> in Figure <ref type="figure">2</ref>, we observe that the regret for the exploration-exploitation phase is less than that of regular <software ContextAttributes="used">BelMan</software> exploration-exploitation. Also, with increase in the window length the phase transition becomes sharper as the growth in regret becomes very small. In brief, there are three major lessons of this experiment. First, Bayesian methods provide an inherent advantage in leveraging prior knowledge (here, accumulated in the first phase). Second, a pure exploration phase helps in improving the performance during the exploration-exploitation phase. Third, we can leverage the exposure to control the exploration-exploitation trade-off.</p></div>
+<div><head n="4">Application to Queueing Bandits</head><p>We instantiate <software ContextAttributes="used">BelMan</software> for the problem of scheduling jobs in a multiple-server multiple-queue system with known arrival rates and unknown service rates. The goal of the agent is to choose such a server for the given system such that the total queue length, i.e. the jobs waiting in the queue, will be as less as possible. This problem is referred as the queueing bandit <ref type="bibr">[24]</ref>. We consider a discrete-time queueing system with 1 queue and K servers. The servers are indexed by a ∈ {1, . . . , K}. Arrivals to the queue and service offered by the servers are assumed to be independent and identically distributed across time. The mean arrival rate is λ ∈ R + . The mean service rates are denoted by µ ∈ {µ a } K a=1 , where µ a is the service rate of server a. At a time, a server can serve the jobs coming from a queue only. We assume the queue to be stable i.e, λ &lt; max</p><formula xml:id="formula_14">a∈[K]</formula><p>µ a . Now, the problem is to choose a server at each time t ∈ [T ] such that the number of jobs waiting in queues is as less as possible. The number of jobs waiting in queues is called the queue length of the system. If the number of arrivals to the queues at time t is A(t) and S(t) is the number of jobs served, the queue length at time t is defined as Q(t) Q(t -1) + A(t) -S(t), where Q : [T ] → R 0 , A : [T ] → R 0 , and S : [T ] → R 0 . The agent, which is the scheduling algorithm in this case, tries to minimise this queue length for a given horizon T &gt; 0. The arrival rates are known to the scheduling algorithm but the service rates are unknown to it. This create the need to learn about the service distributions, and in turn, engenders the exploration-exploitation dilemma.</p><p>Following the bandit literature, <ref type="bibr">[24]</ref> proposed to use queue regret as the performance measure of a queueing bandit algorithm. Queue regret is defined as the difference in the queue length if a bandit algorithm is used instead of an optimal algorithm with full information about the arrival and service rates. Thus, the optimal algorithm OPT knows all the arrival and service rates, and allocates the queue to servers with the best service rate. Hence, we define the queue regret of a queueing bandit algorithm Ψ (t) E Q(t) -Q OPT (t) . In order to keep the bandit structure, we assume that both the queue length Q(t) of algorithm A and that of the optimal algorithm Q OPT (t) starts with the same stationary state distribution ν(λ, µ).</p><p>We show experimental results for the M/B/K queueing bandits. We assume the arrival process to be Markovian, and the service process to be Bernoulli. The arrival process being Markovian implies that the stochastic process describing the number of arrivals is therefore A (t) have increments independent of time. This makes the distribution of A(t) to be a Poisson distribution <ref type="bibr">[12]</ref> with mean arrival rate λ. We denote B a (µ a ) is the Bernoulli distribution of the service time of server a. It implies that the server processes a job with probability µ a ∈ (0, 1) and refuses to serve it with probability 1 -µ a . The goal is to perform the scheduling in such a way that the queue regret will be minimised. The experimental results in Figure <ref type="figure" target="#fig_4">6</ref> depict that <software ContextAttributes="used">BelMan</software> is more stable and efficient than the competing algorithms: Q-UCB, Q-Thompson sampling, and Thompson sampling. We observe that in queues 2 and 3 the average service rates are lower than the corresponding arrival rates. Due to this inherent constraint, the queue 2 and 3 can have unstable queueing systems if the initial exploration of the algorithm does not damp fast enough. Though the randomisation of Thompson sampling is good for exploration but in this case playing the suboptimal servers can induce instability which affects the total performance in future.</p><p>5 Related Work <ref type="bibr">[5]</ref> posed the problem of discounted reward bandits with infinite horizon as a single-state Markov decision process <ref type="bibr">[17]</ref> and proposed an algorithm for computing deterministic Gittins indices to choose the arm to play. Though Gittins index is proven to be optimal for discounted Bayesian bandits with Bernoulli rewards <ref type="bibr">[17]</ref>, explicit computation of the indices is not always tractable and does not provide clear insights into what they look like and how they change as sampling proceeds <ref type="bibr">[28]</ref>. This motivated researchers to design computationally tractable algorithms <ref type="bibr">[7]</ref> that still retain the asymptotic efficiency <ref type="bibr">[26]</ref>.</p><p>These algorithms can be classified into two categories: frequentist and Bayesian. Frequentist algorithms use the history obtained as the number of arm plays and corresponding rewards obtained to compute point estimates of the fitness index to choose an arm. UCB <ref type="bibr">[3]</ref>, UCB-tuned <ref type="bibr">[3]</ref>, KL-UCB <ref type="bibr">[14]</ref>, KL-UCB-Exp <ref type="bibr">[14]</ref>, KL-UCB + <ref type="bibr">[20]</ref> are examples of frequentist algorithms. These algorithms are designed by the philosophy of optimism in face of uncertainty. This methodology prescribes to act as if the empirically best choice is truly the best choice. Thus, all these algorithms overestimate the expected reward of the corresponding arms in form of frequentist indices.</p><p>Bayesian algorithms encode available information on the reward generation process in form of a prior distribution. For stochastic bandits, this prior consists of K belief distributions on the arms. The history obtained by playing the bandit game is used to update the posterior distribution. This posterior distribution is further used to choose the arm to play. Thompson sampling <ref type="bibr" target="#b33">[34]</ref>, informationdirected sampling <ref type="bibr" target="#b31">[32]</ref>, Bayes-UCB <ref type="bibr">[20]</ref>, and <software ContextAttributes="used">BelMan</software> are Bayesian algorithms.</p><p>In a variant of the stochastic bandit problem, called the pure exploration bandit problem <ref type="bibr">[8]</ref>, the goal of the gambler is solely to accumulate information about the arms. In another variant of the stochastic bandit problem, the gambler interacts with the bandit in two consecutive phases of pure exploration and exploration-exploitation. <ref type="bibr">[29]</ref> named this variant the two-phase reinforcement learning problem. Two-phase reinforcement learning gives us a middle ground between model-free and model-dependent approaches in decision making which is often the path taken by a practitioner <ref type="bibr">[13]</ref>. As frequentist methods are well-tuned for exploration-exploitation bandits, a different set of algorithms need to be developed for pure exploration bandits <ref type="bibr">[8]</ref>. <ref type="bibr">[23]</ref> pointed out the lack of Bayesian methods to do so. This motivated recent developments of Bayesian algorithms <ref type="bibr" target="#b30">[31]</ref> which are modifications of their exploration-exploitation counterparts such as Thompson sampling. <software ContextAttributes="used">BelMan</software> leverages its geometric insight to manage the pure exploration bandits only by turning the exposure to infinity. Thus, it provides a single framework to manage the pure exploration, exploration-exploitation, and two-phase reinforcement learning problems only by tuning the exposure.</p></div>
+<div><head n="6">Conclusion</head><p><software>BelMan</software> implements a generic Bayesian information-geometric approach for stochastic multi-armed bandit problems. It operates in a statistical manifold constructed by the joint distributions of beliefs and rewards. Their barycentre, the pseudobelief-reward, summaries the accumulated information and forms the basis of the exploration component. The algorithm is further extended by composing the pseudobelief-reward distribution with a reward distribution that gradually concentrates on higher rewards by means of a time-dependent function, the exposure. In short, <software ContextAttributes="used">BelMan</software> addresses the issue of the adaptive balance of exploration-exploitation from the perspective of information representation, accumulation, and balanced induction of exploitative bias. Consequently, <software ContextAttributes="used">BelMan</software> can be uniformly tuned to support pure exploration, exploration-exploitation, and two-phase reinforcement learning problems. <software ContextAttributes="used">BelMan</software>, when instantiated to rewards modelled by any distribution of the exponential family, conveniently leads to analytical forms that allow derivation of a well-defined and unique projection as well as to devise an effective and fast computation. In queueing bandits, the agent tries and minimises the queue length while also learning the unknown service rates of multiple servers. Comparative performance evaluation shows <software ContextAttributes="used">BelMan</software> to be more stable and efficient than existing algorithms in the queueing bandit literature.</p><p>We are investigating the analytical asymptotic efficiency and stability of <software>BelMan</software>. We are also investigating how <software ContextAttributes="used">BelMan</software> can be extended to other settings such as dependent arms, non-parametric distributions and continuous arms.</p></div>
+<div><head>Supplementary Material: BelMan</head><p>We provide the following supplementary material:</p><p>in Section A, an extended discussion of the related work and of the setting of bandits, beyond what could fit in the main paper; in Section A, proofs and technical details that complement the methodology section (Section 2); in Section A.9, additional experiments in the exploration-exploitation setup.</p></div>
+<div><head>A Extended Discussion of Related Work</head><p>Exploration-exploitation bandit problem. In the exploration-exploitation bandits, the agent searches for a policy that maximises the expected value of cumulative reward S T E T t=1 X at as T → ∞. A policy is asymptotically consistent <ref type="bibr">[28]</ref> if it asymptotically tends to choose the arm with maximum expected reward µ * max 1 a K µ(θ a ), i.e., lim</p><formula xml:id="formula_15">T →∞ 1 T S T = µ * .<label>(4)</label></formula><p>The cumulative regret R T <ref type="bibr">[24]</ref> is the amount of extra reward the gambler can obtain if she knows the optimal arm a * and always plays it instead of the present sequence:</p><formula xml:id="formula_16">R T T E [X a * ] -E T t=1 (X at ) = T µ * - K a=1 E T t=1 (X at × 1(a t = a)) = K a=1 [µ * -µ a ] E[t a T ],</formula><p>where t a T is the number of times arm a is pulled till the T th iteration. <ref type="bibr">[24]</ref> proved that for all algorithms satisfying R T = o(T c ) for a non-negative c, the cumulative regret increases asymptotically in Ω(log T ). Such algorithms are called asymptotically efficient. The Lai-Robbins bound can be mathematically formulated as lim inf</p><formula xml:id="formula_17">T →∞ R T log T a:µ * (θ)&gt;µ(θa) [µ * (θ) -µ(θ a )] inf a D KL (f θa (x) f θ * (x)) ,<label>(5)</label></formula><p>where f θ * (x) is the reward distribution of the optimal arm. This states that the best we can achieve is a logarithmic growth of cumulative regret. It also implies that this optimality is harder to achieve as the minimal KL-divergence between the optimal arm and any other arm decreases. This is intuitive because in such scenario the agent has to explore these two arms more to distinguish between them and to choose the optimal arm. <ref type="bibr">[24]</ref> also showed that for specific reward distributions, the expected number of draws of any suboptimal arm a should satisfy</p><formula xml:id="formula_18">t a T 1 inf a D KL (f θa (x) f θ * (x)) + o(1) log T.<label>(6)</label></formula><p>Equation ( <ref type="formula" target="#formula_17">5</ref>) and ( <ref type="formula" target="#formula_18">6</ref>) together claim that the best achievable number of draws of suboptimal arms is Θ(log T ). Based on this bound, <ref type="bibr">[3]</ref> extensively studied the upper confidence bound (UCB) family of algorithms. These algorithms operate on the philosophy of optimism in face of uncertainty. They compute the upper confidence bounds of each of the arm's distributions in a frequentist way and choose the one with the maximum upper confidence bound optimistically expecting that one to be the arm with maximum expected reward. Later on, this family of algorithms was analysed and improved to propose algorithms such as KL-UCB <ref type="bibr">[15]</ref> and DMED <ref type="bibr">[17]</ref>.</p><p>Frequentist approaches implicitly assume a 'true' parametrization of reward distributions (θ true 1 , . . . , θ true K ). In contrast, Bayesians model the uncertainty on the parameter using another probability distribution B (θ 1 , . . . , θ K ) <ref type="bibr">[13,</ref><ref type="bibr">29]</ref> which is referred to as the belief distribution. Bayesian algorithms begin with a prior B 0 (θ 1 , . . . , θ K ) over the parameters and eventually try to find out a posterior distribution such that the Bayesian sum of rewards S T dB (θ 1 , . . . , θ K ) is maximised, or equivalently the Bayesian risk R T dB (θ 1 , . . . , θ K ) is minimised.</p><p>Another variant of the Bayesian formulation was introduced by <ref type="bibr">[4]</ref> with a discounted reward setting. Unlike S T , the discounted sum of rewards D γ ∞ t=0 [γ t x t+1 ] is calculated over infinite horizon. Here, γ ∈ [0, 1) ensures convergence of the sequential sum of rewards for infinite horizon. Intuitively, the discounted sum implies the effect of an action decay with each time step by the discount factor γ. This setting assumes K independent priors on each of the arms and also models the process of choosing the next arm as a Markov process. Thus, the bandit problem is reformulated as maximising</p><formula xml:id="formula_19">. . . E θ [D γ ]db 1 (θ 1 ) . . . db K (θ K )</formula><p>where, b a is the independent prior distribution on the parameter θ a for a = 1, . . . , K. <ref type="bibr">[16]</ref> showed the agent can have an optimally indexed policy by sampling from the arm with largest Gittins index</p><formula xml:id="formula_20">G a (s a ) sup τ &gt;0 E τ t=0 γ t x a (S a t ) | S a 0 = s a E τ -1 t=0 γ t | S a 0 = s a</formula><p>where s a is the state of arm a and τ is referred to as the stopping time i.e, the first time when the index is no greater than its initial value. Though Gittins index <ref type="bibr">[16]</ref> is proven to be optimal for discounted Bayesian bandits with Bernoulli rewards, explicit computation of the indices is not always tractable and does not provide clear insights into what they look like and how they change as sampling proceeds <ref type="bibr">[25]</ref>.</p><p>Thus, researchers developed approximation algorithms <ref type="bibr">[23]</ref> and sequential sampling schemes like Thompson sampling <ref type="bibr">[30]</ref>. At any iteration, the latter samples K parameter values from the belief distributions and chooses the arm that has maximum expected reward for them. <ref type="bibr">[19]</ref> also proposed a Bayesian analogue of the UCB algorithm. Unlike the original, it uses belief distributions to keep track of arm uncertainty and update them using Bayes' theorem, computes UCBs for each arm using the belief distributions, and chooses the arm accordingly.</p><p>Pure exploration bandit problem. In this variant of the bandit problem, the agent aims to gain more information about the arms. <ref type="bibr">[8]</ref> formulated this notion of gaining information as minimisation of the simple regret rather than cumulative regret. Simple regret r t (θ) at time t is the expected difference between the maximum achievable reward X a * and the sampled reward X at . Unlike cumulative regret, minimising simple regret depends only on exploration and the number of available rounds to do so. <ref type="bibr">[8]</ref> proved that, for Bernoulli bandits, if an explorationexploitation algorithm achieves an upper-bounded regret, it cannot reduce the expected simple regret by more than a fixed lower bound. This establishes the fundamental difference between exploration-exploitation bandits and pure exploration bandits. <ref type="bibr">[2]</ref> identified the pure exploration problem as best arm identification and proposed the Successive Rejects algorithm under fixed budget constraints. <ref type="bibr">[7]</ref> extended this algorithm for finding m-best arms and proposed the Successive Accepts and Rejects algorithm. In another endeavour to adapt the UCB family to pure exploration scenario, the LUCB family of frequentist algorithms are proposed <ref type="bibr">[20]</ref>. In the beginning, they sample all the arms. Following that, they sample both the arm with maximum expected reward and the one with maximum upper-confidence bound till the algorithm can identify each of them separately. Existing frequentist algorithms <ref type="bibr">[2,</ref><ref type="bibr">7,</ref><ref type="bibr">20]</ref> do not provide an intuitive and rigorous explanation of how a unified framework would work for both the pure exploration and the exploration-exploitation scenario. As discussed in Section 1, both Thompson sampling and Bayes-UCB also lack this feature of constructing a single successful structure for both pure exploration and exploration-exploitation. Two-Phase reinforcement learning. Two-phase reinforcement learning problems append the exploration-exploitation problem after the pure exploration problem. The agent gets an initial phase of pure exploration for a given window. In this phase, the agent collects more information about the underlying reward distributions. Following this, the agent goes through the exploration-exploitation phase. In this phase, it solves the exploration-exploitation problem and focuses on maximising the cumulative reward. This setup is perceivable as an initial online model building or 'training' phase followed by an online problem solving or 'testing' phase. This problem setup often emerges in applications <ref type="bibr">[14]</ref> where the decision maker explores for an initial phase to create a knowledge base and another phase to take decisions by leveraging this pre-build knowledge base. In applications, this way of beginning the exploration-exploitation is called a warm start. Thus, two-phase reinforcement learning gives us a middle ground between model-free and model-dependent approaches in decision making which is often the path taken by a practitioner.</p><p>Formally, this knowledge-base is a prior distribution built from the agent's experience. Since Bayesian methods naturally accommodate and leverage prior distributions, Bayesian formulation provide the scope to approach this problem without any modification. <ref type="bibr">[27]</ref> approached this problem with a technique amalgamating a sampling technique, PSPE, and an extension of Thompson sampling, PSRL <ref type="bibr">[26]</ref>, for episodic fixed horizon Markov decision processes (MDPs) <ref type="bibr">[11]</ref>. PSPE uses Bayesian update to create a posterior distribution for the reward distribution of a policy. Then, PSPE samples from the distribution in order to evaluate the policies. These two steps are performed iteratively for the initial pure exploration phase. PSRL <ref type="bibr">[26]</ref> is an extension of Thompson sampling for episodic MDPs. Unlike Thompson sampling, they also use Markov chain Monte Carlo method for creating the posteriors corresponding to each of the policies. Though the amalgamation of these two methods for the two phase problems in episodic MDPs perform reasonably, they lack a reasonable unified structure attacking the problem and a natural cause to pipeline them.</p><p>A.1 KL-divergence on the Manifold.</p><p>Kullback-Liebler divergence (or KL-divergence) <ref type="bibr">[22]</ref> is a pre-metric measure of dissimilarity between two probability distributions.</p><p>Definition 6 (KL-divergence). If there exist two probability measures P and Q defined over a support set S and P is absolutely continuous with respect to Q, we define the KL-divergence between them as</p><formula xml:id="formula_21">D KL (P Q) S log dP dQ dP .</formula><p>dP dQ is the Radon-Nikodym derivative of P with respect to Q.</p><p>Since it represents the expected information lost if P is encoded using Q, it is also called relative entropy. Depending on the applications, P acts as the representative of 'true' underlying distribution obtained from observations or data or natural law, and Q represents the model or approximation of P . For two probability density functions p(s) and q(s) defined over a support set S, the KL-divergence can be rewritten as</p><formula xml:id="formula_22">D KL (p(s) q(s)) = s∈S p(s) log p(s) q(s) ds = -h(p(s)) + H(p(s), q(s)). (7)</formula><p>Here, h(p(s)) is entropy of p and H(p(s), q(s)) is the mutual information between p and q. Thus, from an information-theoretic perspective, we perceive KL-divergence as the natural divergence function on the belief-reward manifold when we analyse the dynamics of the entropy function on it. Except that, any general α-divergence function on the statistical manifold is a convex combination of ±1-divergences.</p><p>Mathematically, for α ∈ (-1, +1),</p><formula xml:id="formula_23">D (α) (p q) 1 + α 2 D (+1) (p q) + 1 -α 2 D (-1) (p q) = 1 + α 2 D KL (q p) + 1 -α 2 D KL (p q).<label>(8)</label></formula><p>From a manifold perspective, it seems that the divergence function for the ±1-connections on the belief-reward manifolds and a convex mixture of D KL divergences form the general notion of movement on any such space. Thus, KLdivergence between two belief-reward distributions is an effective and natural quantifier of movement, and also of information accumulation during Bayesian update. Hence, for updating the beliefs in an optimal manner, and to decrease the uncertainty, we have to represent the observations using a knowledge-base, and to minimise the KL-divergence between the knowledge-base and other distributions respectively. If P are the candidate belief-reward distributions of the arms formed by accumulation of actions and rewards, and Q are the pseudobelief or pseudobelief-focal-reward distribution-reward distributions, the alternating minimisation scheme looks for the most succinct representation Q of the knowledge and the exploitation bias while choosing such arms whose belief-reward distributions resemble their true reward distributions as much as possible.</p></div>
+<div><head>A.2 Exponential Family</head><p>Use of KL-divergence as a divergence measure on the statistical manifolds and also the issue of representation of a random variable using sufficient statistics provoked the study of the exponential family of distributions. Interesting properties of exponential family distributions, such as existence of finite representation of sufficient statistics, convenient mathematical form, and existence of moments, provided them a central stage in the field of mathematical statistics <ref type="bibr">[6]</ref>[12][18] <ref type="bibr">[21]</ref>.</p><p>The exponential family <ref type="bibr">[6]</ref> is a class of probability distributions which is defined by a set of natural parameters ω(θ) and a sufficient statistics T (X) of the random variable X as follows:</p><formula xml:id="formula_24">f θ (X) g(X) exp ( ω(θ), T (x) -A(θ)) .</formula><p>Here, g(X) is the base measure on reward X and A(θ) is called the log-partition function. The exponential family includes the majority of the distributions found in the bandit literature such as Bernoulli, beta, Gaussian, Poisson, exponential, and chi-squared. For T (X) = X, the log-partition function is logarithm of the Laplace transform of the base measure.</p><p>Example 1. Bernoulli distribution with probability of success θ ∈ (0, 1) is defined as</p><formula xml:id="formula_25">f θ (X) Ber(θ) = θ X (1 -θ) (1-X) = exp X log θ 1 -θ + log(1 -θ)</formula><p>for X ∈ {0, 1}. Here, the base measure g(x) is 1. The sufficient statistics is</p><formula xml:id="formula_26">T (X) = X. The natural parameter is ω(θ) = log θ 1-θ . The log-partition function is A(θ) = -log(1 -θ) = log(1 + exp(ω)).</formula><p>We choose the exponential family to instantiate our framework not only because of its wide range and applicability but also due to its well behaving Bayesian and information geometric properties. From a sampling and uncertainty representation point of view, the exponential family is useful because of its finite representation of sufficient statistics. Specifically, sufficient statistics of exponential family can represent any arbitrary number of independent identically distributed samples using a finite number of variables <ref type="bibr">[21]</ref>. This keeps the uncertainty representation tractable for exponential family distributions.</p><p>From a Bayesian point of view, the useful property of the exponential family is the existence of conjugate distributions which also belong to this family <ref type="bibr">[6]</ref>. Two parametric distributions f θ (x) and b η (θ) are conjugate if the posterior distribution P(θ|x) formed by multiplying them has the same form as b η (θ). Mathematically, the conjugate distribution of the distribution of Equation A.2 is given by b η (θ)</p><formula xml:id="formula_27">P(θ|η, v) = f (η, v) exp( η, θ -vA(θ)) = f (η, v)g(θ) v exp( η, θ ).</formula><p>Here, η is the parameter of the conjugate prior and v &gt; 0 corresponds to the effective number of observations that the prior contributes. Thus, if the reward distribution belongs to the exponential family, the belief distribution is represented as: b η (θ) h(θ) exp ( η, T (θ) -A(η)) with the natural parameters η ∈ R d .</p><p>From information geometric point of view, exponential family distributions are flat with respect to KL-divergence <ref type="bibr">[1]</ref>. Thus, both information and reverse information projections <ref type="bibr" target="#b9">[10]</ref> that we would use in <software ContextAttributes="used">BelMan</software> are well-defined and unique. Thus, at each iteration, we obtain an optimal and unambiguous computation of the decision variables of <software ContextAttributes="used">BelMan</software>. <ref type="bibr">[1]</ref> also stated that the necessary and sufficient condition for a parametric probability distribution to have an efficient estimator is that the distribution belongs to the exponential family and has an expectation parametrisation. Thus, working with exponential family distributions implicitly supports the well-defined nature and possibility of getting an efficient estimation.</p></div>
+<div><head>A.3 Pseudobelief-reward: Existence, Uniqueness and Consistency</head><p>In order to establish pseudobelief-reward as a valid knowledge-base for all the arms, we have to prove that it exists uniquely and its parameters can be consistently estimated.</p><p>The proofs require only two assumptions. Firstly, the belief-reward manifold can be described by a unique chart. This implies that pdf of the belief-reward distributions is a bijective function of parameters. Secondly, there exist unique geodesics between any two points of the belief-reward manifold. This implies that the divergence function between any two belief-reward distributions is uniquely defined. Instead of having such modest requirement, we represent our proofs in form of the exponential family distributions due to ease of presentation and our limited interest.</p><p>Theorem 1. For given set of belief-reward distributions {P a t } K a=1 defined on the same support set and having a finite expectation, Pt is uniquely defined, and is such that its expectation parameter verifies μt (θ</p><formula xml:id="formula_28">) = 1 K K a=1 µ a t (θ).</formula><p>Proof. For belief-reward distributions P a and P, the KL-divergence is defined as</p><formula xml:id="formula_29">D KL (P a t P) = θ X P a t (X, θ) log P a t (X, θ) P(X, θ) dxdθ = θ X f θ (X)b a ξt (θ) log b a ξt (θ) b ξ (θ) dxdθ = θ b a ξt (θ) log b a ξt (θ) b ξ (θ) X f θ (X)dx dθ = θ b a ξt (θ) log b a ξt (θ) b ξ (θ) dθ = E b a t [ ξ a t , Θ(θ) -Ψ a t (ξ a t ) -ξ, Θ(θ) + Ψ (ξ)] = ξ a t -ξ, µ a t (θ) -Ψ a t (ξ a t ) + Ψ (ξ).</formula><p>Thus, the objective function that P minimises is given by</p><formula xml:id="formula_30">F (P) 1 K K a=1 D KL (P a t P) = 1 K K a=1 ξ a t -ξ, µ a (θ) - 1 K K a=1 Ψ a t (ξ a t ) + Ψ (ξ).<label>(9)</label></formula><p>Since the exponential family distributions are dually flat <ref type="bibr">[1]</ref>, we get a unique expectation parametrisation µ(θ) of the belief distributions for a given natural parametrisation ξ. The expectation parameter is defined as</p><formula xml:id="formula_31">µ(θ) E b [Θ(θ)] = ∇ ξ Ψ (ξ). µ(θ)</formula><p>dually expresses a natural parametrisation as its dual. Mathematically, ξ = ∇ µ ( ξ, µ -Ψ (ξ)) = ∇ µ Φ(µ). Ψ (ξ) and Φ(µ) are log-normalisers under two parametrisations and are convex conjugate to each other. If we define μt (θ)</p><formula xml:id="formula_32">1 K K a=1 µ a t ,</formula><p>we get a unique natural parameter ξt ξ(μ t ). This allows us to rewrite Equation <ref type="formula" target="#formula_30">9</ref>as</p><formula xml:id="formula_33">F (P) = ξt -ξ, μt (θ) -Ψ ( ξt ) + Ψ (ξ) + 1 K K a=1 ( ξ a t , µ a t (θ) -Ψ a t (ξ)) -( ξ(μ t ), μt (θ) -Ψ (ξ(μ t )) = D KL (P μt P) + 1 K K a=1 Φ(µ a t ) -Φ(μ t ) 1 K K a=1 Φ(µ a t ) -Φ(μ t ). 0 0.5 1 Reward(R) 0 0.2 0.4 0.6 0.8 1 L t (R)</formula><p>(1) &gt; ( <ref type="formula" target="#formula_43">10</ref>) &gt; (100) &gt; (1000)</p><p>(1000) Fig. <ref type="figure">7</ref>. Evolution of the focal distribution over X ∈ [0, 1] for t = 1, 10, 100 and 1000.</p><p>Since D KL (P μt P) = 0 for P = P μt , F (P) reaches unique minimum F (P μ) for the belief-reward distribution with expectation parameter μt (θ)</p><formula xml:id="formula_35">1 K K a=1 µ a t .</formula><p>Thus, for a given set of belief-reward distributions the pseudobelief-reward distribution Pt (X, θ) P μt (X, θ) is a unique distribution in belief-reward manifold.</p><p>Corollary 1. The pseudobelief-reward distribution Pt (X, θ) is the unique point on the belief-reward manifold that has minimum KL-divergence from the distribution Pt (X, θ)</p><formula xml:id="formula_36">1 K K a=1 P a t (X, θ).</formula><p>Proof. KL-divergence from Pt (X, θ) to any pseudobelief-reward distribution P(X, θ)is D KL Pt P = D KL Pt Pt + ξt -ξ, μt -Ψ ( ξt ) + Ψ (ξ) = D KL P P + D KL P P .</p><p>Here, Pt is the pseudobelief distribution with ξt and μt as defined in Theorem 1.</p><p>Since Pt is a mixture of belief-reward distributions, it does not belong to the beliefreward manifold. Thus, Pt = Pt and D KL Pt Pt &gt; 0. Hence, D KL Pt P attends unique minimum for P = Pt .</p></div>
+<div><head>A.4 Focal Distribution: Visualisation</head><p>The focal distribution gradually concentrates on higher rewards as the exposure τ (t) decreases with time. We see this feature in Figure <ref type="figure">7</ref>. Thus, it constrains using KL-divergence to choose distributions with higher rewards and induces the exploitive bias.</p></div>
+<div><head>A.5 Condition for Existence of Alternating Projection Scheme</head><p>Both I-and rI-projections are valid and well-defined if the KL-divergence between any two distributions in P and Q is defined and finite.</p><p>Assumption 4 (Absence of singularities). The distribution families P and Q are defined over the sets Supp(P) {a : p(a) &gt; 0, ∀p ∈ P} and Supp(Q) {a : q(a) &gt; 0, ∀p ∈ P} respectively. Moreover, none of the supports are empty and Supp(P) ⊆ Supp(Q).</p><p>A.6 Implications of Alternating Projections Definition 4 (I-projection). The information projection (or I-projection) of a distribution Q ∈ Q onto a non-empty, closed, convex set P of probability distributions, P a 's, defined on a fixed support set is defined by the probability distribution P a * ∈ P that has minimum KL-divergence to q: P a * arg min P a ∈P D KL (P a Q).</p><p>Since D KL (p(s) q(s)) = -h(p(s)) + H(p(s), q(s)), we observe that the Iprojection p * is the distribution in P that maximises the entropy h(p) of P, while minimising the mutual information H(p, q): it is the distribution in P which is most similar to q. This implies that the I-projection p * captures at least the first moment, i.e., the expectation of the fixed distribution q.</p><p>In the last part (Lines 8-9), the updated beliefs are used to obtain the pseudobelief-focal-reward distribution using rI-projection. Following Theorem 1, rI-projection would lead to a unique pseudobelief-focal-reward distribution for a given set of belief-rewards and exposure τ (t). Here, <software>BelMan</software> is inducing the exploitative bias. It keeps the pseudobelief-focal-reward distribution away from the 'actual' barycentre of the belief-reward distributions and pushes it towards the arms with higher expected reward. Increasing exploitative bias eventually merges the pseudobelief-focal-reward distribution to the distribution of the arm having the highest expected reward.</p><p>Definition 5 (rI-projection). The reverse information projection (or rI-projection) of a distribution P a ∈ P onto Q, which is also a non-empty, closed, convex set of probability distributions on a fixed support set, is defined by the distribution Q * ∈ Q that has minimum KL-divergence from P a : Q * arg minQ ∈Q D KL (P a Q).</p><p>The rI-projection finds the distribution q * from a space of candidate distributions Q that encodes maximum information of the distribution p. If the set of candidate distributions is engendered by a statistical model, the rI-projection of the empirical distribution formed from samples to the model is equivalent to finding the maximum likelihood estimate. Since rI-projection aims to maximise the complete likelihood rather than finding a distribution with similar entropy, q * also captures higher moments of the fixed distribution p. Thus, it is computationally more demanding but more informative than I-projection.</p><p>Due to the underlying minimisation operation, if we begin from p 0 ∈ P and q 0 ∈ Q and alternately perform I-projection and reverse I-projection, it will lead to two distributions p * and q * for which the KL-divergence between sets P and Q are minimum <ref type="bibr" target="#b9">[10]</ref>.</p></div>
+<div><head>A.7 Law of Convergence for the Pseudobelief-reward Distribution</head><p>We are simultaneously approximating the belief-reward parameters as well as the pseudobelief-reward parameters. If we look into the belief update step (Equation <ref type="formula" target="#formula_1">1</ref>), we observe that the belief distribution of each arm b a ξt (θ) is updated by incorporating i.i.d samples obtained from the reward distribution of that arm. Let us assume that <software ContextAttributes="used">BelMan</software> has played total T times and any arm a for t a T times. Since we are doing naïve Bayesian updates with i.i.d. samples, the belief distributions will follow central limit theorem. This means that if μa t a is the estimate of the expectation parameters of the belief distribution of arm a constructed from samples {X a i }</p><formula xml:id="formula_37">t a T i=1 , t a T (μ a t a</formula><p>T -µ a ) converges in distribution to a centered normal random vector in N (0, Σ a ). In Theorem 2, we show that the estimator of the mean parameters of pseudobelief is also consistent with these estimators and satisfies central limit theorem.</p><p>Theorem 2 (Central limit theorem). If μT</p><formula xml:id="formula_38">1 K K a=1 μa t a</formula><p>T is estimator of the expectation parameters of the pseudobelief distribution, √ T ( μT -μ) converges in distribution to a centered normal random vector in N (0, Σ). The covariance matrix Σ = K a=1 λ a Σ a such that T K 2 t a T tends to λ a as T → ∞.</p></div>
+<div><head>Proof. The characteristics function for</head><formula xml:id="formula_39">√ N ( μN -μ) is Φ √ T ( μT -μ) (t) = E exp(ι t, √ T ( μT -μ) ) = E exp(ι t, √ T K K a=1 (μ a t a T -µ a ) ) = K a=1 E exp(ι t, √ T K (μ a t a T -µ a ) ) = K a=1 E exp(ι √ T K t a T t, t a T (μ a t a T -µ a ) ) = K a=1 Φ √ t a T (μ a t a T -µ a ) √ T K t a T t Since each of the t a T (μ a t a</formula><p>T -µ a ) converges in distribution to a random vector that follows N (0, Σ a ), the covariance matrix for √ T ( μT -μ) would be</p><formula xml:id="formula_40">lim T →∞ K a=1 √ T K √ t a T 2 Σ a = K a=1 λ a Σ a Σ.</formula><p>A.8 Proof of Theorem 3</p><p>Theorem 3 (Asymptotic consistency). Given τ (t) = 1 log t+c×log log t for any c 0, BelMan will asymptotically converge to choosing the optimal arm in case of a bandit with bounded reward and finite arms. Mathematically, if there exists µ * max a µ(θ a ), lim</p><formula xml:id="formula_41">T →∞ 1 T E T t=1 X at = µ * .<label>(3)</label></formula><p>We reformulate this result more precisely using Lemma 2.</p><p>Lemma 2. If Assumption 3 is true and there exists at least an optimal arm with expected reward µ * max a µ(θ a ), and the exposure satisfies lim t→∞ τ (t)</p><formula xml:id="formula_42">1 √</formula><p>2C , then <software>BelMan</software> would satisfy asymptotic consistency</p><formula xml:id="formula_43">lim T →∞ 1 T E T t=1 (X At ) = µ * .<label>(10)</label></formula><p>Proof. Without loss of generality, let us consider that there exists at least one optimal arm and it is identified as the arm a = 1. At the I-projection step, we choose the arm that has minimum KL-divergence D KL P a t (X, θ) Q(X, θ) from the pseudobelief-focal distribution. Thus, we have to prove that for large t and for all a = 1,</p><formula xml:id="formula_44">lim t→∞ P(D KL P 1 t (X, θ) Q(X, θ) -D KL P a t (X, θ) Q(X, θ) &lt; 0) = 1.</formula><p>This is equivalent to proving that almost surely lim t→∞</p><formula xml:id="formula_45">D KL P 1 t (X, θ) Q(X, θ) -D KL P a t (X, θ) Q(X, θ) &lt; 0.<label>(11)</label></formula><p>We begin as follows,</p><formula xml:id="formula_46">D KL P 1 t (X, θ) Q(X, θ) -D KL P a t (X, θ) Q(X, θ) = X θ P 1 t (X, θ) log P 1 t (X, θ) dθ dX - X θ P a t (X, θ) log P a t (X, θ) dθ dX T1 + X θ P a t (X, θ) -P 1 t (X, θ) log Q(X, θ) dθ dX T2</formula><p>The first term T1 is the difference in entropy in two of the arms.</p><formula xml:id="formula_47">T1 = X θ P 1 t (X, θ) log P 1 t (X, θ) dθ dX - X θ P a t (X, θ) log P a t (X, θ) dθ dX = X θ P a t (X, θ) -P 1 t (X, θ) log P 1 t (X, θ) dθ dX -D KL P a t (X, θ) P 1 t (X, θ) (a) X θ P a t (X, θ) -P 1 t (X, θ) log P 1 t (X, θ) dθ dX (b) X θ P a t (X, θ) -P 1 t (X, θ) log P 1 t (X, θ) dθ dX (c) sup X,θ log P 1 t (X, θ) X θ P a t (X, θ) -P 1 t (X, θ) dθ dX (d) sup X,θ log P 1 t (X, θ) log 2 2 D KL (P a t (X, θ) P 1 t (X, θ))</formula><p>The inequality (a) is due to the non-negativity of KL-divergence. Inequality (b) is derived from the monotonicity of integrals. This means that if f g for all w ∈ W then w∈W f (w) dw w∈W g(w) dw. Boundedness of the logarithmic density function of the pseudobelief-reward as stated in Proposition 3 results to inequality (c). Inequality (d) is obtained from Pinsker's inequality <ref type="bibr">[9]</ref>.</p><p>Similarly, we get for the second term T2:</p><formula xml:id="formula_48">T2 = X θ P a t (X, θ) -P 1 t (X, θ) log Q(X, θ) dθ dX) = X θ P a t (X, θ) -P 1 t (X, θ) log a P a t (X, θ) λ a t dθ dX - 1 τ (t) E P 1 t (X,θ)-P a t (X,θ) [X] + log Zt × E P 1 t (X,θ)-P a t (X,θ) [1] (e) sup X,θ log P 1 t (X, θ) log 2 2 D KL (P a t (X, θ) P 1 t (X, θ)) - ∆ a t τ (t) .</formula><p>Here, ∆ a t µ 1 t -µ a t , which means the difference between the expected reward of the optimal arm and the suboptimal arm a. Inequality (e) is obtained by applying AM-GM inequality, inequalities (a), (b), (c), and (d) in sequence. Thus,</p><formula xml:id="formula_49">T1 + T2 sup X,θ log P 1 t (X, θ) 2 log 2 D KL (P a t (X, θ) P 1 t (X, θ)) - ∆ a t τ (t) = 2 log 2 D KL (P a t (X, θ) P 1 t (X, θ)) sup X,θ log P 1 t (X, θ) - 1 τ (t) ∆ a t D KL (P a t (X, θ) P 1 t (X, θ)) 2 log 2 D KL (P a t (X, θ) P 1 t (X, θ)) sup X,θ log P 1 t (X, θ) - 1 √ 2τ (t)</formula><p>If we consider lim t→∞ for both sides of the inequality, we observe Equation 11 is true if</p><formula xml:id="formula_50">lim t→∞ sup X,θ log P 1 t (X, θ) - 1 √ 2τ (t) &lt; 0.</formula><p>This holds as D KL P a t (X, θ) P 1 t (X, θ) &gt; 0 for all a and t. By Assumption 4, we get lim t→∞ sup X,θ log P 1 t (X, θ) C + log P 1 t (X, θ) = C (say). Thus, we get in order to satisfy the inequality lim t→∞ τ (t) &lt; 1 √ 2C which is in our premise. Lemma 3. For τ (t) = 1 log t+c×log log t with c 0, lim t→∞ τ (t) &lt; 1 C for any C &lt; ∞.</p><p>Proof. Since lim t→∞ 1 log t+c log log t = 0, the aforementioned claim holds true. Lemma 2 and 3 together prove Theorem 3. This proves that <software>BelMan</software> is asymptotically consistent for finite-arm stochastic bandit problems.</p><p>For exploration-exploitation bandit problem, we observe that τ (t) has to be a positive valued function of time t that asymptotically decreases with time. Such decay in the value of exposure τ (t) adaptively increases the importance of reward maximisation over minimising the KL-divergence between the belief-reward of selected arm and the pseudobelief-reward. This mechanism allows <software>BelMan</software> to adaptively balance between the exploration and exploitation components.</p><p>The growth rate proposed for exposure, O( 1 log t ), is a loose bound. Beside this, it is also distribution independent. Thus, we observe a gap between the bound on exposure growth obtained here, and the one used in practice. It would be interesting to find out tighter bounds with more specific constants for given reward distributions.</p></div>
+<div><head>A.9 BelMan for Exponential Family Distributions</head><p>As mentioned in Section B.2, exponential family <ref type="bibr">[6]</ref> is a class of probability distributions which can be defined using a set of natural parameters ω(θ) and a given natural sufficient statistics T (X) as follows:</p><formula xml:id="formula_51">f θ (X) h(X) exp ( ω(θ), T (X) -A(θ)) .</formula><p>Here, h(X) is the base measure on reward X and A(θ) is called the log-partition function. The exponential family includes the majority of the distributions found in the bandit literature such as Bernoulli, beta, Gaussian, Poisson, exponential, and chi-squared.</p><p>We choose the exponential family to instantiate our framework not only because of its wide range and applicability but also due to its well behaving Bayesian and information geometric properties. From a Bayesian point of view, the most useful property of the exponential family is the existence of conjugate distributions which also belong to this family <ref type="bibr">[6]</ref>. Two parametric distributions f θ (X) and b η (θ) are conjugate if the posterior distribution P(θ|X) formed by multiplying them has the same form as b η (θ). Thus, if the reward distribution belongs to the exponential family, the belief distribution is represented as: b η (θ) h(θ) exp ( η, T (θ) -A(η)) with the natural parameters η.</p><p>Since exponential family distributions are flat with respect to KL-divergence <ref type="bibr">[1]</ref>, both I-and rI-projections in <software ContextAttributes="used">BelMan</software> are well-defined and unique. Thus, at each iteration, we obtain an optimal and unambiguous choice of the arm and pseudobelief respectively. <ref type="bibr">[1]</ref> also stated that the necessary and sufficient condition for a parametric probability distribution to have an efficient estimator is that the distribution belongs to the exponential family and has an expectation parametrisation. Thus, working with exponential family distributions implicitly supports the well-defined nature and possibility of getting an efficient estimation. Being a member of the exponential family, the belief distributions b η (θ) construct a statistical manifold with local co-ordinates η <ref type="bibr">[1]</ref>. Theorem 1 and 2 validate these claims in case of <software ContextAttributes="used">BelMan</software>.</p><p>Bernoulli Bandits. In the case of Bernoulli bandits, we assume that drawing an arm returns the rewards 1 and 0 with probability θ and 1 -θ respectively. Thus, the reward distribution of the a th arm is f θa (X)</p><p>Ber(θ a ). Following the Bayesian approach, we choose the conjugate prior to begin with. Thus, we keep the prior belief over each arm as a beta distribution with shape parameters {α a } K a=1 and {β a } K a=1 . After t-iterations the prior over the probability of success of the a th arm is b a t (θ a ) Beta(θ a ; α a t , β a t ) = 1 B(α a t , β a t )</p><formula xml:id="formula_52">θ α a t -1 a (1 -θ a ) β a t -1 ,</formula><p>for α a t , β a t &gt; 0 and θ a ∈ (0, 1). Here, α a t and β a t are the number of successes and failures, respectively, for the arm a till iteration t. We begin with both α a 0 and β a 0 to be 1 for all arms. This amounts to the uniform distribution over 0 and 1. This initialisation allows us to choose all the arms with equal probability and without any initial bias. We update this belief eventually as we further draw the arms and compute it using <software ContextAttributes="used">BelMan</software>. Under this specific setting of beta prior and Bernoulli reward, we compute the targeted KL-divergence of <software ContextAttributes="used">BelMan</software> as Here, N a t = α a t + β a t is the total number of times the jth arm is played till the nth iteration, N = ᾱ + β and Ψ is the digamma function <ref type="bibr">[5]</ref> defined as the derivative of the logarithm of gamma function, i.e. d da (log Γ (a)). In Line 4 of Algorithm 1, we first perform the I-projection to decide which arm a t to draw to minimize the KL-divergence. Following this, we update the pseudobelief using I-projection in Line 9 of Algorithm 1. In order to perform this update, we find out such ᾱ and β that minimize the objective and update the pseudobelief accordingly. The presence of pseudobelief offers <software ContextAttributes="used">BelMan</software> a chance to explore the less successful arms to minimize the entropy, while the Focal distribution creates the scope of exploiting the present information of the best arm.</p><p>Exponential Bandits. The exponential distribution is another member of the exponential family. For a given positive rate parameter θ a , the reward distribution of arm a of exponential bandit is f θa (X) θ a exp(-θ a X) for X ∈ [0, ∞). Following the structure of Sections A.9 and the previous Bernoulli case, we obtain the gamma distribution, another member of the exponential family, as the conjugate prior. After the t th iteration, the belief distribution corresponding to a th arm is expressed as b a t (θ a ) Gamma(θ a ; α a t , β a t ) =</p><formula xml:id="formula_53">β a t α a t Γ (α a t )</formula><p>θ a α a t -1 exp(-θ a β a t ), for both shape and rate parameters α a t , β a t &gt; 0. Here, α a t and β a t are, respectively, the number of times the arm a is played and sum of the rewards obtained by playing the arm till iteration t. As we update using Equation (1), we get gamma distributions with parameters α a t+1 = α a t + 1, and β a t+1 = β a t + x t if the arm a is played and a reward x t is obtained. Under this specific setting of gamma prior and exponential reward, we compute the targeted KL-divergence of <software>BelMan</software> as + ᾱt-1 log β a t ] + K log Zt + K log (Γ (ᾱ t-1 )) -K ᾱt-1 log βt-1 .</p><formula xml:id="formula_54">K a=1 D KL P a t (X, θ) Q(X, θ) = K a=1 [- 1 τ (t)</formula><p>We incorporate this analytical form in Algorithm 1 and update it as mentioned in the Bernoulli case. Figure <ref type="figure">8</ref>, 9, and 10 show the evolution of cumulative regret with number of iterations for the three cases whose number of suboptimal arm draws are reported in Figure <ref type="figure" target="#fig_0">1</ref>, 2, and 3, respectively.</p><p>We also experimented on another 2-arm bandit scenario with means 0.45 and 0.55. Figures 11 depicts the evolution of cumulative regret and suboptimal draws for <software ContextAttributes="used">BelMan</software> and the other competing algorithms. Similar to Figure <ref type="figure" target="#fig_7">11</ref>, we observe the cumulative regret of <software ContextAttributes="used">BelMan</software> grows at first linearly and then it transits to a state of slow growth. Except showing this ideal behaviour, <software ContextAttributes="used">BelMan</software> performs competitively with the contending algorithms. This shows its efficiency as a candidate solution to the exploration-exploitation bandit.</p><p>Figure <ref type="figure" target="#fig_0">12</ref> shows performance for 10-arm Bernoulli bandit. For this setup, <software ContextAttributes="used">BelMan</software> outperforms other algorithms. We also observe though the number of arms increases from Figure <ref type="figure" target="#fig_7">11</ref> to Figure <ref type="figure" target="#fig_0">12</ref> that performance of all algorithms is comparatively better in the first case. This is explainable from the fact that hardness of minimising cumulative regret increases as the number of arms increases. Beside that, as more arms with identical or almost identical distributions appear, the algorithm requires more exploration to separate them and to determine which one is optimal. The difference in performance between Figure <ref type="figure" target="#fig_7">11</ref> and 1 indicates this.</p><p>We finally tested <software ContextAttributes="used">BelMan</software> on an exponential bandit consisting of 5-arms with expected rewards {0.2, 0.25, 0.33, 0.5, 1.0}. We compare performance of <software ContextAttributes="used">BelMan</software> with state-of-the-art frequentist method tailored for exponential distribution of rewards, called KL-UCBExp <ref type="bibr">[15]</ref>. We also compare it with Thompson sampling, UCBtuned and uniform sampling method (Random). The results are shown in Figure <ref type="figure" target="#fig_0">13</ref> and 14. Since the formulation is oblivious to boundedness of the distribution, we choose to validate also on unbounded rewards. In Figure <ref type="figure" target="#fig_0">13</ref>, it outperforms all the other algorithms. In Figure <ref type="figure" target="#fig_2">14</ref>, though KL-UCBexp performs the best, performance of <software ContextAttributes="used">BelMan</software> is still competitive with it.</p><p>These results validate <software>BelMan</software>'s claim as a generic solution to a wide range of bandit problems.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig.1. Evolution of number of suboptimal draws for 2-arm Bernoulli bandit with expected rewards 0.8 and 0.9 for 1000 iterations. The dark black line shows the average over 25 runs. The grey area shows the 75 percentile.</figDesc></figure>
+<figure xml:id="fig_1"><head>Fig. 2 .Fig. 3 .</head><label>23</label><figDesc>Fig.2. Evolution of number of suboptimal draws for 20-arm Bernoulli bandit with expected rewards [0.25 0.22 0.2 0.17 0.17 0.2 0.13 0.13 0.1 0.07 0.07 0.05 0.05 0.05 0.02 0.02 0.02 0.01 0.01 0.01] for 1000 iterations.</figDesc></figure>
+<figure xml:id="fig_2"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Evolution of (mean) regret for exploration-exploitation 20-arm Bernoulli bandit setting of Figure 2 with hori-zon=50,000.</figDesc><graphic coords="12,291.91,110.93,201.15,139.50" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 5 .</head><label>5</label><figDesc>Fig. 5. Evolution of (mean) cumulative regret for two-phase 20-arm Bernoulli bandits.</figDesc></figure>
+<figure xml:id="fig_4"><head>Fig. 6 .</head><label>6</label><figDesc>Queue regret for single queue and 5 server setting with Poisson arrival with arrival rate 0.35 and Bernoulli service distribution with service rates [0.5,0.33,0.33,0.33,0.25], [0.33,0.5,0.25,0.33,0.25], and [0.25,0.33,0.5,0.25,0.25] respectively. Each experiment is performed 50 times for a horizon of 10,000.</figDesc></figure>
+<figure xml:id="fig_5"><head>D-</head><label /><figDesc>KL P a t (X, θ) Qt-1 (X, θ) log (B (α a t , β a t )) + (α a t -ᾱt-1 )Ψ (α a t ) + (β a t -βt-1 )Ψ (β a t )-(N a t -Nt-1 )Ψ (N a t )] + K log ᾱt-1 exp( 1 τ (t) ) + βt-1 Nt-1 + K log B ᾱt-1 , βt-1 .</figDesc></figure>
+<figure xml:id="fig_7"><head>Fig. 11 .</head><label>11</label><figDesc>Fig. 11. Evolution of cumulative regret (top), and number of suboptimal draws (bottom) for 500 iterations for 2-arm Bernoulli bandit with means 0.45 and 0.55.</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgement</head><p>We would like to thank <rs type="person">Jonathan Scarlett</rs> for valuable discussions. This work is partially supported by <rs type="funder">WASP-NTU</rs> grant, the <rs type="funder">National University of Singapore Institute for Data Science project WATCHA</rs>, and <rs type="funder">Singapore Ministry of Education</rs> project Janus.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div><p>for 20-arm Bernoulli bandit with expected rewards [0.25 0.22 0.2 0.17 0.17 0.2 0.13 0.13 0.1 0.07 0.07 0.05 0.05 0.05 0.02 0.02 0.02 0.01 0.01 0.01] for 1000 iterations. </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Barycenters in the wasserstein space</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Agueh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Carlier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM Journal on Mathematical Analysis</title>
+		<imprint>
+			<biblScope unit="volume">43</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="904" to="924" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Methods of information geometry</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Amari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Nagaoka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Translations of mathematical monographs</title>
+		<imprint>
+			<biblScope unit="volume">191</biblScope>
+			<date type="published" when="2007">2007</date>
+			<publisher>American Mathematical Society</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Finite-time analysis of the multiarmed bandit problem</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fischer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="235" to="256" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Information geometry of covariance matrix: Cartan-siegel homogeneous bounded domains, mostow/berger fibration and frechet median</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Barbaresco</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Matrix Information Geometry</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="199" to="255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A problem in the sequential design of experiments</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bellman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sankhyā: The Indian Journal of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="221" to="229" />
+			<date type="published" when="1933">1933-1960. 1956</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Fundamentals of Statistical Exponential Families: With Applications in Statistical Decision Theory</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Brown</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1986">1986</date>
+		</imprint>
+		<respStmt>
+			<orgName>Institute of Mathematical Statistics</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Regret analysis of stochastic and nonstochastic multi-armed bandit problems</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="122" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Pure exploration in multi-armed bandits problems</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Munos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoltz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ALT</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="23" to="37" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">É</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<ptr target="http://mloss.org/software/view/415/" />
+		<title level="m">pymaBandits</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Sanov property, generalized I-projection and a conditional limit theorem</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Csiszár</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Probability</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="768" to="793" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Optimal statistical decisions</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Degroot</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<biblScope unit="volume">82</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><surname>Durrett</surname></persName>
+		</author>
+		<title level="m">Probability: theory and examples</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Adaptive web crawling through structure-based link classification</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Faheem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICADL</title>
+		<meeting>ICADL<address><addrLine>Seoul, South Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015-12">Dec 2015</date>
+			<biblScope unit="page" from="39" to="51" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">The KL-UCB algorithm for bounded stochastic bandits and beyond</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="359" to="376" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">On explore-then-commit strategies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lattimore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page" from="784" to="792" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ménard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoltz</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1602.07182</idno>
+		<title level="m">Explore first, exploit next: The true shape of regret in bandit problems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Bandit processes and dynamic allocation indices</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Gittins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society. Series B (Methodological)</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="148" to="177" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Thompson sampling for learning parameterized markov decision processes</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gopalan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mannor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Learning Theory</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="861" to="898" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Prior probabilities</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">T</forename><surname>Jaynes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Systems Science and Cybernetics</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="227" to="241" />
+			<date type="published" when="1968">1968</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">On bayesian index policies for sequential resource allocation</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="842" to="865" />
+			<date type="published" when="2018-04">April 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">On Bayesian upper confidence bounds for bandit problems</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="592" to="600" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Information complexity in bandit subset selection</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kalyanakrishnan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="228" to="251" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Efficient Thompson sampling for online matrix-factorization recommendation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kawale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">H</forename><surname>Bui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kveton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Tran-Thanh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chawla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1297" to="1305" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Regret of queueing bandits</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Krishnasamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Johari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Shakkottai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1669" to="1677" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Information theory and statistics</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kullback</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+			<publisher>Courier Corporation</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Asymptotically efficient adaptive allocation rules</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Robbins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Adv. Appl. Math</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="4" to="22" />
+			<date type="published" when="1985-03">Mar 1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Bandit problems and the exploration/exploitation tradeoff</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">G</forename><surname>Macready</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">H</forename><surname>Wolpert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on evolutionary computation</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="2" to="22" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Computing a classic index for finite-horizon bandits</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nino-Mora</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">INFORMS Journal on Computing</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="254" to="267" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Pure exploration in episodic fixed-horizon Markov decision processes</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tulabandhula</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAMAS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1703" to="1704" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Some aspects of the sequential design of experiments</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Robbins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bull. Amer. Math. Soc</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="527" to="535" />
+			<date type="published" when="1952-09">09 1952</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Simple bayesian algorithms for best arm identification</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Russo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Learning Theory</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1417" to="1418" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">An information-theoretic analysis of Thompson sampling</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Russo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Van Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Rates of convergence of posterior distributions</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wasserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="687" to="714" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">On the likelihood that one unknown probability exceeds another in view of the evidence of two samples</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">R</forename><surname>Thompson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page">285</biblScope>
+			<date type="published" when="1933">1933</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Probability inequalities for likelihood ratios and convergence rates of sieve mles</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">H</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Shen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="339" to="362" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+	<note>References for the Appendix</note>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Methods of information geometry</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">I</forename><surname>Amari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Nagaoka</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Translations of mathematical monographs</title>
+		<imprint>
+			<biblScope unit="volume">191</biblScope>
+			<date type="published" when="2007">2007</date>
+			<publisher>American Mathematical Society</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Best arm identification in multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Audibert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="41" to="53" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Finite-time analysis of the multiarmed bandit problem</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fischer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="235" to="256" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">A problem in the sequential design of experiments</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bellman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Sankhyā: The Indian Journal of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">3/4</biblScope>
+			<biblScope unit="page" from="221" to="229" />
+			<date type="published" when="1933">1933-1960. 1956</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Algorithm AS 103: Psi (digamma) function</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Bernardo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society. Series C (Applied Statistics)</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="315" to="317" />
+			<date type="published" when="1976">1976</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Fundamentals of Statistical Exponential Families: With Applications in Statistical Decision Theory</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Brown</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1986">1986</date>
+		</imprint>
+		<respStmt>
+			<orgName>Institute of Mathematical Statistics</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Multiple identifications in multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Viswanathan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="258" to="265" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Pure exploration in multi-armed bandits problems</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bubeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Munos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoltz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ALT</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="23" to="37" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Sanov property, generalized I-projection and a conditional limit theorem</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">M</forename><surname>Cover</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Thomas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Csiszár</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Probability</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="768" to="793" />
+			<date type="published" when="1984">2012. 1984</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+		</imprint>
+	</monogr>
+	<note>Elements of information theory</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Sample complexity of episodic fixed-horizon reinforcement learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Brunskill</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2818" to="2826" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Sur les lois de probabilites a estimation exhaustive</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Darmois</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">C. R. Acad. Sci</title>
+		<imprint>
+			<biblScope unit="volume">200</biblScope>
+			<biblScope unit="page" from="1265" to="1266" />
+			<date type="published" when="1935">1935</date>
+			<pubPlace>Paris</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<monogr>
+		<title level="m" type="main">Optimal statistical decisions</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Degroot</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<biblScope unit="volume">82</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Adaptive web crawling through structure-based link classification</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Faheem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICADL</title>
+		<meeting>ICADL<address><addrLine>Seoul, South Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015-12">Dec 2015</date>
+			<biblScope unit="page" from="39" to="51" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">The KL-UCB algorithm for bounded stochastic bandits and beyond</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="359" to="376" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Bandit processes and dynamic allocation indices</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Gittins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society. Series B (Methodological)</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="148" to="177" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">An asymptotically optimal policy for finite support models in the multiarmed bandit problem</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Honda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Takemura</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">85</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="361" to="391" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">On bayesian index policies for sequential resource allocation</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">46</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="842" to="865" />
+			<date type="published" when="2018-04">April 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">On Bayesian upper confidence bounds for bandit problems</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="592" to="600" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Information complexity in bandit subset selection</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kalyanakrishnan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">COLT</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="228" to="251" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">On distributions admitting a sufficient statistic</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">O</forename><surname>Koopman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Transactions of the American Mathematical society</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="399" to="409" />
+			<date type="published" when="1936">1936</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<monogr>
+		<title level="m" type="main">Information theory and statistics</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kullback</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+			<publisher>Courier Corporation</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Asymptotic solutions of bandit problems</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Lai</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Stochastic differential systems, stochastic control theory and applications</title>
+		<editor>
+			<persName><forename type="first">W</forename><surname>Fleming</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><forename type="middle">L</forename><surname>Lions</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="1988">1988</date>
+			<biblScope unit="page" from="275" to="292" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Asymptotically efficient adaptive allocation rules</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Robbins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Adv. Appl. Math</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="4" to="22" />
+			<date type="published" when="1985-03">Mar 1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Computing a classic index for finite-horizon bandits</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Nino-Mora</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">INFORMS Journal on Computing</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="254" to="267" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">More) efficient reinforcement learning via posterior sampling</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Osband</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Russo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Van Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="3003" to="3011" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">Pure exploration in episodic fixed-horizon Markov decision processes</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">R</forename><surname>Putta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tulabandhula</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAMAS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1703" to="1704" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Some aspects of the sequential design of experiments</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Robbins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bull. Amer. Math. Soc</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="527" to="535" />
+			<date type="published" when="1952-09">09 1952</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">A modern Bayesian look at the multi-armed bandit</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">L</forename><surname>Scott</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Applied Stochastic Models in Business and Industry</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="639" to="658" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">On the likelihood that one unknown probability exceeds another in view of the evidence of two samples</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">R</forename><surname>Thompson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page">285</biblScope>
+			<date type="published" when="1933">1933</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

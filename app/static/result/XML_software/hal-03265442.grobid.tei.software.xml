@@ -1,0 +1,716 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">On Limited-Memory Subsampling Strategies for Bandits</title>
+				<funder ref="#_ucTjJs2">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Dorian</forename><surname>Baudry</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">UMR</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<orgName type="institution" key="instit4">Centrale Lille</orgName>
+								<address>
+									<addrLine>9198-CRIStAL</addrLine>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yoan</forename><surname>Russac</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory" key="lab1">DI ENS</orgName>
+								<orgName type="laboratory" key="lab2">ENS</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">Université PSL</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Olivier</forename><surname>Cappé</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="laboratory" key="lab1">DI ENS</orgName>
+								<orgName type="laboratory" key="lab2">ENS</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">Université PSL</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">On Limited-Memory Subsampling Strategies for Bandits</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">33C1D51628BCF942542AA1C0D405DB1E</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>There has been a recent surge of interest in nonparametric bandit algorithms based on subsampling. One drawback however of these approaches is the additional complexity required by random subsampling and the storage of the full history of rewards. Our first contribution is to show that a simple deterministic subsampling rule, proposed in the recent work of <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> under the name of "last-block subsampling", is asymptotically optimal in one-parameter exponential families. In addition, we prove that these guarantees also hold when limiting the algorithm memory to a polylogarithmic function of the time horizon. These findings open up new perspectives, in particular for non-stationary scenarios in which the arm distributions evolve over time. We propose a variant of the algorithm in which only the most recent observations are used for subsampling, achieving optimal regret guarantees under the assumption of a known number of abrupt changes. Extensive numerical simulations highlight the merits of this approach, particularly when the changes are not only affecting the means of the rewards.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Introduction</head><p>In the K-armed stochastic bandit model, the learner repeatedly picks an action among K available alternatives and only observes the rewards associated with her actions. By interacting with the environment, the learner aims at maximizing her expected sum of rewards and needs to sequentially adapt her decision strategy in light of the information gained up to now. In this model, over-confident policies are provably suboptimal and a proper trade-off between exploitation and exploration has to be found.</p><p>Multi-armed bandits models have been used to address a wide range of sequential optimization tasks under uncertainty: online recommendation <ref type="bibr" target="#b23">(Li et al., 2011;</ref><ref type="bibr" target="#b24">2016)</ref>, strategic pricing <ref type="bibr" target="#b6">(Bergemann &amp; Välimäki, 1996)</ref> or clinical trials <ref type="bibr">(Zelen, 1969;</ref><ref type="bibr">Vermorel &amp; Mohri, 2005)</ref> to name a few. In its standard formulation the multi-armed bandit model postulates that the distributions of the rewards obtained when drawing the different arms remain constant over time. However, in some scenarios the stationary assumption is not realistic. In clinical trials, the disease to defeat may mutate and the initially optimal treatment could become suboptimal compared to another candidate <ref type="bibr" target="#b16">(Gorre et al., 2001)</ref>. In strategic pricing problems, the price maximizing the profit of a given asset can evolve with the introduction of a new product on the market <ref type="bibr" target="#b13">(Eliashberg &amp; Jeuland, 1986)</ref>. For online recommendation systems, the preferences of the users are likely to evolve <ref type="bibr">(Wu et al., 2018)</ref> and collected data becomes progressively obsolete.</p><p>During the past ten years, several works have considered non-stationary variants of the multi-armed bandit model, proposing methods that can be grouped into two main categories: they either actively try to detect modifications in the distribution of the arms with changepoint detection algorithms <ref type="bibr">(Liu et al., 2017;</ref><ref type="bibr" target="#b9">Cao et al., 2019;</ref><ref type="bibr" target="#b3">Auer et al., 2019;</ref><ref type="bibr" target="#b12">Chen et al., 2019;</ref><ref type="bibr" target="#b8">Besson et al., 2020)</ref> or they passively forget past information <ref type="bibr" target="#b15">(Garivier &amp; Moulines, 2011;</ref><ref type="bibr">Raj &amp; Kalyani, 2017;</ref><ref type="bibr">Trovo et al., 2020)</ref>. To some extent, all of these methods require some knowledge on the distribution to obtain theoretical guarantees.</p><p>To balance exploration and exploitation, the algorithms mentioned so far are based on one of the two standard building blocks introduced in the bandit literature: Upper Confidence Bound (UCB) constructions <ref type="bibr" target="#b2">(Auer et al., 2002)</ref> or Thompson Sampling (TS) <ref type="bibr">(Thompson, 1933)</ref>. However, there has been a recent surge of interest for alternative non-parametric bandit strategies <ref type="bibr">(Kveton et al., 2019a;</ref><ref type="bibr">b;</ref><ref type="bibr">Riou &amp; Honda, 2020)</ref>. Instead of using prior information on the reward distributions as in Thompson sampling or of building tailored upper-confidence bounds <ref type="bibr" target="#b10">(Cappé et al., 2013)</ref> those methods only use the empirical distribution of the data. These algorithms are non-parametric in the sense that the exact same implementation can be used with different probability distributions, while still achieving optimal regret guarantees (in a sense to be defined in Section 2 below).</p><p>In particular, subsampling algorithms <ref type="bibr" target="#b4">(Baransi et al., 2014;</ref><ref type="bibr" target="#b11">Chan, 2020;</ref><ref type="bibr" target="#b5">Baudry et al., 2020)</ref> have demonstrated their potential thanks to their flexibility and strong theoretical guarantees. From a high level perspective, they all rely on the same two components. (1) subsampling: the arms that have been pulled a lot are randomized by sampling only a fraction of their history. (2) duels: the arms are pulled based on the outcomes of duels between the different pairs of arms. Note that the term duel, which we will also use in the following, refers to the algorithmic principle of comparing the arms two by two, based on their subsamples. It is totally unrelated to the dueling bandit framework introduced by Yue &amp; Joachims <ref type="bibr">(2009)</ref>.</p></div>
+<div><head>Scope and contributions</head><p>In this paper, we build on the Last-Block Subsampling Duelling Algorithm (LB-SDA) introduced by <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> but for which no theoretical guarantees were provided. This approach is of interest because of its simplicity and its computational efficiency compared to other strategies based on randomized subsampling. We first prove that for stationary environments LB-SDA is asymptotically optimal in one-parameter exponential family models and therefore matches the guarantees obtained by <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> for randomized subsampling schemes. The main technical challenge is to devise an alternative to the diversity condition used in their work, which was specifically designed for randomized subsampling schemes. Furthermore, we show that, without additional changes, these guarantees still hold for a variant of the algorithm using a limited memory of the observations of each arm. We prove that storing Ω (log T ) 2 observations instead of T is sufficient to ensure the asymptotic guarantees, making the algorithm more tractable for larger time horizons. To the best of our knowledge, this paper is the first to propose an asymptotically optimal subsampling algorithm with polylogarithmic storage of rewards under general assumptions.</p><p>Building a subsampling algorithm based on the most recent observations makes it an ideal candidate for a passively forgetting policy. Our third contribution is to propose a natural extension of the LB-SDA strategy to non-stationary environments. By limiting the extent of the time window in which subsampling is allowed to occur, one obtains a passively forgetting non-parametric bandit algorithm, which we refer to as Sliding Window Last Block Subsampling Duelling Algorithm (SW-LB-SDA). To analyze the performance of this algorithm, we assume an abruptly changing environment in which the reward distributions change at unknown time instants called breakpoints. We show that SW-LB-SDA guarantees a regret of order O( Γ T T log(T )) for any abruptly changing environment with at most Γ T breakpoints, thus matching the lower bounds from <ref type="bibr" target="#b15">Garivier &amp; Moulines (2011)</ref>, up to logarithmic factors. The only required assumption is that, during each stationary phase, the reward distributions belong to the same one-parameter exponential family for all arms. Due to its non-parametric nature, this algorithm can thus be used in many scenarios of interest beyond the standard bounded-rewards / change-in-the-mean framework. We discuss some of these scenarios in Section 5, where we validate numerically the potential of the approach by comparing it with a variety of state-of-the-art algorithms for non-stationary bandits.</p></div>
+<div><head n="2.">Preliminaries</head><p>The algorithms to be presented below are designed for the stochastic K-armed bandit model, which is the most studied setting in the bandit literature. We introduce in this section the two variants of this basic model that will be considered in the paper: stationary and abruptly changing environments.</p><p>Stationary environments When the environment is stationary, the K arms are characterized by the reward distributions (ν k ) k≤K and their associated means (µ k ) k≤K , with µ = max k∈{1,...,K} µ k denoting the highest expected reward. We denote by (Y k,s ) s∈N the i.i.d. sequence of rewards from arm k. Following <ref type="bibr" target="#b11">Chan (2020)</ref>, our algorithm operates in successive rounds, whose length varies between 1 and K time steps. At each round r, the leader denoted (r) is defined and (K -1) duels with the remaining arms called challengers are performed. Denoting by N k (r) the number of pulls of arm k up to the round r the leader is the arm that has been most pulled. Namely, (r) = argmax k∈{1,...,K} N k (r) .</p><p>(1)</p><p>When several arms are candidate for the maximum number of pulls, the one with the largest sum of rewards is chosen. If this is still not sufficient to obtain a unique arm, the leader is chosen at random among the arms maximizing both criteria. At round r, a subset A r ⊂ {1, ..., K} is selected by the learner based on the outcomes of the duels against (r). Next, all arms in A r are drawn, yielding Y k,N k (r) for k ∈ A r , where N k (r) = r s=1 1(k ∈ A s ). The regret is defined as the expected difference between the highest expected reward and the rewards collected by playing the sequence of arms (A t ) t≤T :</p><formula xml:id="formula_0">R T = E T t=1 (µ -µ At ) .</formula><p>For distributions in one-parameter exponential families, the lower bound of <ref type="bibr" target="#b22">Lai &amp; Robbins (1985)</ref> states that no strategy can systematically outperform the following asymptotic regret lower bound lim inf</p><formula xml:id="formula_1">T →∞ R T log(T ) ≥ k:µ k &lt;µ µ -µ k kl(µ k , µ ) .</formula><p>Abruptly changing environments In Section 4, we consider abruptly changing environments. The number of breakpoints up to time T , denoted Γ T , is defined by</p><formula xml:id="formula_2">Γ T = T -1 t=1 1{∃k, ν k,t = ν k,t+1 }.</formula><p>The time instants (t 1 , ..., t Γ T ) associated to these breakpoints define Γ T + 1 stationary phases where the reward distributions are fixed. Note that in this model, the change do not need to affect all arms simultaneously. In such environments, letting µ t = max k∈{1,...,K} µ k,t denote the best arm at time t, the performance of a policy is measured through the dynamic regret defined as</p><formula xml:id="formula_3">R T = E T t=1 (µ t -µ At ) .</formula><p>We will explain how to extend the notion of leader to this setting in Section 4.</p><p>In the non-stationary case, the lower bound for the regret takes a different form: for any strategy, there exists an abruptly changing instance such that <ref type="bibr" target="#b15">&amp; Moulines, 2011;</ref><ref type="bibr" target="#b8">Seznec et al., 2020)</ref>. Note that in the bandit literature, there is also another, more general, way of characterizing non-stationary environments based on a variational distance introduced by <ref type="bibr" target="#b7">Besbes et al. (2014)</ref>. In this work, we however only consider the case of abruptly changing environments.</p><formula xml:id="formula_4">E[R T ] = Ω( √ T Γ T ) (Garivier</formula></div>
+<div><head n="3.">LB-SDA in Stationary Environments</head><p>In this section we detail the subsampling strategy used in the LB-DSA algorithm and obtain asymptotically optimal regret guarantees for its performance. In Section 3.3, we consider the variant of LB-SDA in which the memory available to the algorithm is strongly limited.</p></div>
+<div><head n="3.1.">Last Block Sampling</head><p>Compared to the algorithms analyzed in <ref type="bibr" target="#b5">(Baudry et al., 2020)</ref> where the sampler is randomized, we consider a deterministic sampler. At round r, the duel between arm k = (r) and the leader consists in comparing the average reward from arm k with the average reward computed only from the last N k (r) observations of the leader. The challenger k thus wins its duel if</p><formula xml:id="formula_5">Ȳk,N k (r) ≥ Ȳ (r),N (r) (r)-N k (r)+1:N (r) (r) ,<label>(2)</label></formula><p>where Ȳk,i:j = 1 j-i+1 j n=i Y k,n denotes the average computed on the j -i + 1 observations of arm k between its i-th and j-th pull, and Ȳk,n is a shortcut for Ȳk,1:n .</p><p>At each round, the set A r+1 includes all of the challengers that have defeated the leader, according to Equation (2), as well as under-explored arms for which N k (r) ≤ log(r). If A r+1 is empty, only the leader is pulled. Combining these elements gives LB-SDA detailed below. <ref type="bibr" target="#b4">Baransi et al. (2014)</ref> propose interesting arguments explaining why subsampling methods work. Essentially, if the sampler allows enough diversity in the duels, the probability of repeatedly selecting a suboptimal arm is small. On the sampler side, this condition is satisfied when out of a large number of duels between two arms there is a reasonable amount of them with non-overlapping subsamples. We prove that last block sampling satisfies such property. The second requirement concerns the distribution of the arms, and has been formulated by <ref type="bibr" target="#b4">Baransi et al. (2014)</ref> who introduced the balance function of a family of distributions. In particular, <ref type="bibr" target="#b11">Chan (2020)</ref> shows that introducing an asymptotically negligible sampling obligation of √ log r is enough to make subsampling suitable when the arms come from the same one-parameter exponential family of distributions. Namely, if each arm has at least √ log r samples at round r, the diversity of duels will guarantee each arm to be pulled enough. This exploration rate does not have to be tuned and is not detrimental in practice : for an horizon of, say, T = 10 6 it only forces each arm to be sampled at least 4 times.</p><formula xml:id="formula_6">Algorithm 1 LB-SDA Input: K arms, horizon T Initialization: t ← 1, r ← 1, ∀k ∈ {1, ..., K}, N k ← 0 while t &lt; T do A ← {}, ← leader(N, Y ) if r = 1 then A ← {1, . . . , K} (Draw each arm once) else for k = ∈ {1, ..., K} do if N k ≤ log(r) or Ȳk,N k ≥ Ȳ ,N -N k +1:N then A ← A ∪ {k} if |A| = 0 then A ← { } for k ∈ A do Pull arm k, observe reward Y k,N k +1 , N k ← N k + 1, t ← t + 1 r ← r + 1</formula></div>
+<div><head n="3.2.">Regret Analysis of LB-SDA</head><p>We consider that the arms come from the same oneparameter exponential family of distributions P Θ , i.e., that there exists a function g : R × Θ → R such that any arm k has a density of the form</p><formula xml:id="formula_7">g k (x) = g(x, θ k ) = e θ k x-Ψ(θ k ) g(x, 0) ,</formula><p>where Ψ(θ k ) = log e θ k x g(x, 0) dx . This assumption is standard in the literature and covers a broad range of bandits applications. The exact knowledge of the family of distributions of the arms (e.g Bernoulli, Gaussian with known variance, Poisson, etc.) can be used to calibrate algorithms like Thompson Sampling <ref type="bibr" target="#b18">(Kaufmann et al., 2012)</ref>, KL-UCB <ref type="bibr" target="#b10">(Cappé et al., 2013)</ref> or IMED <ref type="bibr" target="#b17">(Honda &amp; Takemura, 2015)</ref> in order to reach asymptotic optimality. Recently, subsampling algorithms like SSMC <ref type="bibr" target="#b11">(Chan, 2020)</ref> and RB-SDA <ref type="bibr" target="#b5">(Baudry et al., 2020)</ref> have been proved to be optimal without knowing exactly P Θ . This means that the same algorithm can run on Bernoulli or Gaussian distributions and achieve optimality. We first prove that LB-SDA matches these theoretical guarantees. We denote kl(µ, µ ) the Kullback-Leibler divergence between two distributions of mean µ and µ in the exponential family P Θ .</p><p>Theorem 1 (Asymptotic optimality of LB-SDA). For any bandit model ν = (ν 1 , . . . , ν K ) ⊂ P K Θ where P Θ is any one-parameter exponential family of distributions, the regret of LB-SDA satisfies, for all ε &gt; 0,</p><formula xml:id="formula_8">R(T ) ≤ k:µ k &lt;µ 1 + ε kl(µ k , µ ) log(T ) + C(ν, ε) , where C(ν, ε) is a problem-dependent constant.</formula><p>Proof sketch We assume without loss of generality that there is a unique optimal arm denoted k . The analysis of <ref type="bibr" target="#b11">Chan (2020)</ref> and <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> shows that for any SDA algorithm the number of pulls of a suboptimal arm may be bounded as follow.</p><p>Lemma 1 (Lemma 4.1 in <ref type="bibr" target="#b5">Baudry et al. (2020)</ref>). For any suboptimal arm k = k , the expected number of pulls of k is upper bounded by</p><formula xml:id="formula_9">E[N k (T )] ≤ 1 + ε kl(µ k , µ ) log(T ) + C k (ν, ε) + 32 T r=1 P(N k (r) ≤ (log r) 2 ) ,<label>(3)</label></formula><p>where</p><formula xml:id="formula_10">C k (ν, ε) is a problem-dependent constant.</formula><p>The next step consists in upper bounding the probability that the best arm is not pulled "enough" during a run of the algorithm. This part is more challenging and relies on the notion of diversity in the subsamples provided by the subsampling algorithm. This notion was introduced by <ref type="bibr" target="#b4">Baransi et al. (2014)</ref> to analyze the Best Empirical Sampled Average (BESA) algorithm. Intuitively, random block sampling <ref type="bibr" target="#b5">(Baudry et al., 2020)</ref> or sampling without replacement <ref type="bibr" target="#b4">(Baransi et al., 2014)</ref> explore different part of the history thus bringing diversity in the duels. Unfortunately, this property is not satisfied by deterministic samplers. Nonetheless, with a careful examination of the relation implied by the deterministic nature of last-block subsampling it is possible to prove that the number of pulls of the optimal arm is large enough with high probability.</p><p>Lemma 2. The probability that the optimal arm is not pulled enough by LB-SDA can be upper bounded as follows</p><formula xml:id="formula_11">+∞ r=1 P N k (r) ≤ (log r) 2 ≤ C k (ν) ,</formula><p>for some constant C k (ν).</p><p>Plugging the result of Lemma 2 in Lemma 1 gives the asymptotic optimality of LB-SDA (Theorem 1). The proof of Lemma 2 is reported in Appendix A.</p></div>
+<div><head n="3.3.">Memory-Limited LB-SDA</head><p>One of our main motivations for studying LB-SDA is its simplicity and efficiency. Yet, all existing subsampling algorithms <ref type="bibr" target="#b4">(Baransi et al., 2014;</ref><ref type="bibr" target="#b11">Chan, 2020;</ref><ref type="bibr" target="#b5">Baudry et al., 2020)</ref> as well as the vanilla version of LB-SDA have to store the entire history of rewards for all the arms. In this section, we explain how to modify LB-SDA to reduce the storage cost while preserving the theoretical guarantees.</p><p>The fact that LB-SDA is asymptotically optimal means that, when T is large, the arm with the largest mean is most often the leader with all of its challengers having a number of pulls that is of order O(log T ) only. With duels based on the last block, this would mean in particular that only the last O(log T ) observations from the optimal arm should be stored and that previous observations will never be used again in practice. Based on this intuition, one might think that keeping only log(T )/(µ -µ k ) 2 observations is enough for LB-SDA. However, this could only be done with the knowledge of the gaps that are unknown.</p><p>We propose instead to limit the storage memory of each arm at round r to a value of the form</p><formula xml:id="formula_12">m r = max M, C(log r) 2 ,</formula><p>where C &gt; 0 and M ∈ N. M ensures that a minimum number of samples are stored during the first few rounds. Following the definition of <ref type="bibr" target="#b0">Agrawal &amp; Goyal (2012)</ref>, we then define the set of saturated arms at a round r as</p><formula xml:id="formula_13">S r = {k ∈ {1, . . . , K} : N k (r) ≥ m r } .</formula><p>The only modification of LB-SDA is the following: at each round r, if a saturated arm is pulled then the newly collected observation replaces the oldest observation in its history.</p><p>The pseudo code of LB-SDA with Limited Memory (LB-SDA-LM) is given in Appendix B and the following result shows that it keeps the same asymptotical performance as LB-SDA under general assumptions on m r .</p><p>Theorem 2 (Asymptotic optimality of LB-SDA with Limited Memory). For any bandit model ν = (ν 1 , . . . , ν K ) ⊂ P K Θ where P Θ is any one-parameter exponential family of distributions, if m r / log(r) → ∞, the regret of memorylimited LB-SDA satisfies, for all ε &gt; 0,</p><formula xml:id="formula_14">R T ≤ k:µ k &lt;µ 1 + ε kl(µ k , µ ) log(T ) + C (ν, ε, M) ,</formula><p>where M = (m 1 , m 2 , . . . , m T ) denotes the sequence (m r ) r∈N and C (ν, ε, M) is a problem-dependent constant.</p><p>The proof of this theorem is reported in Appendix B, which provides precise estimates of the dependence of C (ν, ε, M) with respect to the parameters, and in particular, with respect to the sequence M. Note that LB-SDA-LM remains an anytime algorithm because the storage constraint does not depend on the time horizon T but only on the current round.</p></div>
+<div><head n="3.4.">Storage and Computational Cost</head><p>To the best of our knowledge, LB-SDA-LM is the only subsampling bandit algorithm that does not require to store the full history of rewards. We report in Table <ref type="table" target="#tab_0">1</ref> estimates of the computational cost of LB-SDA-LM and its competitors. The computational cost can be broken into two parts: (a) the subsampling cost and (b) the computation of the means of the samples. We assume that drawing a sample of size n without replacement has O(n) cost and that computing the mean of this subsample costs another O(n). Furthermore, at round T , each challenger to the best arm has about O(log T ) samples. This gives an estimated cost of O (log T ) 2 for BESA <ref type="bibr" target="#b4">(Baransi et al., 2014)</ref>. For RB-SDA <ref type="bibr" target="#b5">(Baudry et al., 2020)</ref> the estimated cost is O(log(T )), because the sampling cost for random block sampling is O(1) and only the sample mean has to be recomputed at each round.</p><p>For the three deterministic algorithms (namely SSMC <ref type="bibr" target="#b11">(Chan, 2020)</ref>, LB-SDA, LB-SDA-LM), when the leader arm wins all its duels, its sample mean can be updated sequentially at cost O(1). This is the best case in terms of computational cost. However, when a challenger arm is pulled, SSMC requires a full screening of the leader's history, with O(T ) cost, while LB-SDA and LB-SDA-LM only need the computation of the mean of the last O(log T ) samples from the leader.</p></div>
+<div><head n="4.">LB-SDA in Non-Stationary Environments</head><p>In stationary environments, LB-SDA achieves optimal regret rates, even when its decisions are constrained to use at most O((log T ) 2 ) observations. One might think that this argument itself is sufficient to address non-stationary scenarios as the duels are performed mostly using recent observations. However, the latter is only true for the best arm and in the case where an arm that has been bad for a long period of time suddenly becomes the best arm, adapting to the change would still be prohibitively slow. For this reason, LB-SDA has to be equipped with an additional mechanism to perform well in non-stationary environments.</p></div>
+<div><head n="4.1.">SW-LB-SA: LB-SDA with a Sliding-Window</head><p>We keep a round-based structure for the algorithm, where, at each round r, duels between arms are performed and the algorithm subsequently selects the subset of arms A r that will be pulled. In contrast to Section 3.3, where a constraint on storage related to the number of pulls was added, here, we use a sliding window of length τ to limit the historical data available to the algorithm to that of the last τ rounds. The bold rectangle correspond to the leader. A blue square is added when an arm has an observation for the corresponding round and the red square correspond to the information that will be lost at the end of the round due to the sliding window.</p><formula xml:id="formula_15">r -τ r -τ r -τ r -1 r -1 r -1 l o o s e w in (r -1) (r -1) (r -1) (r) (r) (r) round r r r r -τ + 1 r -τ + 1 r -τ + 1 r r r</formula></div>
+<div><head>Modified leader definition</head><p>The introduction of a sliding window requires a new definition for the leader. By analogy with the stationary case, the leader could be defined as the arm that has been pulled the most during the τ last rounds.</p><p>Algorithm 2 SW-LB-SDA Input: K arms, horizon T , τ length of sliding window</p><formula xml:id="formula_16">Initialization: t ← 1, r ← 1, ∀k ∈ {1, ..., K}, N k ← 0, N τ k ← 0 while t &lt; T do A ← {}, ← leader(N, Y, τ ) if r = 1 then A ← {1, . . . , K} (Draw each arm once) else for k = ∈ {1, ..., K} do if N τ k ≤ log(τ ) or D τ k (r) = 1 then A ← A ∪ {k} else µ τ k = Ȳk,N k -N τ k +1:N k N = min(N τ k , N τ ) µ τ ,k = ȲN -N +1:N if µ τ k ≥ µ τ ,k then A ← A ∪ {k} if |A| = 0 then A ← { } for k ∈ A do Pull arm k, observe reward Y k,N k +1 Update N k ← N k + 1, N τ k ← N τ k + 1, t ← t + 1 for k ∈ {1, ..., K} do if k ∈ A r-τ +1 then N τ k ← N τ k -1 r ← r + 1</formula><p>However, with the inclusion of the sliding window, a new phenomenon, which we call passive leadership takeover, can occur. Let us define N τ k (r) = r-1 s=r-τ 1 (k ∈ A s+1 ), the number of times arm k has been pulled during the last τ rounds and consider a situation with 3 arms {1, 2, 3}. Assume that the leader is arm 1 and at a round (r -1) we have N τ 1 (r -1) = N τ 2 (r -1). If the leader has been pulled τ rounds away and wins its duel against arm 2 but looses against arm 3, only arm 3 will be pulled at round r. Consequently, at round r, arm 2 will have a strictly larger number of pulls than arm 1 without having actually defeated the leader. This situation, illustrated on Figure <ref type="figure" target="#fig_0">1</ref>, is not desirable as it can lead to spurious leadership changes. We fix this by imposing that any arm has to defeat the current leader to become the leader itself. Define,</p><formula xml:id="formula_17">B r = {k ∈ A r+1 ∩ {N τ k (r + 1) ≥ min(r, τ )/K}} .</formula><p>Then for any r ∈ N, the leader at round r + 1 is defined as τ (r+1) = argmax k∈{1,...,K} N τ k (r+1) if N τ τ (r) (r+1) &lt; min(r, τ )/(2K) and the argmax is taken over B r ∪ { τ (r)} otherwise. This modified definition of the leader ensures that an arm can become the leader only after earning at least τ /K samples and winning a duel against the current leader, or if the leader loses a lot of duels and its number of samples falls under a fixed threshold. Thanks to this definition it holds that N τ τ (r) (r) ≥ min(r, τ )/(2K). More details are given in Appendix C.</p><p>Additional diversity flags As in the vanilla LB-SDA, we use a sampling obligation to ensure that each arm has a minimal number of samples. However, in contrast to the stationary case, this very limited number of forced samples may not be sufficient to guarantee an adequate variety of duels, due to the forgetting window. To this end, the sampling obligation is coupled with a diversity flag. We define it as a binary random variable D τ k (r), satisfying D τ k (r) = 1 only when, for the last (K -1)(log τ ) 2 rounds the three following conditions are satisfied: 1) some arm k = k has been leader during all these rounds, 2) k has not been pulled, and 3) k has not been pulled and satisfy N τ k (r) ≤ (log τ ) 2 . In practice, there is a very low probability that these conditions are met simultaneously but this additional mechanism is required for the theoretical analysis. Note that the diversity flags have no impact on the computational cost of the algorithm as they require only to store the number of rounds since the last draw of the different arms (which can be updated recursively) as well as the last leader takeover. Arms that raise their diversity flag are automatically added to the set of pulled arms.</p><p>Bringing these parts together, gives the pseudo-code of SW-LB-SDA in Algorithm 2.</p></div>
+<div><head n="4.2.">Regret Analysis in Abruptly Changing Environments</head><p>In this section we aim at upper bounding the dynamic regret in abruptly changing environments, as defined in Section 2. Our main result is the proof that the regret of SW-LB-SDA matches the asymptotic lower bound of <ref type="bibr" target="#b15">Garivier &amp; Moulines (2011)</ref>.</p><p>Theorem 3 (Asymptotic optimality of SW-LB-SDA). If the time horizon T and number of breakpoint Γ T are known, choosing τ = O( T log(T )/Γ T ) ensures that the dynamic regret of SW-LB-SDA satisfies</p><formula xml:id="formula_18">R T = O( T Γ T log T ) .</formula><p>To prove this result we only need to assume that, during each stationary period, the rewards come from the same one-parameter exponential family of distributions. In contrast, current state-of-the-art algorithms for non-stationary bandits typically require the assumption that the rewards are bounded to obtain similar guarantees. Hence, this result is of particular interest for tasks involving unbounded reward distributions that can be discrete (e.g Poisson) or continuous (e.g Gaussian, Exponential). SW-LB-SDA can also be used for general bounded rewards with the same performance guarantees by using the binarization trick <ref type="bibr" target="#b1">(Agrawal &amp; Goyal, 2013)</ref>. Note however, that the knowledge of the horizon T and the estimated number of change point Γ T is still required to obtain optimal rates, which is an interesting direction for future works on this approach <ref type="bibr" target="#b3">(Auer et al., 2019;</ref><ref type="bibr" target="#b8">Besson et al., 2020)</ref>. We provide a high-level outline of the analysis behind Theorem 3 and the complete proof is given in Appendix C.</p><p>Regret decomposition For the Γ T + 1 stationary phases [t φ , t φ+1 -1] with φ ∈ {1, . . . , Γ T }, we define r φ as the first round where an observation from the phase φ was pulled.</p><p>Introducing the gaps ∆ φ k = µ * t φ -µ t φ ,k and denoting the optimal arm k φ , we can rewrite the regret as</p><formula xml:id="formula_19">R T = E   Γ T φ=1 r φ+1 -2 r=r φ -1 k =k φ 1 (k ∈ A r+1 ) ∆ φ k   = Γ T φ=1 k =k * φ E[N φ k ]∆ φ k ,</formula><p>where we define</p><formula xml:id="formula_20">N φ k = r φ+1 -2 r=r φ -1 1(k ∈ A r+1</formula><p>) the number of pulls of an arm k during a phase φ when it is suboptimal.</p><p>Note that the quantities t φ , r φ and ∆ φ k for the different stationary phases φ are only required for the theoretical analysis and the algorithm has no access to those values. We highlight that the sequence (r φ ) φ≥1 is a random variable that depends on the trajectory of the algorithm. However, we show in Appendix C that this causes no additional difficulty for upper bounding the regret. We introduce δ φ = t φ+1 -t φ the length of a phase φ. Combining elements from the proofs of <ref type="bibr" target="#b15">Garivier &amp; Moulines (2011)</ref> and that of Theorem 1, we first provide an upper bound on E[N φ k ] for any suboptimal arm k during the phase φ as</p><formula xml:id="formula_21">E[N φ k ] ≤ 2τ + δ φ A φ,τ k τ + c φ,τ k,1 + c φ,τ k,2 + c φ,τ k,3 .</formula><p>In this decomposition we define</p><formula xml:id="formula_22">A φ,τ k = b φ k log(τ ) for some constant b φ k &gt; 0, along with the terms c φ,τ k,1 , c φ,τ k,2 and c φ,τ k,3</formula><p>, which all represents a different technical aspect of the regret decomposition of SW-LB-SDA. Before interpreting them we start with their formal definition,</p><formula xml:id="formula_23">c φ,τ k,1 = E   r φ+1 -2 r=r φ +2τ -2 1 G τ k (r, A φ,τ k )   , c φ,τ k,2 = E   r φ+1 -2 r=r φ +2τ -2 1 τ (r) = k * φ , D τ k (r) = 1   , c φ,τ k,3 = E   r φ+1 -2 r=r φ +2τ -2 1 τ (r) = k * φ   , where G τ k (r, n) is equal to {k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ n, D τ k (r) = 0} .</formula><p>Bounding individual terms The three terms have intuitive interpretation and summarize well the technical contributions behind Theorem 3. To some extent they all rely on the notion of saturated arms defined in Section 3.3 and that we refine in Appendix C for the problems considered in this section (mainly by properly tuning A φ,τ k in the theoretical analysis).</p><p>First, c φ,τ k,1 is an upper bound on the expectation of the number of times a saturated suboptimal arm can defeat the optimal leader (i.e τ (r) = k * φ ). To prove this result we establish a new concentration inequality for Last-Block Sampling in the context of SW-LB-SDA.</p><p>The second term c φ,τ k,2 controls the probability that the diversity flag is activated when the optimal arm k * φ is the leader. We prove that if this event happen, then k * φ has necessarily lost at least one duel against a saturated sub-optimal arm, and that this event has only a low probability.</p><p>The term c φ,τ k,3 is the most difficult to handle, the main challenge is to upper bound the probability that the optimal arm is not saturated after a large number of rounds.</p><p>In Appendix C we provide the complete analysis of each of these terms and a full description of all the technical results that led to Theorem 3.</p></div>
+<div><head n="5.">Experiments</head><p>Limiting the storage in stationary environments. In our first experiment<ref type="foot" target="#foot_0">1</ref> reported on Figure <ref type="figure" target="#fig_2">3</ref>, we compare LB-SDA and LB-SDA-LM on a stationary instance with K = 2 arms with Bernoulli distributions for a horizon T = 10000. We add natural competitors <ref type="bibr">(Thompson Sampling (Thompson, 1933)</ref>, kl-UCB <ref type="bibr" target="#b10">(Cappé et al., 2013)</ref>), that know ahead of the experiment that the reward distributions are Bernoulli and are tuned accordingly. The arms satisfy (µ 1 , µ 2 ) = (0.05, 0.15) with a gap ∆ = 0.1. We run LB-SDA-LM with a memory limit m r = log(r) 2 + 50, which gives a storage ranging from 50 to 150 samples (much smaller than the horizon T = 10000). The regret are averaged on 2000 independent replications and the upper and lower quartiles are reported. In this setup LB-SDA-LM performs similarly to KL-UCB, and the impact of limiting the memory is mild, when compared to LB-SDA. This illustrates that even with relatively small gaps (here 0.1), a substantial reduction of the storage can be done with only minor loss of performance with LB-SDA-LM.   <ref type="bibr">TS (Trovo et al., 2020)</ref>. We also add EXP3S <ref type="bibr" target="#b2">(Auer et al., 2002)</ref> designed for adversarial bandits and our SW-LB-SDA algorithm for the comparison. The different algorithms make use of the knowledge of T and Γ T .</p><p>To allow for fair comparison, we use for SW-LB-SDA, the same value of τ = 2 T log(T )/Γ T that is recommended for SW-UCB <ref type="bibr" target="#b15">(Garivier &amp; Moulines, 2011)</ref>. D-UCB uses the discount factor suggested by <ref type="bibr" target="#b15">Garivier &amp; Moulines (2011)</ref>, This problem is challenging because a policy that focuses on arm 1 to minimize the regret in the first stationary phase also has to explore sufficiently to detect that the second arm is the best in the second phase. SW-LB-SDA has perfor-mance comparable to the forgetting TS algorithms and is the best performing algorithm in this scenario. Note that both TS algorithms use the assumption that the arms are Bernoulli whereas SW-LB-SDA does not. SW-klUCB performs better than D-klUCB and its regret closely matches the one from the changepoint detection algorithms. By observing the lower and the upper quartiles, one sees that the performance of CUSUM vary much more than the other algorithms depending on its ability to detect the breakpoints. Finally, EXP3S, which can adapt to more general adversarial settings, lags behind the other algorithms in this abruptly changing stochastic environment. In the third experiment with Γ T = 3 breakpoints, the K = 3 arms comes from Gaussian distributions with a fixed standard deviation of σ = 0.5 but time dependent means. The evolution of the arm's means is pictured on the right of Figure <ref type="figure" target="#fig_1">2</ref> and Figure <ref type="figure" target="#fig_4">5</ref> displays the performance of the algorithms. CUSUM and M-UCB can not be applied in this setting because CUSUM is only analyzed for Bernoulli distributions and M-UCB assume that the distributions are bounded. Even if no theoretical guarantees exist for Thompson sampling with a sliding window or discount factors, when the distribution are Gaussian with known variance, we add them as competitors. The analysis of SW-UCB and D-UCB was done under the bounded reward assumption but the algorithms can be adapted to the Gaussian case. Yet, the tuning of the discount factor and the sliding window had to be adapted to obtain reasonable performance, using τ = 2(1 + 2σ) T log(T )/Γ T for D-UCB and γ = 1 -1/(4(1 + 2σ)) Γ T /T for SW-UCB (considering that, practically, most of the rewards lie under 1 + 2σ). For reference, Figure <ref type="figure" target="#fig_4">5</ref> also displays the performance of the UCB1 algorithm that ignores the non-stationary structure. Clearly, SW-LB-SDA, in addition of being the only algorithm analyzed in this setting with unbounded rewards, also has the best empirical performance. Changes affecting the variance. The last experiment features the same Gaussian means but with different standard errors. The standard error takes the values 0.5, 0.25, 1 and 0.25, respectively, in the four stationary phases. The algorithms based on upper confidence bound are given the maximum standard error σ = 1, whereas SW-LB-SDA is not provided with any information of this sort. Figure <ref type="figure" target="#fig_5">6</ref> shows that the non-parametric nature of SW-LB-SDA is effective, with a significant improvement over state-of-the-art methods in such settings. </p></div>
+<div><head>Organization of the appendix</head><p>The appendix is organized as follows:</p><p>• In Section A we provide some details on our analysis for the vanilla LB-SDA algorithm.</p><p>• In Section B explain how to adapt LB-SDA when a limited memory is used and derive an upper-bound for the regret of this variant of LB-SDA.</p><p>• In Section C a detailed analysis of LB-SDA with a sliding window in any abruptly changing environment is proposed.</p></div>
+<div><head>A. Analysis of LB-SDA</head><p>A.1. Proof of Lemma 2</p><p>Before establishing our main result for LB-SDA, we introduce the balance function of an arm, which was first defined in <ref type="bibr" target="#b4">(Baransi et al., 2014)</ref>.</p><p>Assume that the K arm are characterized by the reward distributions (ν 1 , ..., ν K ). Assume that there is a unique optimal arm associated to the arm k .</p><p>Definition 1. Letting ν k,j denote the distribution of the sum of j independent variables drawn from ν k , and F ν k,j its corresponding CDF. the balance function of arm k is</p><formula xml:id="formula_24">α k (M, j) = E X∼ν k ,j 1 -F ν k,j (X) M .</formula><p>If we draw one sample from a distribution ν k ,j , and M independent samples from another distribution ν k,j , the balance function α k (M, j) quantifies the probability that each sample from ν k,j is larger than the sample from ν k ,j . The index j represents itself the fact that these variables are built as the sum of j independent random variables from the same distribution (respectively ν k and ν k ). This function has been studied in detail in <ref type="bibr" target="#b5">(Baudry et al., 2020)</ref> (Appendix G and H), and we will use its properties to prove the following result.</p><p>Lemma 2. The probability that the optimal arm is not pulled enough by LB-SDA can be upper bounded as follows</p><formula xml:id="formula_25">+∞ r=1 P N k (r) ≤ (log r) 2 ≤ C k (ν) ,</formula><p>for some constant C k (ν).</p><p>Proof. The main problem with the last block sampling is that if both the leader and a given challenger are not played for some time, the index used in their duels remain the same due to the deterministic nature of the sampler. As a consequence this challenger is never played as long as the leader remains the same. If this situation occur too often, this would limit the diversity for the duels played by the optimal arm k against suboptimal leaders. We show that this is not possible by proving that the leader will be played a large number of times, which necessarily brings some diversity. To measure this, we define the quantity of duels won by the leaders at the different rounds as</p><formula xml:id="formula_26">W r = 1 + r-1 s=1 1(A s+1 = { (s)}) ,</formula><p>where we added 1 to consider the first round where every arm is pulled once. For any trajectory this quantity is linear in r.</p><formula xml:id="formula_27">Lemma 3. With W r = 1 + r-1 s=1 1(A s+1 = { (s)}), for any round r under LB-SDA it holds that W r = N (r) (r) ≥ r/K .</formula><p>Before using Lemma 3, we recall the sampling obligation rule introduced in Section 3. and that we use to consider rounds where the optimal arm has enough samples. At any round r each arm with less than f (r) = √ log r samples is pulled. We focus on rounds where we are sure that arm k has been pulled "enough", and compute the probability that it has lost a lot of duels after this moment. In particular, we consider a r as the smallest round satisfying f (a r ) ≥ f (r) -1, ensuring N k (a r ) ≥ f (r) -1 . This round is exactly f -1 (f (r) -1) , that can be computed as</p><formula xml:id="formula_28">f -1 (f (r) -1) = exp (f (r) -1) 2 = exp f (r) 2 + 1 -2f (r) = f -1 (f (r)) exp(-2f (r) + 1) = r × exp(-2f (r) + 1) .</formula><p>This means that for any γ ∈ (0, 1), if r is large enough to satisfy f (r) ≥ 1-log γ 2 then a r ≤ γr. For the rest of the proof we consider the number of duels lost by the arm k after the round a r against unique subsamples of a suboptimal leader. The number of duels won by the leader between the rounds a r and r is equal to W r -W ar . Out of those duels, at most (log r) 2 of them can concern the optimal arm k because N k (r) ≤ log(r) 2 . Consequently, there is at least W r -W ar -(log r) 2 duels won by a suboptimal leader between rounds a r and r. Using Lemma 3 and W ar ≤ a r one has,</p><formula xml:id="formula_29">W r -W ar -(log r) 2 ≥ r K -a r -(log r) 2 ≥ r K -γr -(log r) 2 .</formula><p>To simplify the expression we just write that for any β ∈ (0, 1) there exists a constant r(β, K)</p><formula xml:id="formula_30">satisfying ∀r ≥ r(β, K), W r -W ar -(log r) 2 ≥ β r K .<label>(4)</label></formula><p>Under N k (r) ≤ (log r) 2 we are sure that there exists some j ∈ {1, ..., (log r) 2 } such that a fraction 1/(log r) 2 of the duels counted above have been played with N k (r) = j. Let us denote W r = W r -W ar -(log r) 2 and show this by contradiction. Out of those duels, we denote W r,j the number of duels played with N k (r) = j. If we assume that for all j ≤ (log r) 2 , there is strictly less than β (log r) 2 r K duels played with N k (r) = j. The following would hold,</p><formula xml:id="formula_31">W r -W ar -(log r) 2 = W r = (log r) 2 j=1 W r,j &lt; (log r) 2 j=1 β (log r) 2 r K &lt; β r K .</formula><p>There is a contradiction with Equation (4) and means there is a j ≤ (log r) 2 and βr/((log r) 2 K) duels such that k competes using its same block of observations of size j.</p><p>Furthermore, with the same argument we are sure that a fraction 1/(K -1) of these duels is played against the same leader k ∈ {2, . . . , K}. We would now like to obtain duels with non-overlapping blocks. Even if the blocks are all consecutive, waiting for j steps is enough to ensure that they are not overlapping. Taking a fraction 1/j of the duels from the previous subsets is hence enough to guarantee this.</p><p>Finally, we conclude that for any β ∈ (0, 1) there exists a constant r(β, K) such that for any round r &gt; r(β, K), under the event {N 1 (r) ≤ (log r) 2 } there exists some k ∈ {2, . . . , K} and some j ∈ { f (r) -1 , (log r) 2 } such as arm k lost at least β r K(K-1)(log r) 2 j duels against non-overlapping blocks of arm k while k is the leader and k has exactly j observations. This term correspond exactly to the balance function α k (M, j) from Definition 1, with M = β r K(K-1)(log r) 2 j , hence we can upper bound</p><formula xml:id="formula_32">T r=1 P N k (r) ≤ (log r) 2 ≤ r(β, K) + K k=2 T r=r(β,K) (log r) 2 j= log(r)-1 α k β r K(K -1)(log r) 2 j , j .</formula><p>Remark 1. The fact that the duels concern non-overlapping blocks of arm k is necessary to obtain independent samples. It is also important that those duels are based on exactly j observations in order to introduce the balance function.</p><p>We conclude the proof using the following lemma which is proved in the next section.</p><p>T r=r(β,K)</p><formula xml:id="formula_33">(log r) 2 j= log(r)-1 α k β r K(K -1)(log r) 2 j , j = O(1) .</formula></div>
+<div><head>A.2. Proof of Auxiliary Results</head><p>Lemma 3. With W r = 1 + r-1 s=1 1(A s+1 = { (s)}), for any round r under LB-SDA it holds that</p><formula xml:id="formula_34">W r = N (r) (r) ≥ r/K .</formula><p>Proof. We consider any trajectory of the bandit algorithm. For this trajectory we consider the sequence of the rounds where a change of leader occurred and write them as the (potentially infinite) set Y = [r 0 , r 1 , r 2 , . . . ]. These are basically all the rounds r satisfying (r) = (r -1). r 0 = 1 as it is the first round where we start defining the leader in the algorithm, and it holds that N (1) (1) = 1 as every arm is drawn once at the first round. As the leader was not defined before it holds that</p><formula xml:id="formula_35">W 1 = 1 = N (1)</formula><p>(1) so the property holds in r 0 . As a first step, we show that the property is valid for all r i when i ∈ N. Let i ∈ N, we assume that the property holds in r i and we consider the round r i+1 . It holds that</p><formula xml:id="formula_36">W ri+1 = W ri + ri+1-1 s=ri 1(A s+1 = (s)) .</formula><p>The sum is exactly the number of duels won by the arm that is leader during the interval [r i , r i+1 -1] and it holds that</p><formula xml:id="formula_37">ri+1-1 s=ri 1(A s+1 = (s)) = N (ri) (r i+1 ) -N (ri) (r i ).</formula><p>Furthermore, when a change of leader happens the number of elements of the new and former leader are the same, i.e. N (ri+1) (r i+1 ) = N (ri) (r i+1 ). This is due to the fact that when a challenger reaches the history size of the leader then the arm with the largest mean is chosen as the leader. In particular, if the challenger has a lower index than the leader at this round it cannot take the leadership at the next round as it will otherwise lose its duel against the leader. For this reason, the only possibility for a challenger to take the leadership is to reach to number of samples of the leader and to have a better index at this moment. We can write</p><formula xml:id="formula_38">W ri+1 = W ri + ri+1-1 s=ri 1(A s+1 = { (s)}) = W ri + N (ri) (r i+1 ) -N (ri) (r i ) = W ri + N (ri+1) (r i+1 ) -N (ri) (r i ) = N (ri) (r i ) + N (ri+1) (r i+1 ) -N (ri) (r i ) (Inductive step) = N (ri+1) (r i+1 ) .</formula><p>Therefore, if the property holds in r i then it holds in r i+1 which gives the result. The extension to any round is obtained with similar arguments: ∀r / ∈ Y, ∃i : r i &lt; r &lt; r i+1 . Then we write</p><formula xml:id="formula_39">W r =W ri + r-1 s=ri 1(A s+1 = (s)) =N (ri) (r i ) + (N (ri) (r) -N (ri) (r i )) =N (ri) (r) = N (r) (r) ,</formula><p>where the last inequality comes from the fact that the leader is unchanged between the rounds r i and r. We conclude the proof by using the property that as the leader always has a number of samples larger than r/K, as it is the arm with the largest number of pulls at each round.</p><p>T r=r(β,K)</p><formula xml:id="formula_40">(log r) 2 j= log(r)-1 α k β r K(K -1)(log r) 2 j , j = O(1) .</formula><p>Before proving this result we prove an intermediary result that will also be useful to handle the balance function in the proof for switching bandits in Appendix C. This result was already presented in <ref type="bibr" target="#b11">(Chan, 2020</ref>), but we provide its proof for completeness.</p><p>Lemma 5. Let F 1 and F 2 be the cdf of two distributions with respective means µ 1 and µ 2 , µ 1 &gt; µ 2 . For any integer j ≥ 1 we denote F 1,j and F 2,j the cdf of the sum of j independent random variables drawn respectively from F 1 and F 2 , and α(M, j) = E X∼F1,j (1 -F 2,j (X)) M the balance function of these two distributions. For any u ∈ R it holds that</p><formula xml:id="formula_41">α(M, j) ≤ F 1,j (u) + (1 -F 2,j (u)) M .</formula><p>Furthermore, if we assume that F 1 and F 2 come from the same one-parameter exponential family of distributions, for any</p><formula xml:id="formula_42">u ∈ [0, 1] satisfying F 2 (u) ≤ F 2 (µ 2 ) the following result holds α(M, j) ≤ e -jkl(θ2,θ1) u + (1 -u) M ,</formula><p>where kl(θ 2 , θ 1 ) is the Kullback-Leibler divergence between F 2 and F 1 , expressed with their canonical parameters θ 1 and θ 2 .</p><p>Proof. We prove the first result, that is valid for any distribution F 1 and F 2 and is a direct property of the definition of the balance function. For u ∈ R, it holds that</p><formula xml:id="formula_43">α(M, j) = +∞ -∞ (1 -F 2,j (x)) M dF 1,j (x) ≤ u -∞ (1 -F 2,j (x)) M dF 1,j (x) + +∞ u (1 -F 2,j (x)) M dF 1,j (x) ≤ F 1,j (u) + (1 -F 2,j (u)) M .</formula><p>We now assume that F 1 and F 2 come from the same one-parameter exponential family of distributions. In this case they admit a density f θ (y) = f (y, 0)e η(θ)y-ψ(θ) for some natural parameter θ ∈ R. We write θ 1 the parameter of F 1 , and θ 2 the parameter of F 2 . We then define some y 1 , ..., y j ∈ R j . If the sequence y 1 , . . . , y j satisfies j u=1 y u ≤ jµ 2 , it holds that</p><formula xml:id="formula_44">j u=1 f θ1 (y u ) = j u=1 e (η(θ1)-η(θ2))yu-(ψ(θ1)-ψ(θ2)) f θ2 (y u ) ≤ e -jkl(θ2,θ1) j u=1 f θ2 (y u ) .</formula><p>where we write kl(θ 2 , θ 1 ) for the Kullback-Leibler divergence between F 1 and F 2 . This inequality first ensures that for all x ≤ µ 2 F 1,j (x) ≤ e -jkl(θ2,θ1) F 2,j (x) .</p><p>If we insert this expression in the first result, we have that for any u ∈</p><formula xml:id="formula_45">[0, 1] satisfying F 2 (u) ≤ F 2 (µ 2 ) the following result holds α(M, j) ≤ e -jkl(θ2,θ1) u + (1 -u) M .</formula><p>Remark 2. The second result is particularly interesting because there is a trade-off in the choice of u. If we want to upper bound α(M, j) by a relatively small quantity we need to choose small values for u, however if u is too small then the second term may become too large. In particular, making the approximation (1 -u) M ≈ e -M u provides an optimal scaling of u of the form</p><formula xml:id="formula_46">u * = jkl(θ 2 , θ 1 ) + log M M ,</formula><p>and as a consequence θ2,θ1) ,</p><formula xml:id="formula_47">α(M, j) ≤ e -jkl(θ2,θ1) u * + (1 -u * ) M ≤ jkl(θ 2 , θ 1 ) + log M M e -jkl(θ2,θ1) + e M log 1- jkl(θ 2 ,θ 1 )+log M M ≤ jkl(θ 2 , θ 1 ) + log M M e -jkl(θ2,θ1) + C 1 e -jkl(θ2,θ1) M = jkl(θ 2 , θ 1 ) + log M + C 1 M e -jkl(</formula><formula xml:id="formula_48">for some constant C 1 .</formula><p>With these technical results we can now finish the proof of Lemma 4 by simply replacing M by its value in the double sum.</p><p>Proof. We denote α k the balance function between the arm k and an arm k and want to upper bound T r=r(β,K)</p><formula xml:id="formula_49">(log r) 2 j= √ log r-1 α k β r K(K -1)(log r) 2 j , j .</formula><p>We directly use the second result of Lemma 5, and choose the tuning of u from Remark 2. If we write a r,j = α k β r K(K-1)(log r) 2 j , j and try to extract the order of a r,j just in terms of r and j we obtain</p><formula xml:id="formula_50">a k,j = O r,j j 2 (log r) 2 r e -jkl(θ k ,θ k ) .</formula><p>We then upper bound the term in j 2 by another (log r) 4 using the upper limit on the sum on j, hence the only term left in j is e -jkl(θ2,θ1) , which sums in a term of order exp(-√ log r). So we then obtain a term of the form T r=r(β,K)</p><formula xml:id="formula_51">(log r) 2 j= √ log r-1 α k β r K(K -1)(log r) 2 j , j = O T r=1 (log r) 6 e - √ log r r .</formula><p>We conclude, using that for any integer k &gt; 1, (log r) k = o(e √ log r ). Hence</p><formula xml:id="formula_52">(log r) 6 e - √ log r r = o 1 r(log r) 2 ,</formula><p>which is the general term of a convergent series. Hence we finally obtain T r=r(β,K)</p><formula xml:id="formula_53">(log r) 2 j= √ log r-1 α k β r K(K -1)(log r) 2 j , j = O(1) .</formula></div>
+<div><head>B. LB-SDA with a limited memory</head><p>In this section the variant of LB-SDA using a limited storage memory introduced in Section 3.3 is analyzed. After introducing a few notations, we present a detailed version of the algorithm. We then provide a detailed proof of Theorem 2.</p></div>
+<div><head>B.1. Notation for the Proof of Theorem 2</head><p>General notations for the stationary case:</p><p>• K number of arms</p><p>• ν k distribution of the arm k, with mean µ k . We assume that ∀k, ν k ∈ P Θ , a one-parameter exponential family.</p><p>• We assume that µ 1 = max k∈[K] µ k so we call the (unique) optimal arm "arm 1".</p><p>• I k (x) some large deviation rate function of the arm k, evaluated in x. For one-parameter exponential families this function will always be the KL-divergence between ν k and the distribution from the same family with mean x.</p><p>• N k (r) number of pull of arm k up to (and including) round r.</p><p>• Y k,i reward obtained at the i-th pull of arm k.</p><p>• Ȳk,i mean of the i-th first reward of arm k, Ȳk,n:m mean of the rewards of k on a subset of indices n &lt; m: • A r set of arms pulled at a round r.</p><formula xml:id="formula_54">Ȳk,n:m = 1 m-n+1 m i=n Y k,i . If m -n = s,</formula><p>• R T regret up to (and including) round T .</p><p>Notations for the regret analysis, part relying on concentration:</p><p>• Z r = { (r) = 1}, the leader used at round r + 1 is suboptimal.</p><p>• D r = {∃u ∈ { r/4 , ..., r} such that (u -1) = 1}, the optimal arm has been leader at least once between r/4 and r.</p><p>•</p><formula xml:id="formula_55">B u = { (u) = 1, k ∈ A u+1 , N k (u) = N 1 (u)</formula><p>-1 for some arm k}, the optimal arm is leader in u but loses its duel against arm k, that have been pulled enough to possibly take over the leadership at next round.</p><p>•</p><formula xml:id="formula_56">C u = {∃k = 1, N k (u) ≥ N 1 (u), Ŷk,S u 1 (N k (u),N1(u)) ≥ Ŷ1,N1<label>(</label></formula><p>u) }, the optimal arm is not the leader and has lost its duel against the suboptimal leader.</p><formula xml:id="formula_57">• L r = r u= r/4 1 C u .</formula></div>
+<div><head>B.2. The algorithm</head><p>Before giving the algorithm, we introduce additional notations that are used in the statement of the algorithm. The stored history for the arm k at round r is denoted H k (r). At round r when comparing the leader (r) and the arm k = (r) the last block of the history of (r) is used and is denoted S(H k (r), H (r)). In particular, when both arms are saturated their entire history of length m r is used for the duel. The Last Block Subsampling Duelling Algorithm with Limited Memory is reported in Algorithm 3 Algorithm 3 LB-SDA with Limited Memory Input: K arms, horizon T , m r storage limitation</p><formula xml:id="formula_58">Initialization: t ← 1, r = 1 ∀k ∈ {1, ..., K}, N k ← 0, H k = {} while t &lt; T do A ← {}, ← leader(N, t) if r = 1 then A ← {1, . . . , K} (Draw each arm once) else for k = ∈ {1, ..., K} do if N k ≤ √ log r or Ȳk,H k &gt; Ȳ ,S(H k ,H ) then A ← A ∪ {k} if |A| = 0 then A ← {l} for k ∈ A do if card(H k ) ≥ m r then pop(H k ) // Removing the oldest observation Pull arm k, observe reward Y k,N k +1 , N k ← N k + 1, t ← t + 1 H k = H k ∪ {Y k,N k +1 } // Append the new observation r ← r + 1 B.3. Proof of Theorem 2</formula><p>The beginning of the proof of Baudry et al. ( <ref type="formula">2020</ref>) is valid for LB-SDA, however it has to be rewritten completely to introduce the storage limitation. We use the same notation as in Section 3.3 and introduce a sequence m r of allowed memory for each arm at a round r. In the beginning of the proof we do not make any assumption on the sequence m r except that m r / log(r) → +∞, which is required in the statement of Theorem 2. We further assume that m r is an integer for any round r, which does not change anything for the algorithm but simplifies the notations for the proof. In this section, without loss of generality, we assume that the arm 1 is the unique optimal arm µ 1 = max k∈[K] µ k . We also recall that the arms are assumed to come from the same one-parameter exponential family of distributions.</p><p>In terms of notation, we remark that if N k (r) ≥ m r and (r) = k then the duel between k and (r) is the comparison between Ȳk,N k (r)-mr:N k (r) and Ȳ (r),N (r) (r)-mr:N (r) (r) . Otherwise, if N k (r) ≤ m r and (r) = k then the duel is the comparison between Ȳk,N k (r) and Ȳ (r),N (r) (r)-N k (r):N (r) (r) , which is the same as for the vanilla LB-SDA.</p><p>We recall that the set of saturated arms at round r is defined as</p><formula xml:id="formula_59">S r = {k ∈ {1, . . . , K} : N k (r) ≥ m r } .</formula><p>(5) However, we do not change the definition of the leader that is still defined as (r) = argmax k≤K N k (r) nor the corresponding tie-breaking rules. All along the proof we will use the Chernoff inequality, that states that for any exponential family of distribution and any x, y satisfying x &lt; µ k &lt; y, then P( Ȳk,n ≤ x) ≤ e -kl(x,µ k ) and P( Ȳk,n ≥ y) ≤ e -kl(y,µ k ) . To simplify the notation for each arm k we define the real number x k = µ1+µ k 2 ∈ (µ k , µ 1 ), and write ω k = min(kl(x k , µ 1 ), kl(x k , µ k )). Hence, we will write most of our results using concentration with this value ω k for arm k.</p></div>
+<div><head>We write N</head><formula xml:id="formula_60">k (T ) as N k (T ) = 1 + T -1 r=1 1(k ∈ A r+1</formula><p>). The first step of the proof is to decompose the number of pulls according to the events { (r) = 1} and k ∈ S r ,</p><formula xml:id="formula_61">E[N k (T )] = 1 + E T -1 r=1 1(k ∈ A r+1 , (r) = 1) + E T -1 r=1 1(k ∈ A r+1 , k / ∈ S r , (r) = 1) + E T -1 r=1 1(k ∈ A r+1 , k ∈ S r , (r) = 1) ≤ 1 + E T -1 r=1 1( (r) = 1) + E T -1 r=1 1(k ∈ A r+1 , k / ∈ S r , (r) = 1) + E T -1 r=1 1(k ∈ A r+1 , k ∈ S r , (r) = 1) .</formula><p>We first study the term</p><formula xml:id="formula_62">E 1 = E T -1 r=1 1(k ∈ A r+1 , k ∈ S r , (r) = 1</formula><p>) and use that under k ∈ S r the index of both arms will be a subsample of size m r of their history. We start the sum on the rounds at 2m 1 because two arms cannot be saturated before this round is reached, so it holds that</p><formula xml:id="formula_63">E 1 ≤ T -1 r=2m1 P ( (r) = 1, k ∈ A r+1 , N k (r) ≥ m r , N 1 (r) ≥ m r ) ≤ T -1 r=2m1 P (r) = 1, k ∈ A r+1 , N k (r) ≥ m r , N 1 (r) ≥ m r , Ȳk,N k (r)-mr+1:N k (r) ≥ Ȳ1,N1(r)-mr+1:N1(r) ≤ T -1 r=2m1 P N k (r) ≥ m r , Ȳk,N k (r)-mr+1:N k (r) ≥ x k + T -1 r=2m1 P N 1 (r) ≥ m r , Ȳ1,N1(r)-mr+1:N1(r) ≤ x k ≤ T -1 r=2m1 r n k =mr P Ȳk,n k -mr+1:n k ≥ x k , N k (r) = n k + T -1 r=2m1 r n1=mr P Ȳ1,n1-mr+1:n1 ≤ x k , N 1 (r) = n 1 ≤ T -1 r=2m1 r n k =mr P Ȳk,n k -mr+1:n k ≥ x k + T -1 r=2m1 r n1=mr P Ȳ1,n1-mr+1:n1 ≤ x k ≤ 2 T -1 r=2m1 re -mrω k ,</formula><p>where we used two main elements: 1) if two random variables X and Y satisfy X ≥ Y then for any threshold η it holds that either X ≥ η or Y ≤ η (third line), and 2) the empirical averages of the fixed blocks of observations satisfy the Chernoff concentration inequality. Using the notation, we introduced</p><formula xml:id="formula_64">P( Ȳ1,n1-mr+1:n1 ≤ x k ) = P( Ȳ1,mr ≤ x k ) ≤ e -mrω k and P( Ȳk,n k -mr+1:n k ≥ x k ) = P( Ȳk,mr ≥ x k ) ≤ e -mrω k .</formula><p>Therefore, the following holds</p><formula xml:id="formula_65">T -1 r=1 P(k ∈ A r+1 , k ∈ S r , (r) = 1) ≤ 2 T -1 r=2m1 re -mrω k . (<label>6</label></formula><formula xml:id="formula_66">)</formula><p>We then study</p><formula xml:id="formula_67">E 2 = E T -1 r=1 1(k ∈ A r+1 , k / ∈ S r , (r) = 1</formula><p>) . We further distinguish two cases, whenever N k (r) ≤ n 0 (T ) holds or not at each round, for some n 0 (T ) that will be specified later.</p><p>On Limited-Memory Subsampling Strategies for Bandits</p><formula xml:id="formula_68">E 2 ≤ n 0 (T ) + E T -1 r=1 1(k ∈ A r+1 , k / ∈ S r , (r) = 1, N k (r) ≥ n 0 (T )) .</formula><p>We then use that on the event k / ∈ S r the duels played between k and 1 will be the classical duel with the last block: k will compete with its empirical mean and 1 with the mean of its last block of size N k (r). We define some η k ∈ (µ k , µ 1 ) and write</p><formula xml:id="formula_69">E 2 ≤ n 0 (T ) + E T -1 r=1 1(k ∈ A r+1 , k / ∈ S r , (r) = 1, N k (r) ≥ n 0 (T )) ≤ n 0 (T ) + E T -1 r=1 1(k ∈ A r+1 , Ȳk,N k (r) ≥ Ȳ1,N1(r)-N k (r)+1:N1(r) , (r) = 1, N k (r) ≥ n 0 (T )) ≤ n 0 (T ) + T -1 r=1 P k ∈ A r+1 , Ȳk,N k (r) ≥ η k , N k (r) ≥ n 0 (T ) + T -1 r=1 P k ∈ A r+1 , Ȳ1,N1(r)-N k (r)+1:N1(r) ≤ η k , (r) = 1, N k (r) ≥ n 0 (T ), N 1 (r) ≥ n 0 (T ) ,</formula><p>where we used the same trick as for E 1 to obtain the last result.</p><p>We then use a union bound on the values of N k (r) for the first sum and on both N k (r) and N 1 (r) for the second sum, leading to</p><formula xml:id="formula_70">E 2 ≤ n 0 (T ) + T -1 r=1 T -1 n k =n0(T ) P k ∈ A r+1 , Ȳk,n k ≥ η k , N k (r) = n k + T -1 r=1 T -1 n1=n0(T ) n1 n k =n0(T ) P k ∈ A r+1 , Ȳ1,n1-n k +1:n1 ≤ η k , N k (r) = n k , N 1 (r) = n 1 ≤ n 0 (T ) + T -1 n k =n0(T ) P Ȳk,n k ≥ η k + T -1 n k =n0(T ) T -1 n1=n0(T ) P Ȳ1,n1-n k +1:n1 ≤ η k ,</formula><p>where we used that</p><formula xml:id="formula_71">T -1 r=1 1(k ∈ A r+1 , N k (r) = n k ) ≤ 1</formula><p>to remove the sums in r (simply ignoring the event N 1 (r) = n 1 in the second term). Using the Chernoff inequality, we write µ1) .</p><formula xml:id="formula_72">E 2 ≤ n 0 (T ) + e -n0(T )kl(η k ,µ k ) 1 -e -kl(η k ,µ k ) + T e -n0(T )kl(η k ,µ1) 1 -e -kl(η k ,</formula><p>We then calibrate n 0 (T ) and η k in order to makes these terms converge properly. We define ε &gt; 0 and state n 0 (T ) = 1+ε kl(µ k ,µ1) log T . We then use the continuity of the kullback-leibler divergence on (µ k , µ 1 ) to state that for any δ &gt; 0, there exists some ε &gt; 0 and</p><formula xml:id="formula_73">η k ∈ (µ k , µ 1 ) satisfying kl(η k , µ 1 ) ≥ kl(µ k , µ 1 ) -δ ≥ kl(µ k ,µ1) 1+ε</formula><p>. This means that for any ε &gt; 0, there exists some η k &gt; 0 satisfying T e -n0(T )kl(η k ,µ1) ≤ T e -n0(T ) 1+ε kl(µ k ,µ 1 ) log T ≤ 1. Hence, for any ε &gt; 0 it holds that</p><formula xml:id="formula_74">E 2 ≤ 1 + ε I 1 (µ k ) log T + C k,ε ,</formula><p>where C k,ε is a constant.</p><p>Combining these results we can write a first decomposition of E[N k (T )] as</p><formula xml:id="formula_75">E[N k (T )] ≤ 1 + 1 + ε I 1 (µ k ) log T + 2 T -1 r=2m1 re -mrω k + C k,ε + T -1 r=2m1 P( (r) = 1) . (7)</formula><p>We remark that this expression provides an explicit dependence in m r in the second term, that justifies the condition in Theorem 2 for m r ( namely, m r /(log r) → +∞). Indeed, this condition is sufficient to ensure for instance that m r ≥ 3 ω k log r for r large enough, making the term inside the sum a o(r -2 ).</p></div>
+<div><head>The next step is to prove that</head><p>T -1 r=1 P( (r) = 1) = o(log T ). As in the proof of <ref type="bibr" target="#b11">(Chan, 2020)</ref> this part causes a lot of technical challenges, and we need to define several new events to analyze the different scenarios that could lead a suboptimal arm to be the leader at a round r. In the next steps we will consider the same events as in the original proof, but the storage limitation will add some complexity to the task. We will use the following property, issued from the definition of the leader</p><formula xml:id="formula_76">(r) = k ⇒ N k (r) ≥ r K .</formula><p>However, adding the storage constraint we have that for any r satisfying r ≥ Km r the leader has necessarily more than m r observations. For this reason, its history will be truncated to the m r last observations. However, we leverage the property that when r is reasonably large, m r is large enough to guarantee a good concentration of the empirical mean of the saturated arms around their true mean. We will explain how this can be done in this section. We define a r = r 4 , and write the following decomposition</p><formula xml:id="formula_77">P ( (r) = 1) = P ({ (r) = 1} ∩ D r ) + P { (r) = 1} ∩ Dr . (<label>8</label></formula><formula xml:id="formula_78">)</formula><p>We define D r the event under which the optimal arm has been leader at least once in [a r , r].</p><formula xml:id="formula_79">D r = {∃u ∈ [a r , r] such that (u) = 1}.</formula><p>We now explain how to upper bound the term in the left hand side of Equation ( <ref type="formula" target="#formula_77">8</ref>). We look at the rounds larger than some round r 0 that will be specified later in the proof.</p></div>
+<div><head>B.3.1. ARM 1 HAS BEEN LEADER a r AND r</head><p>We introduce a new event</p><formula xml:id="formula_80">B u = { (u) = 1, k ∈ A u+1 , N k (u) = N 1 (u) -1 for some arm k} .</formula><p>Under the event D r , { (r) = 1} can only be true only if the leadership has been taken over by a suboptimal arm at some round between a r and r, that is</p><formula xml:id="formula_81">{ (r) = 1} ∩ D r ⊂ ∪ r-1 u=ar { (u) = 1, (u + 1) = 1} ⊂ ∪ r-1 u=ar B u . (9)</formula><p>Indeed, a leadership takeover can only happen after a challenger has defeated the leader while having at least the same number of observations minus one (however this situation is necessary but not sufficient to cause a change of leader, hence the strict inclusion).</p></div>
+<div><head>We now upper bound</head><p>T -1 r=r0 r u=ar P(B u ). We use the notation b r = a r /K representing the minimum of samples of the leader at the round a r . Hence we are sure that under B u arm 1 had at least b u observations when it lost the duel that cost it the leadership.</p><p>We then take an union bound on all the suboptimal arms k ∈ {2, ..., K}, defining</p><formula xml:id="formula_82">B u = ∪ K k=2 B u k := { (u) = 1, k ∈ A u+1 , N k (u) = N 1 (u) -1} ,</formula><p>which fixes the specific suboptimal arm that could have taken the leadership.</p><p>Choosing x k , ω k as in the previous section we can write</p><formula xml:id="formula_83">T -1 r=r0 r u=ar P(B u k ) = E T -1 r=r0 r u=ar 1( (u) = 1, k ∈ A u+1 , N 1 (u) = N k (u) + 1) ≤ E T -1 r=r0 r u=ar 1( (u) = 1, k ∈ A u+1 , N 1 (u) = N k (u) + 1, k / ∈ S u ) B1 + E T -1 r=r0 r u=ar 1( (u) = 1, k ∈ A u+1 , N 1 (u) = N k (u) + 1, k ∈ S u ) B2 .</formula><p>We proceed similarly as in the previous part, analyzing separately the case k ∈ S u and the case k / ∈ S u with S u defined in Equation ( <ref type="formula">5</ref>). We start with the term B 1 ,</p><formula xml:id="formula_84">B 1 ≤ E T -1 r=r0 r u=ar 1(N 1 (u) ≥ b r , Ȳk,N k (u) ≥ Ȳ1,N1(u)-N k (u)+1:N1(u) , N 1 (u) = N k (u) + 1, k ∈ A u+1 , k / ∈ S u ) ≤ E T -1 r=r0 r u=ar 1(N 1 (u) ≥ b r , Ȳk,N k (u) ≥ x k , N 1 (u) = N k (u) + 1, k ∈ A u+1 , k / ∈ S u ) (10) + E T -1 r=r0 r u=ar 1(N 1 (u) ≥ b r , Ȳ1,N1(u)-N k (u)+1:N1(u) ≤ x k , N 1 (u) = N k (u) + 1, k ∈ A u+1 , k / ∈ S u ) . (<label>11</label></formula><formula xml:id="formula_85">)</formula><p>We now separately upper bound each of these two terms. First, ( <ref type="formula">10</ref>)</p><formula xml:id="formula_86">≤ E T -1 r=r0 r u=ar mu-1 n k =br-1 1(N k (u) = n k , k ∈ A u+1 , Ȳk,n k ≥ x k ) ≤ E T -1 r=r0 r u=ar r n k =br-1 1(N k (u) = n k , k ∈ A u+1 , Ȳk,n k ≥ x k ) ≤ E       T -1 r=r0 r n k =br-1 1( Ȳk,n k ≥ x k ) r u=ar 1(N k (u) = n k )1(k ∈ A u+1 ) ≤1       ≤ T -1 r=r0 r n k =br-1 P( Ȳk,n k ≥ x k ) ≤ T -1 r=r0 r n k =br-1 exp (-n k ω k ) ≤ T -1 r=r0 e -(br-1)ω k 1 -e -ω k .</formula><p>We remark that by definition b r ≥ a r /K ≥ r/(4K) and using r 0 ≥ 8, we conclude that 4K) ) .</p><formula xml:id="formula_87">(10) ≤ e (1-2 K )ω k (1 -e -ω k )(1 -e -ω k /(</formula><p>As the subsampling in LB-SDA is deterministic, thanks to N 1 (r) = N k (u) + 1 we obtain the same result for ( <ref type="formula" target="#formula_84">11</ref>), ( <ref type="formula" target="#formula_84">11</ref>) 4K) ) .</p><formula xml:id="formula_88">≤ E T -1 r=r0 r u=ar r n k =br-1 1( Ȳ1,2:n k +1 ≤ x k )1(N k (u) = n k )1(k ∈ A u+1 ) ≤ E       T -1 r=r0 r n k =br-1 1( Ȳ1,2:n k +1 ≤ x k ) r u=ar 1(N k (u) = n k )1(k ∈ A u+1 ) ≤1       ≤ T -1 r=r0 r n k =br-1 P( Ȳ1,n k ≤ x k ) ≤ e (1-2 K )ω k (1 -e -ω k )(1 -e -ω k /(</formula><p>We then control B 2 . For B 2 the condition N 1 (u) = N k (u) + 1 will not be used but instead we use Equation ( <ref type="formula" target="#formula_65">6</ref>) already established in the previous section.</p><formula xml:id="formula_89">r u=1 P(k ∈ A u+1 , k ∈ S u , (u) = 1) ≤ 2 r u=2m1 ue -muω k ,</formula><p>which leads to</p><formula xml:id="formula_90">B 2 = E T -1 r=r0 r u=ar 1( (u) = 1, k ∈ A u+1 , N 1 (u) = N k (u) + 1, k ∈ S u ) ≤ T -1 r=r0 r u=max(ar,2m1) 2ue -muω k .</formula><p>Then, if consider r 0 = min{r : a r ≥ 2m 1 } we can further upper bound B 2 by</p><formula xml:id="formula_91">B 2 ≤ T -1 r=r0 r u=ar 2ue -muω k ≤ 2 T -1 r=r0 r r u=ar 2e -muω k ≤ 2 T -1 r=r0 r 2 e -ma r ω k .</formula><p>We first use this result without commenting its dependence in the sequence (m r ) r≥1 . Summing on all suboptimal arms k we obtain</p><formula xml:id="formula_92">T -1 r=r0 P ({ (r) = 1} ∩ D r ) ≤ 2 K k=2 e (1-2 K )ω k (1 -e -ω k )(1 -e -ω k /(4K) ) + T -1 r=r0 r 2 e -ma r ω k . (<label>12</label></formula><formula xml:id="formula_93">)</formula><p>Hence, the sums of the probability that arm 1 is not the leader while it has already been before is upper bounded by two terms: a problem-dependent constant, and a term that depends of the sequence of memory limits (m r ) r≥1 . We can further analyze this second term. First, we remark that contrarily to the term in m r in Equation ( <ref type="formula">7</ref>) this time we have both r 2 and m ar instead of m r , with a r = r/4 . Hence, for a fixed r the term of the sum is larger in this case. However, the constraint m r / log(r) → +∞ is again sufficient to ensure a proper convergence of this sum to a constant with the same arguments. This is mainly because the choice of a r as a fraction of r ensures that m ar will be sufficiently large.</p></div>
+<div><head>B.3.2. ARM 1 HAS NEVER BEEN LEADER BETWEEN a r AND r</head><p>The idea in this part is to leverage the fact that if the optimal arm is not leader between r/4 and r, then it has necessarily lost a lot of duels against the current leader at each round. We then use the fact that when the leader has been drawn "enough", concentration prevents this situation with large probability. We introduce</p><formula xml:id="formula_94">L r = r u=ar 1 C u , with C u defined as C u = {∃k = 1, (u) = k, 1 / ∈ A u+1 }.</formula><p>The following holds</p><formula xml:id="formula_95">P( (r) = 1 ∩ Dr ) ≤ P(L r ≥ r/4) .<label>(13)</label></formula><p>This result comes from <ref type="bibr" target="#b11">(Chan, 2020)</ref>, along with the direct use of the Markov inequality to provide the upper bound</p><formula xml:id="formula_96">P(L r ≥ r/4) ≤ E(L r ) r/4 = 4 r r u=ar P(C u ) .<label>(14)</label></formula><p>We further decompose the probability of P(C u ) in two parts depending on the value of the number of selections of arm 1.</p><p>For the next steps we define the following events, {N 1 (u) ≤ C/4 log(u)} and {N 1 (u) ≥ C/4 log(u)}, for some constant C that is not known by the algorithm and that we will define later. This idea handle the memory limit through this parameter C. Indeed, we only know that the sequence (m r ) r≥1 satisfies m r /(log(r)) → +∞. For this reason, we know that for any C &gt; 0 there exists a round r C such that for any r ≥ r C then m r ≥ C log(r).</p><p>Using Equation ( <ref type="formula" target="#formula_95">13</ref>) and Equation ( <ref type="formula" target="#formula_96">14</ref>), we have</p><formula xml:id="formula_97">T -1 r=r0 P({ (r) = 1} ∩ D r ) ≤ T -1 r=r0 4 r r u=ar P N 1 (u) ≤ C 4 log(u) B + T -1 r=r0 4 r r u=ar P C u , N 1 (u) ≥ C 4 log(u) D .</formula><p>Again, D can be upper bounded by splitting the cases when the optimal arm is saturated or not. We also introduce</p><formula xml:id="formula_98">C u k = { (u) = k, 1 / ∈ A u+1 } for any k ∈ {2, . . . , K} and obtain D ≤ K k=2       T -1 r=r0 4 r r u=ar P C u k , N 1 (u) ≥ C 4 log(u), 1 ∈ S u D k,1 + T -1 r=r0 4 r r u=ar P C u k , N 1 (u) ≥ C 4 log(u), 1 / ∈ S u D k,2       .</formula><p>For the event featuring {1 ∈ S u } we can use the result of the previous sections because in the event we consider there is no difference between (r) = 1 and (r) = k when both arms are saturated. Following the proof for obtaining Equation ( <ref type="formula" target="#formula_65">6</ref>), one has</p><formula xml:id="formula_99">r u=ar P(1 / ∈ A u+1 , 1 ∈ S u , (u) = k) ≤ 2 r u=ar ue -muω k . (<label>15</label></formula><formula xml:id="formula_100">)</formula><p>On Limited-Memory Subsampling Strategies for Bandits</p><p>With this result we then obtain</p><formula xml:id="formula_101">D k,1 = T -1 r=r0 4 r r u=ar P (C u k , 1 ∈ S u ) ≤ T -1 r=r0 4 r r u=ar P (1 / ∈ A u+1 , 1 ∈ S u , (u) = k) ≤ T -1 r=r0 4 r r u=ar 2ue -muω k (Equation (15)) ≤ 8 T -1 r=r0 r u=ar e -muω k ≤ 8 T -1 r=r0 re -ma r ω k , D k,2 ≤ T -1 r=r0 4 r r u=ar P(C u k , N 1 (u) ≥ C 4 log(u), 1 / ∈ S u ) ≤ T -1 r=r0 4 r r u=ar P( Ȳk,N k (u)-N1(u)+1:N k (u) &gt; Ȳ1,N1(u) , N 1 (u) ≥ C 4 log(u), 1 / ∈ S u , N k (u) &gt; N 1 (u)) ≤ T -1 r=r0 4 r 1 1 -e -ω k e -C 4 log(ar)ω k + r 1 -e -ω k e -C 4 log(ar)ω k ≤ T -1 r=r0 4(r + 1) r(1 -e -ω k ) e -C 4 log(ar)ω k ≤ T -1 r=r0 6 1 -e -ω k e -C 4 log(ar)ω k .</formula><p>So finally</p><formula xml:id="formula_102">D ≤ K k=2 8 T -1 r=r0 re -ma r ω k + T -1 r=r0 6 1 -e -ω k e -C 4 log(ar)ω k .</formula><p>At this step we remark that we need to choose the constant C large enough in order to make this sum converge to a constant. We remind here, that C is only an analysis parameter. We then consider the term B. As in <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> we transform the double sum in a simple sum by simply counting the number of times each term is included. For any integer s and any round r, the term 4 s only if a s ≤ r ≤ s. With the value a r = r 4 we obtain</p><formula xml:id="formula_103">B = T r=r0 4 r r u=ar P N 1 (u) ≤ C 4 log(u) = T r=r0 r t=1 4 t 1(t ∈ [r, 4r]) P N 1 (r) ≤ C 4 log(u) .</formula><p>If we remark that</p><formula xml:id="formula_104">r t=1 4 t 1(t ∈ [s, 4s]) ≤ (4s -s + 1) × 4</formula><p>s ≤ 16, we finally get:</p><formula xml:id="formula_105">T r=r0 P({ (r) = 1} ∩ D r ) ≤ r 0 + 16 T r=r0 P N 1 (r) ≤ C 4 log(r) + D(ν).<label>(16)</label></formula><p>Combining ( <ref type="formula" target="#formula_92">12</ref>) and ( <ref type="formula" target="#formula_105">16</ref>) yields</p><formula xml:id="formula_106">T r=r0 P ( (r) = 1) ≤ r 0 + 16 T r=r0 P N 1 (r) ≤ C 4 log(r) + D k (ν)</formula><p>for some constant D k (ν) that depends on k and ν. Hence, the storage limit may introduce larger constant terms in the proof, but asymptotically the dominant terms are the same as in the proof of the vanilla LB-SDA algorithm.</p><p>The last step is to show that we can upper the last term as we did in Appendix A. To do so, we only need to prove that if r 0 is large enough and {N 1 (r) ≤ C/4 log(r)}, then the arm 1 has not been saturated for a long time. This way we would handle the saturation exactly as we handled the forced exploration (which is still present here) in the proof for the vanilla LB-SDA. To do so, we define the function m -1 (x) = inf{r : m r ≥ x}. If we had exactly m r = C log r then this function would be m -1 (x) = exp(x/C). Up to choosing a slightly larger r 0 , we consider that for any r &gt; r 0 we also have m -1 (C/4 log r) ≤ exp(C/4 log(r)C -1 ) = r 1/4 . Hence, after the round r 0 we are sure that arm 1 has never been saturated since the round r 1/4 , hence we can apply the same sketch of proof as in Appendix A to conclude that</p><formula xml:id="formula_107">T r=r0 P N 1 (r) ≤ C 4 log(r) = O(1) .</formula></div>
+<div><head>C. Proof for Switching Bandits</head><p>As explained in the main paper bounding E[N φ k ], the number of pulls of a suboptimal arm k during a phase φ is sufficient to control the dynamic regret. During the phase φ the best arm is denoted k * φ . We consider the SW-LB-SDA policy with a sliding window of size τ . We also define δφ = r φ+1 -r φ , the random number of rounds in the phase φ. Due to the sliding window, we use the definition of the leader introduced in Section 4 and recall that N τ k (r) = r-1 s=r-τ 1 (k ∈ A s+1 ), i.e. number of times arm k has been pulled during the τ last rounds.</p><p>Then for any r ∈ N, the leader at round r + 1 is defined as</p><formula xml:id="formula_108">τ (r + 1) = argmax k∈{1,...,K} N τ k (r + 1) if N τ τ (r) (r + 1) &lt; min(r, τ )/(2K) argmax k∈Br∪{ τ (r)} N τ k (r + 1) otherwise C.1. Details for SW-LB-SDA Implementation</formula><p>With our new definition of the leader, it could happen that for some rounds the leader is not the arm with the largest number of samples when K ≥ 3. We give an example of such a behavior: assume that the first round is r = 1, there are 2n + m rounds and K = 3 arms drawn in the following order (1 arm per round): m pulls of arm 1, followed by n &gt; m pulls of arm 3 and then n -m pulls of arm 1. If the length of the sliding window is τ = 2n and the leader at the round (m</p><formula xml:id="formula_109">+ n + (n -m) = 2n</formula><p>) is 1, then we see that 1 will lose samples during the next m rounds. If for those m successive rounds only the arm 2 is pulled, then 1 will stay leader with n -m samples while 3 still have n samples. At the end (round 2n + m), the leader is arm 1, we have</p><formula xml:id="formula_110">N τ 1 (2n + m) = n -m &lt; N τ 3 (2n + m) = n.</formula><p>This example highlights that is it possible that the leader is not the arm that has been played the most with a sliding window.</p><p>For this reason, the duels are slightly different to the stationary case. The index of the leader for duels against an arm with a larger number of samples is simply the mean of its observations collected during the last τ rounds. Indeed, in this case both arms have a large number of samples hence subsampling is not necessary. This explain why the term μτ ,k is used in Algorithm 2.</p></div>
+<div><head>C.2. Analysis</head><p>We use the notation introduced in Section 4. The beginning of the proof takes elements from <ref type="bibr" target="#b14">Garivier &amp; Moulines (2008)</ref> and <ref type="bibr" target="#b5">Baudry et al. (2020)</ref>. For k = k * φ and an arbitrary function A φ,τ k , we write</p><formula xml:id="formula_111">N φ k = r φ+1 -2 r=r φ -1 1 (k ∈ A r+1 ) ≤ 2τ + r φ+1 -2 r=r φ +2τ -2 1 (k ∈ A r+1 ) ≤ 2τ + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ A φ,τ k + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , N τ k (r) &lt; A φ,τ k + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ ≤ 2τ + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ A φ,τ k , D τ k (r) = 0 + r φ+1 -2 r=r φ +2τ -2 1 τ (r) = k * φ , D τ k (r) = 1 + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , N τ k (r) &lt; A φ,τ k + r φ+1 -2 r=r φ +2τ -1 1 k ∈ A r+1 , τ (r) = k * φ .</formula><p>We then use the following lemma.</p><p>Lemma 6 (Adaptation of Lemma 25 from <ref type="bibr" target="#b14">(Garivier &amp; Moulines, 2008)</ref>).</p><formula xml:id="formula_112">r φ+1 -2 r=r φ +2τ -2 1 (k ∈ A r+1 , N τ k (r) &lt; A) ≤ δ φ A τ .</formula><p>Therefore,</p><formula xml:id="formula_113">N φ k ≤ 2τ + δ φ A φ,τ k τ + r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ A φ,τ k , D τ k (r) = 0 c φ,τ k,1 + r φ+1 -2 r=r φ +2τ -2 1 τ (r) = k * φ , D τ k (r) = 1 c φ,τ k,2 + r φ+1 -2 r=r φ +2τ -1 1 τ (r) = k * φ c φ,τ k,3</formula><p>.</p><p>We control the expectation of these terms separately.</p><formula xml:id="formula_114">C.2.1. UPPER BOUNDING E[c φ,τ k,1 ] We recall that E[c φ,τ k,1 ] = E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ A φ,τ k , D τ k (r) = 0   .</formula><p>We start by stating a lemma on the concentration of subsample means in Last Block sampling that is crucial for the proof.</p><p>Lemma 7. We consider a stationary phase φ and the multi-arm bandit model characterized by (ν φ 1 , . . . , ν φ K ). Let k * φ denote the arm with the largest mean. For each arm we assume there exists a continuous rate function</p><formula xml:id="formula_115">I k satisfying I k (x) = 0 if x = E X∼ν φ k (X) = µ φ k and I k (x) ≥ 0 otherwise. Furthermore, ∀x &gt; µ φ k , P Ȳn ≥ x ≤ e -nI k (x) , ∀y &lt; µ φ k , P Ȳn ≤ y ≤ e -nI k (y) .</formula><p>Then, for any constant n ∈ N satisfying n ≥ f (τ ) = √ log τ , by letting ñ = min(n, τ /(2K) ) it holds that</p><formula xml:id="formula_116">E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ n, D τ k (r) = 0   ≤ δ φ (τ + 1) e -ñω k 1 -e -ω k , (<label>17</label></formula><formula xml:id="formula_117">)</formula><p>where we defined</p><formula xml:id="formula_118">ω k = min I k 1 2 (µ φ k + µ φ k * φ ) , I k * φ 1 2 (µ φ k + µ φ k * φ</formula><p>) , and δ φ is the length of the phase and τ the size of the sliding window. Similarly,</p><formula xml:id="formula_119">E   r φ+1 -2 r=r φ +τ -2 1 k * φ / ∈ A r+1 , τ (r) = k, N τ k * φ (r) ≥ n   ≤ δ φ (τ + 1) e -ñω k 1 -e -ω k . (<label>18</label></formula><formula xml:id="formula_120">)</formula><p>Proof. We start with the first claim. Under the considered event, an arm k can be drawn for three reason: 1) D τ k (r) = 1, the diversity flag of this arm is raised 2) N τ k (r) ≤ √ log τ , the forced exploration is used, or 3) k has won its duel against the leader k * φ . In our case, as</p><formula xml:id="formula_121">D τ k (r) = 0 and N τ k (r) ≥ n ≥ √ log τ , if k is pulled while k *</formula><p>φ is leader then k has won its duel against k * φ . Under this event, the duel between k and k * φ is a comparison between the mean of two blocks containing at least min(n, τ /(2K)) observations because of the definition of the leader. As in <ref type="bibr" target="#b5">Baudry et al. (2020)</ref> we use that for any threshold ξ k , k wins the duel only if either µ τ k (r) ≥ ξ k or µ τ ,k (r) ≤ ξ k . For the sake of simplicity in our results we choose ξ k as the number satisfying</p><formula xml:id="formula_122">ξ k = 1 2 (µ φ k + µ φ k * φ</formula><p>), and this choice will remain the same for the rest of the paper. We then write</p><formula xml:id="formula_123">A = E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ n, D τ k (r) = 0   ≤ E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , { µ τ k (r) ≥ ξ k ∪ µ τ k * φ ,k (r) ≤ ξ k }, N τ k * φ (r) ≥ τ /(2K), N τ k (r) ≥ n   ≤ E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , µ τ k * φ ,k (r) ≤ ξ k , N τ k * φ (r) ≥ τ /(2K), N τ k (r) ≥ n   + E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , µ τ k (r) ≥ ξ k , N τ k * φ (r) ≥ τ /(2K), N τ k (r) ≥ n   .</formula><p>First note that for a given arm k all possible blocks of observations are uniquely described by two quantities: N φ k (r) the number of observations of arm k from the beginning of the phase φ and N τ k (r) number of observations of arm k over the last τ rounds. We will use this property to bound the two previous sums.</p><p>Starting by the simpler term featuring the arm k, we use</p><formula xml:id="formula_124">1 k ∈ A r+1 , µ τ k (r) ≥ ξ k , N τ k * φ (r) ≥ τ 2K , N τ k (r) ≥ n ≤ 1 (k ∈ A r+1 , µ τ k (r) ≥ ξ k , N τ k (r) ≥ n) . (<label>19</label></formula><formula xml:id="formula_125">)</formula><formula xml:id="formula_126">N φ k is defined by N φ k (r) = r-1 s=r φ -1 1(k ∈ A s+1 ).</formula><p>For a given round r if the indicator from the RHS of Equation ( <ref type="formula" target="#formula_124">19</ref>) is equal to 1, it implies that there is a block of length at least n with a mean at least ξ k . More formally, when introducing</p><formula xml:id="formula_127">S n,m k (r) = {k ∈ A r+1 , µ τ k (r) ≥ ξ k , N φ k (r) = m + n -1, N τ k (r) = n} , the following holds, {k ∈ A r+1 , µ τ k (r) ≥ ξ k , N τ k (r) ≥ n} ⊂ δφ n k =n δφ m k =1 S n k ,m k k (r) .<label>(20)</label></formula><p>For the sake of clarity, we denote Y k,1 , ..., Y k, δφ the set of possible rewards for the arm k for the phase φ. If the indicator function equals one for a given round r 0 , then {k ∈ A r0+1 } holds. The same block (same value for both n and m) can not be used for upcoming rounds because N φ k (r 0 + 1) will satisfy N φ k (r 0 + 1) = 1 + N φ k (r 0 ). More specifically, for the arm k for any possible block there is at most one round for which the indicator function can be 1., i.e.</p><formula xml:id="formula_128">δφ n k =n δφ m k =1 r φ+1 -2 r=r φ +2τ -2 1 (S n k ,m k k (r)) ≤ δφ n k =n δφ m k =1 1 Ȳk,m k :m k +n k -1 ≥ ξ k .</formula><p>Similarly, we denote Y k φ ,1 , ..., Y k φ , δφ the set of possible rewards for the arm k φ and let</p><formula xml:id="formula_129">S n,m k φ (r) = {k ∈ A r+1 , µ τ k φ ,k (r) ≤ ξ k , N φ k * φ (r) = m + n -1, N τ k * φ (r) = n} . We also have {k ∈ A r+1 , µ τ k φ ,k (r) ≤ ξ k , N τ k φ (r) ≥ n } ⊂ δφ n =n δφ m =1 S n ,m k φ (r) .<label>(21)</label></formula><p>The main difference here is that several rounds can use the same block of observations of k φ . This can be explained because when the indicator function equals 1 the arm k is drawn instead of k φ and the previous argument do not hold anymore. Yet, N τ k * φ (r) can not remain unchanged for more than τ steps because of the sliding window. This implies in particular, Bringing things together and applying the previous inequality with n = τ /(2K) we obtain</p><formula xml:id="formula_130">A ≤ E   δφ m =1 δφ n =n τ 1 Ȳk * φ ,m :m +n -1 ≤ ξ k + δφ m k =1 δφ n k =n 1 Ȳk,m k :m k +n k -1 ≥ ξ k   .</formula><p>We then have to handle carefully the fact that δ φ is actually a random variable depending on the bandit algorithm. Indeed, as several arms can be pulled at each round we don't know what will be the length of a phase in terms of rounds. However, this quantity is upper bounded by the actual length of the phase in terms of arms pulled δ φ .</p><p>Thus, using the concentration inequality corresponding to the family of distributions for an appropriate rate function we can write</p><formula xml:id="formula_131">A ≤ δ φ m =n δ φ n =n τ P Ȳk * φ ,m :m +n -1 ≤ ξ k + δ φ m k =1 δ φ n k =n P Ȳk,m k :m k +n k -1 ≥ ξ k ≤ δ φ m =1 δ φ n =n τ e -n I k * φ (ξ k ) + δ φ m k =n δ φ n k =n e -n k I k (ξ k ) ≤ δ φ τ e -n I k * φ (ξ k ) 1 -e -I k * φ (ξ k ) + e -nI k (ξ k ) 1 -e -I k (ξ k ) ≤ δ φ (τ + 1) e -nω k 1 -e -ω k ,</formula><p>We remark that if we reorganize the sums in s and r each element in the range [r φ + 2τ -1, r φ+1 -2] will appear at most τ times, which leads to r φ+1 -2</p><formula xml:id="formula_132">r=r φ +2τ -1 1( τ (r) = k * φ , D(r)) ≤ r φ+1 -2 r=r φ +2τ -2 τ k =k * φ 1 τ (r) = k * φ , τ (r + 1) = k, k ∈ A r+1 , D τ k (r) = 0 C1 + r φ+1 -2 r=r φ +2τ -2 τ 1 τ (r) = k * φ , N τ τ (r) (r + 1) ≤ τ /(2K) C2 + r φ+1 -2 r=r φ +2τ -1 τ k =k * φ 1 τ (r) = k * φ , τ (r + 1) = k, D τ k (r) = 1 C3 .</formula><p>We then upper bound separately the three terms. We can upper bound C 1 using Lemma 7 replacing n by the value τ /K -2,</p><formula xml:id="formula_133">E[C 1 ] ≤ k =k * φ τ E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ τ K -2, D τ k (r) = 0   ≤ k =k * φ δ φ τ (τ + 1) e -(τ /K-2)ω k 1 -e -ω k .</formula><p>To handle C 2 we will use Lemma 8. The definition of the leader ensures that when one arm takes the leadership is does it with at least τ /K observations. Hence, to make this number go below the threshold τ /(2K), k * φ has to lose at least τ /(2K) duels between the moment this arm took the leadership and the round r. There are two possibilities. The first one is that k * φ was leader for at least τ rounds: as the index of each arms are computed from observations that have been all drawn under the leadership of k * φ then at least one arm has to beat k * φ while having more than τ /K -1 observations, which results in an active leadership takeover by this arm. Hence, a passive change of leader can only happen if k * φ was leader for less than τ rounds. In this case, we apply Lemma 8, it ensures that k * φ lost at least one duel with an arm with more than</p><formula xml:id="formula_134">τ 2K(K-1)</formula><p>observations during the time it was leader. Formally,</p><formula xml:id="formula_135">τ (r) = k * φ , N τ k * φ (r + 1) ≤ τ /(2K) ⊂ ∪ r-1 s=r-τ ∃k = k * φ : k ∈ A s+1 , τ (s) = k * φ , N τ k (s) ≥ τ 2K(K -1)</formula><p>.</p><p>We can write</p><formula xml:id="formula_136">E[C 2 ] = τ E   r φ+1 -2 r=r φ +2τ -2 1( τ (r) = k * φ , N τ k * φ (r + 1) ≤ τ /(2K))   ≤ τ k =k * φ E   r φ+1 -2 r=r φ +2τ -2 r-1 s=r-τ 1 k ∈ A s+1 , τ (s) = k * φ , N τ k (s) ≥ τ 2K(K -1) , D τ k (s) = 0   ≤ τ 2 k =k * φ E   r φ+1 -2 r=r φ +2τ -2 1 k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ τ 2K(K -1) , D τ k (r) = 0   ≤ k =k * φ δ φ τ 2 (τ + 1) e - τ 2K(K-1) ω k 1 -e -ω k .</formula><p>In the second to last inequality, we have used that the terms can appear at most τ times and the last inequality result from Lemma 7.</p><p>We now focus on the term C 3 . We use that { τ (s + 1) = k, D τ k (s) = 1} can happen only if τ /K ≤ (log τ ) 2 because if (log τ ) 2 ≤ τ /K, the activation of the diversity flag is not sufficient to take over the leadership. We recall that,</p><formula xml:id="formula_137">E[C 3 ] = E   r φ+1 -2 r=r φ +2τ -2 τ k =k * φ 1 τ (r) = k * φ , τ (r + 1) = k, D τ k (r) = 1   .</formula><p>Using Equation ( <ref type="formula">23</ref>), and letting b = (K -1)(log τ ) 2 , one has</p><formula xml:id="formula_138">E[C 3 ] ≤ τ k =k * φ E   r φ+1 -2 r=r φ +2τ -2 k =k * φ r-1 s=r-b 1(k ∈ A s+1 , τ (s) = k * φ , N τ k (s) ≥ (log τ ) 2 , D τ k (s) = 0)1 τ /K ≤ (log τ ) 2   ≤ τ (K -1) k =k * φ 1 τ /K ≤ (log τ ) 2 E   r φ+1 -2 r=r φ +2τ -2 1(k ∈ A r+1 , τ (r) = k * φ , N τ k (r) ≥ (log τ ) 2 , D τ k (r) = 0)   .</formula><p>As 1 τ /K ≤ (log τ ) 2 is deterministic, we conclude by applying Lemma 7.</p><formula xml:id="formula_139">E[C 3 ] ≤ (K -1) k =k * φ δ φ τ (τ + 1) e -(log τ ) 2 ω k 1 -e -ω k 1 τ /K ≤ (log τ ) 2 .</formula><p>We then use the condition on τ to simply upper bound C 3 by</p><formula xml:id="formula_140">E[C 3 ] ≤ (K -1) k =k * φ δ φ τ (τ + 1) e -(τ /K)ω k 1 -e -ω k .</formula><p>We observe that the three terms</p><formula xml:id="formula_141">E[C 1 ], E[C 2</formula><p>] and E[C 3 ] have very similar upper bounds, so we finally regroup them in a single term using</p><formula xml:id="formula_142">τ 2K(K-1) ≤ τ /K -2 ≤ τ /K. E[C 1 ] + E[C 2 ] + E[C 3 ] ≤ 3δ φ τ 2 (τ + 1)(K -1) k =k * φ e - τ 2K(K-1) ω k 1 -e -ω k .</formula><p>Part 2: the optimal arm has never been the leader after the 2τ first observations of the phase.</p><p>We now aim at upper bounding E r φ+1 -2 r=r φ +2τ -2 1(D(r) c ) , where D(r) c is the event that k * φ has never been the leader between r -τ and r -1. To do so, we use that</p><formula xml:id="formula_143">D(r) c ⊂ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ ≥ τ 2 ,</formula><p>and as in <ref type="bibr" target="#b11">Chan (2020)</ref> we would like to handle this term using the Markov inequality. However, the problem in non-stationary environment is that the index of the sum is a random variable. Hence, to get back to a sum with a deterministic number of terms we introduce the set R φ = [r φ + 2τ -1, r φ+1 -2] and write</p><formula xml:id="formula_144">E   r φ+1 -2 r=r φ +2τ -1 1(D(r) c )   = E T r=2τ 1(D(r) c , r ∈ R φ ) ≤ T r=2τ E [1(D(r) c , r ∈ R φ )] ≤ T r=2τ P r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ ≥ τ 2 , r ∈ R φ ≤ T r=2τ P r-1 s=r-τ 1(r ∈ R φ )1 k * φ / ∈ A s+1 , τ (s) = k * φ ≥ τ 2 .</formula><p>At this step we can use the Markov inequality, and obtain</p><formula xml:id="formula_145">E   r φ+1 -2 r=r φ +2τ -1 1(D(r) c )   ≤ T r=2τ 2 τ E r-1 s=r-τ 1(r ∈ R φ )1 k * φ / ∈ A s+1 , τ (s) = k * φ ≤ E T r=2τ 1(r ∈ R φ ) 2 τ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ ≤ E   r∈R φ 2 τ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ   = E   r φ+1 -2 r=r φ +2τ -1 2 τ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ   .</formula><p>Hence,</p><formula xml:id="formula_146">E   r φ+1 -2 r=r φ +2τ -1 1(D(r) c )   ≤ E   r φ+1 -2 r=r φ +2τ -1 2 τ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ   ≤ D 1 + D 2 ,</formula><p>where,</p><formula xml:id="formula_147">D 1 = E   r φ+1 -2 r=r φ +2τ -1 2 τ r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ , N τ k * φ (s) ≥ A φ,τ k * φ   D 2 = E   r φ+1 -2 r=r φ +2τ -1 2 τ r-1 s=r-τ 1 N τ k * φ (s) ≤ A φ,τ k * φ   .</formula><p>The different rounds can appear at most τ times in the double sum. Using this and the second equation of Lemma 7, D 1 can be upper bounded</p><formula xml:id="formula_148">D 1 ≤ 2E   r φ+1 -2 r=r φ +2τ -2 1 k * φ / ∈ A r+1 , τ (r) = k * φ , N τ k * φ (r) ≥ A φ,τ k * φ   ≤ 2δ φ (τ + 1) k =k * φ e -A φ,τ k * φ ω k 1 -e -ω k .</formula><p>Contrarily to the stationary case, we cannot work directly with D 2 and have to further decompose 1</p><formula xml:id="formula_149">(N k * φ (r, τ ) ≤ A φ,τ k * φ</formula><p>). Indeed, the proof in the stationary case use the sparsity of the observations of k * φ when it has not been pulled a lot, and the fact that in this case it has necessarily lost a lot of duel while having a fixed sample size. This is not the case in the non stationary environment, as for instance if k * φ has been pulled a lot in the previous windows its index may change a lot. To avoid this we split the event according to the values of N τ k (r -τ ).</p><formula xml:id="formula_150">1 N τ k * φ (r) ≤ A φ,τ k * φ ≤ 1 N τ k * φ (r) ≤ A φ,τ k * φ , N τ k * φ (r -τ ) &gt; A φ,τ k * φ + 1 N τ k * φ (r) ≤ A φ,τ k * φ , N τ k * φ (r -τ ) ≤ A φ,τ k * φ .</formula><p>We then write D 2 = 2(D 3 + D 4 ), with</p><formula xml:id="formula_151">D 3 = E   r φ+1 -1 r=r φ +2τ -1 1 N τ k * φ (r) ≤ A φ,τ k * φ , N τ k * φ (r -τ ) &gt; A φ,τ k * φ   , D 4 = E   r φ+1 -1 r=r φ +2τ -1 1 N τ k * φ (r) ≤ A φ,τ k * φ , N τ k * φ (r -τ ) ≤ A φ,τ k * φ   .</formula><p>D 3 can be upper bounded using Equation ( <ref type="formula" target="#formula_119">18</ref>) in Lemma 7. Indeed, if</p><formula xml:id="formula_152">N τ k * φ (r) ≤ A φ,τ k * φ and N τ k * φ (r -τ, τ ) &gt; A φ,τ k * φ</formula><p>, for large enough values of τ , k * φ can not be the leader and lost at least one duel against a suboptimal leader while having exactly A φ,τ k * φ samples between round r -τ and round r -1, thus</p><formula xml:id="formula_153">N τ k * φ (r) ≤ A φ,τ k * φ , N τ k * φ (r -τ ) &gt; A φ,τ k * φ ⊂ ∪ r-1 s=r-τ k * φ / ∈ A s+1 , τ (s) = k * φ , N τ k * φ (s) = A φ,τ k * φ .</formula><p>We use the same trick as for D 1 and D 2 to handle the sums and write</p><formula xml:id="formula_154">D 3 ≤ E   r φ+1 -1 r=r φ +2τ -1 r-1 s=r-τ 1 k * φ / ∈ A s+1 , τ (s) = k * φ , N τ k * φ (s) = A φ,τ k * φ   ≤ τ E   r φ+1 -1 r=r φ +2τ -1 1 k * φ / ∈ A r+1 , τ (r) = k * φ , N τ k * φ (r) = A φ,τ k * φ   .</formula><p>We can directly use Lemma 7, however we remark that as we do not have to use an union bound on the values of N τ k * φ we can remove the factor 1/(1 -e -ω k ). Hence, we finally get</p><formula xml:id="formula_155">D 3 ≤ δ φ τ (τ + 1)e -A φ,τ k * φ ω k .</formula><p>We then handle D 4 by using the arguments introduced by <ref type="bibr" target="#b4">Baransi et al. (2014)</ref> with some novelty due to the sliding window. Indeed, we remark that if both Our objective is to highlight a property similar to the balance condition. To do so we need to identify the fraction of the duels played by k * φ with the same index and against non-overlapping blocks (i.e of mutually independent means) of any suboptimal arm k ∈ {1, . . . , K}, k = k * φ . To avoid cumbersome notations we summarize the elements that allow this conclusion, first recalling the arguments of the previous paragraph: • Among those duels, a fraction of at least 1/(K -1) of them has been played against the same suboptimal arm k = k * φ .</p><formula xml:id="formula_156">N τ k * φ (r -τ ) ≤ A φ,τ k * φ and N τ k * φ (r) ≤ A φ,τ k * φ , then k * φ competes with at most 2A φ,τ k * φ different index in the entire window [r -τ,</formula><formula xml:id="formula_157">• k * φ lost at least τ -A φ,τ k * φ duels in the window [r -τ, r -1] • A fraction 1/(2A</formula><p>The next step is to identify the proportion of these duels that have been played against non-overlapping blocks of k. As in the proof for the stationary case we proceed in 2 steps. First we identify the number of different duels (i.e the index of k is not based on the same block of observations of k) played by k * φ against k. However, thanks to the diversity flag we know a new duel happens after at most each (K -1)(log τ ) 2 rounds. So we further process the set of duels previously identified stating that:</p><p>• A fraction of We put all these elements together to state that there exist some β ∈ (0, 1) such that for any value of τ large enough k * φ lost at least C τ = βτ 2(K-1) 2 (log τ ) 2 (A φ,τ k * φ ) 2 duels against non-overlapping blocks of some challenger k, with a fixed index. We write this event E τ j . Summing on all the arms, rounds, possible interval (index n) and size of the history of k * φ (index j), we obtain</p><formula xml:id="formula_158">D 4 ≤E      k =k * φ r φ+1 -1 r=r φ +2τ -1 2 A φ,τ k * φ n=1 A φ,τ k * φ j= √ log τ 1(E τ j )     </formula><p>.</p><p>As these events do not depend on r and on n we have</p><formula xml:id="formula_159">D 4 ≤2δ φ A φ,τ k * φ k =k * φ A φ,τ k * φ j= √ log τ E 1(E τ j ) ≤2δ φ A φ,τ k * φ k =k * φ A φ,τ k * φ j= √ log τ α φ k (C τ , j) .</formula><p>Here α k is the balance function, as defined in Appendix A. We index these functions by φ and k in order to denote the balance function between k * φ and k in the phase φ. We recall the definition of α k , for any integer M</p><formula xml:id="formula_160">α φ k (M, j) = E X∼ν φ k * φ (1 -F φ k,j (X)) M ,</formula><p>where ν φ k is the distribution of the sum of j random variables drawn from the distribution of an arm k in the phase φ, and F φ k ,j its cdf. We then use the Lemma 5, introduced and proved in Appendix A. We recall that this result state that for any u ≤ µ φ k it holds that α k (C τ , j) ≤ e where ω φ = min k =k * φ ω φ k . Even if these terms look impressive we explain in the next section that they are not first order terms in the regret analysis. Indeed, if we only look at the order of A φ,τ k * Objective Due to the many terms introduced in the analysis we provide in this section a clarification of the final terms in the regret. First of all we recall the decomposition introduced in the Section 4 to control the number of pulls of a suboptimal arm during a phase φ ∈ [1, Γ T ],</p><formula xml:id="formula_161">E[N φ k ] ≤ 2τ + δ φ A φ,τ k τ + E[c φ,τ k,1 ] + E[c φ,τ k,2 ] + E[c φ,τ k,3 ] .</formula><p>Results of Section C We first provide the results we obtained in Appendix C, that are true for any value of the sliding window τ and the function A φ,τ k , that we will properly calibrate later. We also recall that for any suboptimal arm k in a phase φ we defined a constant ω φ k (written ω k in the proof as the phase is explicit), satisfying</p><formula xml:id="formula_162">ω φ k = min kl µ φ k , 1 2 (µ φ k + µ φ k * φ ) , kl µ φ k * φ , 1 2 (µ φ k + µ φ k * φ ) .</formula><p>We first obtained an upper bound on E[c φ,τ k,1 ], which controls the probability that a "concentrated" suboptimal arm k is pulled when the best one is leader, and E[c φ,τ k,2 ], that represents the expectation of the number of pulls of the arm k because of the diversity flag when the best arm is leader. These upper bounds are</p><formula xml:id="formula_163">E[c φ,τ k,1 ] ≤ δ φ (τ + 1) e -A φ,τ k ω k 1 -e -ω k , E[c φ,τ k,2 ] ≤ δ φ (τ + 1) k =k * φ e -(log τ ) 2 ω k 1 -e -ω k .</formula><p>We then provided an upper bound of E[c φ,τ k,3 ] composed of multiple terms. This is because this term represents the expectation of the number of rounds when the best arm is not leader. To provide a general overview, this term is composed of two parts: the first one for the cases when the best arm has already been leader in the last τ rounds, and the case when the best arm has never been leader in the last τ round. The first general scenario was handled by the constants C 1 , C 2 and C 3 , that we upper bounded in expectation by,</p><formula xml:id="formula_164">E [C 1 + C 2 + C 3 ] ≤ 3δ φ τ 2 (τ + 1)(K -1) k =k * φ e - τ 2K(K-1) ω k 1 -e -ω k .</formula><p>We observe that this term has a larger order in τ than the previous one before the exponential, but as a larger term in the exponential that compensates. After that, we handled the cases when the best arm has never been leader in . We distinguish again different cases. The terms D 1 and D 3 provide terms that share similar order with the ones we obtained before, namely:</p><formula xml:id="formula_165">D 1 ≤ 2δ φ (τ + 1) k =k * φ e -A φ,τ k ω k 1 -e -ω k and D 3 ≤ δ φ τ (τ + 1)e -(log τ ) 2 ω k</formula><p>The last term is the one that corresponds to the balance condition in the stationary case. Its adaptation to the non-stationary case was non trivial but we could provide an upper bound, leveraging on the properties detailed in Appendix A. We obtained</p><formula xml:id="formula_166">D 4 ≤ 2δ φ A φ,τ k * φ (K -1)   e - √ log τ ω φ 1 -e -ω φ 3 log τ C τ + γA φ,τ k * φ τ 3   ,</formula><p>where C τ = βτ 2(K-1) 2 (log τ ) 2 (A φ,τ k * φ ) 2 .</p><p>On Limited-Memory Subsampling Strategies for Bandits Tuning of the parameters The previous results allow to control precisely the dynamic regret of SW-LB-SDA for general values of τ and the constants of the problem. We first remark that one could tune each of the constants A φ,τ k * φ to optimize the term in each phase. However, in this paragraph we propose a more general asymptotic analysis that proves that an optimal tuning of τ allows the algorithm to reach optimal guarantees. To catch this generality we will simply define As the only term that depends on the phase is δ φ it is now straightforward to sum on the phases and the arms to obtain the dynamic regret, recalling that Γ T φ=1 δ φ = T . Without loss of generality, we also assume that for all φ and for all k = k * φ , ∆ φ k ≤ 1.</p><formula xml:id="formula_167">R T = Γ T φ=1 k =k * φ E[N φ k ]∆ φ k ≤ 2(K -1)τ Γ T + (K -1)T A(τ ) τ E1 + 2T (τ + 1)K(K -1)</formula><p>1 -e -ω e -A(τ )ω E2 + T K(K -1)τ (τ + 1) 1 -e -ω e -(log τ ) 2 ω E3 + 3T (K -1)τ 2 (τ + 1)(K -1) 2 1 -e -ω e - </p></div>
+<div><head>E5</head><p>Knowing the horizon T and an order of the number of breakpoints Γ T we propose a tuning for τ in T log T Γ T . We then prove that the only first order terms in the decomposition are the terms in E 1 .</p><p>First, as log τ is of order log T , choosing A(τ ) = 6 ω log τ ensures that E 2 is upper bounded by a constant. Then, the terms E 3 and E 4 are also both upper bounded by constants as the term in the exponent dominates the polynomial in τ before it.</p><p>The term E 5 is a bit more touchy. Indeed, its second component causes no difficulty and is upper bounded by a constant. However, for the first term we need to use the fact C τ is of order τ / log(τ ) j , hence there exists some integer j such that the dominant term in E 5 is of order T τ × (log τ ) j e - √ log τ ω . As in Appendix A we use that (log τ ) j e - √ log τ ω = o(log(τ ) -1 ) (for instance). Hence, thanks to the log terms E 5 is of lower order than E 1 . Finally, we obtain</p><formula xml:id="formula_168">R T = O( T Γ T log T ) .</formula><p>This concludes the proof of Theorem 3.</p></div><figure xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure1. Illustration of a passive leadership takeover with a sliding window τ = 4 when the standard definition of leader is used. The bold rectangle correspond to the leader. A blue square is added when an arm has an observation for the corresponding round and the red square correspond to the information that will be lost at the end of the round due to the sliding window.</figDesc></figure>
+<figure xml:id="fig_1"><head>Figure 2 .</head><label>2</label><figDesc>Figure 2. Evolution of the means: Left, Bernoulli arms (Fig. 4); Right, Gaussian arms (Figs. 5 and 6).</figDesc><graphic coords="9,81.63,67.06,194.40,130.10" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Cost of storage limitation on a Bernoulli instance. The reported regret are averaged over 2000 independent replications.</figDesc><graphic coords="9,61.85,239.94,218.70,166.58" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Performance on a Bernoulli instance averaged on 2000 independent replications.</figDesc><graphic coords="9,313.85,239.94,218.69,163.90" type="bitmap" /></figure>
+<figure xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Performance on a Gaussian instance with a constant standard deviation of σ = 0.5 averaged on 2000 independent runs.</figDesc><graphic coords="10,61.85,220.93,218.69,163.90" type="bitmap" /></figure>
+<figure xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Performance on a Gaussian instance with time dependent standard deviations averaged on 2000 independent replications.</figDesc><graphic coords="10,313.85,67.06,218.69,163.90" type="bitmap" /></figure>
+<figure xml:id="fig_6"><head /><label /><figDesc>then Ȳk,s and Ȳk,n:m have the same distribution. • (r) leader at round r, (r) = argmax k∈{1,...,K} N k (r).</figDesc></figure>
+<figure xml:id="fig_7"><head /><label /><figDesc>φ ,m :m +n -1 ≤ ξ k .</figDesc></figure>
+<figure xml:id="fig_8"><head /><label /><figDesc>r -1]. This is due to the fact that the index change only if k * φ is pulled (can happen at most A φ,τ k * φ times) or if k * φ loses one observation from the window [r -2τ, r -τ -1] due to the sliding window (which can also happen at most A φ,τ k * φ times). Thanks to these properties we know that during the interval [r -τ, r -1] we are sure that k * φ lost at least τ -A φ,τ k * φ duels, and that a fraction 1/2A φ,τ k * φ of them occurred while the index of k * φ remained the same.</figDesc></figure>
+<figure xml:id="fig_9"><head /><label /><figDesc>1)(log τ ) 2 has been played against different index of k based on different blocks of observations from the history of k, thanks to the diversity flag. • As the blocks are of maximum size A φ,τ k * φ a fraction at least 1/A φ,τ k * φ of them are non-overlapping.On Limited-Memory Subsampling Strategies for Bandits</figDesc></figure>
+<figure xml:id="fig_10"><head>-</head><label /><figDesc>jkl(µ φ k ,µ k * φ ) u + (1 -u) C τ .We write kl(µ φ k , µ k * φ ) = ω φ k , and choose the value u = 3 log τ C τ . Thanks to this choice, there exist a constant γ &gt; 1 such that(1 -u) C τ = exp (C τ log(1 -u)) = exp C τ log 1 -If we plug this expression to upper bound the sums we obtainD 4 ≤ 2δ φ A φ</figDesc></figure>
+<figure xml:id="fig_11"><head>φ,</head><label /><figDesc>C τ , we can use the same argument as in the proof of Lemma 4. Considering that for any integer k &gt; 1, (log τ ) k = o e - √ log rω we obtain that asymptotically D 4 is a o δ φ τ log τ k for any integer k ≥ 1. C.3. Summary: Upper Bound on the Dynamic Regret</figDesc></figure>
+<figure xml:id="fig_12"><head /><label /><figDesc>τ ) = B log τ for some constant B, and define ω= min φ∈[1,Γ T ] {min k =k * φ ω φ k }.With these new definitions we can regroup several terms together, and obtain for τ &gt; KE[N φ k ] ≤2τ + δ φ A(τ ) τ + 2δ φ (τ + 1)K 1 -e -ω e -A(τ )ω + Kδ φ τ (τ + 1) 1 -e -ω e -(log τ ) 2 ω+ 3δ φ τ 2 (τ + 1)(K -1) 2 e -</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Storage and computational cost at round T for existing subsampling algorithms.</figDesc><table><row><cell>Algorithm</cell><cell>Storage</cell><cell>Comp. cost</cell></row><row><cell /><cell /><cell>Best-Worst case</cell></row><row><cell>BESA (Baransi et al., 2014)</cell><cell>O(T )</cell><cell>O((log T ) 2 )</cell></row><row><cell>SSMC (Chan, 2020)</cell><cell>O(T )</cell><cell>O(1)-O(T )</cell></row><row><cell>RB-SDA (Baudry et al., 2020)</cell><cell>O(T )</cell><cell>O(log T )</cell></row><row><cell>LB-SDA (this paper)</cell><cell>O(T )</cell><cell>O(1)-O(log T )</cell></row><row><cell>LB-SDA-LM (this paper)</cell><cell cols="2">O((log T ) 2 ) O(1)-O(log T )</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head /><label /><figDesc>Liu, F., Lee, J., and Shroff, N. A change-detection based framework for piecewise-stationary multi-armed bandit problem. arXiv preprint arXiv:1711.03539, 2017.</figDesc><table><row><cell>Raj, V. and Kalyani, S. Taming non-stationary bandits: A</cell></row><row><cell>bayesian approach. arXiv preprint arXiv:1707.09727,</cell></row><row><cell>2017.</cell></row><row><cell>Riou, C. and Honda, J. Bandit algorithms based on thomp-</cell></row><row><cell>son sampling for bounded reward distributions. In Algo-</cell></row><row><cell>rithmic Learning Theory, pp. 777-826. PMLR, 2020.</cell></row><row><cell>Seznec, J., Menard, P., Lazaric, A., and Valko, M. A single</cell></row><row><cell>algorithm for both restless and rested rotting bandits. In</cell></row><row><cell>International Conference on Artificial Intelligence and</cell></row><row><cell>Statistics, pp. 3784-3794. PMLR, 2020.</cell></row><row><cell>Thompson, W. R. On the likelihood that one unknown</cell></row><row><cell>probability exceeds another in view of the evidence of</cell></row><row><cell>two samples. Biometrika, 25(3/4):285-294, 1933.</cell></row><row><cell>Trovo, F., Paladino, S., Restelli, M., and Gatti, N. Sliding-</cell></row><row><cell>window thompson sampling for non-stationary settings.</cell></row><row><cell>Journal of Artificial Intelligence Research, 68:311-364,</cell></row><row><cell>2020.</cell></row></table><note><p>Vermorel, J. and Mohri, M. Multi-armed bandit algorithms and empirical evaluation. In European conference on machine learning, pp. 437-448. Springer, 2005. Wu, Q., Iyer, N., and Wang, H. Learning contextual bandits in a non-stationary environment. In The 41st International ACM SIGIR Conference on Research &amp; Development in Information Retrieval, pp. 495-504, 2018. Yue, Y. and Joachims, T. Interactively optimizing information retrieval systems as a dueling bandits problem. In Proceedings of the 26th Annual International Conference on Machine Learning. ACM, 2009. Zelen, M. Play the winner rule and the controlled clinical trial. Journal of the American Statistical Association, 64 (325):131-146, 1969.</p></note></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>The <software>code</software> for obtaining the different figures reported in the paper is available at https://github.com/YRussac/ LB-SDA.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>The PhD of <rs type="person">Dorian Baudry</rs> is funded by a <rs type="grantNumber">CNRS80</rs> grant.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_ucTjJs2">
+					<idno type="grant-number">CNRS80</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div><p>where in the last inequality we have introduced ñ = min(n, n ) = min(n, τ /(2K) ).</p><p>Finally, the proof of the second statement is a direct adaptation of this proof by inverting k and k * φ . We don't need the event D φ k (r) = 0 because if k * φ is not drawn it has necessarily lost its duel against the leader k.</p><p>We then remark that Equation ( <ref type="formula">17</ref>) in Lemma 7 can be used to upper bound term c φ,τ k,1 , by replacing n by A φ,τ k . Assuming that A φ,τ k ≤ τ /(2K) it holds that</p><p>To upper bound E[c φ,τ k,2 ] we have to study the probability that the optimal arm for the phase φ loses (K -1)(log τ ) 2 successive duels while being leader. We derive in Lemma 8 an intuitive consequence of this property: the optimal arm has necessarily lost at least one duel against a concentrated arm. Lemma 8. Consider K arms, and assume that some arm k has been leader for M consecutive rounds, M ≤ τ . For any m satisfying (K -1)m ≤ M , if k has lost more than (K -1)m duels then it has lost at least one duel against an arm with more than m samples.</p><p>Proof. We assume that arm k has been leader for M consecutive rounds and that arm k lost strictly more than (K -1)m duels. We also assume that all the challengers that have won against the arm k have less than m samples. There exists an arm k = k such that k won at least m + 1 duels against arm k while having less than m samples by assumption. We denote the rounds corresponding to the first m + 1 wins r 1 , . . . , r m+1 . The following holds,</p><p>As the number of rounds where k wins against k is smaller than τ , we have</p><p>We have the contradiction and it concludes the proof.</p><p>Under the event c φ,τ k,2 , the optimal arm k * φ is the leader and the diversity flag for the arm k is raised. If D τ k (r) = 1, and k * φ is the leader, it means that the leader has not changed for (K -1)(log τ ) 2 successive rounds and hast lost more than (K -1)(log τ ) 2 duels. All the conditions for applying Lemma 8 are met. Using Lemma 8 and the fact that the diversity flag cannot be activated in r if it has already been activated in the last (K -1)(log τ ) 2 rounds it holds that</p><p>(23) Furthermore, we can add that an event</p><p>can only be associated with at most one event D τ k (r) = 1 for some r. Indeed, if the diversity flag is activated it cannot be anymore before at least (K -1)(log τ ) 2 rounds. Hence, combining these results we obtain r φ+1 -2</p><p>Applying Lemma 7 with n = (log τ ) 2 gives,</p><p>We recall that,</p><p>As for the stationary case the trickiest part is to prove that the leader is the best arm with high probability. We will first look at the terms involving the event that the best arm has already been leader after the first τ rounds of the phase, and then analyze the situation where it has never been leader. As the upper bound for c φ,τ k,3 is difficult to obtain, we break this section into different parts.</p><p>Part 1: the optimal arm has been leader between r -τ and r -1</p><p>If the best arm has already been leader between r -τ and r -1 then it has necessarily lost its leadership at some intermediate round. Loosing the leadership can be done in two different ways. The first one called the active leadership takeover corresponds to the case where an arm takes the leadership by winning against the leader. The second one, passive leadership takeover is simply the case where the leader loses so many duels that its number of samples falls below τ /(2K). We handle the first case similarly as in <ref type="bibr" target="#b5">Baudry et al. (2020)</ref>, while for the second we use Lemma 8.</p><p>We denote</p><p>φ } and we will upper bound P( τ (r) = k * φ , D(r)). We introduce,</p><p>) . The change of leader can happen under three different scenarios: 1) some arm k takes the leadership after winning against k * φ (active takeover), 2) arm k * φ loses the leadership because its number of samples falls below the threshold τ /(2K) and 3) some arm takes the leadership after being pulled because of the diversity flag. We remark that the activation of the diversity flag for some arm k cannot lead to a leadership takeover by arm k if (log τ ) 2 ≤ τ /K, so this scenario can only happen for relatively small values of τ . These properties can be formulated as</p><p>Using this property it holds that </p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Analysis of thompson sampling for the multi-armed bandit problem</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">JMLR Workshop and Conference Proceedings</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="39" to="40" />
+		</imprint>
+	</monogr>
+	<note>Conference on learning theory</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Further optimal regret bounds for thompson sampling</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goyal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Artificial intelligence and statistics</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="99" to="107" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Finite-time analysis of the multiarmed bandit problem</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Cesa-Bianchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fischer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Adaptively tracking the best bandit arm with an unknown number of distribution changes</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Auer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gajane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ortner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Learning Theory</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="138" to="158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Sub-sampling for multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Baransi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O.-A</forename><surname>Maillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mannor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Joint European Conference on Machine Learning and Knowledge Discovery in Databases</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="115" to="131" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Subsampling for efficient non-parametric bandit exploration</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Baudry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O.-A</forename><surname>Maillard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Learning and strategic pricing</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Bergemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Välimäki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Econometrica: Journal of the Econometric Society</title>
+		<imprint>
+			<biblScope unit="page" from="1125" to="1149" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Stochastic multi-armedbandit problem with non-stationary rewards</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Besbes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zeevi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="199" to="207" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Efficient change-point detection for tackling piecewisestationary bandits</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Besson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O.-A</forename><surname>Maillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Seznec</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020-12">December 2020</date>
+		</imprint>
+		<respStmt>
+			<orgName>Prepint</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Nearly optimal adaptive procedure with change detection for piecewisestationary bandit</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kveton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The 22nd International Conference on Artificial Intelligence and Statistics</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="418" to="427" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Kullback-leibler upper confidence bounds for optimal sequential allocation</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Cappé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O.-A</forename><surname>Maillard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Munos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Stoltz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1516" to="1541" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">The multi-armed bandit problem: An efficient nonparametric solution</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>Chan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Statistics</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="346" to="373" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A new algorithm for non-stationary contextual bandits: Efficient, optimal and parameter-free</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-W</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-Y</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conference on Learning Theory</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="696" to="726" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">The impact of competitive entry in a developing market upon dynamic pricing strategies</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Eliashberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Jeuland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Marketing Science</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="20" to="36" />
+			<date type="published" when="1986">1986</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Moulines</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:0805.3415</idno>
+		<title level="m">On upper-confidence bound policies for non-stationary bandit problems</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">On upper-confidence bound policies for switching bandit problems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Garivier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Moulines</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Algorithmic Learning Theory</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="174" to="188" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Clinical resistance to sti-571 cancer therapy caused by bcr-abl gene mutation or amplification</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Gorre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mohammed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ellwood</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Paquette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">N</forename><surname>Rao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">L</forename><surname>Sawyers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">293</biblScope>
+			<biblScope unit="issue">5531</biblScope>
+			<biblScope unit="page" from="876" to="880" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Non-asymptotic analysis of a new bandit algorithm for semi-bounded rewards</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Honda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Takemura</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="3721" to="3756" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Thompson sampling: An asymptotically optimal finite-time analysis</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Korda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Munos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Algorithmic Learning Theory -23rd International Conference</title>
+		<imprint>
+			<publisher>ALT</publisher>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kveton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Szepesvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghavamzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Boutilier</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1902.10089</idno>
+		<title level="m">Perturbed-history exploration in stochastic multiarmed bandits</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Garbage in, reward out: Bootstrapping exploration in multi-armed bandits</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kveton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Szepesvari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vaswani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lattimore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ghavamzadeh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<biblScope unit="page" from="3601" to="3610" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<title />
+		<author>
+			<persName><surname>Pmlr</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019b</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Asymptotically efficient adaptive allocation rules</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">L</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Robbins</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in applied mathematics</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="4" to="22" />
+			<date type="published" when="1985">1985</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Unbiased offline evaluation of contextual-bandit-based news article recommendation algorithms</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Langford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the fourth ACM international conference on Web search and data mining</title>
+		<meeting>the fourth ACM international conference on Web search and data mining</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="297" to="306" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Collaborative filtering bandits</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Karatzoglou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gentile</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 39th International ACM SIGIR conference on Research and Development in Information Retrieval</title>
+		<meeting>the 39th International ACM SIGIR conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="539" to="548" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

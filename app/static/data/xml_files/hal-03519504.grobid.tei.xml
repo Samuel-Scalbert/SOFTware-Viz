@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Build WebAudio and JavaScript Web Applications using JSPatcher: A Web-based Visual Programming Editor</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Shihong</forename><surname>Ren</surname></persName>
+							<email>shihong.ren@univ-st-etienne.com</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Jean Monnet Saint-Etienne</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Laurent</forename><surname>Pottier</surname></persName>
+							<email>laurent.pottier@univ-st-etienne.fr</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Université Jean Monnet Saint-Etienne</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+							<email>michel.buffa@univ-cotedazur.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">INRIA Sophia Antipolis</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Build WebAudio and JavaScript Web Applications using JSPatcher: A Web-based Visual Programming Editor</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">ADEE798F4C6C1B37C44CE2C28060A959</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Many visual programming languages (VPLs) such as Max <ref type="bibr" target="#b0">[1]</ref> or PureData <ref type="bibr" target="#b1">[2]</ref> provide a graphic canvas to allow developers to connect functions or data between them. This canvas, also known as a patcher [3], is basically a graph meant to be interpreted as dataflow computation by the system. Some VPLs are used for multimedia performance or content generation as the UI system is often an important part of the language. This paper presents a webbased VPL, JSPatcher, which allows not only to build audio graphs using the WebAudio API, but also to design graphically AudioWorklet DSPs with FAUST toolchain, [4] [5]  or to create interactive programs with other language built-ins, Web APIs or any JavaScript modules.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">INTRODUCTION</head><p>Visual programming languages are likely to be more user-friendly to non-coders, artists, designers or children as these programs seem closer to the flowchart diagram, which often corresponds to the way things work in our physical world, especially in the audio processing field. Connecting signal processors using audio cables to produce sounds and effects is a common practice even though we can now bring this practice to the digital world. Max, PureData and Vvvv, 1 which are well-known VPLs for audio and video processing, use patchers, connections with cables and boxes, to describe the dataflow of the program.</p><p>Patcher-like VPLs are massively developed especially on the web. WebPd 2 is a web-based PureData patcher interpreter using JavaScript and the WebAudio API. Cables.gl<ref type="foot" target="#foot_0">3</ref> is a video-oriented patcher editor on the web that also handles WebAudio nodes. WebAudio Visual Editor, 4 WebAudioDesigner, 5 Mosaicode 6 <ref type="bibr" target="#b5">[6]</ref> and Olos 7 are web-oriented VPLs for audio processing.</p><p>However, with many web-based VPL, users can create patchers only from a limited number of different types of boxes (box objects), which are high-level abstractions like generators, audio and video 1 https://vvvv.org/ 2 https://github.com/sebpiq/WebPd processors, or UI components. It is possible to create simple audio or video sequences, but insufficient to implement more complex web applications that need to deal with lower-level Web APIs.</p><p>The patcher system we designed aims to be able to create a patcher from boxes that represent JavaScript usages, such as variables, getters, setters and functions. The language built-ins or Web APIs available under the current global scope will be imported to the system, along with usages from other JavaScript modules that can be included dynamically. These imported box objects allow users to create programs from lower-level APIs just like code with JavaScript.</p><p>On top of these lower-level box objects, we implemented two additional layers of patcher interpretation. The first is a representation of the WebAudio graph which contains connections between WebAudio Nodes. The graph is similar and fit to a patcher system in which boxes are the Nodes and cables are the connections between them. Another layer is designed to carry subpatchers (patchers in patcher) that can be in different modes: imperative or compiled.</p><p>A patcher can be imperative, interactive with UI components and process dataflow in real-time; or compiled, to generate a program to execute at runtime. For example, Max is mainly an imperative VPL but can include Gen 8 patchers, which will be compiled to Max's DSP modules after edit.</p><p>The mixed system like Max and its integrated Gen, allowing the coexistence of compiled and imperative patchers in a single environment, provides two advantages. First, compiled modules are often more efficient compared to imperative ones as they are considered as a single functional processor at runtime. The compiled patchers can be used to design specific sub-process such as DSPs or shaders. Second, while the compiled patchers are encapsulated, they are extendable and reusable in other patchers, which economizes computing resources and developer's efforts.</p><p>Besides, it would be interesting for the system to have different compilers as options to interpret these patchers.</p><p>Using this approach, JSPatcher offers possibilities to design AudioWorklet DSPs with compiled patchers thanks to FAUST WebAssembly compiler <ref type="bibr" target="#b6">[7]</ref> and to interact with them in real-time from an imperative patcher.</p><p>The UI of JSPatcher is inspired by Max and meant to be close to Max to facilitate the comprehension and the usage of Max-like VPL developers. Yet, JSPatcher is designed for different purposes compared to Max, as web applications for multimedia will not perform as well as on native platforms in terms of efficiency and reliability, but more flexible on device-compatibility, networking and interactivity.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">PRINCIPLES OF PATCHING 9 2.1 Cables and Boxes</head><p>A patcher in JSPatcher, following Max's convention, usually contains cables and boxes. A box represents a function with or without UI, can take data from its input ports (inlets) and send processed data to its output ports (outlets). A cable represents a connection between one inlet and one outlet, meaning that data is flowing from the outlet to the inlet. One-to-many or many-to-one port connections are possible.</p><p>The inlets of a box are on its top, the outlets are on its bottom, aligned horizontally. A box will normally send out data to its outlets from right to left. A box can be positioned anywhere in a 2D space. The position will influence the priority while receiving data from one outlet: When data coming from one outlet should be delivered to multiple destination inlets, the position of these inlets will be used to compare the priority. The inlet at the right side will have a higher priority and receive firstly the data, if aligned vertically, the one at the bottom will have a higher priority.</p><p>For example, in Figure <ref type="figure" target="#fig_0">1</ref>, print B and print A are connected to a message. In the two cases, print B will receive the message earlier than print A. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Box's Class, Arguments and Properties</head><p>For any box with the default UI, its function is dynamic and changeable by editing its text. When the box's function is changed, it's number of IOs will also be actualized, the cables no longer being used will be removed.</p><p>The behavior of a box is mainly determined by its text. The text will be parsed to three parts: class, arguments and properties, each element is separated by a white-space and be considered as a JSON string. The first element is the class identifier to a registry in the system that contains all the available classes. Elements after the identifier are the arguments, as the parameters of a function. Then, if an element string starts with the character "@", it will be considered as an identifier of the box's property, elements after the property identifier are its value.</p><p>The arguments and the properties indicated in the box's text only determine its initial state, they can be changed any time with any operations without changing the text.</p><p>For example, in Figure <ref type="figure" target="#fig_1">2</ref>, the box + 2 @textAlign right initialized the box's class as +, with one argument 2, and the value right of the property textAlign.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">States of a Patcher</head><p>A patcher in the presented system is editable while the patcher is unlocked. In this state, users can add or remove boxes and cables, move or resize the boxes, change the endpoints of the lines, or change the boxes' text, arguments or properties. If a patcher is locked, the user can interact with the boxes if they provide UIs.</p><p>A patcher can also be in the presentation state, in which boxes can be displayed or not, presented with another position and size without affecting the program. As cables and non-UI-related boxes will be hidden in the presentation state, this is an interesting feature for the design of a user-friendly application with the system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4">Bang Object</head><p>Similar to Max, JSPatcher uses a specific object "Bang" as an event to tell any box object to proceed with its task. The Bang contains no additional information, its only purpose is to trigger immediately anything, which is likely to output the previous result or stored value.</p><p>For example, in Figure <ref type="figure">3</ref>, when the user clicks the button, it will output a Bang that triggers the message to output the string "Do something", then alert will display the string in a dialog. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">PATCHING JAVASCRIPT</head><p>One of our main goals in JSPatcher is to offer a possibility to create JavaScript programs with patchers. To achieve that, the patcher system should in the first place have an equivalent way to program for any ECMAScript statement or expression if necessary. Then, get, set or store values, calling functions, methods or constructors should be possible with any language built-ins, Web APIs or external JavaScript modules.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Operators 10</head><p>Most of the operators in the ECMAScript standard are available as box objects. For binary operators, one argument can be provided to initialize the second component which can also be changed from the second inlet. The first component will be determined by the first inlet, then, the operation will be executed and output immediately while receiving. For ternary operators, we are using the same implementation unless the number of arguments is three.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Conditions and Iterations 11</head><p>Patcher systems like Max provide several ways to handle conditions and iterations because the representation of decision branches is slightly different from literal expressions. A choice from many inputs to one output, or output to a chosen branch from one input, is likely to be easier to understand as a condition testing object in a patcher system. For the iterations, a loop can be created by connecting a cable from the output of a graph to its input. Also, we provide box objects that will output all the iterated value with one outlet, and a message using another outlet while the iteration is ended, so that the rest of the program can be connected with this outlet.</p><p>For example, in Figure <ref type="figure">4</ref>, conditions can be verified using the ternary operator or gate to block the dataflow. in Figure <ref type="figure">5</ref>, the graph on the left is a loop with a condition, the right one is a for loop with predefined borders The message box receives a value from its second inlet to set the value without output, a Bang from the first inlet will output the current value. The sel true will output from its first inlet a Bang if the input matches true.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 4 Conditions Figure 5 Loop with condition</head><p>Built-in iterators like Array.prototype.map can be called as language built-in with a lambda function. The usage will be presented in the next subsection.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Lambda functions 12</head><p>In JSPatcher, a box object called lambda allows to create a JavaScript anonymous function. The function body will be a graph attached to this box, taking the box's outputs as the function's arguments, then give back to the second inlet of the box the function's return value.</p><p>When the object receives a Bang from its first inlet, it will output an anonymous function from its first outlet. The function's number of arguments can be declared as the box's argument, which changes the number of outlets of the box. When the function is called, the values of arguments will be output starting from the third outlet, along with a Bang from the second outlet. If the number of arguments is not declared, the arguments will be output as an array from the third outlet.</p><p>For example, in Figure <ref type="figure">6</ref>  When the JSPatcher is initialized, it scans recursively the global variable window and imports its content which includes most of the JavaScript built-ins and Web APIs. The imported variables, getters, setters and functions are then usable as different box objects.</p><p>Box objects with imported variables have two inlets and one outlet.</p><p>A Bang from its first inlet will output the current value from its first outlet, the second inlet can be used to set the value. For example:</p><p>Box objects with property getters have one inlet for a Bang to trigger the getter and output its value from the first outlet.</p><p>Box object with property setters has one inlet that receives value to be set.</p><p>If the property has both setter and getter, the box object will behave like a variable box, have two inlets where the first serves as the getter and the second serves as the setter.</p><p>In the example (Figure <ref type="figure">7</ref>), click on the button or the message is equivalent to execute the following JavaScript code:</p><p>console.log(window); escape(",\&gt;?"); Number.MAX_SAFE_INTEGER;</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Figure 7 Imported Web APIs</head><p>For box objects with imported functions, the default number of inlets corresponds to the number of arguments of the function, in case the number is variable, users can also set the number by the args property. The function's argument values can be initialized from the box's arguments, and be set from the inlets. While the box receives a Bang or an argument from its first inlet, the function will be called with the arguments stored, then output the return value from its first outlet, along with the arguments after calling the function from the rest of the outlets.</p><p>For the box objects which are imported from a JavaScript prototype, these identifiers omit the string prototype, and there will be an additional inlet and an additional outlet for passing an instance of the prototype. This facilitates the calling of the instance's methods or using its setters, getters or properties.</p><p>To construct an object from its constructor function, users can use the new box object, following by the identifier of the constructor's box object and the arguments. The box will evoke the new operator on the constructor and output the instance from the first outlet.</p><p>To get of set a specific property by name from an object is possible using set and get box object. Plus, call object can be used to call a specific method by name from an object.</p><p>Here (Figure <ref type="figure">8</ref>) are two examples to build a WebAudio graph (oscillator-gain-destination) with JavaScript box objects, they are equivalent:</p><p>Figure <ref type="figure">8</ref> WebAudio graph with JavaScript boxes</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">External JavaScript Modules</head><p>It is common that JavaScript module creators make their work available in a CDN and can be fetched remotely. Websites like unpkg.com provide available packages on NPM, a JavaScript module registry. It is practical to get these public JavaScript modules with a CDN URL and the package identifier.</p><p>The packages on NPM are designed for Node.js, using the CommonJS module standard for import and export. The system will simulate the Node.js's environment to import these packages as box objects under a given namespace. It is also possible to import ES6 modules into the system.</p><p>A patcher can add packages with their URL and namespace as its dependencies. When JSPatcher loads a patcher, it will automatically import these packages from these URLs.</p><p>14 https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=07.%20audioworklet.jspat</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">PATCHING WEBAUDIO 4.1 WebAudio Node Box</head><p>Apart from using JavaScript box objects to build a WebAudio graph, JSPatcher provides a dedicated layer for WebAudio nodes. In this layer, each box is a representation of one WebAudio node that has node connections and its AudioParams becoming the box's inlets and outlets. If a cable is connected between an inlet and an outlet both marked as a WebAudio connection, the cable will be displayed differently, and call native WebAudio connect and disconnect methods while manipulated.</p><p>The layer is compatible with normal box objects and cable, the data passed through the normal cables can still be treated. For example, inlets representing AudioParams can be connected from an AudioNode as in the WebAudio API, or be connected from box objects that generate numbers to be set as the value of the AudioParam. Some customized WebAudio nodes can have their inlet for receiving MIDI messages at the same time.</p><p>One additional outlet of these WebAudio node box object outputs the instance of the AudioNode for further possible usage via JavaScript box object. For example, Figure <ref type="figure">9</ref> is equivalent to two examples from Figure <ref type="figure">8</ref>. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">AudioWorklet</head><p>JSPatcher includes a set of box object that helps to code, register and use an AudioWorklet node in the patcher system. Firstly, users can add a code box to write an AudioWorklet processor with plain JavaScript code. Then the box object audioWorklet allows users to register the processor from the code, using internally createObjectURL. After being registered, the box will output a Bang that can be used to construct the AudioWorklet AudioNode with the processor's identifier. The node~ box object can bring any AudioNode into the WebAudio connection layer so that the constructed AudioWorklet node can be connected to other AudioNode boxes.</p><p>In Figure <ref type="figure" target="#fig_0">10</ref>, the AudioWorkletProcessor is written in a code box, registered by the audioWorklet box. Then it's created using the AudioWorkletNode constructor, and transformed using node~ into an AudioNode box.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">WebAudio Plugin Box</head><p>We provide in this layer a box object plugin~ to bring any WebAudio Plugin <ref type="bibr" target="#b7">[8]</ref> [9] into the patcher with its UI. The box behaves like a WebAudio node box, creating automatically corresponded inlets and outlets. According to the WebAudio Plugin standard, an URL is needed to fetch from a remote server a JavaScript file that loaded its dependencies and returns an HTML element as its UI, and an AudioNode to be connected and output from the box's last outlet.</p><note type="other">Figure 11 Visualizations</note></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">UI with WebAudio Node</head><p>Audio signal analyzers with UI visualizations are commonly used to display the features of audio streams. This can be achieved by an AudioNode which receives and analyzes the real-time signal, and HTML elements to display the result of the analysis. In JSPatcher, like the WebAudio Plugins, an analyzer with visualization can be packed in one WebAudio node box.</p><p>For example, a level meter can be a box object that displays instant RMS (root mean square) values graphically, with one inlet as a connection to an analyzer AudioNode. Figure <ref type="figure" target="#fig_0">11</ref> is an example 15 of different visualizations of three sinewave oscillators. 15 https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=08.%20meter.jspat 4.5 AudioNode generated by FAUST <ref type="foot" target="#foot_4">16</ref>FAUST is a functional, synchronous, domain-specific programming language designed for real-time audio signal processing and synthesis.</p><p>Multiple developments have been done to use the language on the Web platform. Thanks to the Emscripten transpiler and the WebAssembly format, the FAUST compiler is available as a JavaScript module faust2webaudio <ref type="bibr" target="#b9">[10]</ref> which can compile FAUST code to a fully functional WebAudio AudioWorklet node.</p><p>The language also allows us to describe MIDI-controllable parameters of the DSP or polyphonic MIDI instruments. The parameters will be interpreted as AudioParams, and the node has APIs to handle MIDI messages.</p><p>The compiler is available with the faustnode~ box object. When receiving the FAUST code, it will try to compile the code and transform itself into a WebAudio node box. Like the AudioWorklet box, its AudioNode and AudioParams are connectable with other WebAudio node boxes, in addition, it handles incoming MIDI messages from its first inlet.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">FAUST SUBPATCHER</head><p>The design of the FAUST programming language represents its code with a patcher-like graph called block-diagram algebra (BDA) <ref type="bibr" target="#b10">[11]</ref> [12] that can be optimized and transformed into a high-performance low-level code. The BDA acts as a middleware between the userwritten code and its internal code. Using the BDA, FAUST compiler can generate a block diagram that shows the processing structure of the compiling DSP.</p><p>A FAUST code is therefore always represented by a graph that leaves the possibility to generate code from an equivalent graph. In JSPatcher, we designed a specific mode of patcher to build a FAUST-compatible graph, that will be firstly interpreted to an equivalent FAUST code which can be used in other FAUST tools, then be compiled to a WebAudio node using faust2webaudio. While patching in this mode, users have a panel that shows the interpreted code of the actual patcher in real-time. <ref type="bibr" target="#b12">[13]</ref> The implementation of this mode of patcher is inspired by Gen, which is also a graph-to-code system that can be compiled into a high-performance DSP.</p><p>Figure <ref type="figure" target="#fig_0">13</ref> The generated code can be previewed in on the right panel (synchronized to the patcher) Figure <ref type="figure" target="#fig_0">14</ref> A FAUST patcher can be compiled to a WebAudio node box (the patcher on the right is the FAUST patcher) 17   6. FUTURE WORK</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">Timeline and Musical Notation</head><p>Patcher-like VPLs are good choices to build musical applications or event music generators, as a timeline or a musical score can be displayed in real-time in a patcher. As an example, OpenMusic <ref type="bibr" target="#b13">[14]</ref> is a VPL to design computer-aided composition which provides different musical representation including score and timeline. For the timeline, a JavaScript audio library Tone.js implemented an AudioWorklet-based timing and scheduling system, which is an interesting and more accurate method for musical timing. These features could be included in the JSPatcher.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">AudioWorklet Generators</head><p>Aside from FAUST, Csound <ref type="bibr" target="#b14">[15]</ref> is also a language that can be compiled into an AudioWorklet node thanks to the WebAssembly Besides, it will be interesting to design an AudioWorklet's processor with JavaScript boxes in a subpatcher by having a dedicated patcher system in the audio thread. It enables the possibility to design imperative patchers to process audio buffers or event FFT data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">File System</head><p>We are working on a virtual file system in the JSPatcher so that dependencies like audio files or subpatchers can be loaded and saved to the file system. This feature can change the design of a project under JSPatcher, as it can be separated into several patchers for different roles in the project. For example, an interactive performance can have a host that sends messages to clients using WebRTC standard, in this case, the project will have a dedicated patcher for host and another for clients. Some DSPs or synthesizers, like a sampler or a granular synthesizer, need to load audio files in advance. They can load files remotely using an URL, but it will be more efficient to get them directly from the virtual file system.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.4">SDK</head><p>The box objects in the JSPatcher are extendable and meant to be fully accessible for developments from community contributors. We should offer a software development kit (SDK) based on these built-in box objects. With the SDK, developers can create their box object packages which can be imported from an URL into the JSPatcher.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">CONCLUSIONS</head><p>The pros and cons of dataflow VPLs have been discussed for decades. Compared to textual languages, VPLs are more accessible and illustrative in some fields like multimedia processing, but lack clearance and performance in some complex algorithms. <ref type="bibr" target="#b16">[17]</ref> In the design of WebAudio applications, JSPatcher is similar to some other platforms, allowing users to manipulate an audio graph and control the parameters. But we try to provide more flexibilities and potentials to JSPatcher, to design an AudioWorklet, and to gain control of other JavaScript-based web features. Developers can also write code in boxes to implement complex algorithms, then connect UI components with them. With this hybrid system where compiled and imperative patcher and code coexist, we try to overcome the disadvantages of VPLs. Indeed, the project starts from an aspect of audio programming, but its actual implementation seems to have more use cases to us. We have experimented on the platform to program with three.js 18 OpenGL rendering, d3.js 19  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1</head><label>1</label><figDesc>Figure 1 Messaging priority</figDesc><graphic coords="3,123.50,458.14,101.10,59.05" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2</head><label>2</label><figDesc>Figure 2 Box's text Figure 3 Bang</figDesc><graphic coords="3,345.47,412.85,64.55,54.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 6 function 3 . 4</head><label>634</label><figDesc>Figure 6 Lambda function 3.4 Built-ins and Web APIs 13</figDesc><graphic coords="4,387.55,79.16,100.70,91.55" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 9 Figure 10</head><label>910</label><figDesc>Figure 9 WebAudio graph</figDesc><graphic coords="5,337.82,393.88,200.15,194.18" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 12</head><label>12</label><figDesc>Figure 12 is an example to compile an eight-voice polyphonic instrument from FAUST. The instrument is handling MIDI messages from its first inlet.</figDesc><graphic coords="6,82.55,276.36,182.33,201.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 12</head><label>12</label><figDesc>Figure 12 Faust node</figDesc><graphic coords="6,341.05,316.04,193.68,174.75" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>, Array..map represents the Array.prototype.map function. the first argument is the array<ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b3">4]</ref>, the second is a lambda function where the function</figDesc><table /><note><p>11 https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=03.%20cond-loop.jspat 12 https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=04.%20lambda.jspat body is * 2 which means to multiply each element in the array by 2.</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>Csound compiler.<ref type="bibr" target="#b15">[16]</ref> Using the compiler, it is possible to generate a WebAudio node box from Csound code.</figDesc><table><row><cell>version of the</cell></row><row><cell>17 https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example</cell></row><row><cell>s/wac.zip&amp;file=09.%20pfaust.jspat</cell></row><row><cell>18 https://threejs.org/, example at</cell></row><row><cell>https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../examples/</cell></row><row><cell>wac.zip&amp;file=10.%20gl.jspat</cell></row><row><cell>19 https://d3js.org/, example at</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>data visualization, or Tensorflow.js 20 web-based neural networking as proofs of concept. Hopefully, the platform could facilitate the design of interactive multimedia projects in the future. https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../examples/ wac.zip&amp;file=11.%20d3.jspat 20 https://www.tensorflow.org/js, example at https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../examples/ wac.zip&amp;file=12.%20prnn.jspat</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://cables.gl/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_1"><p>Interactive examples can be found at following URL: https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=01.%20basics.jspat</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="10" xml:id="foot_2"><p>https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=02.%20ops.jspat</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="13" xml:id="foot_3"><p>https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../example s/wac.zip&amp;file=05.%20imported.jspat https://fr0stbyter.github.io/jspatcher/dist/?projectZip=../examples/ wac.zip&amp;file=06.%20graph.jspat</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="16" xml:id="foot_4"><p>Video demonstration on https://youtu.be/vYgqjakKYwo</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="8.">ACKNOWLEDGMENTS</head><p>Our thanks to <rs type="institution">GRAME-CNCM (Lyon, France</rs>) for ideas to the design of the FAUST-based patcher.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Max/msp</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Puckette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">E A</forename><surname>Zicarelli</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1990">1990</date>
+			<publisher>Cycling</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Pure Data</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Puckette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Computer Music Conference</title>
+		<meeting>the International Computer Music Conference<address><addrLine>Thessaloniki</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The patcher</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Puckette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Computer Music Conference</title>
+		<meeting>the International Computer Music Conference<address><addrLine>San Francisco, United States</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="1986">1986</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">FAUST : an Efficient Functional Approach to DSP Programming</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">New Computational Paradigms for Computer Music</title>
+		<meeting><address><addrLine>E. D. France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="65" to="96" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">AudioWorklet: The future of web audio</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Choi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>Michigan Publishing, University of Michigan Library</publisher>
+			<pubPlace>Ann Arbor, MI</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Web Audio application development with Mosaicode</title>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">L</forename><surname>Schiavoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">L</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L N</forename><surname>Gomes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th Brazilian Symposium on Computer Music</title>
+		<meeting>the 16th Brazilian Symposium on Computer Music<address><addrLine>Sã o Paulo, Brazil</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Faust audio DSP language in the Web</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Denoux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Linux Audio Conference</title>
+		<meeting>the Linux Audio Conference<address><addrLine>Mainz</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Towards an open Web Audio plugin standard</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings of the The Web Conference</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Emerging W3C APIs opened up commercial opportunities for computer music applications</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Web Conference 2020 DevTrack</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">FAUST online IDE: dynamically compile and publish FAUST code as WebAudio Plugins</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ammari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Audio Conference</title>
+		<meeting>the Web Audio Conference<address><addrLine>Trondheim</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">An Algebra for Block Diagram Languages</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Computer Music Conference</title>
+		<meeting>the International Computer Music Conference<address><addrLine>Gothenburg</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Syntactical and Semantical Aspects of Faust</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Soft Computing</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">From Diagram to Code: a Web-based Interactive Graph Editor for Faust DSP Design and Code Generation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pottier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2nd International Faust Conference</title>
+		<meeting>the 2nd International Faust Conference<address><addrLine>Saint-Denis</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">OpenMusic: visual programming environment for music composition, analysis and research</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bresson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Agon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Assayag</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th ACM international conference on Multimedia</title>
+		<meeting>the 19th ACM international conference on Multimedia</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Csound: a sound and music computing system</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lazzarini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Heintz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ø</forename><surname>Brandtsegg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mccurdy</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Others</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<publisher>Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">WebAssembly AudioWorklet Csound</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lazzarini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Costello</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Audio Conference</title>
+		<meeting>the Web Audio Conference<address><addrLine>Berlin</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A survey of stream processing</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Stephens</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Acta Informatica</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="491" to="541" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Enriching Language Models with Semantics</title>
+				<funder ref="#_DR8cvKa">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Tobias</forename><surname>Mayer</surname></persName>
+						</author>
+						<title level="a" type="main">Enriching Language Models with Semantics</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">05A3628B962DFD29BE3EFE7CB7D78D3D</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:54+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Recent advances in language model (LM) pre-training from largescale corpora have shown to improve various natural language processing tasks. They achieve performances comparable to non-expert humans on the GLUE benchmark for natural language understanding (NLU). While the improvement of the different contextualized representations comes from (i) the usage of more and more data, (ii) changing the types of lexical pre-training tasks or (iii) increasing the model size, NLU is more than memorizing word co-occurrences. But how much world knowledge and common sense can those language model capture? How much can those models infer from just the lexical information? To overcome this problem, some approaches include semantic information in the training process. In this paper, we highlight existing approaches to combine different types of semantics with language models during the pre-training or fine-tuning phase.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Pre-trained contextualized language models such as ELMo, OpenAI GPT, BERT and XLNet have been shown to effectively capture language representation and helped advance the state-of-the-art in many natural language processing (NLP) tasks. A central discipline in NLP is natural language understanding (NLU), which is a prerequisite for other downstream tasks, like natural language generation or question answering. NLU requires a sophisticated comprehension of natural language. For NLU tasks various branches of transformer models are spearheading the leaderboard of the General Language Understanding Evaluation (GLUE) benchmark. This benchmark consists of 9 language understanding tasks representing problems like sentiment analysis, semantic similarity, paraphrasing and inference. Recent transformer models surpass the performance of non-expert humans making this benchmark no longer a suitable metric <ref type="bibr" target="#b6">[7]</ref>. The newer SuperGLUE <ref type="bibr" target="#b6">[7]</ref> benchmark comprises harder tasks like reading comprehension, common sense reasoning or textual entailment to better quantify the performance of the understanding. While for most tasks the leaders of the GLUE benchmark also performed reasonably well <ref type="bibr" target="#b1">[2]</ref>, they are significantly worse than humans on the causal reasoning task and co-reference dependent reading comprehension, where the human baseline is at 100% accuracy. Besides a deep understanding of the discourse, these problems require common sense and world knowledge. It has been shown that BERT-based models in the higher layers do capture some kind of semantic abstraction <ref type="bibr" target="#b5">[6]</ref> and the performance of the models on the aforementioned tasks is also high. But how well do these models understand the interactions in a discourse and how much common sense and world knowledge can be learnt from just word co-occurrences? More importantly, how can the major limitation of being trained only with character-based features be enhanced to capture more of this information?</p><p>1 Univ. Côte d'Azur, Inria, CNRS, I3S, France, email: tmayer@i3s.unice.fr One option is to include semantic information in the training process. We show here recent approaches in this direction. Section 2 describes one approach to incorporate world knowledge from knowledge bases during pre-training. The next section highlights discourse and semantic aware approaches, which inject the semantic information during either pre-training or fine-tuning.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Semantics from Knowledge Bases</head><p>Additionally to the aforementioned problems of understanding the discourse, knowledge dependent tasks, like fine-grained relation classification or entity typing, pose challenges for models trained solely on contextual character-based features. For example in Bob Dylan wrote Blowin' in the Wind in 1962, it is hard to determine if Bob Dylan is a writer or songwriter without knowing that Blowin' in the Wind is a song. This knowledge is available in knowledge bases (KB). The semantic web is full of structured world knowledge, which can be exploited. One approach to incorporate such external knowledge into language models is Enhanced language Representa-tioN with Informative Entities (ERNIE) <ref type="bibr" target="#b7">[8]</ref>. The idea is to stack a knowledge encoder consisting of multiple aggregators on top of the encoder layers of a transformer model, where the knowledge encoder fuses knowledge graph embeddings with the contextualized embeddings into one united feature space. As a first step, named entity mentions in the text are aligned with their KB entries. The aligned named entities are represented with knowledge graph embeddings using TransE. Each aggregator takes the contextualized token embeddings from the transformer encoder and the entity embeddings and feeds them into a multi-head self-attention layer, respectively. An information fusion layer integrates the different representations coming from the two self-attention layers into one feature space. The output embeddings for each token and entity are the input for the next aggregator. The output of the last aggregator is used as the final embedding representation. For more details we refer the reader to the original paper <ref type="bibr" target="#b7">[8]</ref>. Like BERT, the pre-training for ERNIE is done with cloze test like tasks <ref type="foot" target="#foot_0">2</ref> . Similar to the masked language model (MLM), they employ a knowledge masking task, where either one entity of the entity alignment is replaced with a random entity, a token-entity alignment is masked, or the alignment stays unchanged. For ERNIE 1.0 the pre-training comprises MLM, next sentence prediction (same as for BERT) plus the knowledge masking task, while ERNIE 2.0 consists of more tasks <ref type="foot" target="#foot_1">3</ref> . Adding only the knowledge masking to the pre-training, ERNIE 1.0 significantly outperforms BERT on entity typing and relation classification datasets while still delivering comparable results on GLUE.</p><p>With ERNIE being a first step towards integrating heterogeneous information coming from world knowledge databases, the next step is to inject common sense knowledge in a similar fashion. There are available resources providing this knowledge to a certain extend, e.g. ConceptNet <ref type="bibr" target="#b3">[4]</ref> or ATOMIC <ref type="bibr" target="#b2">[3]</ref> in form of cause and effect relations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Contextual Semantics</head><p>One approach to include contextual semantics to language modelling is SemBERT <ref type="bibr" target="#b8">[9]</ref>, motivated by the semantically incomplete answer spans of BERT on the Stanford Question Answering Dataset (SQuAD), where single semantic discourse units were broken down and only parts were classified as the answer to the question. For example, answering How many people does the Greater Los Angeles Area have? with 17.5 million instead of over 17.5 million. To overcome this problem, the authors integrated information from semantic role labeling (SRL) in the sequence encoding. As a first preprocessing step, the input sentences are annotated with a semantic role labeler. Each token is assigned a list of labels, where the length of the list is the number of semantic structures output by the semantic role labler. The embeddings of each semantic role label are learnt via a BiGRU and subsequently fed into a linear layer to obtain one joint representation for each word in the sequence. In parallel, the subword-level representations from the BERT encoder are converted to word-level using a CNN with max pooling to match the token length of the SRL output. The contextualized and semantic embeddings are concatenated to form the final embedding. While the BERT encoder is initialized with pre-trained weights, the weights for the Bi-GRU are learnt during the fine-tuning on a specific task. SemBERT outperformed the existing models on GLUE and SQuAD <ref type="foot" target="#foot_2">4</ref> .</p><p>Another way to inject discourse knowledge is discourse-aware semantic self-attention <ref type="bibr" target="#b0">[1]</ref>, which replaces the basic multi-head selfattention block in the transformer encoder. Here, the motivation comes from integrating discourse information into reading comprehension to better understand interactions, causation and temporal sequences in the text. For example, given the context: Jacob frequently visits Jeff and Kenny, who are serving time in a juvenile hall. Jacob initially threatens them, until eventually Jeff commits suicide. To answer Why did Jeff commit suicide? one needs to understand that the suicide is caused (until eventually) by Jacob threatening Jeff (them). For this, structured knowledge about entity co-reference and their semantic roles are required as much as information about the discourse relations between text sequences. To learn all this information, the proposed self-attention gets three additional inputs <ref type="foot" target="#foot_3">5</ref> , which are represented by one embedding vector, respectively: 1) semantic role label; similar to the aforementioned approach, embeddings for the semantic roles are learnt. 2) discourse relation label; following 15 finegrained discourse relation sense types from the Penn Discourse Tree Bank annotation scheme, such as causation or contrast. 3) label of the co-reference cluster; where tokens referring to the same entity are assigned to the same cluster. Using these linguistic annotations, the model outperforms the same model with the basic self-attention by +3.43 Rouge-L on NarrativeQA reading comprehension. Concerning the impact of the individual linguistic information, the authors found that information about the SRL improves who and when questions, while information about the discourse relations is beneficial to answer why and where questions.</p><p>Similar to the discourse-aware semantic self-attention, ERNIE 2.0 <ref type="bibr" target="#b4">[5]</ref> takes advantage of information about the discourse relations. One of the added tasks for pre-training with respect to the previous version, is the discourse relation classification task. Here, the model has to predict the marker, e.g. but, for an explicit discourse relation between two sentences. Together with the continual learning strategy and the other added pre-training tasks related to lexical, structural and semantic information, ERNIE 2.0 shows significant improvement compared with the previous version.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Conclusion</head><p>In this paper, we have presented various ways to combine information about semantics and discourse with current state-of-the-art transformer-based language models. Furthermore, we have shown one example of how to inject world knowledge coming from KBs into LM pre-training. We consider the addition of semantics to LMs trained on only contextualized character-based features an important and inevitable step towards natural language understanding. Especially with respect to common sense, world knowledge and coreferential discourse, current contextualized representations cannot solve the challenges of general language understanding alone.</p></div>			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>Cloze tests are fill-in-the-blank tests, which require an understanding of the context and are commonly used in language learning.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>The discourse semantic aware pre-training task will be quickly highlighted in the following section.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>While later models like XLNet and RoBERTa outperform SemBERT, they still do not consider semantic information. The proposed approach to inject semantics can be implemented in these LMs as well.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>Linguistic annotation is a pre-processing and relational annotations spanning multiple sentences are projected from paragraph-level to token-level.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENTS</head><p>This work is partly funded by the <rs type="funder">French government labelled</rs> <rs type="programName">PIA program</rs> under its <rs type="projectName">IDEX UCA JEDI</rs> project (<rs type="grantNumber">ANR-15-IDEX-0001</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_DR8cvKa">
+					<idno type="grant-number">ANR-15-IDEX-0001</idno>
+					<orgName type="project" subtype="full">IDEX UCA JEDI</orgName>
+					<orgName type="program" subtype="full">PIA program</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Discourse-aware semantic selfattention for narrative reading comprehension</title>
+		<author>
+			<persName><forename type="first">Todor</forename><surname>Mihaylov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anette</forename><surname>Frank</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP-IJCNLP)</title>
+		<meeting>the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP-IJCNLP)<address><addrLine>Hong Kong</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-11">November 2019</date>
+			<biblScope unit="page" from="2541" to="2552" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Exploring the limits of transfer learning with a unified text-to-text transformer</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Raffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noam</forename><surname>Shazeer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Roberts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katherine</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sharan</forename><surname>Narang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Matena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanqi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><forename type="middle">J</forename><surname>Liu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">ATOMIC: an atlas of machine commonsense for if-then reasoning</title>
+		<author>
+			<persName><forename type="first">Maarten</forename><surname>Sap</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Lebras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emily</forename><surname>Allaway</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chandra</forename><surname>Bhagavatula</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicholas</forename><surname>Lourie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hannah</forename><surname>Rashkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brendan</forename><surname>Roof</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yejin</forename><surname>Choi</surname></persName>
+		</author>
+		<idno>CoRR, abs/1811.00146</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Representing general relational knowledge in ConceptNet 5</title>
+		<author>
+			<persName><forename type="first">Robyn</forename><surname>Speer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catherine</forename><surname>Havasi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eighth International Conference on Language Resources and Evaluation (LREC&apos;12)</title>
+		<meeting>the Eighth International Conference on Language Resources and Evaluation (LREC&apos;12)<address><addrLine>Istanbul, Turkey</addrLine></address></meeting>
+		<imprint>
+			<publisher>ELRA</publisher>
+			<date type="published" when="2012-05">May 2012</date>
+			<biblScope unit="page" from="3679" to="3686" />
+		</imprint>
+	</monogr>
+	<note>European Language Resources Association</note>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">ERNIE 2.0: A continual pre-training framework for language understanding</title>
+		<author>
+			<persName><forename type="first">Yu</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuohuan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shikun</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hua</forename><surname>Hao Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifeng</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Wang</surname></persName>
+		</author>
+		<idno>CoRR, abs/1907.12412</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">BERT rediscovers the classical NLP pipeline</title>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Tenney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dipanjan</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ellie</forename><surname>Pavlick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="4593" to="4601" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Superglue: A stickier benchmark for general-purpose language understanding systems</title>
+		<author>
+			<persName><forename type="first">Alex</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yada</forename><surname>Pruksachatkun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikita</forename><surname>Nangia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amanpreet</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Hill</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Omer</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">R</forename><surname>Bowman</surname></persName>
+		</author>
+		<idno>CoRR, abs/1905.00537</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">ERNIE: Enhanced language representation with informative entities</title>
+		<author>
+			<persName><forename type="first">Zhengyan</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyuan</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xin</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maosong</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qun</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019-07">July 2019</date>
+			<biblScope unit="page" from="1441" to="1451" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Semantics-aware BERT for language understanding</title>
+		<author>
+			<persName><forename type="first">Zhuosheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuwei</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuchao</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shuailiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">the Thirty-Fourth AAAI Conference on Artificial Intelligence (AAAI-2020)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

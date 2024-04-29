@@ -1,0 +1,866 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Efficiently identifying disguised missing values in heterogeneous, text-rich data</title>
+				<funder ref="#_YgGqUUe">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+				<funder ref="#_9UXk8Mj">
+					<orgName type="full">FCT</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Théo</forename><surname>Bouganim</surname></persName>
+							<email>theo.bouganim@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria Saclay Ile de France</orgName>
+								<address>
+									<postCode>91120</postCode>
+									<settlement>Palaiseau</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">Institut Polytechnique de Paris (IPP</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+							<email>ioana.manolescu@inria.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="department">INESC-ID &amp; IST</orgName>
+								<orgName type="institution">Universidade de Lisboa</orgName>
+								<address>
+									<country key="PT">Portugal</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Efficiently identifying disguised missing values in heterogeneous, text-rich data</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">CB9AE8AA6C9E9DAB3094980BF269B2E0</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:54+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Digital data is produced in many data models, ranging from highly structured (typically relational) to semi-structured models (XML, JSON) to various graph formats (RDF, property graphs) or text. Most real-world datasets contain a certain amount of null values, denoting missing, unknown, or inapplicable information. While some data models allow representing nulls by special tokens, so-called disguised missing values (DMVs, in short) are also frequently encountered: these are values that are not syntactically speaking nulls, but which do, nevertheless, denote the absence, unavailability, or inapplicability of the information. In this work, we tackle the detection of a particular kind of DMV: texts freely entered by human users. This problem is not tackled by DMV detection methods focused on numeric or categoric data; further, it also escapes DMV detection methods based on value frequency, since such free texts are often different from each other, thus most DMVs are unique. We encountered this problem within the <software ContextAttributes="used">ConnectionLens</software> [6,<ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b11">12]</ref> project where heterogeneous data is integrated into large graphs. We present two DMV detection methods for our specific problem: (i) leveraging Information Extraction, already applied in <software ContextAttributes="used">ConnectionLens</software> graphs; and (ii) through text embeddings and classification. We detail their performanceprecision trade-offs on real-world datasets.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>Digital data is being produced and reused at unprecedented rates. Large datasets are usually processed within data management systems, which model the data according to a given data model, provide means to store it, and query it using a query language. The database industry has been pioneered by Relational Database Management Systems (RDBMSs), whose foundations lay in first-order logic, formalization by E. F. Codd <ref type="bibr" target="#b12">[13]</ref>, and subsequent work, e.g., <ref type="bibr" target="#b2">[3]</ref>.</p><p>Where there is data, there are null values Since the early database days, nulls have been identified as a central concept denoting missing, unknown, or inapplicable information. The semi-structured data model first embodied in OEM (the Object Exchange Model), proposed to simply omit missing values from the data <ref type="bibr" target="#b16">[17]</ref>. However, standard semi-structured models such as XML and JSON re-introduced nulls, e.g., xsi:nil in tools supporting XML Schema or the special null value in JSON. Such null tokens may have been needed in practice because perfect, complete databases, regardless of their data model, are the exception rather than the norm.</p><p>Disguised missing values In practice, relational databases often feature not only null tokens but also non-null values playing the semantic role of nulls, also called disguised missing values (DMVs, in short) <ref type="bibr" target="#b1">[2]</ref>. For instance, 0 or -1 are often used to encode an unknown (but non-zero) number such as a price; users may enter "none, "-", "unknown" or "N/A" or any other similar phrase or token, in entry forms requiring numbers, names or dates that they are unable or unwilling to fill in. Further, when a value needs to be chosen from a predefined set, such as a state of the U.S., users may forget to set it from the menu, leaving the default value which just happens to be the first, e.g., "Alabama" as a U.S. state.</p><p>Data entry forms sometimes prevent DMVs by checking the entered value, e.g., "N/A" would not be accepted as a number. However, DMVs may still persist: (i) users replace "N/A" with 0 for an unknown, non-zero number; (ii) if the expected input type is free text, e.g., "List of industrial collaborations in connection with this research", no simple format-driven validation applies; (iii) in cases such as "Alabama" above, the value is in the correct domain.</p><p>Detecting DMVs Identifying DMVs requires dedicated methods, and several have been proposed for relational databases <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b24">25]</ref>, based on a statistical analysis of the data. They can detect, for instance, when a value such as 0 is suspiciously frequent in a numeric attribute, or when a value of attribute R.a is an outlier in the joint distribution of (R.a, R.b), where we expect the distributions R.a, R.b to be independent. More approaches, in particular rulebased, are discussed in <ref type="bibr" target="#b0">[1]</ref>. Other works also propose corrections for erroneous or missing values, e.g., <ref type="bibr" target="#b21">[22]</ref>. Detecting and correcting DMVs is important for data cleaning (users may want to replace them with explicit nulls), and for query correctness: null values should not match any selection predicate, and there should be no join on null values.</p></div>
+<div><head>Problem statement and outline</head><p>In this work, we consider the detection of DMVs in textual, heterogeneous data. The motivation for our work came from <software ContextAttributes="used">ConnectionLens</software> <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b11">12]</ref>, a system that integrates structured, semi-structured, or unstructured data into graphs, enriched by adding all the entities (people, organizations, places, URIs, dates, etc.) encountered in various text nodes.</p><p>We have developed <software ContextAttributes="used">ConnectionLens</software> inspired by fact-checking and data journalism applications <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b8">9]</ref>. In such applications, we encountered many datasets where some fields are free-form text entered by users. For instance, in the French Transparency dataset HATVP <ref type="foot" target="#foot_0">4</ref> , elected officials need to state "their direct finan-cial participation in company capitals"; in the PubMed bibliographic database <ref type="foot" target="#foot_1">5</ref> , free-form texts include the article titles, abstracts, funding statements, and possible acknowledgments. Detecting DMVs in <software ContextAttributes="used">ConnectionLens</software> graphs is interesting from the following perspective: if we know that a string is a DMV, we can avoid extracting entities from it, thus reducing the time needed to construct Connec-tionLens graphs <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref>.</p><p>DMVs encountered in free-form text fields can be classified into two broad classes:</p><p>1. Short, simple strings such as "N/A" or "-", which tend to be frequent, and thus can be detected using previously proposed methods, such as <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b22">23]</ref>; 2. Complex phrases such as "Liz Smith has not received any funding related to this work", "No conflicts of interest, financial, or otherwise are declared by the authors", or "There is no conflict of interest relating to Authors. The manuscript was prepared according to scientific and ethical rules".</p><p>To detect DMVs of the second form above, our work is organized as follows:</p><p>1. We recall the closest existing DMV detection techniques (Section 2), then we introduce a motivating example to support our discussion (Section 3). 2. We show that <software>ConnectionLens</software> Named Entity Recognition can be leveraged to (manually) establish an entity profile for each set of text attributes in which we want to detect DMVs and consider any value deviating from this profile a DMV. For instance, the entity profile of financial participation descriptions could be Organization+ to state that it should contain at least one organization. Profiles allow defining, in semistructured and heterogeneous graphs, groups of values on which we can reason about DMVs. This method is quite accurate, however, it incurs a high computational cost, since entity extraction is a complex operation (Section 4). 3. To address this shortcoming, we devised a novel method, which relies on text embeddings and classification, while also leveraging entity extraction on a much smaller portion of the dataset. This method is much more efficient than the one based on entity profiles, while also being very accurate (Section 5). 4. We show how we integrated this novel method within the architecture of Con-nectionLens (Section 6) to speed up graph construction. 5. In our experimental evaluation (Section 7): (i) We perform a set of experiments on state of the art methods, and show that they do not perform well on the DMVs we target in this work. (ii) We study the efficiency and precision of our method based on embeddings and classification. (iii) We experimentally validate the interest of including it within the <software ContextAttributes="used">ConnectionLens</software> system, demonstrating that it reduces the graph construction time.</p><p>This work is an invited extension of a short, informally presented paper <ref type="bibr" target="#b9">[10]</ref>. A core contribution of this paper with respect to that prior work is the integration of our DMV detection method within <software ContextAttributes="used">ConnectionLens</software> (Section 6), together with the associated experiments (Section 7.7) validating the practical interest of this method. Other novel extensions, beyond improving and clarifying the writing, include comparisons with a method based on sentence-Bert <ref type="bibr" target="#b26">[27]</ref> (Section 7.5), and a validation of the quality and performance of our methods on a manually labeled dataset (Section 7.6).</p></div>
+<div><head n="2">Related Work</head><p>In this section, we recall the main DMV detection methods, as well as some closely related efforts. Foundational work in this area was made in <ref type="bibr" target="#b23">[24]</ref>, which introduced and formalized the problem of Disguised Missing Values (DMV), and measured its influence on different data science models. A set of statistical models (mutually disjoint hypothesis) were introduced in <ref type="bibr" target="#b20">[21]</ref> to model nulls as well as disguised missing values:</p><p>-The MCAR (Missing Completely At Random) model posits that the probability of a value to be missing is the same for any value of an attribute, and does not depend on the values of any other attribute. For instance, assuming an attribute is the result of a physical measure made with a device that breaks down, the resulting missing values are not correlated to any other aspect of the data or of the values. -The MAR (Missing At Random) model considers that the probability for a value being missing depends on values encountered in other attributes of the same table (these notions have been defined for tables). For example, in a political poll, assume young voters are more likely not to declare their political preference. Then, the political preference value is MAR. -MNAR (Missing Not At Random) applies when neither MAR nor MCAR holds, and when the probability for a value to be missing does depend on the actual value that is missing, but not on the values of any other attribute. For instance, assuming supporters of a certain political party generally avoid stating their preference and instead let that information go missing, such values are MNAR.</p><p>Building upon these models, <ref type="bibr" target="#b18">[19]</ref> has proposed a heuristic method for identifying DMVs in relational databases. Under the MAR and MCAR assumptions, the authors assume that a value v in attribute</p><formula xml:id="formula_0">A i in a table T is a DMV if σ Ai=v (T ) contains a subset T *</formula><p>Ai=v that represents a good sampling of T . Such a subset is an Embedded Unbiased Sample (EUS) which means that except for attribute A i , T * Ai=v and T have similar distributions. Then, a MEUS (Maximal EUS ) is intuitively an EUS with a good trade-off between size (larger is better) and similarity (in distribution) with T . Thus, the MEUS is the largest EUS with the highest similarity. The gist of the <ref type="bibr" target="#b18">[19]</ref> heuristics is to find MEUS in a dataset and consider their associated A i = v values as DMVs.</p><p><software ContextAttributes="used">FAHES</software> <ref type="bibr" target="#b24">[25]</ref> incorporates the method of <ref type="bibr" target="#b18">[19]</ref>, to which the authors add two other methods, in order to distinguish three classes of DMV.</p><p>-The first class contains syntactic outliers. A syntactic outlier is a value whose syntax is significantly different from that of other values in the same attribute. Two techniques are used to identify them. (i) Syntactic pattern discovery infers a frequent syntactic pattern (shape) for the values of each attribute and points out the values that do not fit the pattern as syntactic outliers. For example, if the attribute is "blood type", the recognized pattern could be one or two uppercase letters followed by a + or a -sign; then, "ABO" would be considered a syntactic outlier. (ii) Repeated Pattern Identification singles out values that contain repeated patterns, such as 0101010101 in a 10-digit phone number, or "blablabla" in a text attribute. -Second, in numerical attributes, statistical outliers can be found by leveraging common outlier detection methods <ref type="bibr" target="#b17">[18]</ref>. This allows identifying as DMVs numerical values that do not fit the extent of the other values, e.g., negative values in a distance attribute. -Finally, some inlier DMVs, called Random DMVs in <ref type="bibr" target="#b24">[25]</ref> can be identified. These are legal attribute values, which do not stand out as outliers; they are the hardest to find even for an application domain specialist. The "Alabama" example from Section 1 is a typical example. Inlier DMVs are detected in <ref type="bibr" target="#b24">[25]</ref> under the MAR and MCAR hypotheses; the authors state that detecting DMVs under the NMAR model is hard to impossible. The intuition being exploited is that DMVs are frequent values (because the lack of information is assumed to occur more frequently than an actual, correct value). Thus, one must find amongst the most frequent values, which ones are DMVs. To this purpose, each frequent value is successively replaced by an actual null. If, by doing this, the (original and introduced) null values follow the MAR or MCAR models, then we consider that value as a good DMV candidate. Then, the MEUS method from <ref type="bibr" target="#b18">[19]</ref> is applied to each candidate to detect the DMVs.</p><p>The <software ContextAttributes="used">FAHES</software> team has developed a tool using these methods to detect all three types of DMV in a relational database. DMV detection is also related to data error detection and correction, which has been studied in <ref type="bibr" target="#b0">[1]</ref>. A tool called RAHA <ref type="bibr" target="#b22">[23]</ref> has been developed for detecting errors in relational databases; it detects the DMVs that <software ContextAttributes="used">FAHES</software> <ref type="bibr" target="#b24">[25]</ref> finds, as well as errors that are not DMVs. BARAN <ref type="bibr" target="#b21">[22]</ref> corrects data errors through a combination of multiple techniques. The free-text DMVs we are interested in are not errors, and their values should be preserved as such. From this perspective, <software ContextAttributes="used">FAHES</software> <ref type="bibr" target="#b24">[25]</ref> is closest to our DMV detection goal.</p><p>DMV detection is one among the many problems raised by poor data quality problems that have been traditionally addressed through data cleaning. Data quality raises many real problems, which to this day still need solutions. Traditional approaches for data cleaning were rule-based <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b25">26]</ref>. Newer techniques are now based on machine learning, e.g., <ref type="bibr" target="#b19">[20]</ref>. DMV detection can also be considered as part of data profiling <ref type="bibr" target="#b1">[2]</ref> since DMV detection also allows the characterization of a certain attribute (set of nodes) by the percentage of their values which are DMVs.</p><p>Summing up, the existing literature has proposed methods for detecting DMVs and errors, in categorical or text data, with rule-based and especially statistical and more recently machine learning techniques. Our focus is on DMV occurring in free-text data, which are not detected by methods based on value frequency, as we illustrate below.</p></div>
+<div><head n="3">Motivating example</head><p>As part of a data journalism project <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b7">8]</ref>, we loaded 400.000 PubMed bibliographic notices in a <software ContextAttributes="used">ConnectionLens</software> graph, out of which we extracted (paper ID, conflict of interest statement) pairs. These conflict of interest (CoI, in short) statements cover any kind of benefits (funding, personal fees, etc.) that authors report with various organizations such as companies, foundations, etc. In Figure <ref type="figure" target="#fig_0">1</ref>, "Dr. Alice consults for ABCPharma" (in the upper left) is such a conflict of interest, part of the XML bibliographic notice; "Dr. Alice thanks HealthStar... this article" (at the top right) is another one. "The authors report no related funding" in the second paper, at the bottom of the figure, illustrates the DMVs targeted in this work. PubMed data originates from various biomedical journals. Some do not provide CoI information; in this case, the CoI is an empty string. Others provide a default DMV, e.g., "The authors report no conflict". Finally, some journals only allow free text, leading to a large variety of disguised nulls.</p><p><software>ConnectionLens</software> extracts named entities from all text nodes, regardless of the data source they come from, using trained language models. In the figure, blue, green, and yellow nodes denote Organization, Person, and Location entities, respectively. Each entity node is connected to the text node it has been extracted from, by an extraction edge, which also records the confidence (between 0 and 1) of the extractor. Finally, nodes are compared to find that some may be equivalent, or similar.</p><p>Entity extraction is a costly operation since it involves predicting, for each token encountered in a given text, if it is part of an Organization entity, Person entity, Location entity, or none. The prediction is made by computations that involve a large, trained model. Trying to extract entities from a DMV is a computational effort spent for no benefit.</p></div>
+<div><head n="4">Detecting DMVs with entity profiles</head><p>Inspecting the <software ContextAttributes="used">ConnectionLens</software> graph illustrated in Figure <ref type="figure" target="#fig_0">1</ref>, together with our journalist partner, we immediately made the following observation. An actual CoI (such as those involving Alice in Figure <ref type="figure" target="#fig_0">1</ref>) is either of the form "Researcher A was funded by B", or of the form "The authors acknowledge funding from C". Thus, a person's name may be present (in other cases, we just find "The authors"), but an organization is always involved. Thus, we can say that the entity profile of a CoI is: it must contain at least an organization.</p><p>This leads to the following DMV detection method:</p><p>-Extract all named entities from the CoI strings (through regular Connec-tionLens data ingestion); -Declare those CoI strings in which no Organization entity was found, as DMVs.</p><p>One could also call such DMVs uninformative answers. We use the result of the above entity-based DMV detection method as a ground truth in our work, for several reasons: (i) Named Entity Recognition is by now a relatively well-mastered task, thus its precision is quite good, and considered acceptable by our end-users; (ii) Constructing an ideal human-authored ground truth would require time or monetary costs out of reach for our setting; (iii) The very purpose of our work is to save Named Entity extraction time, in other words: Named Entity extraction at the core of <software ContextAttributes="used">ConnectionLens</software>' integration is a given in our context. The accuracy of this method is exactly that of the entity extractor; it has been shown in <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref> (for English) and in <ref type="bibr" target="#b6">[7]</ref> (for French) that the accuracy is quite high. Its drawback is that extracting entities from all CoI strings is very lengthy.</p><p>This motivates the search for a faster technique, which, on one hand, could identify the DMVs, while at the same time also reducing the entity extraction (thus, the actual <software>ConnectionLens</software> graph creation) time.</p></div>
+<div><head n="5">DMV detection through embedding and classification</head><p>Our initial DMV detection approach, which does not require extracting named entities from all strings, has been to cluster the text values from our motivating example dataset, in order to obtain DMV cluster(s) separated from non-DMV clusters. In particular, we experimented with the K-means <ref type="bibr" target="#b17">[18]</ref> algorithm, setting the number of clusters to 10 which was the optimal number of clusters determined using the elbow method <ref type="foot" target="#foot_2">6</ref> . Some clusters contained a majority of DMVs and others a majority of CoIs. However, the clustering was not very successful at separating DMVs from meaningful CoIs.</p><p>Thus, we looked for an alternative method. Our idea is: we could extract entities from a small part of the data, so we have a small automatically labeled dataset to train a Machine Learning model to recognize DMVs (based on the method described in Section 4). We could then use this model to predict whether a yet-unseen value is a DMV or not. Such a model could detect DMVs faster than using the entity extraction technique.</p></div>
+<div><head n="5.1">Textual data representation</head><p>Many techniques can be used to represent textual data. Transformers like BERT <ref type="bibr" target="#b13">[14]</ref> have been proven really efficient for many Natural Language Processing (NLP) tasks; Sentence-BERT <ref type="bibr" target="#b26">[27]</ref> provides sentence-level embeddings.</p><p>An alternative, less costly textual data representation can be computed by first applying a set of common text pre-processing steps: suppressing punctuation, normalization, and stemming. Embeddings can then be computed using the well-known TF-IDF (Term-Frequency -Inverse-Document-Frequency) representation, also frequently used in NLP. TF-IDF weights term frequencies in each document according to the frequency of the term across the corpus. If a word occurs many times in a document, its relevance is boosted (TF part of the score), as this word is likely to be more meaningful. Conversely, IDF stands for the fact that if the word appears frequently in many documents, then it is probably frequent in any text, and its relevance should be decreased. Finally, to reduce the dimensionality of the representation, we only consider the terms having the 20.000 highest TF-IDF scores.</p><p>We will compare Sentence-BERT representation with TF-IDF representation for this task of detecting DMVs in free-form texts. However, we integrate into <software>ConnectionLens</software> (Section 6.2) the TF-IDF version, because it is faster yet provides equivalent quality.</p></div>
+<div><head n="5.2">Classification model</head><p>To classify texts as DMVs or non-DMVs, we decided to rely on a Random Forests classifier <ref type="bibr" target="#b10">[11]</ref>. These classifiers are not the fastest, but they are quite efficient over complex data. Random Forests rely on decision trees, which seemed appropriate in our context, as they could learn specific discriminating words that help to differentiate the classes. Other classifiers might work as well; our goal here is to investigate whether the above approach, which trains the classifier on extraction results, can provide a more efficient DMV detection method, by avoiding extracting entities from a certain part of the input.</p><p>As we show in Section 7.5, this is indeed the case; even for small training set sizes (that is, even if entities are fully extracted only from a small part of the data), the classifier learns to predict DMVs quite accurately, while sparing significant entity extraction time comparing to the entity profile method.</p></div>
+<div><head n="5.3">Placing our DMV detection methods in context</head><p>To further clarify the relationship between our work and prior DMV detection work, Figure <ref type="figure">2</ref> depicts known types of DMVs as rectangles carrying white titles, and the values which various techniques find to be DMVs, as ovals with black titles. As no method is perfect, rectangles and ovals only partially overlap; further, some DMVs are detected by more than one method, and thus some ovals overlap. We assigned numbers to some areas in the figure, and comment on them below. It helps to keep in mind that an area in a rectangle but outside of an oval comprises DMVs that the method corresponding to the oval does not detect; conversely, an area within an oval but outside of the DMV rectangle(s) is a declared by the method to be a DMV, while it is not.</p><p>1. Correctly detected statistical outliers, e.g.: In a human height attribute, a height of 3 meters. 2. Wrongly detected statistical outliers, e.g.: In a dataset containing salaries of the employees of a company, if the CEO's salary is 10 times higher than any of his employees, this could be wrongly detected as a DMV. 3. Correctly detected syntactic outliers, e.g.: In a blood type attribute, the value 'ABO'. 4. Wrongly detected syntactic outliers, e.g.: In a name attribute, François-Noël which is a composed name is detected as a syntactic outlier because of the '-', even though it is a valid name. 5. Correctly detected Random DMVs, e.g.: A default value such as Alabama for a state, detected thanks to the MEUS technique. 6. Correctly detected Random DMVs found by the MEUS technique, and also by syntactic and statistic outliers detections. A DMV can be at the same time detected as a syntactic outlier, a random DMV, and a statistical outlier, e.g., a default distance value of -1. 7. Wrongly detected random DMVs. In a poll where we ask for favorite colors, blue might come often. Lacking correlation with other attributes, blue could be wrongly detected as a random DMV. With respect to the the diagram in Figure <ref type="figure">2</ref>, we target the Uninformative answers rectangle, with two methods: the Entity profile one, corresponding to the blue oval that encompasses the areas numbered 8, 9, and 12; and the Classification one, corresponding to the green oval, that comprises the areas numbered 10, 11 and 12. The closest method from the literature, <software ContextAttributes="used">FAHES</software>, excels in finding: Syntactic outliers, Random DMVs, and Statistical outliers. </p></div>
+<div><head n="6">Integrating our DMV detection methods within ConnectionLens</head><p>We recall the architecture of the <software>ConnectionLens</software> system (Section 6.1), then discuss how we integrated our DMV detection module within it (Section 6.2).</p></div>
+<div><head n="6.1">ConnectionLens architecture</head><p>The architecture of the <software ContextAttributes="used">ConnectionLens</software> software platform is outlined in Figure <ref type="figure" target="#fig_2">3</ref>. To consolidate heterogeneous data sources into a single graph, the sources are traversed, creating primary nodes and edges which represent the source contents (black solid nodes and edges in Figure <ref type="figure" target="#fig_0">1</ref>). On the fly, also during the data source traversal, all the text values encountered in the data are sent to an entity extraction module, which may recognize named entities within these texts.</p><p>Extracted entities are shown as colored nodes in Figure <ref type="figure" target="#fig_0">1</ref>, and edges connecting them to their parent nodes are called secondary edges. <software ContextAttributes="used">ConnectionLens</software>' entity extraction (for French and English) is based on Flair <ref type="bibr" target="#b3">[4]</ref>. The cost of an extraction operation is relatively high compared with other kinds of processing taking place in memory on a data item, and quite high also when compared to the cost of storing data persistently on disk <ref type="bibr" target="#b6">[7]</ref>. Within the <software ContextAttributes="used">ConnectionLens</software> platform, the Flair entity extractor is deployed as a Python <software ContextAttributes="used">Web service</software> using the <software ContextAttributes="used">Flask</software> web service library; we were able to experimentally check that the performance overhead of calls from the main Java software to the Python <software ContextAttributes="used">web service</software> was negligible. Depending on how many text nodes a data source contains, and how long they are, entity extraction may take a very large part of the graph construction time. A method we implemented to alleviate to some extent speeds up entity extraction by exploiting the parallel processing (multi-core) capabilities of the server on which the extraction runs. Concretely, a batch mechanism is implemented: text nodes accumulate in a fixed-size batch and the <software ContextAttributes="used">Flask</software> service is called when the batch is full. It is more efficient for a multi-core machine to apply its prediction model to a set of values in parallel, as enabled by sending them in batches; the benefits range from 2× on a 4-cores laptop to 20× on a powerful server <ref type="bibr" target="#b6">[7]</ref>. However, entity extraction costs remain quite significant, and in some cases, they dominate the <software ContextAttributes="used">ConnectionLens</software> graph construction time.</p><p>The remaining <software ContextAttributes="used">ConnectionLens</software> modules are: a File converter, that allows ingesting document formats such as PDF, Word, Excel, etc. by converting them to JSON HTML, and/or RDF, which can be directly loaded; a Node matching module that creates equivalence or similarity links between entities (red, respectively, dashed graph edges in Figure <ref type="figure" target="#fig_0">1</ref>); an Entity disambiguation service, which, for each entity identified in the graph, attempts to find its URI in a knowledge base; finally, a Keyword search algorithm (<software ContextAttributes="used">GAMSearch</software>) <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b6">7]</ref> which enables users to search for information within <software ContextAttributes="used">ConnectionLens</software> graphs.</p></div>
+<div><head n="6.2">Integrating our DMV detection method within ConnectionLens</head><p>We now describe how we integrated our DMV detection approach described in Section 5 within <software>ConnectionLens</software>, to speed up graph construction. In a nutshell: we train our classifier during the graph construction process, then, in the same process, we use the classifier to predict which strings are DMVs, and thus, not worth the Named Entity Recognition effort.</p></div>
+<div><head>Value contexts</head><p>The DMV detection method applies to a set of values describing the same kind of data. Thus, while loading complex-structure data, we need to dynamically form such groups of values. For this, we view each value as occurring in a context, based on the structure of the dataset it comes from. On hierarchical data sources (JSON, XML, HTML, etc.), a natural context to attach to a value is the root-to-leaf label path on which the value occurs in a given document. In PubMed bibliographic data, for instance, CoI values appear as text children of the XML elements on the path PubMedArticles.PubMedArticle.CoIStatement. Thus, we pair each value on which extraction could be performed (or which could be a DMV), with its context; all the values in a certain context form a set on which we can learn.</p></div>
+<div><head>Entity profiles (EP)</head><p>The next ingredient we need is entity profiles (Section 4), spelling which entities we expect to find in values from a certain context that are not DMVs; such a judgment is easily made by a human expert. Thus, currently, for each context where an entity profile is known, we allow users to specify them in a configuration file given to <software ContextAttributes="used">ConnectionLens</software>. <software ContextAttributes="used">SmartExtract</software> Web service We deployed our DMV detection approach as a standalone Python <software ContextAttributes="used">Web service</software>, called <software ContextAttributes="used">smartExtract</software> in Figure <ref type="figure" target="#fig_2">3</ref>, and also deployed using <software ContextAttributes="used">Flask</software>. It is called by the Entity extraction module with each (value, context) pair, and works as follows (see Figure <ref type="figure" target="#fig_3">4</ref>). To each context, we associate a state that represents the existence (or not) of a TF-IDF vectorizer and a trained Random Forest model (Section 5.2) able to predict, based on the entity profile (EP) associated with that context, whether a value occurring in the context is a DMV (Section 5). We consider the model has been sufficiently trained when it has reached a determined quality, measured by its f1-score. The quality to reach is a parameter of the service. For each value (text node) that <software ContextAttributes="used">ConnectionLens</software> finds in that context (top box in Figure <ref type="figure" target="#fig_3">4</ref>), we test this state (diamond box below the top box in the figure <ref type="figure">):</ref> -Yes, the model associated with this EP has been fully trained on values previously encountered in the same context. In this case, we send the value to the <software ContextAttributes="used">smartExtract</software> Web Service, which returns a boolean answer:</p><p>• yes, this value is worth extracting entities from (through the Flair entity extraction service mentioned in Section 6.1); in this case, the value is added to the extraction batch; • no, this value is not worth the entity extraction effort, since our model predicts that the value is a DMV. -No, the model for this EP has not been fully trained yet. In this case, our module needs to learn more about values in this context (by examining more results of the Flair extraction for values in this context). In this case, the node is added to the extraction Batch.</p><p>Once the extraction batch is full, <software>ConnectionLens</software> sends all the batch values to its Flair entity extraction service, to find out the entities contained in each value.</p><p>We then capture these extraction results and share them with the <software ContextAttributes="used">smartExtract</software> service to train its models (one different model for each entity profile). In turn, <software ContextAttributes="used">smartExtract</software> may answer with the information that the state(s) associated with some context(s) have become true (the respective models are sufficiently trained). <software ContextAttributes="used">ConnectionLens</software> keeps track of the context states on which it bases its decision (test box in Figure <ref type="figure" target="#fig_3">4</ref>).</p></div>
+<div><head>Performance of online learning</head><p>In the above integration of <software>smartExtract</software> within <software ContextAttributes="used">ConnectionLens</software>, the <software ContextAttributes="used">smartExtract</software> models are continuously trained with each value sent to extraction (online learning). In contrast, in the approach we described in Section 5, we trained the model once and for all with the training set, and then just used it to predict which values are DMVs. This difference has several consequences:</p><p>1. The training effort of our DMV technique drastically increases in this online integration within <software>ConnectionLens</software>. 2. To keep the TF-IDF representation of the data accurate with respect to all the data seen until a certain point during the graph construction, we need to compute a new vectorization and a new model for each new value.</p><p>While this online integration strategy achieves a high quality of data representation and prediction, it is computationally very expensive. Indeed, the cost of recomputing the vectorization and repeatedly re-training the model increases quickly with the number of nodes.</p><p>To reduce this high computational cost, we initially computed a new vectorization only when re-training the model (after each batch of values sent to the extractor). This strategy allowed us to save some time compared to the precedent, however, we were still losing time (when our goal is to save it) by using the <software>smartExtract</software> Web Service.</p><p>Next, we decided not to re-train the model after each batch, but to test it on each batch and re-train only if the quality of the model (as measured by the f1 prediction score) is under a determined threshold. This also brought some modest savings. However, using the <software>smartExtract</software> Web Service was still more computationally expensive than running the entity extractor on all values.</p><p>The change that actually brought visible performance benefits was to reengineer the <software>smartExtract</software> service so that it does not load its model each time a prediction is made. Instead, we kept it in memory on the server side, which significantly reduced the time needed to call the <software ContextAttributes="used">smartExtract</software> service and allowed it to speed up the <software ContextAttributes="used">ConnectionLens</software> graph construction.</p></div>
+<div><head n="7">Experimental evaluation</head><p>In this section, we experimentally study several aspects related to the DMV methods that we have considered in the previous sections. After describing our datasets (Section 7.1) and experimental settings (Section 7.2), we show how <software>FAHES</software> performs on these datasets and that there is room for improvement in Section 7.3. Then, Sections 7.4 and 7.5 study DMV detection through entity profiling and through embedding (TF-IDF embedding and sentence-BERT embedding) and classification, respectively. In Section 7.6 we detail the results of our methods and of <software ContextAttributes="used">FAHES</software>, over a small dataset manually labeled. Section 7.7 studies DMV detection impact in <software ContextAttributes="used">ConnectionLens</software> extraction time.</p></div>
+<div><head n="7.1">Datasets</head><p>To conduct our experiments, we have built three <software ContextAttributes="used">ConnectionLens</software> graphs out of real-world datasets. These were datasets Le Monde journalists suggested we should integrate in <software ContextAttributes="used">ConnectionLens</software>, for applications including that described in <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b7">8]</ref>, and which inspired the research described in this paper. We believe these datasets are representative of many Open Data that is published through government and scientific transparency initiatives: data involving names of people, organizations, and partially obtained by asking individual to fill forms including free text fields.</p><p>1. We have loaded the most complete HATVP XML transparency dataset (35MB), with data about 270.000 people, in a <software ContextAttributes="used">ConnectionLens</software> graph. From this, we extracted the montant (monetary amount) fields which appeared to contain many DMVs<ref type="foot" target="#foot_3">7</ref> . 2. We loaded a smaller HATVP CSV dataset (2.1 MB), containing information about 9.000 people; this dataset is relational-looking, which simplifies processing it through <software ContextAttributes="used">FAHES</software>. 3. We loaded 400.000 PubMed bibliographic notices in a graph, out of which we extracted (paper ID, conflict of interest statement) pairs. These CoI statements cover any kind of benefits (funding, personal fees, etc.) that authors report with various organizations such as companies, foundations, etc., as illustrated in Figure <ref type="figure" target="#fig_0">1</ref>. PubMed data originates from various medical journals. Some do not provide CoI information; in this case, the CoI is an empty string. Others provide a default DMV, e.g., "The authors report no conflict". Finally, some journals only allow free text, leading to a large variety of DMVs.</p><p>We will denote these datasets as DS1, DS2, and DS3, respectively.</p><p>In practice, of course, we only extract entities once from each distinct string. It turns out that DS3 had a high number of duplicates (especially some very popular disguised nulls). Removing duplicates led to a new dataset we denote DDS3 consisting of 82.388 values.</p></div>
+<div><head n="7.2">Settings</head><p>All experiments were performed on a MacBook Pro 16 inches from 2019, with a 2.4 GHz Intel Core i9 8-core processor and 32 GB 2667 MHz DDR4 memory. Experiments using sentence-BERT (Table <ref type="table" target="#tab_1">2</ref>) had to be run on Google Colab<ref type="foot" target="#foot_4">8</ref> because of the MacBook's lack of support for CUDA. For consistency, all results in Table <ref type="table" target="#tab_1">2</ref> are obtained in Google Colab, with a Tesla-T4 GPU. We used Con-nectionLens <ref type="foot" target="#foot_5">9</ref> to build the graphs, including in particular the extraction of named entities using Flair <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b3">4]</ref>, which we had retrained for French <ref type="bibr" target="#b6">[7]</ref>. <software ContextAttributes="used">ConnectionLens</software> graphs are stored in <software ContextAttributes="used">Postgres</software> 9.6; experiment <software ContextAttributes="used">code</software> was written in Python 3.6.</p><p>Precision, recall, and F1 measures For our purposes, given that we aim to detect a certain form of DMV, a "positive" example is a DMV, while a "negative" example is an informative value. This interpretation is used in all the experiments described below. In the context of our project, precision is more important than recall, since low precision means wrongly considering a value as a DMV, while it contains valid information, which journalists would not want to miss. In comparison, low recall "only" means that we would waste time extracting entities from DMVs that turn out not to contain interesting information. While undesirable, the impact, from an application perspective, is lower.</p></div>
+<div><head n="7.3">DMV detection through FAHES</head><p>We have applied <software ContextAttributes="used">FAHES</software> <ref type="bibr" target="#b24">[25]</ref> on the three datasets described previously, asking it to detect DMVs. It is worth mentioning that <software ContextAttributes="used">FAHES</software> is an unsupervised method; we use it for comparison as its goal of DMV detection is closest to our work. We comment on its results below.</p><p>Results on DS1 Among the 270.000 values of the numeric amount attribute, <software>FAHES</software> correctly found the 0 (which occurs 45.000 times) as a Random DMV (Inlier). It also detected 372.2196 (4 occurrences) as a numerical outlier DMV; this is wrong. All the amount values are numbers, and as far as we could see, there are no other DMVs.</p></div>
+<div><head>Results on DS2</head><p>In this relational dataset, in an attribute called filename, <software>FAHES</software> identified correctly the DMV dispense (120 occurrences) as a Random DMV. Then, <software ContextAttributes="used">FAHES</software> identified wrongly other values as being DMVs, in all cases as Syntactic Outliers DMV. The values falsely flagged as DMVs are:</p><p>-François-Noël (3 occurrences) in the attribute given name; -B ÉRIT-D ÉBAT (6 occurrences) and K ÉCLARD-MOND ÉSIR (3) in the attribute name; di (4480 occurrences) in the attribute document type; this is the acronym for déclaration d'intérêt; -2A and 2B as departement numbers; they are, in fact, correct numbers of French departments in Corsica; four distinct, correct URLs within the photo url attribute, probably because their structure did not resemble the others'.</p><p>DS2 seems to include no other DMVs.</p><p>Results on DS3 Out of the 400.000 values, <software>FAHES</software> correctly identified "The authors have declared that no competing interests exist" (31.891 occurrences) as a Random DMV. However, visual inspection exhibited many other DMVs (we will revisit this below). <software ContextAttributes="used">FAHES</software> fails to find them because freely written texts rarely coincide, thus <software ContextAttributes="used">FAHES</software>' statistical approach based on value frequencies leads it to consider a rarely occurring DMV as a valid value, which is wrong. All DMVs detected by <software ContextAttributes="used">FAHES</software> on this dataset are actual DMVs (precision of 1.0). However, in this example, the entity profile technique identifies 351.123 DMVs, most of which <software ContextAttributes="used">FAHES</software> misses, leading to a recall of 0, 0909. This low recall shows the need for alternative techniques for detecting the DMVs we are interested in: uninformative, free-text answers.</p><p>From these experiments, we conclude that <software>FAHES</software> fails to detect the DMVs we are interested in; DMVs detected as Syntactic outliers are often false positives. With a bit of domain knowledge, it is possible to manually discard these DMVs. However, importantly, <software ContextAttributes="used">FAHES</software> has also shown its limitations on uninformative free text DMVs, by missing a vast majority of them. This shows the need of dedicated methods to detect such DMVs.</p></div>
+<div><head n="7.4">DMV detection through entity profiles</head><p>To measure performances of the entity profiles technique, we performed 5 experiments with respectively the 500, 5.000, 10.000, 15.000, and 20.000 first values of dataset the duplicate-free dataset DDS3. The objective here is to measure the extraction time as a function of the input size; this indicates the time needed to extract DMVs using the Entity Profile method. We present the results in Table <ref type="table" target="#tab_0">1</ref>. We observe that extracting entities is time consuming and that the extraction time is almost linear to the number of values. For the complete dataset DDS3, we can expect to have an extraction time of around 11.000 seconds (183 minutes), which is quite lengthy.</p></div>
+<div><head n="7.5">DMV detection through embedding and classification</head><p>The most common training-test split method consists on separating the dataset with 20% used for training and 80% for testing. We know that in our case, the most time-consuming operation is to label the training set with the entity extraction technique. Thus, to gain time, we want to reduce the training set.</p><p>To evaluate the impact of the training set size on the performance of the model used to detect DMVs over DDS3, we have performed three experiments. We trained models with respectively 20% (16.477 values), 10% (8.238 values), and 1% (823 values) of the dataset and report the comparison of the performances of each model in Table <ref type="table" target="#tab_1">2</ref>. In this table, the precision, recall, and thus F1 are computed using the result of the entity profile method (Section 4) as the gold standard. In bold, we highlight the best performance result between TF-IDF and sentence-BERT. Table <ref type="table" target="#tab_1">2</ref> shows that we can attain very good precision, even if the model is trained on a small part of the dataset while saving significant amounts of time. Table 2 also shows that using sentence-BERT to represent our data does not significantly improve performance, while it heavily increases execution time. This happens despite speeding up its execution as much as possible, With respect to our motivating example, building the graph for DDS3 took around 11.000 seconds. Using our method with a training-set of 1% of the values (823 values) takes now the time to predict to which values we have to apply the extractor (125 seconds), to which we add the time to extract the valuable values. We have found on our dataset that there are around 45.000 valuable values. We need 5.900 seconds to extract those. That brings us to a total of 6.000 seconds to build our graph instead of 11.000 seconds previously, without losing much information.</p></div>
+<div><head n="7.6">Comparison on manually labeled data</head><p>To get a better understanding of the performance of our entity profile technique, our classification technique, and <software>FAHES</software>, we labeled by hand a sample of 200 values from DDS3. The sample contains 96 actual CoIs, and 104 DMVs, labeled following the instructions of our domain expert (journalist).</p><p>Table <ref type="table" target="#tab_2">3</ref> shows, for each method, the numbers of true and false negatives (TN and FN), as well as the precision, recall, and F1 score of each technique with respect to the human-labeled gold standard. Our first observation is that <software ContextAttributes="used">FAHES</software> has not found a single DMV in this dataset, leading to recall, precision, and F1 of 0.</p><p>The Entity Profile technique performed quite well (F1 of 0, 86). A few valid CoI statements are wrongly detected as DMVs, but the contrary is quite rare, and that suits our application needs since we should not skip extraction on valid CoIs.</p><p>Our classification method performed even better (F1 of 0, 94). Since this method is based on word frequency, we can suppose that some words are specific to DMVs and others are specific to valid CoIs.</p><p>Inspecting the false negatives (DMVs detected as valid CoIs), we noticed that they mention "ICMJE", as in Conflicts of Interest: All authors have completed the ICMJE uniform disclosure form (available at http://dx.doi.org/10.21037/atm-20-3650). The authors have no conflicts of interest to declare. ICMJE has been wrongly detected as an entity, which led astray our entity profile technique. As our classification model is trained with entity profile results, "ICMJE" has probably been identified as associated with valid CoIs.</p><p>On the other hand, the entity profile technique has led to only having 4 CoIs identified as DMVs (false positives). In those, the authors mentioned patents they have, which may be seen as creating a conflict of interest with the research presented in the paper. However, by the domain experts' (journalists') rule, these statements are no conflicts of interest.</p><p>Finally, we found that the NER has missed an organization entity in the value "The authors are supported by the use of resources and facilities at the Michael E. Debakey VA Medical Center, Houston, Texas", thus the entity profile detection technique has wrongly considered this string to be a DMV. However, the classification model did not make the same mistake and correctly considered this value an informative COI.</p></div>
+<div><head n="7.7">DMV detection integrated in ConnectionLens</head><p>As explained in Section 6.2, we developed a Python <software>Flask</software> service for DMV detection based in entity profiles, to save extraction time in specified contexts. We only kept TF-IDF representation, because sentence-BERT has proven to be way slower. To measure its impact on the time spent extracting entities, we loaded 100.000 XML PubMed bibliographic notices into <software ContextAttributes="used">ConnectionLens</software>, without the <software ContextAttributes="used">smartExtract</software> service (that is, following the graph construction method prior to this work), then also using the smartExtractor service as described in Section 6.2. The quality parameter (F1-score mentioned in Section 6.2) is set to 0.9. To mesure the F1-score, we split each batch of values used for training, into training testing subsets, the latter containing 20% randomly chosen values from the batch. We used a batch size of 160, that is: the Flair NER entity extractor was called on groups of 160 values. In this experiment, the <software ContextAttributes="used">smartExtract</software> service is called to ConflictOfInterest values, for which an entity profile is manually provided. Thus, in this experiment, we only apply entity extraction on the ConflictOfInterest values.</p><p>As we can see in Table <ref type="table" target="#tab_3">4</ref>, we saved 557 calls to the Flair NER Service (which amounts to 70% of the calls) thanks to the <software ContextAttributes="used">smartExtract</software> service. This corresponds to saving 1.770 seconds on extraction (33% of the extraction time) and 2.215 seconds from the total graph construction time. Finally, using our smar-tExtract service leads to missing out on 3.225 organization entities that would have been extracted without it. These represent about 10% of the total orga- nization entities, which is consistent with our quality parameter (F1-score = 0.9).</p><p>The overall time saving is slightly higher than the one corresponding only to extraction. This is because not creating some entities also means we do not have to store them, nor the edges that connect them to their parents in the graph.</p></div>
+<div><head n="8">Conclusion</head><p>Integration of very heterogeneous data, such as we encountered in data journalism applications <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b8">9]</ref>, requires extracting Named Entities from all values found in the data, in order to interconnect sources through the presence of the same entity in two or more sources. The <software ContextAttributes="used">ConnectionLens</software> <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b5">6]</ref> system we have developed leverages this idea.</p><p>In this work, we sought to automatically find uninformative answers: these are free texts that users write in response to some question, and which do not provide the information required by the question. These can be seen as a particular class of textual DMVs. While many kinds of DMVs have been studied in the literature, as we discussed in Section 2 and 5.3, when uninformative answers are basically all distinct, existing methods cannot detect them.</p><p>The first technique we studied leverages <software>ConnectionLens</software>' effort carried to extract Named Entities from each value of the database. Our technique exploits so-called entity profiles (expected entities in a valid value) to identify DMVs. While highly accurate, this is expensive time-wise, because of the extraction. For efficiency, instead, our second method trained a Random Forest classifier on a small subset of our dataset, labeled with entity profiles, and classified the other values as DMVs or not. This technique saves significant extraction time, while also having very good accuracy.</p><p>We have included this method within the <software ContextAttributes="created">ConnectionLens</software> platform and demonstrated that it allows to avoid a large part of the Named Entity Recognition (NER) effort. This is significant, since as shown in <ref type="bibr" target="#b6">[7]</ref>, NER dominates the graph construction time. Thus, the method proposed here allows speeding up the construction of integrated graphs out of heterogeneous data sources.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Sample ConnectionLens graph.</figDesc><graphic coords="7,134.77,294.00,345.83,253.67" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Fig. 2 . 11 .</head><label>211</label><figDesc>Fig. 2. DMVs and the scope of each DMV detection technique.</figDesc><graphic coords="11,137.60,115.83,340.16,234.14" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig.3. ConnectionLens architecture (based on<ref type="bibr" target="#b6">[7]</ref>).</figDesc><graphic coords="12,134.77,115.84,345.82,132.77" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Integration of DMV detection module within ConnectionLens.</figDesc><graphic coords="13,134.77,115.83,345.82,194.52" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Entity extraction method times</figDesc><table><row><cell cols="3">Values Total characters Extraction times (s)</cell></row><row><cell>500</cell><cell>163.203</cell><cell>56</cell></row><row><cell>5.000</cell><cell>1.604.141</cell><cell>669</cell></row><row><cell>10.000</cell><cell>3.281.345</cell><cell>1.320</cell></row><row><cell>15.000</cell><cell>5.000.364</cell><cell>2.175</cell></row><row><cell>20.000</cell><cell>6.728.493</cell><cell>2.620</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Impact of the training set size on the performance of DMV detection.</figDesc><table><row><cell>Training-set size</cell><cell cols="2">16.477</cell><cell>8.238</cell><cell /><cell>823</cell><cell /></row><row><cell>Embedding type</cell><cell cols="6">TF-IDF s-BERT TF-IDF s-BERT TF-IDF s-BERT</cell></row><row><cell>Embedding Times (s)</cell><cell>99</cell><cell>509</cell><cell>99</cell><cell>509</cell><cell>99</cell><cell>509</cell></row><row><cell>Extraction Times (s)</cell><cell>2.153</cell><cell>2.153</cell><cell>1.075</cell><cell>1.075</cell><cell>108</cell><cell>108</cell></row><row><cell>Training Times (s)</cell><cell>20</cell><cell>75</cell><cell>10</cell><cell>30</cell><cell>2</cell><cell>1</cell></row><row><cell>Prediction Times (s)</cell><cell>4</cell><cell>2</cell><cell>4</cell><cell>2</cell><cell>3</cell><cell>1</cell></row><row><cell>Total Times (s)</cell><cell>2.276</cell><cell cols="2">2.739 1.206</cell><cell>1.616</cell><cell>212</cell><cell>619</cell></row><row><cell>Precision</cell><cell cols="2">0,939 0,956</cell><cell cols="2">0,933 0,956</cell><cell cols="2">0,926 0,946</cell></row><row><cell>Recall</cell><cell>0,922</cell><cell cols="2">0,877 0,923</cell><cell cols="2">0,870 0,872</cell><cell>0,856</cell></row><row><cell>F1-score</cell><cell>0,931</cell><cell cols="2">0,915 0,928</cell><cell cols="3">0,911 0,899 0,899</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>Comparing FAHES, Entity profile and classification over a sample of 200 manually-labeled values.</figDesc><table><row><cell>Techniques</cell><cell cols="4">TP FP TN FN Precision Recall F1-score</cell></row><row><cell>FAHES</cell><cell>0 0 96 104</cell><cell>0</cell><cell>0</cell><cell>0</cell></row><row><cell>Entity profile</cell><cell>82 4 92 22</cell><cell cols="2">0,953 0,788</cell><cell>0,862</cell></row><row><cell cols="2">Classification TF-IDF 94 2 94 10</cell><cell cols="2">0,979 0,904</cell><cell>0,940</cell></row></table><note><p><p><p>by parallelizing execution over batches of 1.000. Interestingly, Table</p>2</p>also shows that in our problem, precision is less sensitive than recall to the reduction of the training-set size which suits our purpose.</p></note></figure>
+<figure type="table" xml:id="tab_3"><head>Table 4 .</head><label>4</label><figDesc>Impact of the smartExtract web service on entity extraction within Connec-tionLens.</figDesc><table><row><cell>Is the smartExtract web service used?</cell><cell>Yes</cell><cell>No</cell></row><row><cell>Number of calls to Flair NER service</cell><cell>228</cell><cell>785</cell></row><row><cell>Time needed for extraction (seconds)</cell><cell cols="2">3.514 5.284</cell></row><row><cell>Total graph construction time (seconds)</cell><cell cols="2">6.865 9.080</cell></row><row><cell cols="3">Number of organization entities extracted 35.110 38.335</cell></row></table></figure>
+			<note place="foot" n="4" xml:id="foot_0"><p>https://hatvp.fr</p></note>
+			<note place="foot" n="5" xml:id="foot_1"><p>https://pubmed.ncbi.nlm.nih.gov/</p></note>
+			<note place="foot" n="6" xml:id="foot_2"><p>https://en.wikipedia.org/wiki/Elbow method (clustering)</p></note>
+			<note place="foot" n="7" xml:id="foot_3"><p>The transparency entry forms require filling in the worth of participations or ownerships in various companies; companies that have closed or did not make benefits, or only have a pro-bono activity, lead to DMVs.</p></note>
+			<note place="foot" n="8" xml:id="foot_4"><p><ref type="bibr" target="#b7">8</ref> https://colab.research.google.</p></note>
+			<note place="foot" n="9" xml:id="foot_5"><p>com/<ref type="bibr" target="#b8">9</ref> Available from https://gitlab.inria.fr/cedar/connectionlens</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgments This work was supported by the <rs type="funder">ANR</rs> <rs type="grantName">AI Chair project SourcesSay Grant</rs> no <rs type="grantNumber">ANR-20-CHIA-0015-01</rs>. <rs type="projectName">Galhardas</rs>' work was supported by national funds through <rs type="funder">FCT</rs> under the project <rs type="grantNumber">UIDB/50021/2020</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_YgGqUUe">
+					<idno type="grant-number">ANR-20-CHIA-0015-01</idno>
+					<orgName type="grant-name">AI Chair project SourcesSay Grant</orgName>
+					<orgName type="project" subtype="full">Galhardas</orgName>
+				</org>
+				<org type="funding" xml:id="_9UXk8Mj">
+					<idno type="grant-number">UIDB/50021/2020</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Detecting data errors: Where are we and what needs to be done?</title>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Ziawasch Abedjan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dong</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><forename type="middle">Castro</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ihab</forename><forename type="middle">F</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mourad</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Paolo</forename><surname>Ouzzani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Papotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Stonebraker</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="993" to="1004" />
+			<date type="published" when="2016-08">aug 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Data Profiling</title>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Ziawasch Abedjan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felix</forename><surname>Golab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thorsten</forename><surname>Naumann</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Papenbrock</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<publisher>Morgan and Claypool</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Foundations of Databases</title>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Abiteboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Hull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Victor</forename><surname>Vianu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+			<publisher>Addison-Wesley</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Flair: An easy-to-use framework for state-of-the-art NLP</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Akbik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tanja</forename><surname>Bergmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duncan</forename><surname>Blythe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kashif</forename><surname>Rasul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Schweter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Vollgraf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Contextual string embeddings for sequence labeling</title>
+		<author>
+			<persName><forename type="first">Alan</forename><surname>Akbik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Duncan</forename><surname>Blythe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Roland</forename><surname>Vollgraf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Empowering Investigative Journalism with Graph-based Heterogeneous Data Management</title>
+		<author>
+			<persName><forename type="first">Angelos-Christos</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oana</forename><surname>Balalau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Théo</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Chimienti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yamen</forename><surname>Mhd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stéphane</forename><surname>Haddad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Horel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youssr</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Youssef</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bulletin of the Technical Committee on Data Engineering</title>
+		<imprint>
+			<date type="published" when="2021-09">September 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Graph integration of structured, semistructured and unstructured data for data journalism</title>
+		<author>
+			<persName><forename type="first">Christos</forename><surname>Angelos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oana</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catarina</forename><surname>Balalau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Conceicao</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yamen</forename><surname>Mhd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Haddad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tayeb</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jingmao</forename><surname>Merabti</surname></persName>
+		</author>
+		<author>
+			<persName><surname>You</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Systems</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Discovering conflicts of interest across heterogeneous data sources with connectionlens</title>
+		<author>
+			<persName><forename type="first">Christos</forename><forename type="middle">G</forename><surname>Angelos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oana</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Theo</forename><surname>Balalau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Francesco</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Chimienti</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yamen</forename><surname>Mhd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Haddad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Horel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Youssr</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Youssef</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM '21: The 30th ACM International Conference on Information and Knowledge Management, Virtual Event</title>
+		<meeting><address><addrLine>Queensland, Australia</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2021">November 1 -5, 2021. 2021</date>
+			<biblScope unit="page" from="4670" to="4674" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Mixed-instance querying: a lightweight integration architecture for data journalism</title>
+		<author>
+			<persName><forename type="first">Raphaël</forename><surname>Bonaque</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tien</forename><surname>Duc Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bogdan</forename><surname>Cautis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">François</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Javier</forename><surname>Letelier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oscar</forename><surname>Mendoza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Swen</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xavier</forename><surname>Tannier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michaël</forename><surname>Thomazo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Efficiently identifying disguised nulls in heterogeneous text data</title>
+		<author>
+			<persName><forename type="first">Théo</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">BDA (Conférence sur la Gestion de Données -Principles, Technologies et Applications)</title>
+		<meeting><address><addrLine>Paris, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021-10">October 2021</date>
+		</imprint>
+	</monogr>
+	<note>Informal publication only</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Random forests</title>
+		<author>
+			<persName><forename type="first">Leo</forename><surname>Breiman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="5" to="32" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">ConnectionLens: Finding connections across heterogeneous data sources (demonstration)</title>
+		<author>
+			<persName><forename type="first">Camille</forename><surname>Chanial</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rédouane</forename><surname>Dziri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julien</forename><surname>Leblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minh-Huong Le</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB (also at BDA)</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A relational model of data for large shared data banks</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Edgar</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Codd</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<date type="published" when="1970-06">June 1970</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Bert: Pretraining of deep bidirectional transformers for language understanding</title>
+		<author>
+			<persName><forename type="first">Jacob</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Wei</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kenton</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kristina</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACL</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<monogr>
+		<title level="m" type="main">Declaratively cleaning your data with AJAX</title>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Florescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dennis</forename><forename type="middle">E</forename><surname>Shasha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Simon</surname></persName>
+		</author>
+		<editor>Anne Doucet</editor>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<publisher>BDA</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Declarative data cleaning: Language, model, and algorithms</title>
+		<author>
+			<persName><forename type="first">Helena</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniela</forename><surname>Florescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dennis</forename><forename type="middle">E</forename><surname>Shasha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eric</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cristian-Augustin</forename><surname>Saita</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Information translation, mediation, and mosaic-based browsing in the TSIMMIS system</title>
+		<author>
+			<persName><forename type="first">Joachim</forename><surname>Hammer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hector</forename><surname>Garcia-Molina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kelly</forename><surname>Ireland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannis</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><forename type="middle">D</forename><surname>Ullman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Widom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Data Mining Concepts and Techniques</title>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Micheline</forename><surname>Kamber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Pei</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>Morgan Kaufmann</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Cleaning disguised missing data: A heuristic approach</title>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Pei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGKDD</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Probabilistic Ranking Techniques in Relational Databases</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ihab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mohamed</forename><forename type="middle">A</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Soliman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Synthesis Lectures on Data Management</title>
+		<imprint>
+			<publisher>Morgan &amp; Claypool Publishers</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Statistical analysis with missing data</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Roderick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Donald</forename><forename type="middle">B</forename><surname>Little</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Rubin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1987">1987</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+			<biblScope unit="volume">793</biblScope>
+		</imprint>
+	</monogr>
+	<note>First edition</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Baran: Effective error correction via a unified context representation and transfer learning</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziawasch</forename><surname>Abedjan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1948" to="1961" />
+			<date type="published" when="2020-07">jul 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Raha: A configuration-free error detection system</title>
+		<author>
+			<persName><forename type="first">Mohammad</forename><surname>Mahdavi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ziawasch</forename><surname>Abedjan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><forename type="middle">Castro</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><surname>Madden</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mourad</forename><surname>Ouzzani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Stonebraker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 International Conference on Management of Data, SIGMOD '19</title>
+		<meeting>the 2019 International Conference on Management of Data, SIGMOD '19<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="865" to="882" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The problem of disguised missing data</title>
+		<author>
+			<persName><forename type="first">Ronald</forename><forename type="middle">K</forename><surname>Pearson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGKDD Explor. Newsl</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="83" to="92" />
+			<date type="published" when="2006-06">June 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Fahes: A robust disguised missing values detector</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abdulhakim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ahmed</forename><surname>Qahtan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raul</forename><forename type="middle">Castro</forename><surname>Elmagarmid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mourad</forename><surname>Fernandez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Ouzzani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGKDD</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Potter's wheel: An interactive data cleaning system</title>
+		<author>
+			<persName><forename type="first">Vijayshankar</forename><surname>Raman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">M</forename><surname>Hellerstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Sentence-BERT: Sentence embeddings using siamese bert-networks</title>
+		<author>
+			<persName><forename type="first">Nils</forename><surname>Reimers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Iryna</forename><surname>Gurevych</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

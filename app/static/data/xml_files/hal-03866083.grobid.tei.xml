@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Two-Step Approach for Explainable Relation Extraction</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Hugo</forename><surname>Ayats</surname></persName>
+							<email>hugo.ayats@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">INSA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA Campus de Beaulieu</orgName>
+								<address>
+									<postCode>35042</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peggy</forename><surname>Cellier</surname></persName>
+							<email>peggy.cellier@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">INSA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA Campus de Beaulieu</orgName>
+								<address>
+									<postCode>35042</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sébastien</forename><surname>Ferré</surname></persName>
+							<email>sebastien.ferre@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">INSA</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">IRISA Campus de Beaulieu</orgName>
+								<address>
+									<postCode>35042</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Two-Step Approach for Explainable Relation Extraction</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">ECDC9679F762B09F1EA3E2B19385B661</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Knowledge Graphs (KG) offer easy-to-process information. An important issue to build a KG from texts is the Relation Extraction (RE) task that identifies and labels relationships between entity mentions. In this paper, to address the RE problem, we propose to combine a deep learning approach for relation detection, and a symbolic method for relation classification. It allows to have at the same time the performance of deep learning methods and the interpretability of symbolic methods. This method has been evaluated and compared with state-ofthe-art methods on TACRED, a relation extraction benchmark, and has shown interesting quantitative and qualitative results.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Knowledge Graphs (KG) <ref type="bibr" target="#b9">[10]</ref> have the advantage to offer easy-to-process information. However, most available information is still in the form of texts. A key problem is therefore the extraction of KGs from text, which amounts to identify named entities and relationships <ref type="bibr" target="#b15">[16]</ref>. Relation Extraction (RE) <ref type="bibr" target="#b8">[9]</ref> is the sub-problem of identifying and labelling relationships, assuming that the named entities have already been identified. Currently, the best scores on RE are achieved by deep learning methods, such as LUKE <ref type="bibr" target="#b21">[22]</ref> or BERT <ref type="bibr" target="#b3">[4]</ref>. While their scores have recently increased significantly (e.g., F1-score 72.7 for LUKE), the KGs that would result from their systematic application would still be noisy and incomplete to a large extent (e.g., 30% incorrect triples, and 25% missing triples for LUKE). Therefore, a completely automated process does not seem realistic if we aim at reliable and complete KGs and the RE task is too tedious to perform by hand only.</p><p>It seems necessary to introduce some human control in the extraction process while providing support for automation. Our idea is to base the automation on an increasing set of extraction rules, which are generated from previous examples and validated by humans. Human validation ensures the reliability of the extracted KG, and the generic aspect of rules supports the automation of the information extraction process. In this paper, we focus on the sub-task of generating extraction rules from examples, i.e. sentences in which relationships have already been identified and labelled. Unfortunately, deep learning methods only predict relationships at the instance level, they do not provide information that can be leveraged into general and interpretable extraction rules. In previous work <ref type="bibr" target="#b0">[1]</ref> a symbolic approach based on Concepts of Neighbours <ref type="bibr" target="#b4">[5]</ref> was proposed to provide explainable predictions. Those explanations have the potential to be translated into extraction rules. However, it only solves the sub-problem of relation classification, i.e. when the relationships have already been detected and only remains to be labelled. Indeed, explanations can be found for the label of a relationship but hardly for the absence of a relationship as there are many ways for two entities not to be in relationship.</p><p>To address the RE problem, we propose to combine a deep learning approach for relation detection, and the symbolic approach based on Concepts of Neighbours for relation classification. It allows to have at the same time the performance of deep learning methods and the interpretability of symbolic methods. We conducted experiments showing that in terms of F1-score on the full RE task, our composite approach is comparable to deep learning approaches using the same kind of information from texts (i.e., syntactic structure, lexical semantics), namely GCN and C-GCN <ref type="bibr" target="#b22">[23]</ref>. In contrast to deep learning methods, our approach generates explanations for each prediction, and convert them into extraction rules. Those extraction rules exhibit rich structures, mixing different levels of information from texts: lexical, syntactical, and semantic. In addition, they are generalizations of the current prediction, which makes them useful for the automation of future extractions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Works</head><p>Most approaches addressing the Relation Extraction task use deep learning methods. Historically, convolutional neural networks <ref type="bibr" target="#b18">[19]</ref> and LSTM <ref type="bibr" target="#b20">[21]</ref> were used first, then were replaced by graph convolution networks methods <ref type="bibr" target="#b22">[23]</ref>, which allow to take into account the syntactic structure of sentences. Currently, the approaches that give the best results for the RE task use pre-trained language models such as BERT <ref type="bibr" target="#b3">[4]</ref> and its variants <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b21">22]</ref>. However, the performance of those approaches (with an F-score between 70 and 75% on the TACRED benchmark <ref type="bibr" target="#b23">[24]</ref>) are still too low to allow a full automation. In addition, those fully statistical approaches lack of explanations for their predictions, which limits the possibilities of introducing human control in the process to improve reliability.</p><p>Symbolic approaches have also been proposed for the RE task. Their performance are often lower than deep learning methods, but by definition they provide interpretable results that can be used in a process with human control. The first symbolic approaches use rules such as regular expressions <ref type="bibr" target="#b7">[8]</ref> or syntactic patterns <ref type="bibr" target="#b6">[7]</ref>. However, these rules are handcrafted and thus those approaches are time consuming and often devoted to a specific corpus. Some symbolic approaches automatically learn the linguistic rules. For instance <ref type="bibr" target="#b2">[3]</ref> uses pattern mining techniques to automatically extract those rules. The method presented in <ref type="bibr" target="#b1">[2]</ref> combines symbolic and machine learning techniques and proposes to learn patterns from a list of seed terms, i.e. pairs of entities known to be in some tar- </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Relation Classification with Concepts of Neighbours</head><p>In this section, we describe the use of Concepts of Neighbours for the problem of explainable relation classification. Given a sentence (e.g., "Berlin became the capital of Germany in 1990"), two named entities in the sentence (e.g., "Berlin" and "Germany"), and the assumption that there is a relationship between the two entities, the problem is to predict the label of the relationship (e.g., "is the capital of"), and to provide interpretable explanations for the predicted label. The work presented in this section is developed in more details in <ref type="bibr" target="#b0">[1]</ref>. <ref type="bibr" target="#b4">[5]</ref> is a graph mining method for entity-relation graphs that aims, for a given tuple of entities, to compute which are the most similar tuples of entities. It can be seen as a symbolic form of the k-nearest neighbours method, where numeric distances are replaced by common graph patterns. The bigger the common graph pattern between two tuples, the closer they are. For example, suppose that we want to find couple of entities similar to (Berlin, Germany) in a graph about geography. Concepts of Neighbours hierarchically clusters all couples of entities into concepts according to their similarity with (Berlin, Germany). Figure <ref type="figure" target="#fig_0">1</ref> shows the set of concepts as a Venn diagram. Each concept is defined by its intension, which is a graph pattern with distinguished variables, and its extension, which is the set of couples matching the intension. It can be seen that (Roma,Italy) is a close neighbour as it shares the "capital of" relation, while (New York,USA) is a farther neighbour because New York is only a city of USA. The proper extension of a concept is defined as the subset of tuples of its extension that are not in the extension of more specific concepts. The extensional distance is defined as the size of its extension, and can be used as a numerical distance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Concepts of Neighbours</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Concepts of Neighbours</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Application to Text</head><p>In order to apply Concepts of Neighbours to texts, we first need to model a text as an entity-relation graph. Figure <ref type="figure" target="#fig_1">2</ref> shows the modeling of the sentence "The University of Rennes is French". We rely on NLP tools and resources to extract syntactic and semantic information from text <ref type="foot" target="#foot_0">1</ref> .</p><p>The graph representing each sentence is defined as follows. Tokens are used as entities, and are linked by the dependency relations. Lemmas, named entity types and part-of-speech (POS) tags are then added as entity labels.</p><p>From there we apply a few enhancements to the graph. First, some named entities extend over several tokens but have a syntactic and semantic unity: e.g. "University of Rennes" is split in three tokens. We decided to merge those tokens into a single entity in our graph representation, and to label it with the concatenation of tokens instead of using the lemmas, considering them as proper nouns. Second, we enrich the graph labelling following syntactic and semantic inferences. The objective is to help finding common graph patterns with Concepts of Neighbours. For instance, on the syntactic side, singular nouns have POS tag NN whereas plural nouns have POS tag NNS. To relax the singular/plural distinction, we infer POS tag NN for every entity that has POS tag NNS. On the semantic side, given an entity labelled with some lemma (e.g. "school"), we infer labels for the synonyms and hypernyms of the lemma (e.g., "educational institution")<ref type="foot" target="#foot_1">2</ref> . The Concepts of Neighbours method is capable of handling such inferences efficiently, without having to materialize them in the graph, by relying on a partial ordering over the entity and relation labels.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Application to Relation Classification</head><p>Given the graph modeling of a text, and the choice of a couple of named entities (subject, object), Concepts of Neighbours can compute a set a concepts of neighbours, each concept being associated with a set of neighbour couples (the proper extension), and to an extensional distance. From there, a label of the relation from subject to object can be predicted by looking at the relationships holding for the neighbour couples of each concept c. Intuitively, the more neighbours in the proper extension of c hold some relation r, and the smaller the extensional distance of c, then the stronger the prediction for relation r is. This is formalized as the confidence of the rule R r,c : P c → r(s, o), where (s, o)</p><formula xml:id="formula_0">← P c is the intension of concept c. conf (R r,c ) = |{(s, o) | r(s, o)} ∩ ext(c)| ext_dist(c)</formula><p>To aggregate the rules from all concepts to all relations and to get a ranking of predicted relations, we use Maximum Confidence <ref type="bibr" target="#b16">[17]</ref>, which was applied with success for link prediction <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b5">6]</ref>. Informally, the predicted relation is the relation which has the higher maximal confidence. In case of equality, the predicted relation is the one with the higher second maximal confidence, and so on.</p><p>In practice, the generic prediction method presented above is specialized to the settings of relation extraction benchmarks like TACRED. First, neighbours are only searched among the couples of entities that are annotated by a relation that is compatible with the entity types, according to the RECENT paradigm <ref type="bibr" target="#b12">[13]</ref>. Second, we apply the pruning strategy proposed in <ref type="bibr" target="#b22">[23]</ref>, where only tokens that are at a maximal distance k of the path between the subject and object are kept in the representation of a sentence.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">A Two-Step Approach for Relation Extraction</head><p>The method presented in the previous section works by <ref type="bibr">similarity</ref> The idea is to combine two methods, one for relation detection only, and the method presented in the above section for relation classification. Figure <ref type="figure" target="#fig_2">3</ref> presents how such a system works: the method for relation detection discriminates the positive examples from the negative examples, and our neighboursbased method classifies the positive examples among the compatible relation types. Such a two-step approach has already been exploited with promising results <ref type="bibr" target="#b13">[14]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Relation Detection with Deep Learning</head><p>As there is no efficient symbolic or fully explainable method for relation detection that we know of, we decided to favor performance and therefore to use a state-ofthe-art deep learning approach. Moreover, there is not much need to explain the </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Explainability</head><p>The main asset of this two-step method is its explainability: for a given prediction, if this prediction is not no_relation, the method is able to provide an explanation. This limitation to positive prediction may seem odd, but this can be understood by the fact that if it is easy to imagine how to explain why there is a relation between two examples (by giving other annotated examples looking like the given example), it is more complicated to explain why a given example has no relation between its subject and its object, as negative examples do not have to look like other negative examples.</p><p>For a given example annotated as positive, the raw explanation that can be given is the whole set of Concepts of Neighbours of this example. However, whereas it is a complete explanation, it is hardly readable for a non-expert. However, among this set of concepts, only a few ones are used to make a prediction: the ones that have an intension which was used to create a rule of maximum confidence. Therefore, by displaying those intensions and the examples matching it, we obtain a short and readable explanation (only a few graph patterns and the related sentences). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Experiments and Results</head><p>In this section, we present the different experiments made with our relation extraction system and the subsequent results. Those experiments can be divided in three parts: 1) the LUKE-based Relation Detection module, 2) the Concepts of Neighbours-based Relation Classification module, and 3) the whole system.</p><p>All experiments were made on the TACRED dataset <ref type="bibr" target="#b23">[24]</ref>, one of the most used dataset for Relation Extraction. This dataset is made of 106,264 examples, split into a training corpus (68,124 examples), a development corpus <ref type="bibr" target="#b21">(22,</ref><ref type="bibr">631</ref> examples) and a test corpus <ref type="bibr">(15,509 examples)</ref>. Each example of this dataset is a sentence with two entity mentions (a subject and an object), each mention being typed among 23 possible types, and annotated with a relation type among 41 effective classes plus a no_relation class representing the absence of relation between the subject and the object. For greater accuracy compared to random pairs of entity mentions occurring in real-world sentences, 79.5% of the examples are in the no_relation class.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Relation Detection</head><p>We evaluate the different configurations of LUKE <ref type="bibr" target="#b21">[22]</ref> presented in Section 4.1, in order to choose the best one for relation detection.</p><p>Experiment Design As presented in Section 4.1, several configuration of LUKE were tested. In addition to luke-base and luke-detect , a third configuration, called luke-reprod has been tested. Theoretically equivalent to luke-base, it consists into reproducing the fine-tuning on TACRED to see if this fine-tuning is reproducible, and to have another comparison point for luke-redetect. Concerning luke-detect, several values have been tested for the size of the hidden layer, and best results have been obtained with n = 400. The implementation is freely accessible<ref type="foot" target="#foot_2">3</ref> , and the experiments were run using a Tesla V100 GPU.</p><p>Results Table <ref type="table" target="#tab_1">1</ref> shows the performance for the three detailed configurations. It can be read that, contrary to our expectations, luke-reprod does not reproduce the results from luke-base, by having an F-score inferior by 1.3 points. LUKE's implementation being in Python, this is probably due to a problem in dependency versioning. However, even if the reproduction was a failure, we can observe that luke-detect's F-score is superior by 0.4 points to luke-reprod 's one.</p><p>Therefore, it can be hoped that if we were able to reproduce perfectly luke-base, luke-detect would have a better F-score.</p><p>It is interesting to point out that if luke-base has an overall better F-score, luke-reprod outperforms its precision and luke-redetect outperforms its recall. However, having a lower recall means having more false-negative examples, which means missing some examples expressing a relation, which we want to avoid, while having a lower precision means trying to classify a relation on examples that express none, which is also problematic. This is why we prefer F-score over precision or recall, and therefore we use luke-base as a relation detection module in the following experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Relation Classification</head><p>We now evaluate our Concepts of Neighbours-based module individually on the Relation Classification task.</p><p>Experiment Design These experiments are made on the positive examples of TACRED, i.e. the examples that have an annotation other than no_relation. As our method does not have any use of a development corpus, we merge this corpus with the training one. We finally obtain a dataset composed of 18,446 training examples and 3,325 test examples. The quality measure usually used on TACRED is the micro-averaged F-score. However, as there is no negative class on this task, this measure does not make sense, and therefore we use accuracy.</p><p>In these experiments, as we work on a subset of TACRED we cannot compare this approach directly to other existing methods. Therefore, we compare our approach to a basic baseline in the RECENT paradigm. This baseline simply predicts, for given subject and object types, the relation type that appears the most among the training examples with the same subject and object types.</p><p>As the algorithm for the computation of Concepts of Neighbours is anytime, we have to choose a timeout for our experiments. In order to see how the timeout influences the classification task, several timeouts were tested between 10 and 1200 seconds. Concerning the dependency tree pruning, several values of k were tested, and the best results have been obtained with k = 1.Our approach was implemented in Java<ref type="foot" target="#foot_3">4</ref> and uses ConceptualKNN<ref type="foot" target="#foot_4">5</ref> for the computation of Concepts of Neighbours, which is based on Apache Jena<ref type="foot" target="#foot_5">6</ref> , a Java library for the semantic web.</p><p>Results Table <ref type="table" target="#tab_2">2</ref> presents the accuracy for the baseline and for our approach. First it can be observed that the baseline has an accuracy of 80.4%, which is particularly high, which means that the dataset leaves little space for progress. Then, it can be read that for any timeout, the proposed approach has a better accuracy than the baseline, surpassing it by 2.2 points for a timeout of over 300s.  <ref type="bibr" target="#b21">[22]</ref> 72.7 BERT-LSTM-Base <ref type="bibr" target="#b19">[20]</ref> 67.8 Ours 66.9 C-GCN <ref type="bibr" target="#b22">[23]</ref> 66.4 GCN <ref type="bibr" target="#b22">[23]</ref> 64.0</p><p>In addition, this table clearly shows a saturation phenomenon: there is an important gain when timeout gets from 10s to 120s, gain that is far smaller from 120s to 1200s. It can be intuited that this comes from the fact that most concepts are computed before 120 seconds, and only a few concepts are added after 120s. This also can be seen in the proportion of examples for which the full set of Concepts of Neighbours is computed: of less than 30% for a timeout of 10s, it rises to over 80% for a timeout of 120s and to over 99% for a timeout of over 600s. This shows that despite the anytime algorithm, most of the prediction is made on the real set of Concepts of Neighbours, and not an approximation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Relation Extraction</head><p>Now that we have shown that our Concepts of Neighbours-based method is a valid approach for relation classification and that we have chosen a deep learning relation detection module, both can be assembled to form a full relation extraction method. In this subsection we present the experimental process to evaluate this method, as well as both quantitative and qualitative results.</p><p>Experiment Design We evaluate our two-step approach on the full TACRED dataset in order to compare it to previous approaches. To do so, according to the structure presented in Figure <ref type="figure" target="#fig_2">3</ref>, we process the test examples of TACRED with luke-base, and obtain examples classified as positive or negative. Then, each example classified as positive is processed by our Concept-of-Neighbours module for relation classification.</p><p>Quantitative Results Table <ref type="table" target="#tab_3">3</ref> compares our method with previous Relation Extraction methods. It shows that although our method is not competitive with pre-trained language models such as BERT or LUKE, it outperforms approaches based on graph convolution networks. Indeed, our method beats by 2.9 F-score points the basic graph convolution network (GCN) and by 0.5 points the contextualized graph convolution network (C-GCN). This is interesting because our method and those two methods are conceptually close: both are based on the representation of sentences as a graph, both use the pruned dependency tree of the sentences, and both add to this modeling a semantic layer (a word embedding for GCN and C-GCN, WordNet for our approach). The difference between those approaches is that ours aims to provide explanations for the examples classified as positive.</p><p>Qualitative Results As mentioned above, the main advantage of our approach is its explainability. Let us take for example the sentence "Sollecito has said he was at his own apartment in Perugia, working at his computer." luke-base predicts that there is a relation between the subject (his) and the object (Perugia). As the subject is a person and the object a city, there are only three compatible relations: per:cities_of_residence, per:city_of_death or per:city_of_birth. After computation of the Concepts of Neighbours, we observe that the relation per:city_of_residence is predicted, as six rules of confidence 1 predict it, while only one rule each predicts the other two compatible relations. Figure <ref type="figure" target="#fig_3">4</ref> shows the body of one of those rules. It can be read as:</p><p>-The subject has lemma he and is the possessor of an apartment; -The object is the name of a city in which there is something.</p><p>Even if this pattern is too specific to form a general rule, it can be infered that, knowing there is a relation between the subject and the object, we can be pretty sure that any sentence following this pattern has the relation per:cities_of_residence between its subject and its object. To complete this explanation, we can look at the training examples matching this rule. In our case, there is one sentence matching it: "Wilbert Gibson walked from his apartment to the grocery store earlier this week -that's what people do in New York City -and thought this must be what it's like to be a celebrity." We can see that this sentence effectively expresses the relation per:cities_of_residence, but quite implicitly. Therefore, this is interesting to see that this kind of pattern can be captured and exploited by our approach.</p><p>In practice, we observe that the rules of maximum confidence have systematically a confidence equal to 1. This is due to the fact that Concepts of Neighbours compute rules specific enough to match a few cases, and therefore to have a low extensional distance. After reviewing the explanations for ten randomly chosen correct predictions, we can observe that 56% of the 172 graph patterns seem reliable. Most of those reliable explanations are considered as such because of a lemma or a synset appearing in the graph pattern (for example the word daughter to characterize the relation per:children). In addition, we observe that the reliability of the explanations depends on the relation type. For example it can be pointed out that for an example predicting the relation per:top_member/employee, most of the explanations are invalid. This is caused by the fact that there is a great variety of words or formulations expressing this relation, and therefore the same one is rarely used several times. In addition, it appears that most of graph patterns are disconnected, but, as we could hope, most of the connected ones are valid.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion</head><p>In this article, we presented a new method for relation extraction. The core idea of this method is to combine an explainable and symbolic approach for relation classification with a deep learning method for relation detection. More precisely, we present a FCA-based approach that has shown promising results on relation classification, and we couple it with a state-of-the-art pre-trained language model fine-tuned for relation detection. Experiments have shown that this two-step approach gives promising results. In addition, this new method explains each positive prediction with interpretable rules.</p><p>In the future, work has to be made on the FCA-based relation classifier, on the modeling, by adding sequentiality for example, as well as on the concepts of neighbours, in order to use more expressive and flexible patterns. There is also work to do on the explainability, on how to display those explanations in order to make them easily readable , in order to to allow for interaction with the user.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Example of Concepts of Neighbours</figDesc><graphic coords="4,173.28,115.83,268.80,129.15" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Example of sentence modeling</figDesc><graphic coords="5,178.68,115.83,258.00,63.60" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Two-step relation classification process</figDesc><graphic coords="7,152.99,115.84,309.38,59.18" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Example of rule body</figDesc><graphic coords="11,175.77,115.84,263.81,101.44" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>, classifying test examples among the different relations according to similar training examples. If it works for deciding which relation exists between a subject and an object, it does not work for knowing if a relation exists. Indeed, there is no reason for a negative example (i.e. an example with no relation) to look like other negative examples. Therefore, this method can perform relation classification but cannot perform relation detection. However, those two steps are necessary to perform proper relation extraction.</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 .</head><label>1</label><figDesc>Precision, recall and F-score for relation detection methods</figDesc><table><row><cell>Approach</cell><cell>P</cell><cell>R F1</cell></row><row><cell>luke-base</cell><cell cols="2">74.8 79.9 77.3</cell></row><row><cell cols="3">luke-reprod 76.8 75.2 76.0</cell></row><row><cell cols="3">luke-redetect 73.1 80.1 76.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 .</head><label>2</label><figDesc>Accuracy for relation classification, compared to the baseline.</figDesc><table><row><cell cols="2">Timeout (s) 10 20 30 60 120 300 600 1200</cell></row><row><cell>Ours</cell><cell>82.0 82.1 82.7 82.9 83.4 83.6 83.6 83.6</cell></row><row><cell>Baseline</cell><cell>80.4</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 3 .</head><label>3</label><figDesc>F-score for several Relation Extraction methods on TACRED</figDesc><table><row><cell>Method</cell><cell>F1 score</cell></row><row><cell>LUKE</cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>We decided to use the Stanford CoreNLP toolkit<ref type="bibr" target="#b14">[15]</ref> </p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>We used WordNet<ref type="bibr" target="#b17">[18]</ref> to do so</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>See https://gitlab.inria.fr/hayats/luke-redect</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>Accessible here: https://gitlab.inria.fr/hayats/conceptualknn-relex</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>https://gitlab.inria.fr/hayats/jena-conceptsofneighbours</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_5"><p>https://jena.apache.org/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Extracting Relations in Texts with Concepts of Neighbours</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ayats</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Formal Concept Analysis</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Automatic extraction of semantic relations between medical entities: a rule based approach</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ben Abacha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zweigenbaum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Biomedical Semantics</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Sequential pattern mining for discovering gene interactions and their contextual information from biomedical texts</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cellier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Charnois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Plantevit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rigotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Crémilleux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gandrillon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kléma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Manguin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Biomedical Semantics</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page">27</biblScope>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Devlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">W</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Toutanova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NAACL-HLT</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Concepts de plus proches voisins dans des graphes de connaissances</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Ingénierie des Connaissances (IC)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Application of Concepts of Neighbours to Knowledge Graph Completion</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Science</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="28" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">RelEx -relation extraction using dependency parse trees</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fundel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Küffner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zimmer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bioinformatics</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="365" to="371" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Exploiting shallow linguistic information for relation extraction from biomedical literature</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Giuliano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lavelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Romano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. Eu. Chapter of the Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="401" to="408" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Twenty-five years of information extraction</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grishman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Natural Language Engineering</title>
+		<imprint>
+			<biblScope unit="page" from="677" to="692" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Knowledge graphs</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Sequeda</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="96" to="104" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">SpanBERT: Improving Pre-training by Representing and Predicting Spans</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Joshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zettlemoyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Levy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Trans. Association for Computational Linguistics</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="64" to="77" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Exploring Pattern Structures of Syntactic Trees for Relation Extraction</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Leeuwenberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Buzmakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Toussaint</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Napoli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Formal Concept Analysis</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">9113</biblScope>
+			<biblScope unit="page" from="153" to="168" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lyu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<ptr target="http://arxiv.org/abs/2105.08393" />
+		<title level="m">Relation Classification with Entity Type Restriction</title>
+		<imprint>
+			<date type="published" when="2021-05">May 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Active Learning for Interactive Relation Extraction in a French Newspaper&apos;s Articles</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Mallart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Le Nouy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gravier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sébillot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Recent Advances in Natural Language Processing -Deep Learning for Natural Language Processing Methods and Applications</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">The Stanford CoreNLP Natural Language Processing Toolkit</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Surdeanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Finkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Bethard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mcclosky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Annual Meeting of the Association for Computational Linguistics: System Demonstrations</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Information extraction meets the Semantic Web: A survey</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Martinez-Rodriguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lopez-Arevalo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="255" to="335" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Anytime Bottom-Up Rule Learning for Knowledge Graph Completion</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Meilicke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">W</forename><surname>Chekol</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ruffinelli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Stuckenschmidt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Joint Conf. Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3137" to="3143" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">WordNet: An Electronic Lexical Database</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Miller</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1998">1998</date>
+			<publisher>MIT Press</publisher>
+			<pubPlace>Cambridge, MA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Relation Extraction: Perspective from Convolutional Neural Networks</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">H</forename><surname>Nguyen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Grishman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Work. Vector Space Modeling for Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="39" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Simple BERT Models for Relation Extraction and Semantic Role Labeling</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.05255</idno>
+		<imprint>
+			<date type="published" when="2019-04">Apr 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Classifying Relations via LSTM Networks along Shortest Dependency Paths</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Mou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Jin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. Empirical Methods in Natural Language Processing. Association for Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">LUKE: Deep Contextualized Entity Representations with Entity-aware Self-attention</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Yamada</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Asai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Shindo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Takeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Matsumoto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. Empirical Methods in Natural Language Processing (EMNLP)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Graph Convolution over Pruned Dependency Trees Improves Relation Extraction</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="2205" to="2215" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Position-aware Attention and Supervised Data Improve Slot Filling</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Zhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Angeli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">D</forename><surname>Manning</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Conf. Empirical Methods in Natural Language Processing</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="35" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

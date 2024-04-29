@@ -1,0 +1,709 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Inconsistency Handling in Prioritized Databases with Universal Constraints: Complexity Analysis and Links with Active Integrity Constraints</title>
+				<funder ref="#_9dekmNn">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Meghyn</forename><surname>Bienvenu</surname></persName>
+							<email>meghyn.bienvenu@labri.fr</email>
+							<affiliation key="aff0">
+								<orgName type="department">Bordeaux INP</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">University of Bordeaux</orgName>
+								<orgName type="institution" key="instit3">LaBRI</orgName>
+								<address>
+									<settlement>Talence</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Camille</forename><surname>Bourgaux</surname></persName>
+							<email>camille.bourgaux@ens.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">ENS</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">PSL University &amp; Inria</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Inconsistency Handling in Prioritized Databases with Universal Constraints: Complexity Analysis and Links with Active Integrity Constraints</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">16B4799E9508341C74FDC77F8677A678</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>This paper revisits the problem of repairing and querying inconsistent databases equipped with universal constraints. We adopt symmetric difference repairs, in which both deletions and additions of facts can be used to restore consistency, and suppose that preferred repair actions are specified via a binary priority relation over (negated) facts. Our first contribution is to show how existing notions of optimal repairs, defined for simpler denial constraints and repairs solely based on fact deletion, can be suitably extended to our richer setting. We next study the computational properties of the resulting repair notions, in particular, the data complexity of repair checking and inconsistency-tolerant query answering. Finally, we clarify the relationship between optimal repairs of prioritized databases and repair notions introduced in the framework of active integrity constraints. In particular, we show that Pareto-optimal repairs in our setting correspond to founded, grounded and justified repairs w.r.t. the active integrity constraints obtained by translating the prioritized database. Our study also yields useful insights into the behavior of active integrity constraints.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>When a database is inconsistent w.r.t. the integrity constraints, it is possible to obtain meaningful query answers by adopting the consistent query answering (CQA) approach <ref type="bibr" target="#b0">(Arenas, Bertossi, and Chomicki 1999)</ref>. In a nutshell, the idea is to consider a set of repairs, which correspond to those databases that satisfy the constraints and are as close as possible to the original database. An answer is then considered true w.r.t. CQA semantics if it holds no matter which repair is chosen, thus embodying the cautious mode of reasoning employed in many KR contexts. The CQA approach was subsequently extended to the setting of ontology-mediated query answering, which led to the proposal of other natural repairbased semantics, such as the brave semantics, which considers as true those answers that hold in at least one repair <ref type="bibr" target="#b6">(Bienvenu and Rosati 2013)</ref>, and the intersection (or IAR) semantics, which evaluates queries w.r.t. the intersection of the repairs <ref type="bibr" target="#b22">(Lembo et al. 2010)</ref>. There is now an extensive literature on CQA and other forms of inconsistency-tolerant query answering, <ref type="bibr" target="#b2">(Bertossi 2019)</ref> and <ref type="bibr" target="#b8">(Bienvenu 2020)</ref> provide recent surveys for the database and ontology settings.</p><p>Several different notions of repair have been considered, depending on the considered class of constraints and the al-lowed repair actions. For denial constraints (such as functional dependencies, FDs) and constraints given by ontologies, consistency can be restored only by removing information, so subset repairs based upon fact deletions are the most common choice. For richer classes of constraints, however, it makes sense to consider symmetric difference repairs obtained using both fact additions and deletions. This is the case for the universal constraints considered in the present paper, which can be used to express data completeness assumptions and other kinds of domain knowledge. For example, in a hospital setting, a universal constraint can be used to capture expert knowledge that a patient cannot receive a certain treatment without a positive test for a given mutation, with violations indicating either an erroneous treatment record or missing test result. Universal constraints are one of the most expressive classes of first-order constraints for which CQA with symmetric difference repairs is decidable, albeit intractable: Π p 2 -complete w.r.t. data complexity (Staworko and Chomicki 2010; <ref type="bibr" target="#b1">Arming, Pichler, and Sallinger 2016)</ref>. Despite this high complexity, there have been some prototype implementations using logic programming <ref type="bibr" target="#b17">(Eiter et al. 2008;</ref><ref type="bibr" target="#b24">Marileo and Bertossi 2010)</ref>.</p><p>Repairs can be further refined by taking into account information about the relative reliability of the database facts. In the framework of prioritized databases <ref type="bibr" target="#b26">(Staworko, Chomicki, and Marcinkowski 2012)</ref>, a binary priority relation indicates preferences between pair of facts involved in some violation of a denial constraint. Three kinds of optimal repair (Pareto-, globally-, and completion-optimal) are then defined to select the most preferred subset repairs according to the priority relation. The complexity of reasoning with these three kinds of optimal repair has been investigated, primarily focusing on databases with FDs <ref type="bibr" target="#b18">(Fagin, Kimelfeld, and Kolaitis 2015;</ref><ref type="bibr" target="#b21">Kimelfeld, Livshits, and Peterfreund 2017;</ref><ref type="bibr" target="#b23">Livshits and Kimelfeld 2017)</ref>, but also in the context of description logic knowledge bases <ref type="bibr" target="#b3">(Bienvenu and Bourgaux 2020)</ref>. A recent system implements SAT-based algorithms for optimal repair-based semantics having (co)NPcomplete data complexity <ref type="bibr" target="#b4">(Bienvenu and Bourgaux 2022)</ref>.</p><p>To the best of our knowledge, there has been no work addressing how to define fact-level preferences for databases with universal constraints and how to exploit such preferences to single out the optimal symmetric difference repairs. Our first contribution is thus an extension of the framework of prioritized databases to the case of universal constraints and symmetric difference repairs. By carefully defining a suitable notion of conflict (which may involve negative facts), we are able to faithfully lift existing notions of optimal repairs and optimal repair-based semantics, while retaining many properties of the original framework.</p><p>We next study the computational properties of optimal repairs of prioritized databases with universal constraints. We provide an almost-complete picture of the data complexity of repair checking and inconsistency-tolerant query answering for each of the three notions of optimal repair (Pareto, global, and completion) and three repair-based semantics (CQA, brave, and intersection). Our results show that adopting optimal repairs does not increase the complexity of inconsistency-tolerant query answering.</p><p>Our third contribution is to establish connections with active integrity constraints (AICs), a framework in which universal constraints are enriched with information on what are the allowed update actions (fact deletions or additions) to resolve a given constraint violation <ref type="bibr" target="#b20">(Flesca, Greco, and Zumpano 2004;</ref><ref type="bibr" target="#b13">Caroprese et al. 2006;</ref><ref type="bibr" target="#b14">Caroprese, Greco, and Zumpano 2009)</ref>. More precisely, we provide a natural translation from prioritized databases to AICs and observe that Pareto-optimal repairs coincide with three kinds of repairs (founded, grounded and justified) that have been defined for AICs. This leads us to explore more general conditions under which AIC repair notions coincide, which we subsequently exploit to exhibit a translation of certain 'wellbehaved' sets of AICs into prioritized databases.</p><p>Proofs can be found in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2023)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries</head><p>We assume familiarity with propositional and first-order logic (FOL) and provide here terminology and notation for databases, conjunctive queries, constraints, and repairs.</p><p>Relational databases Let C and V be two disjoint countably infinite sets of constants and variables respectively. A (relational) schema S is a finite set of relation names (or predicates), each with an associated arity n &gt; 0. A fact over S is an expression of the form P (c 1 , . . . , c n ) where P ∈ S has arity n and c 1 , . . . , c n ∈ C. A database (instance) over S is a finite set D of facts over S. The active domain of D, denoted dom(D), is the set of constants occurring in D.</p><p>A database D can also be viewed as a finite relational structure whose domain is dom(D) and which interprets each predicate P ∈ S as the set {c | P (c) ∈ D}. We shall use the standard notation D |= Φ to indicate that a (set of) FOL sentence(s) Φ is satisfied in this structure.</p><p>Conjunctive queries A conjunctive query (CQ) is a conjunction of relational atoms P (t 1 , . . . , t n ) (with each t i ∈ V ∪ C), where some variables may be existentially quantified. A Boolean CQ (BCQ) has no free variables. Given a query q(x), with free variables x = (x 1 , . . . , x k ), and a tuple of constants a = (a 1 , . . . , a k ), q(a) denotes the BCQ obtained by replacing each variable in x by the corresponding constant in a. An answer to q(x) over a database D is a tuple of constants a from dom(D) such that D |= q(a).</p><formula xml:id="formula_0">Constraints A universal constraint over a schema S is a FOL sentence of the form ∀x(R 1 (t 1 ) ∧ • • • ∧ R n (t n ) ∧ ¬P 1 (u 1 ) ∧ • • • ∧ ¬P m (u m ) ∧ ε → ⊥), where each R i (t i ) (resp. P i (u i )</formula><p>) is a relational atom over S, ε is a (possibly empty) conjunction of inequality atoms, and</p><formula xml:id="formula_1">u 1 ∪• • •∪u m ⊆ t 1 ∪ • • • ∪ t n (safety condition). Universal constraints can also be written in the form ∀x(R 1 (t 1 ) ∧ • • • ∧ R n (t n ) ∧ ε → P 1 (u 1 ) ∨ • • • ∨ P m (u m )).</formula><p>For simplicity, we shall often omit the universal quantification and will sometimes use the generic term constraint to mean universal constraint.</p><p>Denial constraints are universal constraints of the form</p><formula xml:id="formula_2">∀x(R 1 (t 1 ) ∧ • • • ∧ R n (t n ) ∧ ε → ⊥)</formula><p>, which capture the well-known class of functional dependencies.</p><p>We say that a database D is consistent w.r.t. a set of constraints</p><formula xml:id="formula_3">C if D |= C. Otherwise, D is inconsistent (w.r.t. C).</formula><p>A constraint is ground if it contains no variables. Given a constraint τ and database D, we use gr D (τ ) for the set of all ground constraints obtained by (i) replacing variables with constants from dom(D), (ii) removing all true c ̸ = d atoms, and (iii) removing all constraints that contain an atom c ̸ = c. We let gr D (C) := τ ∈C gr D (τ ), and note that D |= τ iff D |= τ g for every τ g ∈ gr D (τ ).</p><formula xml:id="formula_4">Repairs A symmetric difference repair, or ∆-repair, of D w.r.t. C is a database R such that (i) R |= C and (ii) there is no R ′ such that R ′ |= C and R ′ ∆D ⊊ R∆D, where ∆ is the symmetric difference operator: S 1 ∆S 2 = (S 1 \ S 2 ) ∪ (S 2 \ S 1</formula><p>). If only fact deletions are permitted, we obtain subset repairs (⊆-repairs), and if only fact additions are permitted, superset repairs (⊇-repairs). We denote the set of ∆-repairs of D w.r.t. C by SRep(D, C).</p><p>Because of the safety condition, an empty database satisfies any set of universal constraints, so every database has at least one ⊆-repair (which is also a ∆-repair), while it may be the case that no ⊇-repair exists. Moreover, for the subclass of denial constraints, ∆-repairs and ⊆-repairs coincide since adding facts cannot resolve a violation of a denial constraint.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Optimal Repairs for Universal Constraints</head><p>In this section, we show how existing notions of optimal repairs, defined for ⊆-repairs w.r.t. denial constraints, can be lifted to the broader setting of ∆-repairs w.r.t. universal constraints. We then use the resulting repair notions to define inconsistency-tolerant semantics for query answering.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Conflicts for Universal Constraints</head><p>In the setting of denial constraints, a conflict is a minimal subset of the database that is inconsistent w.r.t. the constraints. Conflicts and the associated notion of conflict (hyper)graph underpin many results and algorithms for consistent query answering, and in particular, they appear in the definition of prioritized databases <ref type="bibr" target="#b26">(Staworko, Chomicki, and Marcinkowski 2012)</ref>. Our first task will thus be to define a suitable notion of conflict for universal constraints.</p><p>An important observation is that the absence of a fact may contribute to the violation of a universal constraint. For this reason, conflicts will contain both facts and negated facts, where ¬P (c) indicates that P (c) is absent. We use Facts S We also provide two alternative characterizations of conflicts, in terms of the hitting sets of literals removed from ∆-repairs and the prime implicants 1 of the propositional formula stating that there is a constraint violation (treating the elements of Lits S D as propositional literals): Proposition 1. For every database D and constraint set C:</p><formula xml:id="formula_5">1. Conf (D, C) = {H ∩ D ∪ {¬α | α ∈ H \ D} | H ∈ MHS (D, C)} where MHS (D, C) is the set of all minimal hitting sets of {R∆D | R ∈ SRep(D, C)}. 2. Conf (D, C) = {{λ 1 , . . . , λ k } ⊆ Lits S D | λ 1 ∧ . . . ∧ λ k is a prime implicant of φ→⊥∈gr D (C) φ}.</formula><p>We can show that our notion of conflicts enjoy similar properties to conflicts w.r.t. denial constraints, but to formulate them, we must first introduce some useful terminology and notation for moving between databases and sets of literals.</p><p>Given a database D over schema S, a candidate repair for D is a database B with B ⊆ Facts S D . For every candidate repair B for D, we define its corresponding set of literals </p><formula xml:id="formula_6">Lits D (B) = B ∪ {¬α | α ∈ Facts S D \ B} and the set of lit- erals Int D (B) = Lits D (B) ∩ Lits S D = (B ∩ D) ∪ {¬α | α ∈ Facts S D \(B ∪D)}</formula><formula xml:id="formula_7">(B) = B ∩ D ∪ {α | ¬α ∈ Lits S D \ B}. Note that if B is a candidate repair, Dat D (Int D (B)) = B.</formula><p>Proposition 2. Let D be a database, C a set of universal constraints, and R a candidate repair for D.</p><formula xml:id="formula_8">1. R ∈ SRep(D, C) iff Int D (R) is a maximal subset of Lits S D such that Dat D (Int D (R)) |= C, i.e., R |= C. 2. R ∈ SRep(D, C) iff Int D (R) is a maximal subset of Lits S D such that E ̸ ⊆ Int D (R) for every E ∈ Conf (D, C).</formula><p>1 We recall that a prime implicant of a propositional formula ψ is a minimal conjunction of propositional literals κ that entails ψ. The first property states that ∆-repairs correspond to the consistent databases that preserve a maximal set of the original literals, while the second rephrases consistency in terms of conflicts. The third generalizes a well-known hypergraphbased characterization of ⊆-repairs. As the next remark explains, an earlier attempt at defining conflicts for universal constraints failed to obtain such a property. Every repair gives rise to a MIS of ECG(D, C), but a MIS need not correspond to any repair. Proposition 4 in <ref type="bibr" target="#b25">(Staworko and Chomicki 2010)</ref> claims a weaker converse: for every MIS M of ECG(D, C), either its positive projection</p><formula xml:id="formula_9">3. R ∈ SRep(D, C) iff Int D (R) ∩ ( E∈Conf (D,C) E) is a maximal independent set (MIS) of the conflict hypergraph G C D ,</formula><formula xml:id="formula_10">M + = M ∩ Facts S D is a ∆-repair of D w.r.t. C, or there exists a MIS N of ECG(D, C) such that N + ∆D ⊊ M + ∆D. However, our example disproves this claim, as M = {A(a), B(a), C(a)} is a MIS of ECG(D, C), but M + = M is not a ∆-repair (it violates τ 2 )</formula><p>, and there is no MIS N with N + ∆D ⊊ M + ∆D. Essentially, the problem is that their notion of conflicts does not take into account implicit constraints (A(x) ∧ B(x) → ⊥ in this example).</p><p>To clarify the relationship between the universal and denial constraint settings, we translate the former into the latter. Take a database D and set of universal constraints C over schema S. To represent negative literals, we introduce an extended schema S ′ = S ∪ { P | P ∈ S} and a function facts that maps sets of literals over S into sets of facts over S ′ by replacing each negative literal ¬P (c) by P (c). We then consider the database</p><formula xml:id="formula_11">D d = facts(Lits S D ) = D ∪ { P (c) | P (c) ∈ Facts S D \ D}, and the set of ground denial con- straints C d,D = {( α∈facts(E) α) → ⊥ | E ∈ Conf (D, C)}.</formula><p>Proposition 3. For every database D and constraint set C:</p><formula xml:id="formula_12">Conf (D d , C d,D ) = {facts(E) | E ∈ Conf (D, C)} and SRep(D d , C d,D ) = {facts(Int D (R)) | R ∈ SRep(D, C)}.</formula><p>One may naturally wonder whether a set of denial constraints C d which does not depend on D could be used in place of C d,D in Proposition 3. The answer is no: the existence of such a set C d would imply a data-independent bound on the size of conflicts that may appear in any set Conf (D d , C d ), and hence in Conf (D, C). However, as the next example illustrates, universal constraints differ from denial constraints in that the size of the conflicts cannot be bounded independently from the database.</p><formula xml:id="formula_13">Example 2. Let C consist of R(x, y) ∧ A(x) → A(y) and A(x) ∧ B(x) → ⊥. Then for every n ≥ 1, we can build a database {A(a 0 ), R(a 0 , a 1 ), . . . , R(a n-1 , a n ), B(a n )} of size n + 2 which is a conflict (of itself) w.r.t. C.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Prioritized Databases &amp; Optimal Repairs</head><p>With the definition of conflicts in place, we can extend the notion of prioritized database <ref type="bibr" target="#b26">(Staworko, Chomicki, and Marcinkowski 2012)</ref> to the setting of universal constraints. Definition 2. A priority relation ≻ for a database D w.r.t. a set of universal constraints C is an acyclic binary relation over the literals of Conf (D, C) such that if λ ≻ µ, then there exists E ∈ Conf (D, C) such that {λ, µ} ⊆ E. We say that ≻ is total if for every pair λ ̸ = µ such that {λ, µ} ⊆ E for some We now extend the definitions of optimal repairs to the case of universal constraints. Definition 4. Consider a prioritized database</p><formula xml:id="formula_14">E ∈ Conf (D, C), either λ ≻ µ or µ ≻ λ. A completion of ≻ is a total priority relation ≻ ′ ⊇ ≻. A priority relation ≻ is score-structured if there is a scor- ing function s : E∈Conf (D,C) E → N such that for every {λ, µ} ⊆ E with E ∈ Conf (D, C), λ ≻ µ iff s(λ) &gt; s(µ).</formula><formula xml:id="formula_15">D C ≻ = (D, C, ≻), and let R ∈ SRep(D, C). • A Pareto improvement of R is a database B consistent w.r.t. C such that there is µ ∈ Int D (B) \ Int D (R) with µ ≻ λ for every λ ∈ Int D (R) \ Int D (B). • A global improvement of R is a database B consistent w.r.t. C such that Int D (B) ̸ = Int D (R) and for every λ ∈ Int D (R) \ Int D (B), there exists µ ∈ Int D (B) \ Int D (R) such that µ ≻ λ.</formula><p>We say that R is:</p><p>• Pareto-optimal if there is no Pareto improvement of R.</p><p>• globally-optimal if there is no global improvement of R.</p><p>• completion-optimal if R is a globally-optimal ∆-repair of D C ≻ ′ , for some completion ≻ ′ of ≻. We denote by GRep(D C ≻ ), PRep(D C ≻ ) and CRep(D C ≻ ) the sets of globally-, Pareto-and completion-optimal ∆-repairs.</p><formula xml:id="formula_16">A Pareto improvement is also a global improvement, so GRep(D C ≻ ) ⊆ PRep(D C ≻ ), and a global improvement w.r.t. ≻ is a global improvement w.r.t. any completion ≻ ′ of ≻, so CRep(D C ≻ ) ⊆ GRep(D C ≻ ). Hence, as in the denial constraints case, CRep(D C ≻ ) ⊆ GRep(D C ≻ ) ⊆ PRep(D C ≻ )</formula><p>. Moreover, there always exists at least one completion-(hence Pareto-and globally-)optimal ∆-repair, which can be obtained from G C D by the following greedy procedure: while some literal from Lits S D has not been considered, pick a literal that is maximal w.r.t. ≻ among those not yet considered, and add it to the current set if it does not introduce a conflict from Conf (D, C). If B is a subset of Lits S D obtained by this procedure, we show that Dat D (B) ∈ CRep(D C ≻ ). This procedure requires us to compute Conf (D, C), hence does not run in polynomial time (unlike the denial constraint case). However, as for denial constraints, we have:</p><formula xml:id="formula_17">Proposition 4. If ≻ is total, then |PRep(D C ≻ )| = 1. In particular, this means GRep(D C ≻ ) = PRep(D C ≻ )</formula><p>when ≻ is total, so we may replace globally-optimal by Paretooptimal in the definition of completion-optimal ∆-repairs. </p><formula xml:id="formula_18">S(x, y) ∧ S(x, z) ∧ y ̸ = z → ⊥ S(x, y) → A(x) R(x, y) ∧ R(x, z) ∧ y ̸ = z → ⊥ S(x, y) → B(x) R(y, x) ∧ S(z, x) → ⊥</formula><p>The conflicts are all binary, so the conflict hypergraph is a graph, pictured below. We use an arrow λ → µ when λ ≻ µ and dotted lines for conflicting literals with no priority.</p><formula xml:id="formula_19">R(d, b) S(a, b) ¬A(a) R(d, c) S(a, c) ¬B(a)</formula><p>It can be verified that the optimal repairs are as follows:</p><formula xml:id="formula_20">CRep(D C ≻ ) ={{R(d, b), S(a, c), A(a), B(a)}} GRep(D C ≻ ) =CRep(D C ≻ ) ∪ {{R(d, b)}} PRep(D C ≻ ) =GRep(D C ≻ ) ∪ {{R(d, c)}, {R(d, c), S(a, b), A(a), B(a)}} and that SRep(D, C) = PRep(D C ≻ ).</formula><p>When ≻ is score-structured with scoring function s, we define the prioritization of E∈Conf (D,C) E as the partition S 1 , . . . , S n such that for every 1 ≤ i ≤ n, there exists m ∈ N such that S i = {λ | s(λ) = m}, and for every {λ i , λ j } ⊆ E ∈ Conf (D, C), λ i ≻ λ j iff λ i ∈ S i , λ j ∈ S j and i &lt; j. Intuitively, the more reliable a literal λ the smaller the index of S i that contains λ. Bienvenu, Bourgaux, and Goasdoué (2014) introduced a notion of ⊆ P -repair based upon such prioritizations, which we adapt below to ∆-repairs. Definition 5. Let D C ≻ be a prioritized database such that ≻ is score-structured and S 1 , . . . , S n is the prioritization of</p><formula xml:id="formula_21">E∈Conf (D,C) E. A ∆ P -repair of D C ≻ is a candidate repair R such that (i) R |= C and (ii) there is no R ′ |= C such that there is some 1 ≤ i ≤ n such that • Int D (R) ∩ S i ⊊ Int D (R ′ ) ∩ S i and • for all 1 ≤ j &lt; i, Int D (R) ∩ S j = Int D (R ′ ) ∩ S j .</formula><p>We denote by LRep(D C ≻ ) the set of ∆ P -repairs of D C ≻ . As in the case of denial constraints, all four notions of optimal ∆-repairs coincide when ≻ is score-structured.</p><formula xml:id="formula_22">Proposition 5. If ≻ is score-structured, then CRep(D C ≻ ) = GRep(D C ≻ ) = PRep(D C ≻ ) = LRep(D C ≻ ).</formula><p>We can now define variants of existing inconsistencytolerant semantics based upon our optimal repairs. Definition 6. Fix X ∈ {S, P, G, C} and consider a prioritized database D C ≻ , query q(x), and tuple of constants a with |x| = |a|. Then a is an answer to q(x) over D</p><formula xml:id="formula_23">C ≻ • under X-brave semantics, denoted D C ≻ |= X brave q(a), if R |= q(a) for some R ∈ XRep(D C ≻ ); • under X-CQA semantics, denoted D C ≻ |= X CQA q(a), if R |= q(a) for every R ∈ XRep(D C ≻ ); • under X-intersection semantics, denoted D C ≻ |= X ∩ q(a), if B |= q(a) where B = R∈XRep(D C ≻ ) R.</formula><p>Just as in the case of denial constraints, these semantics are related as follows:</p><formula xml:id="formula_24">D C ≻ |= X ∩ q(a) ⇒ D C ≻ |= X CQA q(a) ⇒ D C ≻ |= X</formula><p>brave q(a) Unlike the denial constraint case, the intersection of the optimal ∆-repairs may be inconsistent w.r.t. C. For example, if</p><formula xml:id="formula_25">D = {A(a)}, C = {A(x) → B(x)∨C(x)}, A(a) ≻ ¬B(a) and A(a) ≻ ¬C(a), then R∈PRep(D C ≻ ) R = {A(a)</formula><p>} violates the constraint. This is not a problem since we consider conjunctive queries, which are monotone, meaning that if the intersection of the optimal ∆-repairs yields a query answer, then the tuple is an answer in every optimal ∆-repair. Example 4 (Example 3 cont'd). Considering the different semantics based upon Pareto-optimal repairs: <ref type="figure">d,</ref><ref type="figure">y</ref>). If we consider now CQA semantics for the different kinds of optimal repairs, we find that:</p><formula xml:id="formula_26">• D C ≻ |= P brave A(a) but D C ≻ ̸ |= P CQA A(a); • D C ≻ |= P CQA ∃yR(d, y) but D C ≻ ̸ |= P ∩ ∃yR(</formula><formula xml:id="formula_27">• D C ≻ |= C CQA A(a) but D C ≻ ̸ |= G CQA A(a); • D C ≻ |= G CQA R(d, b) but D C ≻ ̸ |= P CQA R(d, b).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Complexity Analysis</head><p>In this section, we analyze the data complexity of the central computational tasks related to optimal repairs. We consider the following decision problems:</p><p>• X-repair checking: given a prioritized database D C ≻ and a candidate repair R, decide whether R ∈ XRep(D C ≻ ); • Query answering under X-Sem semantics: given a prioritized database D C ≻ , a query q, and a candidate answer a, decide whether D C ≻ |= X Sem q(a); where X ∈ {S, P, G, C} and Sem ∈ {brave, CQA, ∩}. We focus on data complexity, which is measured in terms of the size of the database D, treating the constraints C and query q as fixed and of constant size (under the latter assumption, R and a are of polynomial size w.r.t. D). Table <ref type="table" target="#tab_1">1</ref> summarizes our new results for optimal repairs w.r.t. universal constraints alongside existing results for denial constraints. <ref type="bibr" target="#b25">Staworko and Chomicki (2010)</ref> showed that S-repair checking is coNP-complete in data complexity. We show that the same holds for Pareto-and globally-optimal repairs: Theorem 1. X-repair checking is coNP-complete in data complexity for X ∈ {P, G}.</p><p>Proof Sketch. The lower bound is inherited from ∆-repairs. For the upper bounds, we sketch NP procedures for checking whether R ̸ ∈ XRep(D C ≻ ) for a given candidate repair R. In a nutshell, we guess either (i) 'inconsistent', (ii) 'not Interestingly, we observe that P-repair checking is hard even if we already know the input is a ∆-repair: Lemma 1. Deciding whether a given ∆-repair is Paretooptimal is coNP-complete in data complexity.</p><formula xml:id="formula_28">S P C G Univ. RC coNP coNP coNP-h, in Σ p 2 coNP BRAVE Σ p 2 Σ p 2 Σ p 2 Σ p 2 CQA, INT Π p 2 Π p 2 Π p 2 Π p</formula><p>We next turn to C-repair checking. A first idea would be to guess a completion ≻ ′ and check (using an NP oracle) that the input database is Pareto-optimal w.r.t. ≻ ′ . However, determining whether the guessed binary relation is a completion is not straightforward, as we must make sure that we relate all and only those literals that appear together in some conflict. As the following result shows, even identifying conflicts is a challenging task for universal contraints: Lemma 2. Deciding whether a set of literals belongs to Conf (D, C) is BH 2 -complete w.r.t. data complexity.</p><p>With a more careful approach, we can show that C-repair checking does belong to Σ p 2 . The exact complexity is open. Theorem 2. C-repair checking is coNP-hard and in Σ p 2 w.r.t. data complexity.</p><p>Proof Sketch. We use a non-deterministic version of the greedy procedure sketched in Section 3.2: to decide if R ∈ CRep(D C ≻ ), we guess the order in which literals of Lits S D will be considered, and for each λ ∈ Lits S D \ Int D (R), we guess a set of literals L ⊆ Int D (R) that precede λ in the order and such that L ∪ {λ} forms a conflict.</p><p>Leveraging our results for repair checking, we can establish the precise data complexity of query answering for all combinations of semantics and optimality notions: Theorem 3. Query answering under X-brave (resp. X-CQA and X-intersection) semantics is Σ p 2 -complete (resp. Π p 2complete) in data complexity, for X ∈ {P, G, C}.</p><p>The lower bounds that are higher for universal constraints than denial constraints involve databases whose conflicts are difficult to compute. This is no coincidence, as we show that if the set of conflicts are available, the complexity drops:</p><formula xml:id="formula_29">Theorem 4. If Conf (D, C</formula><p>) is given and considered as part of the input, then all complexity results for denial constraints listed in Table <ref type="table" target="#tab_1">1</ref> hold also for universal constraints.</p><p>The lower complexities apply in particular to sets of constraints whose conflicts have bounded size, such as universal constraints with at most two relational atoms. Unfortunately, we show that it is impossible in general to determine whether a given set of constraints has bounded conflicts: Theorem 5. Given a set of universal constraints C, it is undecidable to determine whether there exists k ∈ N such that for every database D, max E∈Conf (D,C) (|E|) ≤ k.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Links with Active Integrity Constraints</head><p>Active integrity constraints define which update operations are allowed to solve a constraint violation <ref type="bibr" target="#b20">(Flesca, Greco, and Zumpano 2004;</ref><ref type="bibr" target="#b13">Caroprese et al. 2006;</ref><ref type="bibr" target="#b14">Caroprese, Greco, and Zumpano 2009)</ref>, in the same spririt that prioritized databases express preferred ways of solving conflicts. This section investigates how these two frameworks relate.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Preliminaries on Active Integrity Constraints</head><p>We briefly recall the basics of active integrity constraints, directing readers to (Bogaerts and Cruz-Filipe 2018) for a good overview of the area.</p><p>Update actions An update atom is of the form +P (x) or -P (x) where P (x) is a relational atom. We use fix to map relational literals to the corresponding update atoms: fix (P (x)) = -P (x) and fix (¬P (x)) = +P (x). An update action is a ground update atom, i.e., is of the form -α or +α with α a fact. A set of update actions U is consistent if U does not contain both -α and +α for some fact α. The result of applying a consistent set of update actions U on a database D is D</p><formula xml:id="formula_30">• U := D \ {α | -α ∈ U} ∪ {α | +α ∈ U}.</formula><p>Active integrity constraints An active integrity constraint (AIC) takes the form r</p><formula xml:id="formula_31">= ℓ 1 ∧ • • • ∧ ℓ n → {A 1 , . . . , A k }, where body(r) = ℓ 1 ∧ • • • ∧ ℓ n is such that τ r := body(r) → ⊥ is a universal constraint, upd(r) = {A 1 , . . . , A k } is non-empty,</formula><p>and every A j is equal to fix (ℓ i ) for some ℓ i . We use lits(r) for the set of literals appearing in body(r), and say that ℓ ∈ lits(r</p><formula xml:id="formula_32">) is non-updatable if fix (ℓ) ̸ ∈ upd(r). A database D satisfies r, denoted D |= r, if it satisfies τ r . It satisfies a set of AICs η, denoted D |= η, if D |= r for every r ∈ η. A set of AICs is consistent if there exists a database D such that D |= η.</formula><p>A ground AIC is an AIC that contains no variables. The set gr D (r) contains all ground AICs obtained from r by (i) replacing variables by constants from dom(D), (ii) removing all true c ̸ = d atoms, and (iii) removing all ground AICs with an atom c ̸ = c. We let gr D (η) := r∈η gr D (r), and observe that D |= r iff D |= r g for every r g ∈ gr D (r).</p><p>An AIC is called normal if |upd(r)| = 1. The normalization of an AIC r is the set of AICs N (r) = {body(r) → {A} | A ∈ upd(r)}. The normalization of a set of AICs η is N (η) = r∈η N (r). Note that gr D (N (η)) = N (gr D (η)).</p><p>Repair updates A repair update (r-update)<ref type="foot" target="#foot_0">2</ref> of a database D w.r.t. a set of AICs η is a consistent subset-minimal set of update actions U such that D • U |= η. We denote the set of r-updates of D w.r.t. η by Up(D, η). It is easy to check that {D • U | U ∈ Up(D, η)} = SRep(D, C η ) where C η is the set of universal constraints that correspond to AICs in η.</p><p>To take into account the restrictions on the possible update actions expressed by the AICs, several classes of r-updates have been defined. The first one, founded r-updates <ref type="bibr" target="#b13">(Caroprese et al. 2006)</ref>, was criticized for exhibiting circularity of support, leading to the introduction of more restrictive justified <ref type="bibr">(Caroprese and</ref><ref type="bibr">Truszczynski 2011), well-founded (Cruz-Filipe et al. 2013)</ref>, and grounded r-updates (Cruz-Filipe 2016). The latter were motivated by arguably unexpected behaviors of justified and well-founded r-updates. In particular, justified r-updates are criticized for being too complicated and for excluding some r-updates that seem reasonable. Moreover, they are sensitive to normalization, unlike founded, well-founded and grounded r-updates. Definition 7. An r-update U of D w.r.t. η is:</p><p>• founded if for every A ∈ U, there exists r ∈ gr D (η) such that A ∈ upd(r) and D • U \ {A} ̸ |= r. • well-founded if there exists a sequence of actions A 1 , . . . , A n such that U = {A 1 , . . . , A n }, and for every 1 ≤ i ≤ n, there exists r i ∈ gr D (η) such that</p><formula xml:id="formula_33">A i ∈ upd(r i ) and D • {A 1 , . . . , A i-1 } ̸ |= r i . • grounded if for every V ⊊ U, there exists r ∈ gr D (N (η)) such that D • V ̸ |= r and upd(r) ⊆ U \ V. • justified if ne(D, D • U) ∪ U is a minimal set of update actions closed under η that contains ne(D, D • U) where -ne(D, D • U) = {+α | α ∈ D ∩ (D • U)} ∪ {-α | α / ∈ D ∪ (D • U), α ∈ Facts S</formula><p>D } (set of no-effect actions) -U is closed under η if for every r ∈ gr D (η), if U satisfies all the non-updatable literals of r, then U contains an update action from r. The relationships between the various kinds of repairs are represented below, where a plain arrow from X to Y means X ⊆ Y and the dotted arrow represents an inclusion that only holds when η is a set of normal AICs. All inclusions may be strict <ref type="bibr" target="#b12">(Caroprese and Truszczynski 2011;</ref><ref type="bibr" target="#b15">Cruz-Filipe et al. 2013;</ref><ref type="bibr" target="#b16">Cruz-Filipe 2016)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>We denote by</head><formula xml:id="formula_34">GroundRep(D, η) FoundRep(D, η) JustRep(D, η)</formula><p>WellFoundRep(D, η)</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">From Prioritized Databases to AICs</head><p>Given a prioritized database D C ≻ we define the following set of ground AICs:</p><formula xml:id="formula_35">η C ≻ = {r E | E ∈ Conf (D, C)} where r E := λ∈E λ → {fix (λ) | λ ∈ E, ∀µ ∈ E, λ ̸ ≻ µ}.</formula><p>Intuitively, η C ≻ expresses that conflicts of D C ≻ should be fixed by modifying the least preferred literals according to ≻.</p><p>We can prove that Pareto-optimal repairs of D C ≻ coincide with several kinds of repairs of D w.r.t. η C ≻ . Proposition 7. For every prioritized database</p><formula xml:id="formula_36">D C ≻ , PRep(D C ≻ ) = JustRep(D, η C ≻ ) = GroundRep(D, η C ≻ ) = FoundRep(D, η C ≻ ) ⊆ WellFoundRep(D, η C ≻ )</formula><p>. This result is interesting not only because it provides additional evidence for the naturalness of Pareto-optimal repairs, but also because it identifies a class of AICs for which justified, grounded, and founded r-updates coincide. The proof in fact shows that these three notions coincide for every set of ground AICs η that is monotone, i.e. does not contain both a fact α and the complementary literal ¬α.</p><p>We remark that the final inclusion in Proposition 7 may be strict. This is demonstrated on the next example, which suggests that well-founded repairs may be too permissive: Example 5. It is possible to construct a prioritized database D C</p><p>≻ where D = {α, β, γ, δ} and η C ≻ = {α∧β → {-β}, α∧ γ → {-α}, γ ∧ δ → {-γ}}. For the AICs η C ≻ , the r-update {-α, -γ} is well-founded, but not founded, as the only founded r-update is {-β, -γ}. We argue that {-β, -γ} should indeed be preferred to {-α, -γ}, since the first AIC expresses that it is better to remove β than α.</p><p>The reduction used to show Proposition 7 is datadependent and requires us to create potentially exponentially many ground AICs, one for every conflict. In the case of denial constraints, however, we can give an alternative dataindependent reduction, provided that the priority relation ≻ is specified in the database. We thus assume for the next result that P ≻ is a predicate in S, that the first attribute of each relation in S \ {P ≻ } stores a unique fact identifier, and P ≻ stores pairs of such identifiers. Then given a set of denial constraints C over S \ {P ≻ }, we build a set min(C) that is equivalent to C but has the property that the conflicts of D w.r.t. C are precisely the images of constraint bodies of min(C) on D. This can be achieved by replacing each φ → ⊥ ∈ C with all refinements obtaining by (dis)equating variables in φ with each other, or with constants mentioned in C, then removing any subsumed constraints. For example, if C = {R(x, x) → ⊥, R(x, y) ∧ S(y) → ⊥}, then min(C) contains R(x, x) → ⊥ and R(x, y) ∧ S(y) ∧ x ̸ = y → ⊥, so {R(a, a), S(a)} is no longer an image of a constraint body. We then define η C as the set of all AICs</p><formula xml:id="formula_37">ℓ 1 ∧ . . . ∧ ℓ n ∧ ε ∧ ℓj ̸ =ℓi ¬P ≻ (id i , id j ) → {-ℓ i }. such that ℓ 1 ∧ . . . ∧ ℓ n ∧ ε → ⊥ ∈ min(C), i ∈ {1, .</formula><p>. . , n}, and for every 1 ≤ k ≤ n, ℓ k = R(id k , t) for some R, t. Proposition 8. For every set of denial constraints C, database D and priority relation</p><formula xml:id="formula_38">≻ of D w.r.t. C, PRep(D C ≻ ) = JustRep(D, η C ) = GroundRep(D, η C ) = FoundRep(D, η C ) ⊆ WellFoundRep(D, η C ).</formula><p>This reduction could be used for example to transfer data complexity lower bounds for prioritized databases with denial constraints to the setting of AICs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Towards Well-Behaved AICs</head><p>When translating a prioritized database into AICs, we obtained monotone sets of AICs, for which most of the different kinds of r-update coincide. Can we generalize this idea to obtain larger classes of 'well-behaved' sets of AICs which share this desirable behavior? This subsection explores this question and provides some first insights.</p><p>We start by defining the following condition, which serves to ensure that all constraints are made explicit: Definition 8. We say that a set η of ground AICs is closed under resolution if it is consistent, and for every pair of AICs r 1 , r 2 ∈ η, if there exists α ∈ lits(r 1 ) such that ¬α ∈ lits(r 2 ), and lits(r 1 ) ∪ lits(r 2 ) \ {α, ¬α} is a consistent set of literals, then there exists r 3 ∈ η with lits(r 3 ) = lits(r 1 ) ∪ lits(r 2 ) \ {α, ¬α}. A set of AICs η is closed under resolution if so is gr D (η) for every database D.</p><p>The name 'closure under resolution' comes from considering the clauses that correspond to the negation of the rule bodies: if we have AICs whose clauses are ¬α ∨ φ and α ∨ ψ, then we should also have an AIC for their resolvent φ ∨ ψ ′ , corresponding to the implied constraint ¬φ ∧ ¬ψ → ⊥. This property ensures that η captures all potential conflicts: for every D, if C η = {τ r | r ∈ η}, then Conf (D, C η ) = {lits(r) | r ∈ gr D (η), D ̸ |= r, and there is no r ′ ∈ gr D (η) with lits(r ′ ) ⊊ lits(r)}.</p><p>The following example, given by Bogaerts and Cruz-Filipe (2018) to show that grounded r-updates do not coincide with the intersection of founded and well-founded rupdates, illustrates that sets of AICs not closed under resolution may exhibit undesirable behaviors. Example 6. Consider D = ∅ and η that contains the AICs:</p><formula xml:id="formula_39">r 1 : ¬α ∧ ¬β → {+α} r 4 : α ∧ β ∧ ¬γ → {+γ} r 2 : α ∧ ¬β → {+β} r 5 : α ∧ ¬β ∧ γ → {+β} r 3 : ¬α ∧ β → {-β} r 6 : ¬α ∧ β ∧ γ → {+α} U = {+α, +β</formula><p>, +γ} is founded and well-founded but is not grounded: taking V = {+β}, we have V ⊊ U but there is no r ∈ η such that {β} ̸ |= r and upd(r) ∩ {+α, +γ} ̸ = ∅. However, it can be verified that U is in fact the only rupdate of D w.r.t. η. Indeed, the conflicts of D w.r.t. the constraints expressed by η are {¬α}, {¬β} and {¬γ}.</p><p>If η were closed under resolution, it would contain ¬α → {+α}, ¬β → {+β}, and ¬γ → {+γ}, in which case U would be grounded, as expected for the unique r-update.</p><p>It is always possible to transform a set of ground AICs into one that is closed under resolution by adding the required AICs. However this may result in an exponential blowup. Moreover, we need to choose the update actions of the added AICs. We advocate for this to be done by propagating the relevant update actions of the rules on which the resolution is done. A set of ground AICs obtained in this way will be closed under resolution and will preserve actions under resolution according to the following definition. Definition 9. We say that a set η of ground AICs preserves actions under resolution if for every triple of AICs r 1 , r 2 , r 3 ∈ η, if there exists α such that α ∈ lits(r 1 ), ¬α ∈ lits(r 2 ), and lits(r 3 ) = lits(r 1 ) ∪ lits(r 2 ) \ {α, ¬α}, then upd(r 1 ) ∪ upd(r 2 ) \ {+α, -α} ⊆ upd(r 3 ). A set of AICs η preserves actions under resolution if so does gr D (η) for every database D.</p><p>The next example shows that a set of AICs which does not preserve actions under resolution may be ambiguous. Example 7. Let D = {α, β, γ}, and η that contains:</p><formula xml:id="formula_40">r 1 : α ∧ β → {-α} r 3 : α ∧ ¬δ → {+δ} r 2 : β ∧ γ → {-γ} r 4 : β ∧ δ → {-β}</formula><p>This set of AICs is closed under resolution but does not preserve actions under resolution: due to r 3 and r 4 , -β should be an update action of r 1 . Indeed, r 3 and r 4 together indicate that if α and β are present, β should be removed (since if δ is absent, it should be added, due to r 3 , and β should be removed when δ is present, by r 4 ).</p><p>To make η preserve actions under resolution, there are three possibilities: (1) change</p><formula xml:id="formula_41">r 1 to α ∧ β → {-β} (if α is preferred to β), or (2) change r 4 to β ∧ δ → {-δ} (if β is preferred to α), or (3) change r 1 to α ∧ β → {-α, -β} (if neither α nor β is preferred to the other).</formula><p>Sets of AICs that are closed under resolution and preserve actions under resolution are well behaved in the sense that they make most of the r-update notions coincide. The monotone sets of AICs mentioned in relation to Proposition 7 trivially satisfy these two conditions. Proposition 9. If η is closed under resolution and preserves actions under resolution, then for every database D, JustRep(D, η) = GroundRep(D, η) = FoundRep(D, η) ⊆ WellFoundRep(D, η).</p><p>The next example shows that both conditions are necessary for obtaining Proposition 9. Example 8. Consider D = {α, β, γ} and the two sets</p><formula xml:id="formula_42">η 1 ={α ∧ ¬β → {-α}, ¬α ∧ β → {-β}, α ∧ β ∧ γ → {-γ}} η 2 =η 1 ∪ {α ∧ γ → {-γ}, β ∧ γ → {-γ}}.</formula><p>η 1 is not closed under resolution but (trivially) preserves actions under resolution, while η 2 is closed under resolution but does not preserve actions under resolution.</p><p>In both cases, there are two founded r-updates: {-γ} and {-α, -β}. However, {-α, -β} is not well-founded, hence not grounded nor justified. Indeed, D violates only AICs whose only update action is -γ.</p><p>Even if a set of AICs is such that justified, grounded and founded repairs are guaranteed to exist and coincide, its behavior may still be puzzling, as illustrated next.</p><p>Example 9. Let D = {α, β, γ, δ} and η be the monotone set of AICs comprising the following AICs:</p><formula xml:id="formula_43">r 1 : α ∧ δ → {-δ} r 3 : α ∧ β ∧ γ ∧ δ → {-β} r 2 : α ∧ β ∧ δ → {-α} r 4 : β ∧ γ → {-γ}</formula><p>There are four r-updates:</p><p>U 1 ={-α, -γ} and U 2 = {-δ, -γ} are founded U 3 ={-δ, -β} is not founded but is well-founded U 4 ={-α, -β} is not founded nor well-founded There are two conflicts: {α, δ} and {β, γ}. It is natural to prefer removing γ rather than β to resolve the latter conflict (due to r 4 ), which would justify to preferring U 1 and U 2 over U 4 and U 3 respectively. However, the exact same argument applied to r 1 should lead us to prefer removing δ to solve the first conflict, thus to prefer U 2 over U 1 . It is therefore not clear why both U 1 and U 2 should be the preferred rupdates. The intention of a user specifying the preceding AICs is probably quite far from their actual behavior.</p><p>We thus believe that a reasonable property for sets of AICs is to respect the principle that adding atoms to a rule body can only restrict the possible update actions. We call the anti-normalization of a set η of AICs the set AN (η) of AICs that replace all the AICs r 1 , . . . , r n ∈ η that share the same body by a single AIC whose update actions are the union of the update actions of r 1 , . . . , r n . Definition 10. We say that a set η of ground AICs preserves actions under strengthening if for every pair of AICs r 1 , r 2 in AN (η), if lits(r 1 ) ⊆ lits(r 2 ), then upd(r 2 ) ⊆ upd(r 1 ). A set of AICs η preserves actions under strengthening if so does gr D (η) for every database D.</p><p>The following proposition shows that if η preserves actions under strengthening, then constraints that have nonminimal bodies have no influence on the r-updates. Proposition 10. Let η be a set of ground AICs and min(η) be the set of AICs from AN (η) that have (subset-)minimal bodies. If η preserves actions under strengthening, then for every D, for X ∈ {Found , WellFound , Ground } XUp(D, η) = XUp(D, AN (η)) = XUp(D, min(η)), and JustUp(D, AN (η)) = JustUp(D, min(η)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4">From AICs to Prioritized Databases</head><p>We next study the possibility of reducing well-behaved sets of AICs to prioritized databases and discuss the differences between the two settings.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Binary conflicts case</head><p>We first consider the case where the size of the conflicts is at most two (this covers, for example, AIC bodies corresponding to functional dependencies or class disjointness). In this case, given a set η of AICs closed under resolution that preserves actions under resolution and under strengthening and a database D, we build a set of constraints C η and a binary relation ≻ η such that if ≻ η is acyclic, the Pareto-optimal repairs of D Cη ≻η coincide with the founded, grounded and justified repairs of D w.r.t. η. We take C η = {τ r | r ∈ η} and define ≻ η so that λ ≻ η µ iff • there exists r ∈ min g (η) such that D ̸ |= r, {λ, µ} ⊆ lits(r), and fix (µ) ∈ upd(r); and</p><p>• for every r ∈ min g (η) such that D ̸ |= r and {λ, µ} ⊆ lits(r), fix (λ) ̸ ∈ upd(r), where min g (η) = {r ∈ gr D (η) | there is no r ′ ∈ gr D (η) with lits(r ′ ) ⊊ lits(r)}. The next example shows that the inclusion may be strict. Example 13. Let D = {α, β, γ, δ, ϵ} and η consist of:</p><formula xml:id="formula_44">r 1 : α ∧ β ∧ γ → {-β} r 3 : δ ∧ ϵ → {-δ} r 2 : α ∧ β ∧ δ → {-α, -β}</formula><p>We obtain Conf (D, C η ) = {{α, β, γ}, {α, β, δ}, {δ, ϵ}} and γ ≻ η β, δ ≻ η α, δ ≻ η β and ϵ ≻ η δ (note that α ̸ ≻ η β because -α is an update action of r 2 ). The repair {β, γ, ϵ} is Pareto-optimal, but the corresponding r-update {-α, -δ} is not founded, as -α appears only in r 2 and D•{-δ} |= r 2 .</p><p>One might try to modify the definition of ≻ η by dropping the second condition and adding fix (λ) ̸ ∈ upd(r) to the first. In this case, {β, γ, ϵ} is no longer Pareto-optimal. However, now if we take η ′ = η \ {r 3 }, then {-α} would be founded, but the corresponding repair {β, γ, δ, ϵ} would not be Pareto-optimal, violating the inclusion of Proposition 12.</p><p>This example shows that even for AICs corresponding to denial constraints, there is no clear way to define a priority relation that captures the preferences expressed by the AICs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Conclusion and Future Work</head><p>We studied how to incorporate preferences into repair-based query answering for an expressive setting in which databases are equipped with universal constraints, and both fact additions and deletions are used to restore consistency. We showed that the existing framework of prioritized databases could be faithfully adapted to this richer setting, although the proofs are more involved and crucially rely upon finding the right definition of what constitutes a conflict. While these results focus on databases, we expect that they will also prove useful for exploring symmetric difference repairs in related KR settings, e.g. ontologies with closed predicates.</p><p>Our complexity analysis showed that adopting optimal repairs in place of symmetric difference repairs does not increase the complexity of repair-based query answering. A major difference between denial and universal constraints is that the latter may lead to conflicts of unbounded size. We showed that it is intractable to recognize a conflict and that several problems drop in complexity if we assume that the conflicts are available. This suggests the interest of developing structural conditions on constraint sets that ensure easy-to-compute conflicts, as well as practical algorithms for computing and updating the set of conflicts, which could enable an integration with existing SAT-based approaches.</p><p>Intrigued by the high-level similarities between prioritized databases and active integrity constraints, we explored how the two formalisms relate. We exhibited a natural translation of prioritized databases into AICs whereby Paretooptimal repairs coincide with founded, grounded and justified repairs w.r.t. the generated set of AICs. We take this as further evidence that Pareto-optimal repairs are an especially natural notion (we previously showed that Paretooptimal (subset) repairs correspond to stable extensions in argumentation <ref type="bibr" target="#b3">(Bienvenu and Bourgaux 2020)</ref>). It would be of interest to extend our comparison to other more recent notions of repair updates for AICs <ref type="bibr" target="#b19">(Feuillade, Herzig, and</ref><ref type="bibr">Rantsoudis 2019, Bogaerts and</ref><ref type="bibr" target="#b9">Cruz-Filipe 2018;</ref><ref type="bibr">2021)</ref>.</p><p>Our work also provided new insights into AICs. Existing examples used to distinguish different notions of r-update often seem unnatural in some respect. This led us to devise a set of criteria for 'well-behaved' AICs, which provide sufficient conditions for founded, grounded and justified repairs to coincide (Example 5 suggests that well-founded repairs are too permissive). Even for such restricted AICs, it is not always clear what user intentions are being captured. We thus believe that there is still work to be done to develop user-friendly formalisms for expressing constraints and preferences on how to handle constraint violations.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>D</head><label></label><figDesc>for the set of facts over S with constants from dom(D), and let Lits S D = D ∪ {¬α | α ∈ Facts S D \ D} be the set of literals of D. Conflicts can then be defined as minimal sets of literals that necessarily lead to a constraint violation. Definition 1. Given a database D and set of (universal) constraints C, the set Conf (D, C) of conflicts of D w.r.t. C contains all ⊆-minimal sets E ⊆ Lits S D such that for every database I, if I |= E, then I ̸ |= C. Example 1. Let D = {A(a), B(a)} and C = {τ 1 , τ 2 , τ 3 }, where τ 1 := A(x) → C(x), τ 2 := B(x) → D(x), and τ 3 := C(x) ∧ D(x) → ⊥. It can be verified that SRep(D, C) = {∅, {A(a), C(a)}, {B(a), D(a)}} and that the set Conf (D, C) is as follows: {{A(a), ¬C(a)}, {B(a), ¬D(a)}, {A(a), B(a)}} The first (resp. second) conflict directly violates τ 1 (resp. τ 2 ). To see why {A(a), B(a)} is also a conflict, consider any database I such that {A(a), B(a)} ⊆ I. Then either C(a) / ∈ I or D(a) / ∈ I, in which case I violates τ 1 or τ 2 , or I contains both C(a) and D(a), hence violates τ 3 .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>whose vertices are the literals from E∈Conf (D,C) E and whose hyperedges are the conflicts of D w.r.t. C.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Remark 1 .</head><label>1</label><figDesc><ref type="bibr" target="#b25">Staworko and Chomicki (2010)</ref> define a conflict as a set of literals obtained by grounding a universal constraint, and the hyperedges of their extended conflict hypergraph ECG(D, C) are either conflicts or 'relevant' pairs of literals {α, ¬α}. For instance, if we take D and C as in Example 1, then ECG(D, C) has hyperedges {A(a), ¬C(a)}, {B(a), ¬D(a)}, {C(a), D(a)}, {C(a), ¬C(a)} and {D(a), ¬D(a)}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head></head><label></label><figDesc>Definition 3. A prioritized database D C ≻ = (D, C, ≻) consists of a database D, a set of universal constraints C, and a priority relation ≻ for D w.r.t. C.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>Example 3. Let D = {S(a, b), S(a, c), R(d, b), R(d, c)}, where R(d, b) ≻ S(a, b), S(a, b) ≻ ¬A(a), S(a, c) ≻ R(d, c), S(a, c) ≻ ¬B(a), and C contains the constraints:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head></head><label></label><figDesc>FoundUp(D, η), WellFoundUp(D, η), GroundUp(D, η) and JustUp(D, η) respectively the sets of founded, well-founded, grounded and justified r-updates of D w.r.t. η and let XRep(D, η) = {D • U | U ∈ XUp(D, η)} be the set of corresponding repairs. Calautti et al. (2021) recently redefined founded rupdates. In fact, we show that their definition coincides with grounded r-updates, yielding the following characterization. Proposition 6. For every U ∈ Up(D, η), U is grounded iff U ∈ Up(D, η[U]), where η[U] is the set of AICs obtained from gr D (η) by deleting update actions not occurring in U and AICs whose update actions have all been deleted.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head></head><label></label><figDesc>As η is closed under resolution, Conf (D, C η ) = {lits(r) | r ∈ min g (η), D ̸ |= r}. Proposition 11. If η is closed under resolution, preserves actions under resolution and under strengthening, the size of the conflicts of D w.r.t. η is bounded by 2, and ≻ η is acyclic, then PRep(D Cη ≻η ) = JustRep(D, η) = GroundRep(D, η) = FoundRep(D, η) ⊆ WellFoundRep(D, η).The following examples show that the three first conditions are necessary. Example 10. Let D = {α, β, γ} and η = {α ∧ β → {-β}, ¬β ∧ γ → {-γ}}, which preserves actions under resolution and strengthening but is not closed under resolution. We have Conf (D, C η ) = {{α, β}, {α, γ}} and α ≻ η β. Both {α} and {β, γ} are Pareto-optimal, but the only founded rupdate (which is also grounded and justified) is {-β, -γ}. Example 11 (Example 7 cont'd). In Example 7, η is closed under resolution and preserves actions under strengthening but not under resolution. We have Conf (D, C η ) = {{α, β}, {β, γ}, {α, ¬δ}} and β ≻ η α, β ≻ η γ, α ≻ η ¬δ. The only Pareto-optimal repair is {β}, but {-β, +δ} is a founded, grounded and justified r-update. Example 12 (Example 9 cont'd). In Example 9, η is closed under resolution and preserves actions under resolution but not under strengthening. We have Conf (D, C η ) = {{α, δ}, {β, γ}} and α ≻ η δ, β ≻ η γ. The only Paretooptimal repair is {α, β}, but {-α, -γ} is a founded, grounded and justified r-update.Note that ≻ η may be cyclic:if η = {A(x) ∧ B(x) → {-A(x)}, B(x) ∧ C(x) → {-B(x)}, C(x) ∧ A(x) → {-C(x)}} and D = {A(a), B(a), C(a)}, we obtain A(a) ≻ η C(a) ≻ η B(a) ≻ η A(a). General case Let us now consider the case where the size of the conflicts is not bounded. If we apply the same reduction, we can only show the following inclusions between repairs of D w.r.t. η and Pareto-optimal repairs of D Cη ≻η : Proposition 12. If η is closed under resolution, preserves actions under resolution and under strengthening, and ≻ η is acyclic, then JustRep(D, η) = GroundRep(D, η) = FoundRep(D, η) ⊆ PRep(D Cη ≻η ).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 1 :</head><label>1</label><figDesc>Data complexity of X-repair checking (RC) and query answering under X-brave (BRAVE), X-CQA, and X-intersection (INT) semantics (X ∈ {S, P, G, C}) w.r.t. universal or denial constraints. Completeness results except where indicated otherwise. maximal' together with another candidate repair R ′ , or (iii) 'improvement' together with a candidate (Pareto or global) improvement B. In case (i), it suffices to verify in P that R ̸ |= C, returning yes if so. In case (ii), we test in P whether R ′ ∆D ⊊ R∆D and R ′ |= C, returning yes if both conditions hold. In case (iii), we check in P whether B is indeed a (Pareto / global) improvement of R, returning yes if so.</figDesc><table><row><cell>2</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>Repair updates are usually called repairs in the AIC literature, we use this term to avoid confusion with the other repair notions.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by the <rs type="funder">ANR</rs> <rs type="projectName">AI Chair INTENDED</rs> (<rs type="grantNumber">ANR-19-CHIA-0014</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_9dekmNn">
+					<idno type="grant-number">ANR-19-CHIA-0014</idno>
+					<orgName type="project" subtype="full">AI Chair INTENDED</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Consistent query answers in inconsistent databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</title>
+		<meeting>the 18th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</meeting>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Complexity of repair checking and consistent query answering</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arming</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pichler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sallinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Database Theory (ICDT)</title>
+		<meeting>the 19th International Conference on Database Theory (ICDT)</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Database repairs and consistent query answering: Origins and further developments</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 38th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems</title>
+		<meeting>the 38th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems</meeting>
+		<imprint>
+			<publisher>PODS</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="48" to="58" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Querying and repairing inconsistent prioritized knowledge bases: Complexity analysis and links with abstract argumentation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th International Conference on Principles of Knowledge Representation and Reasoning (KR)</title>
+		<meeting>the 17th International Conference on Principles of Knowledge Representation and Reasoning (KR)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Querying inconsistent prioritized data with ORBITS: algorithms, implementation, and experiments</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Principles of Knowledge Representation and Reasoning (KR)</title>
+		<meeting>the 19th International Conference on Principles of Knowledge Representation and Reasoning (KR)</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Inconsistency handling in prioritized databases with universal constraints: Complexity analysis and links with active integrity constraints</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<idno>arxiv.org/abs/2306.03523</idno>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Tractable approximations of consistent query answering for robust ontologybased data access</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<meeting>the 23rd International Joint Conference on Artificial Intelligence (IJCAI)</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Querying inconsistent description logic knowledge bases under preferred repair semantics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI)</title>
+		<meeting>the 28th AAAI Conference on Artificial Intelligence (AAAI)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A short survey on inconsistency handling in ontology-mediated query answering</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Künstliche Intelligenz</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="443" to="451" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Fixpoint semantics for active integrity constraints</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bogaerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cruz-Filipe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">255</biblScope>
+			<biblScope unit="page" from="43" to="70" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Stratification in approximation fixpoint theory and its application to active integrity constraints</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bogaerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cruz-Filipe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Comput. Log</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Existential active integrity constraints</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Calautti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caroprese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Molinaro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Trubitsyna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zumpano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Expert Syst. Appl</title>
+		<imprint>
+			<biblScope unit="volume">168</biblScope>
+			<biblScope unit="page">114297</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Active integrity constraints and revision programming</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caroprese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Truszczynski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theory Pract. Log. Program</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="905" to="952" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Declarative semantics of production rules for integrity maintenance</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caroprese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Sirangelo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zumpano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Logic Programming, 22nd International Conference, ICLP 2006</title>
+		<meeting><address><addrLine>Seattle, WA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2006-08-17">2006. August 17-20, 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Active integrity constraints for database consistency maintenance</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Caroprese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zumpano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1042" to="1058" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Computing repairs from active integrity constraints</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cruz-Filipe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gaspar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Engrácia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Nunes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Seventh International Symposium on Theoretical Aspects of Software Engineering, TASE 2013</title>
+		<meeting><address><addrLine>Birmingham, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2013-01-03">2013. 1-3 July 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Grounded fixpoints and active integrity constraints</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cruz-Filipe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Technical Communications of the 32nd International Conference on Logic Programming, ICLP 2016 TCs</title>
+		<meeting><address><addrLine>New York City, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-10-16">2016. October 16-21, 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Repair localization for query answering from inconsistent databases</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Eiter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fink</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">33</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="10" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Dichotomies in the complexity of preferred repairs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</title>
+		<meeting>the 34th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">A dynamic logic account of active integrity constraints</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Feuillade</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Herzig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rantsoudis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Fundam. Informaticae</title>
+		<imprint>
+			<biblScope unit="volume">169</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="179" to="210" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Active integrity constraints</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Flesca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Greco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Zumpano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 6th International ACM SIGPLAN Conference on Principles and Practice of Declarative Programming</title>
+		<meeting>the 6th International ACM SIGPLAN Conference on Principles and Practice of Declarative Programming<address><addrLine>Verona, Italy</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2004-08">2004. August 2004</date>
+			<biblScope unit="page" from="24" to="26" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Detecting ambiguity in prioritized database repairing</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Peterfreund</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 20th International Conference on Database Theory (ICDT)</title>
+		<meeting>the 20th International Conference on Database Theory (ICDT)</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Inconsistency-tolerant semantics for description logics</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ruzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Savo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th International Conference on Web Reasoning and Rule Systems (RR)</title>
+		<meeting>the 4th International Conference on Web Reasoning and Rule Systems (RR)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Counting and enumerating (preferred) database repairs</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</title>
+		<meeting>the 36th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">The consistency extractor system: Answer set programs for consistent query answering in databases</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Marileo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Knowl. Eng</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="545" to="572" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Consistent query answers in the presence of universal constraints</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Prioritized repairing and consistent query answering in relational databases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marcinkowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Mathematics and Artificial Intelligence (AMAI)</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="209" to="246" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

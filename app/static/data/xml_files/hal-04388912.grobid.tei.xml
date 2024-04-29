@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Scaling Large RDF Archives To Very Long Histories</title>
+				<funder>
+					<orgName type="full">Poul Due Jensen Foundation</orgName>
+				</funder>
+				<funder ref="#_JjytE8w">
+					<orgName type="full">Danish Council for Independent Research (DFF)</orgName>
+				</funder>
+				<funder ref="#_mz7TCGU">
+					<orgName type="full">Research Foundation -Flanders (FWO)</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Olivier</forename><surname>Pelgrin</surname></persName>
+							<email>olivier@cs.aau.dk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Aalborg University</orgName>
+								<address>
+									<country key="DK">Denmark</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ruben</forename><surname>Taelman</surname></persName>
+							<email>ruben.taelman@ugent.be</email>
+							<affiliation key="aff1">
+								<orgName type="institution">Ghent University</orgName>
+								<address>
+									<country key="BE">Belgium</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Luis</forename><surname>Galárraga</surname></persName>
+							<email>luis.galarraga@inria.fr</email>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Katja</forename><surname>Hose</surname></persName>
+							<email>khose@cs.aau.dk</email>
+							<affiliation key="aff3">
+								<orgName type="institution">Aalborg University</orgName>
+								<address>
+									<country key="DK">Denmark</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Scaling Large RDF Archives To Very Long Histories</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7FCA0DF75F549C29875F25934D8D763C</idno>
+					<idno type="DOI">10.1109/ICSC56153.2023.00013</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In recent years, research in RDF archiving has gained traction due to the ever-growing nature of semantic data and the emergence of community-maintained knowledge bases. Several solutions have been proposed to manage the history of large RDF graphs, including approaches based on independent copies, time-based indexes, and change-based schemes. In particular, aggregated changesets have been shown to be relatively efficient at handling very large datasets. However, ingestion time can still become prohibitive as the revision history increases. To tackle this challenge, we propose a hybrid storage approach based on aggregated changesets, snapshots, and multiple delta chains. We evaluate different snapshot creation strategies on the BEAR benchmark for RDF archives, and show that our techniques can speed up ingestion time up to two orders of magnitude while keeping competitive performance for version materialization and delta queries. This allows us to support revision histories of lengths that are beyond reach with existing approaches.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>The ever-growing nature of RDF data and the emergence of large collaborative knowledge graphs have propelled research in efficient techniques for RDF archiving <ref type="bibr" target="#b4">[FUPK19]</ref>, <ref type="bibr" target="#b8">[PGH21]</ref>, which is the task of keeping track of an RDF graph's change history. RDF archiving is of great value to both maintainers and consumers of RDF data. To the former, archives are the basis of version control [ANR + 19], which opens the door not only to novel data processing tasks, e.g., mining of temporal and correction patterns <ref type="bibr" target="#b9">[PTBS19]</ref>, but also to temporal data analytics [RCS + 15], <ref type="bibr" target="#b2">[Bru10]</ref>. For data consumers, archives are a way to query the past and study the evolution of a given domain of knowledge <ref type="bibr" target="#b6">[HBS13]</ref>, <ref type="bibr" target="#b15">[TS19]</ref>, <ref type="bibr" target="#b0">[AMH21]</ref>.</p><p>From a technical point of view, building and maintaining RDF archives is a very challenging endeavor, primarily due to the massive size of current knowledge graphs. As of April 2022, DBpedia accounts for 220M entities and 1.45B facts 1 , and changes from one release to the next one can be in the order of millions <ref type="bibr" target="#b8">[PGH21]</ref>. However, large changesets are not the only issue that challenges state-of-the-art RDF archive systems. For instance, DBpedia Live 2 receives continuous updates with changes made by the Wikipedia community. This dynamicity makes DBpedia's revision history extremely long, and exacerbates the challenges of managing an archive for a dataset of that nature. As shown in our experimental section, existing approaches for RDF archiving cannot ingest long 1 https://www.dbpedia.org/resources/knowledge-graphs/ 2 https://www.dbpedia.org/resources/live/ histories on large datasets, even when the changes between revisions are small.</p><p>We therefore propose an approach to ingest, store, and query long revision histories on very large RDF graphs. Our techniques rely on a combination of dataset snapshots and sequences of aggregated changesets -called delta chains [TSH + 19] in the literature. We evaluate our approaches on the BEAR benchmark <ref type="bibr" target="#b4">[FUPK19]</ref> and show that our techniques can ingest the BEAR-B instant dataset in no more than 2 hours -something that so far has been beyond reach. Moreover, our techniques exhibit competitive runtimes for most types of queries on RDF archives. We implemented our approach on top of OSTRICH [TSH + 19], a state-of-the-art engine for archiving large RDF graphs.</p><p>The remainder of this paper is structured as follows. Section II elaborates on the background concepts and the state of the art in RDF archiving. Our storage techniques are detailed in Section III, while Section IV explains how to query archives with multiple snapshots and delta chains. Section V provides details of our implementation. The viability of our techniques is evaluated in Section VI. Finally, Section VII concludes the paper and discusses future work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. BACKGROUND AND RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. RDF Graphs and RDF Archives</head><p>An RDF graph G (also called a knowledge graph) consists of a set of triples s, p, o with subject s ∈ I ∪ B, predicate p ∈ I, and object o ∈ I ∪ L ∪ B, where I is a set of IRIs, L is a set of literals, and B is a set of blank nodes <ref type="bibr" target="#b11">[RS14]</ref>. RDF graphs are queried using SPARQL <ref type="bibr" target="#b12">[SH13]</ref>, whose building blocks are triple patterns, i.e., triples that allow variables (prefixed with a '?') in any position, e.g., ?x, cityIn, USA matches all American cities in G.</p><p>An RDF archive A is a temporally ordered collection of RDF graphs that represents all the states of the graph throughout its history of updates. This can be formalized as</p><formula xml:id="formula_0">A = {G 0 , . . . , G k }, with G i being the graph at version (or revision) i ∈ Z ≥0 . The transition from G i-1 to version G i is implemented via an update operation G i = (G i-1 \ u - i ) ∪ u + i</formula><p>, where u + i and u - i are disjoint sets of added and deleted triples. We call the pair u i = u + i , u - i a changeset or delta. We can generalize changesets to any pair of versions, i.e., u i,j = u + i,j , u - i,j defines the changes between versions i and j. When a triple s, p, o is present in a version i of the archive, we write it as a quad s, p, o, i .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Querying RDF Archives</head><p>The literature identifies five types of queries over RDF archives <ref type="bibr" target="#b4">[FUPK19]</ref>, [TSH + 19]. We explain them next and provide examples with a single triple pattern for simplicity.</p><p>• Version Materialization (VM). These are standard SPARQL queries run against a single version i, e.g., ?s, type, Country, 5 returns the countries present in version i = 5. • Delta Materialization (DM). These are queries defined on changesets u i,j = u + i,j , u - i,j , e.g., the query asking for the countries added between versions i = 3 and j = 5, which implies to run ?s, type, Country on u + 3,5 . • Version Query (V). These are standard SPARQL queries that provide results annotated with the versions where those results hold. An example is ?s, type, Country, ?v , which returns pairs country, version . • Cross-version (CV). CV queries combine results from multiple versions, for example: which of the countries in the latest version have diplomatic relationships with the countries in revision 0? • Cross-delta (CD). CD queries combine results from multiple changesets, for example: in which versions were the most countries added? Both CV and CD queries build upon the other types of queries, i.e., V and DM queries. Therefore, full support for VM, DM, and V queries suffices for applications relying on RDF archives.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Solutions for RDF Archive Management</head><p>Several solutions have been proposed for managing the history of RDF graphs efficiently. We review the most prominent approaches in this section and refer the reader to <ref type="bibr" target="#b8">[PGH21]</ref> for a detailed survey.</p><p>In the literature, RDF archive approaches are typically categorized according to their storage architecture. We distinguish three major design paradigms: independent copies (IC), change-based solutions (CB), and timestamp-based systems (TB). IC approaches, such as [VWS + 05], implement full redundancy: all triples present in a version i are stored as an independent RDF graph G i . While IC approaches excel at executing VM queries, they are impractical for today's knowledge graphs due to their prohibitive storage footprint. This fact has shifted the research trend towards CB and TB systems. In a CB solution, some versions are stored as changesets (also called deltas) w.r.t. a previous reference version stored as a snapshot. We call a sequence of changesets -representing an arbitrary sequence of versions -and its corresponding reference revision, a delta chain. CB approaches require less disk space than IC architectures and are optimal for DM queries -at the expense of efficiency for VM queries. This makes them particularly attractive for version-control systems, e.g., <ref type="bibr" target="#b5">[GHU14]</ref>, [ANR + 19], where changesets are rather small and frequent. TB solutions, on the other hand, optimize for V queries as they store temporal metadata, such as validity intervals or insertion/deletion timestamps <ref type="bibr" target="#b7">[NW10]</ref> in specialized indexes.</p><p>Recent approaches borrow inspiration from more than one paradigm. QuitStore [ANR + 19], for instance, stores the data in fragments, for which it implements a selective IC approach. This means that only modified fragments generate new copies, whereas the latest version is always materialized in main memory. OSTRICH [TSH + 19] combines the advantages of CB and TB approaches in a single delta chain; an initial snapshot stores revision 0, whereas a new revision i is built from a changeset of the form u i-1,i and stored as an aggregated changeset u 0,i , i.e. the changes between the snapshot to i. This storage architecture is depicted in Figure <ref type="figure">1a</ref>. OSTRICH supports VM, DM, and V queries on single triple patterns natively. CV, CD, and arbitrary SPARQL queries can be executed by connecting OSTRICH to a query engine. Aggregated changesets have been shown to speed up VM and DM queries significantly w.r.t. a standard CB approach. As shown in <ref type="bibr" target="#b8">[PGH21]</ref>, [TSH + 19], OSTRICH is the only solution that can handle histories for large RDF graphs, such as DBpedia. That said, scalability still remains a challenge for OSTRICH because aggregated changesets grow monotonically. This leads to prohibitive ingestion times for large histories <ref type="bibr" target="#b8">[PGH21]</ref>, <ref type="bibr" target="#b14">[TMVV22]</ref> -even when the original changesets are small. In this paper, we build upon OSTRICH and propose a solution to this problem.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. STORING ARCHIVES WITH MULTIPLE DELTA CHAINS</head><p>As discussed in Section II, ingesting new revisions as aggregate changesets can quickly become prohibitive for long revision histories when the RDF archive is stored in a single delta chain (see Figure <ref type="figure">1a</ref>). In such cases, we propose the creation of a fresh snapshot that becomes the new reference for subsequent deltas. Those new deltas will be smaller, and thus easier to build and maintain. They will also constitute a new delta chain as depicted in Figure <ref type="figure">1b</ref>. While creating a fresh snapshot with a new delta chain should presumably reduce ingestion time for subsequent revisions, its impact on query efficiency seems mixed. V queries, for instance, will have to be evaluated on multiple delta chains, becoming more challenging to answer. In contrast, VM queries defined on revisions already materialized as snapshots should be executed much faster. Storage size and DM response time may be highly dependent on the actual evolution of the data. If a new version includes many deletions, fresh snapshots may be smaller than aggregated deltas. We highlight that in our proposed architecture, revisions stored as snapshots also exist as aggregated deltas w.r.t. the previous snapshot -as shown for revision 2 in Figure <ref type="figure">1b</ref>. Such a design decision allows us to speed up DM queries as explained later.</p><p>It follows from the previous discussion that introducing multiple snapshots and delta chains raises a natural question: "When is the right moment to create a snapshot?" We elaborate on this question from the perspectives of storage, ingestion time, and query efficiency next. We then explain how to query archives in a multi-snapshot setting in Section IV.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Strategies for Snapshot Creation</head><p>A key aspect of our proposed design is to determine the right moment to place a snapshot, as this decision is subject to a trade-off among ingestion speed, storage size, and query performance. We formalize this decision via an abstract snapshot oracle f : A × U → {0, 1} that, given an archive A ∈ A with k revisions and a changeset u k-1,k ∈ U, decides whether revision k should (1) or should not (0) be materialized as a snapshot -otherwise the revision is stored as an aggregated delta. The oracle can rely on properties of the archive and the input changeset to make a decision. In the following, we describe some natural alternatives for our snapshot oracle f and illustrate them with a running example (Table <ref type="table">I</ref>). All strategies start with a snapshot at revision 0. Note that we do not provide an exhaustive list of all possible strategies one could implement. Baseline. The baseline oracle never creates snapshots, except for the very first revision, i.e., f (A, u) ≡ (A = ∅). This is akin to OSTRICH's snapshot policy [TSH + 19]. Periodic. A new snapshot is created when a fixed number d of versions has been ingested as aggregated deltas, i.e., f (A, u) ≡ (|A| mod (d + 1) = 0). We call d the period. Change-ratio. Long delta chains do not only incur longer ingestion times but also higher disk consumption due to redundancy in the aggregated changesets. When low disk usage is desired, the snapshot strategy may take into account the editing dynamics of the RDF graph. This notion has been quantified in the literature via the change ratio score <ref type="bibr" target="#b4">[FUPK19]</ref>:</p><formula xml:id="formula_1">δ i,j (A) = |u + i,j | + |u - i,j | |G i ∪ G j |<label>(1)</label></formula><p>Given two revisions i and j, the change ratio normalizes the number of changes (additions and deletions) between the revisions by their joint size. If we aggregate the change ratios of all the revisions coming after a snapshot revision s, we can estimate the level of redundancy in the current delta chain. A reasonable snapshot strategy would therefore bound</p><formula xml:id="formula_2">k i=s+1 δ s,i , put differently: f (A, u) ≡ (γ ≤ k i=s+1 δ s,i ) for some user-defined budget threshold γ ∈ R &gt;0 .</formula><p>Time. If we denote by t k the time required to ingest revision k as an aggregated changeset in an archive A, this oracle is implemented as f (A, u) ≡ ( t k ts+1 &gt; θ), where s + 1 is the first revision stored as an aggregated changeset in the current delta chain. This strategy therefore creates a new snapshot as soon as ingestion takes θ times longer than the ingestion of version s + 1. </p><formula xml:id="formula_3">S ∆ ∆ ∆ ∆ ∆ Periodic (d = 2) S ∆ S ∆ S ∆ Change ratio (γ = 1.0) S ∆ ∆ S ∆ ∆ Time (θ = 3.0) S ∆ ∆ ∆ S ∆</formula><p>TABLE I: Creation of snapshots according to the different strategies on a toy RDF graph comprised of 100 triples and 5 revisions defined by changesets. An S denotes a snapshot whereas a ∆ denotes an aggregated changeset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. QUERYING ARCHIVES WITH MULTIPLE DELTA CHAINS</head><p>In the following, we detail our algorithms to compute version materialization (VM), delta materialization (DM), and V (version) queries on RDF archives with multiple delta chains. As is common in other RDF archiving approaches [TSH + 19], we focus our algorithms on answering single triple patterns queries, since they constitute the building blocks for more complex query answering, which is outside the scope of this work. All the routines described next are defined w.r.t. to an implicit RDF archive A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. VM Queries</head><p>In a single delta chain with aggregated deltas and reference snapshot s, executing a VM query with triple pattern p on a revision i requires us to materialize the target revision as G i = (G s ∪ u + s,i ) \ u - s,i and then execute p on G i . In our baseline, s = 0; in the presence of multiple delta chains s = snapshot(i) corresponds to i's reference snapshot in the archive's history. Our implementation relies on OSTRICH, which can efficiently compute G i and run queries on top of it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. DM Queries</head><p>The procedure queryDM in Algorithm 1 describes how to answer a DM query on two revisions i and j (i &lt; j) with triple pattern p on an RDF archive with multiple delta chains. The algorithm relies on two important sub-routines. The first one, denoted deltaDiff, executes standard DM queries on single triple patterns over a single delta chain as proposed by OS-TRICH [TSH + 19]. The second routine, called snapshotDiff, computes the difference between the results of p on two reference snapshots S i , S j . It works by first testing if the delta chains of S i and S j are not consecutive (line 2). If they are not, snapshotDiff implements a set-difference between p's results on S i and S j (lines 4-5). In case the snapshots define consecutive delta chains, we leverage the fact that S j also exists as an aggregated delta w.r.t. S i (see Section III-A). We can therefore treat this case efficiently as a standard DM query via deltaDiff (line 7).</p><p>Algorithm 1 DM query algorithm 1: function SNAPSHOTDIFF(S i , S j , p) snapshots Si, Sj, triple pattern p 2:</p><formula xml:id="formula_4">d ← distance(i, j) 3: if d &gt; 1 then 4:</formula><p>q i ← query(S i , p); q j ← query(S j , p) 5:</p><p>delta ← (q j \ q i ) ∪ (q i \ q j ) 6: </p><formula xml:id="formula_5">sid i ← snapshot(i); sid j ← snapshot(j) 14:</formula><p>if sid i = sid j then i and j in the same delta-chain 15:</p><p>delta ← deltaDiff(i, j, p)</p><p>16:</p><p>else i and j not in the same delta-chain 17:</p><p>u si,sj ← snapshotDiff(sid i , sid j , p) return delta 29: end function</p><p>We now have the elements to explain the main DM query procedure (queryDM). First, it checks whether both revisions are in the same delta chain, i.e., if they have the same reference snapshot (line 14). If so, the problem boils down to a single delta chain DM query that can be answered with deltaDiff (line 15). Otherwise, we invoke the routine snapshotDiff on the reference snapshots (line 17) to compute the results' difference between the delta chains. This is denoted by ds.</p><p>If revisions i and j are not snapshots themselves, lines 20 and 23 compute the changes between the target versions and their corresponding reference snapshots -denoted by u si,i and u sj,j . The last steps, i.e., lines 25 and 26, merges the intermediate results to produce the final output. First, the routine mergeBackwards merges u si,sj , i.e., the changes between the two delta chains, with u si,i , i.e., the changes within the first delta chain. This routine is designed as a regular sorted merge because triples are already sorted in the OSTRICH indexes. Unlike a classical merge routine, mergeBackwards inverts the flags of the changes present in u si,i but not in u si,sj . Indeed, if a change in u si,i did not survive to the next delta chain, it means it was later reverted in revision sid j . The result of this operation are therefore the changes between revisions i and sid j , which we denote by u i,sj . The final merge step, mergeForward, combines u i,sj with the changes in the second delta chain, i.e., u sj,sj . The routine mergeForward runs also a sorted merge, but now triples with opposite change flag present in both changesets are filtered from the final output as they indicate revertion operations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. V Queries</head><p>Algorithm 2 V query algorithm return r 8: end function Algorithm 2 describes the process of executing a V query p over multiple delta chains. This relies on the capability to execute V queries on individual delta chains implemented in OSTRICH [TSH + 19] via the function singleQueryV. The routine iterates over the list of delta chains (line 3), and runs singleQueryV on each delta chain (line 4). This gives us triples annotated with lists of versions within the range of the delta chain. At each iteration we carry out a merge step (line 5) that consists of a set union of the triples from the current delta chain and the results seen so far. When a triple is present in both sets, we merge their lists of versions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. IMPLEMENTATION</head><p>We implemented the proposed snapshot creation strategies and query algorithms for RDF archives on top of OS-TRICH [TSH + 19]. We briefly explain the most important aspects of our implementation.</p><p>Storage. An RDF archive consists of a snapshot for revision 0 and a single delta chain of aggregated changesets for the upcoming revisions (Fig. <ref type="figure">1a</ref>). The snapshot is stored as an HDT [FMG + 13] file, whereas the delta chain is materialized in two stores: one for additions and one for deletions. Each store consists of 3 indexes in different triple component orders, namely SPO, OSP, and POS, implemented as B+trees. Keys in those indexes are individual triples linked to version metadata, i.e., the revisions where the triple is present and absent. Besides the change stores, there is an index with addition and deletion counts for all possible triple patterns, e.g., ?s, ?p, ?o or ?s, cityIn, ?o , which can be used to efficiently compute cardinality estimations -particularly useful for SPARQL engines. Dictionary. As common in RDF stores <ref type="bibr" target="#b7">[NW10]</ref>, <ref type="bibr" target="#b19">[WKB08]</ref>, RDF terms are mapped to an integer space to achieve efficient storage and retrieval. Two disjoint dictionaries are used in each delta chain: the snapshot dictionary (using HDT) and the delta chain dictionary. Hence, our multi-snapshot approach uses D × 2 (potentially non-disjoint) dictionaries, where D is the number of delta chains in the archive.</p><p>Ingestion. The ingestion routine depends on whether a revision will be stored as an aggregated delta or as a snapshot. For revision 0, our ingestion routine takes as input a full RDF graph to build the initial snapshot. For subsequent revisions, we take as input a standard changeset u k-1,k (|A| = k), and use OSTRICH to construct an aggregated changeset of the form u s,k , where revision s = snapshot(k) is the latest snapshot in the history. When the snapshot policy decides to materialize a revision s as a snapshot, we use the aggregated changeset u s,s to compute the snapshot efficiently as G s = (G s \ u - s,s ) ∪ u + s,s . Change-ratio estimations. The change-ratio snapshot strategy computes the cumulative change ratio of the current delta chain w.r.t. a reference snapshot s to decide whether to create a new snapshot or not. We therefore store the approximated change ratios δ s,k of each revision in a key-value store. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. EXPERIMENTS</head><p>To determine the effectiveness of our multi-snapshot approach for RDF archiving, we evaluate the four proposed snapshot creation strategies along three dimensions: ingestion time (Section VI-B), disk usage (Section VI-C), and query runtime for VM, DM, and V queries (Section VI-D).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Experimental Setup</head><p>We resort to the BEAR benchmark for RDF archives <ref type="bibr" target="#b4">[FUPK19]</ref> for our evaluation. BEAR comes in three flavors: BEAR-A, BEAR-B, and BEAR-C, which comprise a representative selection of different RDF graphs and query loads. We omit BEAR-C from our experiments because its query load consists of full SPARQL queries and diverse constructs, which are not supported by our implementation, nor by any other RDF archiving approaches. Table <ref type="table" target="#tab_4">II</ref> summarizes the characteristics of the experimental datasets and query loads. Due to the very long history of BEAR-B instant, OSTRICH could only ingest one third of the archive's history (7063 out 21046 revisions) after one month of execution. In a similar vibe, OSTRICH took one month to ingest the first 18 revisions (out of 58) of BEAR-A. Despite the dataset's short history, changesets in BEAR-A are in the order of millions of changes, which also makes ingestion intractable in practice. On these grounds, the original OSTRICH paper [TSH + 19] omitted BEAR-B instant and included only the first 10 versions of BEAR-A. Multi-snapshot solutions, on the other hand, allow us to manage these datasets. All our experiments were run on a Linux server with a 16-core CPU (AMD EPYC 7281), 256 GB of RAM, and 8TB hard disk drive.  We evaluate the different strategies for snapshot creation detailed in Section III-B along ingestion speed, storage size, and query runtime. Except for our baseline (OSTRICH), all our strategies are defined by parameters that we adjust according to the dataset: Periodic. This strategy is defined by the period d. We set d ∈ {2, 5} for BEAR-A, d ∈ {5, 10} for BEAR-B daily, d ∈ {50, 100} for BEAR-B hourly, and d ∈ {100, 500} for BEAR-B instant. Values of d were adjusted per dataset experimentally w.r.t. the length of the revision history and the baseline ingestion time. High periodicity, i.e., smaller values for d, lead to more and shorter delta chains. Change-ratio (CR). This strategy depends on a cumulative change-ratio budget threshold γ. We set γ ∈ {2.0, 4.0} for all the tested datasets. γ = 2.0 yields 10 delta chains for BEAR-A, as well as 5, 23, and 151 delta chains for BEAR-B daily, hourly, and instant, respectively. For γ = 4.0, we obtain instead 6 delta chains for BEAR-A, and 3, 16, and 98 for the BEAR-B alternatives. Time. This strategy depends on the ratio θ between the ingestion time of the new revision and the ingestion time of the first delta in the current delta chain. We set θ = 20 for all datasets. This produces 3, 26, and 293 delta chains for the daily, hourly, and instant variants of BEAR-B respectively, and 2 delta chains for BEAR-A. We omit the reference systems included with the BEAR benchmark since they are outperformed by OSTRICH [TSH + 19].</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Ingestion Time</head><p>Table III depicts the total time to ingest the experimental datasets. Since we always test two different values of d for the periodic strategy on each dataset, in both Table <ref type="table" target="#tab_4">III</ref> and IV, we refer to them as "high" and "low" periodicity. This is meant to abstract away the exact parameters, which vary for each dataset, so that we can focus instead on the effects of higher/lower periodicity. We remind the reader that the baseline (OSTRICH) cannot ingest BEAR-A and BEAR-B instant in a reasonable amount of time. This explains their absence in Table <ref type="table" target="#tab_4">III</ref>. But even when OSTRICH can ingest the entire history (in less than 26 hours), a multi-snapshot strategy still incurs a significant speed-up. This becomes more significant for long histories as observed for BEAR-B hourly, where the speed-up can reach two orders of magnitude. The   good performance of the high periodicity strategy and changeratio with the smaller budget threshold γ = 2.0 suggests that shorter delta chains are beneficial for ingestion time. This is confirmed by Fig. <ref type="figure" target="#fig_3">2</ref>, where we also notice that ingestion time reaches a minimum for the revisions following a snapshot.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Disk Usage</head><p>Unlike ingestion time where shorter delta changes are clearly beneficial, the gains in terms of disk usage need finegrained tuning because they depend on the dataset as shown in Table <ref type="table" target="#tab_6">IV</ref>. Overall, more delta chains tend to increase disk usage. For BEAR-B daily, frequent snapshots (high periodicity d = 5) incur a large overhead w.r.t. the baseline because the changesets are small and the revision history is short. Similar results are observed for BEAR-A and BEAR-B instant, even though we still need multiple snapshots to be able to ingest the data. BEAR-B hourly is interesting because it shows that for long histories, a single delta chain can be inefficient in terms of disk usage. Interestingly for BEAR-A, the changeratio γ = 4.0 uses less storage than the time strategy with θ = 20, despite using more delta chains. This hints that very large aggregated deltas are also inefficient compared to multiple delta chains with smaller aggregated deltas. For BEAR-B instant, the good performance of the change-ratio strategies and the low periodicity strategy (d = 500) suggests that a few delta chains can provide significant space savings. On the other hand, the time strategy with θ = 20 performs slight worse because it creates too many delta chains.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Query Runtime</head><p>In this section we evaluate the impact of our snapshot creation strategies on query runtime. We use the queries provided with the BEAR benchmark for BEAR-A and BEAR-B. These are DM, VM, and V queries on single triple patterns. Each individual query was executed 5 times and the runtimes averaged. All the query results are depicted in Figure <ref type="figure" target="#fig_4">3</ref>.</p><p>1) VM queries: We report the average runtime of the benchmark VM queries for each version i in the archive. The results are depicted in Figures <ref type="figure" target="#fig_4">3a,</ref><ref type="figure" target="#fig_4">3d</ref>, 3g, and 3j. We report runtimes in micro-seconds for all strategies.</p><p>Using multiple delta chains is consistently beneficial for VM query runtime, which is best when the target revision was materialized as a snapshot. When it is not the case, runtime is proportional to the size of the delta chain, which depends on its length and the volume of changes that must be applied to the snapshot before running the query. This is obvious for BEAR-A with the time θ = 20 strategy, which splits the history into two imbalanced delta-chains, where one of them contains the first 53 revisions (out of 58).</p><p>2) DM Queries: We report for each revision i in the archive the average runtime of the benchmark DM queries between revisions 0, i and 1, i . Such a setup tests the query routine in all possible scenarios: between two snapshots, between a snapshot and a delta (and vice versa), and between two deltas. The results are depicted in Figures <ref type="figure" target="#fig_4">3b, 3e, 3h,</ref> and<ref type="figure" target="#fig_4">3k</ref>. The results shows a rather mixed benefit of multiple delta chains in query runtime: highly positive for the long history of BEAR-B hourly and negligible for BEAR-B daily. Overall, DM queries benefit from short delta chains as illustrated by Figure <ref type="figure" target="#fig_4">3b</ref> and to a lesser degree by the periodic strategy with d = 5 in Figure <ref type="figure" target="#fig_4">3e</ref>. All our strategies beat the baseline by a large margin on BEAR-B hourly because delta operations become very expensive as the single delta chain grows. That said, the baseline runtime tends to decrease slightly with i because the data from two distant versions tends to diverge more, which requires the engine to filter fewer results from 6 For BEAR-B daily, multiple delta chains may perform comparably or slightly worse -by no more than 20% -than the baseline. This happens because BEAR daily's history is short, and hence efficiently manageable with a single delta chain. In this case the overhead of multiple snapshots and delta chains does not bring any advantage for DM queries.</p><p>3) V Queries: Figure <ref type="figure" target="#fig_4">3c</ref>, 3f, 3i, and 3l show the total runtime of the benchmark V queries on the different datasets. V queries are the most challenging queries for the multisnapshot archiving strategies as suggested by Figures <ref type="figure" target="#fig_4">3f</ref> and<ref type="figure" target="#fig_4">3i</ref>. As described in Algorithm 2, answering V queries requires us to query each delta chain individually, buffer the intermediate results, and then merge them. It follows that runtime scales proportionally to the number of delta chains, which means that contrary to DM and VM queries, many short delta chains are detrimental to V query performance. Nonetheless, querying datasets such as BEAR-A and BEAR-B instant is only possible with a multi-snapshot solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Discussion</head><p>We now summarize our findings and draw a few design lessons for RDF archives.</p><p>• For small datasets, small changesets, or relatively short histories, the overhead of multi-snapshot strategies does not pay off in terms of query runtime and disk usage. This observation is particularly striking for V queries for which runtime increases with the number of delta chains. • While many short delta chains are detrimental to V queries and often to storage consumption, they are mostly benefitial for VM and DM queries because these query types require us to iterate over changes within delta chains (two in the worst case of DM queries). Moreover, short delta chains reduce ingestion time systematically. • Disk usage usually benefit from less numerous delta chains, except for long change history and large aggregated deltas. • Change-ratio strategies strike an interesting trade-off because they take into account the amount of data stored in the delta chain as criterion to create a snapshot. This ultimately has a direct positive effect on ingestion time, VM/DM querying, and storage size. The bottom line is that the snapshot creation strategy for RDF archives is subject to a trade-off among ingestion time, disk consumption, and query runtime for VM, DM, and V queries. As shown in our experimental section, there is no one-sizefits-all strategy. The suitability of a strategy depends on the application, namely the users' priorities or constraints, the characteristics of the archive (snapshot size, history length, and changeset size), and the query load. For example, implementing version control for a collaborative RDF graph will likely yield an archive like BEAR-B instant, i.e., a very long history with many small changes and VM/DM queries mostly executed on the latest revisions. Depending on the server's capabilities and the frequency of the changes, the storage strategy could therefore rely on the change ratio or the ingestion time ratio and be tuned to offer arbitrary latency guarantees for ingestion. On a different note, a user doing data analytics on the published versions of DBpedia (as done in <ref type="bibr" target="#b8">[PGH21]</ref>) may be confronted to a dataset like BEAR-A and therefore resort to numerous snapshots, unless their query load includes many real-time V queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VII. CONCLUSION</head><p>In this paper we have presented a hybrid storage approach for RDF archiving based on multiple snapshots and chains of aggregated deltas. We studied different snapshot creation strategies and discussed the trade-offs in terms of ingestion time, storage size, and query runtime. Our experimental evaluation shows that our techniques allow us to handle very long revision histories that could not be managed by previous approaches. Moreover, we drew a set of design lessons for RDF archive design that can help users decide the best strategy based on the application scenario. As future work, we plan to develop more complex snapshot strategies, e.g., based on machine learning. Moreover, the development of more efficient encoding and serialization techniques for timestamped deltas is a promising research avenue to further lower storage size. We also plan to study the impact of our techniques on the performance of SPARQL query execution and consider improvements within the landscape of alternative RDF representations and indexing approaches <ref type="bibr" target="#b13">[SLPH22]</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>Fig. 1: Delta chain architectures</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>function QUERYDM(i, j, p) versions i, j, triple pattern p 13:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 2 :</head><label>2</label><figDesc>Fig.2: Detailed ingestion times (log scale) per revision. We include the first 1500 revisions for BEAR-B instant since the runtime pattern is recurrent along the entire history.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Query results for the BEAR benchmark</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>To approximate each δ s,k according to Equation 1, we rely on OSTRICH's count indexes. The terms |u + s,k | and |u - s,k | can be obtained from the count indexes of the fully unbounded triple pattern ?s, ?p, ?o in O(1) time. We estimate |G s ∪ G j | as |G s | + |u + s,j |, where |G s | is efficiently provided by HDT. The source code of our implementation as well as the experimental scripts to reproduce this paper are available in a Zenodo archive 3 .</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>TABLE II :</head><label>II</label><figDesc>Dataset characteristics. |G i | is the size of the individual revisions, |∆| denotes the average size of the individual changesets u k-1,k .</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head>TABLE IV :</head><label>IV</label><figDesc>Disk usage in MB</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_0"><p>https://doi.org/10.5281/zenodo.7256988</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENTS</head><p>This research was partially funded by the <rs type="funder">Danish Council for Independent Research (DFF)</rs> under grant agreement no. <rs type="grantNumber">DFF-8048-00051B</rs> and the <rs type="funder">Poul Due Jensen Foundation</rs>. <rs type="person">Ruben Taelman</rs> is a postdoctoral fellow of the <rs type="funder">Research Foundation -Flanders (FWO)</rs> (<rs type="grantNumber">1274521N</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_JjytE8w">
+					<idno type="grant-number">DFF-8048-00051B</idno>
+				</org>
+				<org type="funding" xml:id="_mz7TCGU">
+					<idno type="grant-number">1274521N</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Colchain: Collaborative linked data networks</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Aebeloe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gabriela</forename><surname>Montoya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Hose</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1385" to="1396" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Decentralized collaborative knowledge management using git</title>
+		<author>
+			<persName><forename type="first">Natanael</forename><surname>Arndt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Patrick</forename><surname>Naumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Norman</forename><surname>Radtke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Edgard</forename><surname>Marx</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="page" from="29" to="47" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Archiving Pushed Inferences from Sensor Data Streams</title>
+		<author>
+			<persName><forename type="first">Jörg</forename><surname>Brunsmann</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Workshop on Semantic Sensor Web</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="38" to="46" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Binary RDF representation for publication and exchange (HDT)</title>
+		<author>
+			<persName><forename type="first">Javier</forename><forename type="middle">D</forename><surname>Fernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miguel</forename><forename type="middle">A</forename><surname>Martínez-Prieto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Axel</forename><surname>Polleres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Arias</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="22" to="41" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Evaluating query and storage strategies for RDF archives</title>
+		<author>
+			<persName><forename type="first">Javier</forename><forename type="middle">D</forename><surname>Fernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Umbrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Axel</forename><surname>Polleres</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Magnus</forename><surname>Knuth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="247" to="291" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">R43ples: Revisions for triples -an approach for version control in the semantic web</title>
+		<author>
+			<persName><forename type="first">Markus</forename><surname>Graube</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephan</forename><surname>Hensel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Leon</forename><surname>Urbas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LDQ@SEMANTICS</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Mining History with Le Monde</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Huet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joanna</forename><surname>Biega</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><forename type="middle">M</forename><surname>Suchanek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Automated Knowledge Base Construction</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="49" to="54" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">x-rdf-3x: Fast querying, high update rates, and consistency for RDF databases</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerhard</forename><surname>Weikum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="256" to="263" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Towards fullyfledged archiving for RDF datasets</title>
+		<author>
+			<persName><forename type="first">Luis</forename><surname>Olivier Pelgrin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Galárraga</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Hose</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="903" to="925" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Learning How to Correct a Knowledge Base from the Edit History</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Pellissier Tanon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Camille</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Suchanek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1465" to="1475" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A flexible framework for understanding the dynamics of evolving RDF datasets</title>
+		<author>
+			<persName><forename type="first">Yannis</forename><surname>Roussakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ioannis</forename><surname>Chrysakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kostas</forename><surname>Stefanidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Giorgos</forename><surname>Flouris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yannis</forename><surname>Stavrakas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ISWC</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">9366</biblScope>
+			<biblScope unit="page" from="495" to="512" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">RDF 1.1 primer. W3C recommendation</title>
+		<author>
+			<persName><forename type="first">Yves</forename><surname>Raimond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guus</forename><surname>Schreiber</surname></persName>
+		</author>
+		<ptr target="http://www.w3.org/TR/2014/NOTE-rdf11-primer-20140624/" />
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">SPARQL 1.1 query language</title>
+		<author>
+			<persName><forename type="first">Andy</forename><surname>Seaborne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steven</forename><surname>Harris</surname></persName>
+		</author>
+		<ptr target="http://www.w3.org/TR/2013/REC-sparql11-query-20130321/" />
+	</analytic>
+	<monogr>
+		<title level="m">W3C recommendation, W3C</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A design space for RDF data representations</title>
+		<author>
+			<persName><forename type="first">Tomer</forename><surname>Sagi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Matteo</forename><surname>Lissandrini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Torben</forename><surname>Bach Pedersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Katja</forename><surname>Hose</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">VLDB J</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="347" to="373" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Optimizing storage of RDF archives using bidirectional delta chains</title>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Taelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Thibault</forename><surname>Mahieu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Vanbrabant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Verborgh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="705" to="734" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Querying the edit history of wikidata</title>
+		<author>
+			<persName><forename type="first">Thomas</forename><surname>Pellissier Tanon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fabian</forename><forename type="middle">M</forename><surname>Suchanek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ESWC</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">11762</biblScope>
+			<biblScope unit="page" from="161" to="166" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Triple Storage for Randomaccess Versioned Querying of RDF Archives</title>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Taelman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miel</forename><surname>Vander Sande</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joachim</forename><surname>Van Herwegen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Mannens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruben</forename><surname>Verborgh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">54</biblScope>
+			<biblScope unit="page" from="4" to="28" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m">VWS +</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">SemVersion: A Versioning System for RDF and Ontologies</title>
+		<author>
+			<persName><forename type="first">Max</forename><surname>Volkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wolf</forename><surname>Winkler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">York</forename><surname>Sure</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sebastian</forename><forename type="middle">Ryszard</forename><surname>Kruk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcin</forename><surname>Synak</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>ESWC</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Hexastore: sextuple indexing for semantic web data management</title>
+		<author>
+			<persName><forename type="first">Cathrin</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Panagiotis</forename><surname>Karras</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abraham</forename><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1008" to="1019" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

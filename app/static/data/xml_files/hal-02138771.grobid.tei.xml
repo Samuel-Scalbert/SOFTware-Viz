@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Schema Validation and Evolution for Graph Databases</title>
+				<funder>
+					<orgName type="full">Fédération Informatique de Lyon</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Angela</forename><surname>Bonifati</surname></persName>
+							<email>angela.bonifati@univ-lyon1.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Lyon</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">University</orgName>
+								<orgName type="institution" key="instit2">CNRS Liris</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Furniss</surname></persName>
+							<email>peter.furniss@neo4j.com</email>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Neo4J</settlement>
+									<country>Germany, UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alastair</forename><surname>Green</surname></persName>
+							<email>alastair.green@neo4j.com</email>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Neo4J</settlement>
+									<country>Germany, UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Russ</forename><surname>Harmer</surname></persName>
+							<email>russell.harmer@ens-lyon.fr</email>
+							<affiliation key="aff3">
+								<orgName type="laboratory">UdL</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">ENS Lyon</orgName>
+								<address>
+									<settlement>UCBL1</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Eugenia</forename><surname>Oshurko</surname></persName>
+							<email>ievgeniia.oshurko@ens-lyon.fr</email>
+							<affiliation key="aff3">
+								<orgName type="laboratory">UdL</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">ENS Lyon</orgName>
+								<address>
+									<settlement>UCBL1</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hannes</forename><surname>Voigt</surname></persName>
+							<email>hannes.voigt@neo4j.com</email>
+							<affiliation key="aff2">
+								<address>
+									<settlement>Neo4J</settlement>
+									<country>Germany, UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Schema Validation and Evolution for Graph Databases</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">1ED8A33DADECAC9AD6BE9B37CECC8568</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Graph Databases</term>
+					<term>Graph Schema Modelling</term>
+					<term>Graph Schema Validation</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Despite the maturity of commercial graph databases, little consensus has been reached so far on the standardization of data definition languages (DDLs) for property graphs (PG). Discussion on the characteristics of PG schemas is ongoing in many standardization and community groups. Although some basic aspects of a schema are already present in most commercial graph databases, full support is missing allowing to constraint property graphs with more or less flexibility. In this paper, we show how schema validation can be enforced through homomorphisms between PG schemas and PG instances by leveraging a concise schema DDL inspired by Cypher syntax. We also briefly discuss PG schema evolution that relies on graph rewriting operations allowing to consider both prescriptive and descriptive schemas.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Property graph databases are modern data management systems that use graph structures, such as nodes, edges and properties, to encode semantically complex data <ref type="bibr" target="#b2">[3]</ref>. Graph database technology has made tremendous progress with many commercial products-such as Neo4j, Oracle PGX, SAP HANA Graph, Redis Graph, Cypher for Apache Spark and TigerGraph-and yet little consensus has been reached so far on the standardization of graph data querying and manipulation or of data definition languages (DDLs).</p><p>The aim of ISO SC32/WG3 is to develop a new international standardized query language-called GQL <ref type="foot" target="#foot_0">4</ref> -for property graphs, with support from the activities of the wider community such as OpenCypher<ref type="foot" target="#foot_1">5</ref> and G-Core <ref type="bibr" target="#b0">[1]</ref>.</p><p>Standardization of graph data querying and manipulation is therefore well under way.</p><p>At present, there are only a few examples of property graph systems offering schema and DDL, e.g. Neo4j's Cypher for Apache Spark and TigerGraph. Neo4j 3.5 already provides the means to express certain basic aspects of schemas, e.g. the use of unique property and property existence constraints enables us to enforce nodes (or edges) to have certain properties. However, this does not allow users to express more advanced aspects of schemas such as specifying, for a given node or edge label, the collection of all possible associated properties; or constraining whether or not an edge may exist between nodes with certain labels.</p><p>In this paper, we make the following specific contributions: (i) a schema model (and corresponding DDL) specifying labels and (mandatory) properties for nodes and edges with mixed composition and facilitating strict typing of every graph element (Section 2); (ii) a mathematical framework for schema validation allowing us to construct both instances and schemas as property graphs and to enforce schema validation through the existence of a homomorphism from instance to schema (Section 3); and (iii) graph rewriting rules <ref type="bibr" target="#b4">[5]</ref> and their application to propagate changes from schema to instance (or vice versa) while keeping the instance and schema consistent at all times (Section 4).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">PG Schema Language</head><p>We introduce in this section an OpenCypher-based<ref type="foot" target="#foot_2">6</ref> schema DDL for Property Graphs (PG). Although informing and feeding the ongoing standardization process, our DLL must not be intended as a standard proposal since its main purpose is to substantiate the algorithmic contributions presented in the paper. The basic components of a schema definition assume a finite set of labels L, a set of property keys K and a finite set of data types T . Property graph type. A property graph type is a triple (BT , N T , ET ) where BT is a set of element types, N T is a set of node types and ET is a set of edge types. A property graph type provides the schema for a PG. Multiple PGs can share a property graph type to the effect that they will have the same schema. Property type. A property type is a pair (k, t), where k ∈ K is the property key and t ∈ T is its data type. Element type. An element type b ∈ BT is a 4-tuple (l, P, M, E), where l ∈ L is a label, P is a set of property types, M ⊆ P is a subset of mandatory property types and E ⊆ BT is the set of element types that b extends.</p><p>Hence, "Message {content: STRING?, length: INTEGER}" is a declaration of the element type m = (Message, {pt 1 , pt 2 } , {pt 2 } , ∅), where pt 1 = (content, STRING) and p 2 = (length, INTEGER); while "Post :: Message {language: STRING?}" declares the element type p = (Post, {pt 3 = (language, STRING)} , ∅, {m}).</p><p>An element type is allowed to extend multiple other element types, but must not extend itself either directly or indirectly. All element types of a property graph type must be disambiguated by their label. Where clear from context, we use the label to denote the corresponding element type.</p><p>Exposed (mandatory) property types and labels. The set of exposed property types of an element type b = (l, P, M, E) is defined as prop(b) := P ∪ c∈E prop(c), i.e. all the property types that b possesses, either directly or through inheritance. Similarly, we define mand(b) to be the set of exposed mandatory property types of b and labels(b) to be the set of exposed labels of b. For instance, for element type p from above we have prop(p) = {pt 1 , pt 2 , pt 3 }, mand(p) = {pt 2 }, and labels(p) = {Post, Message}.</p><p>For an element type b to be valid, prop(b) must not have two or more property types with the same property key, i.e. all properties types of a element type are disambiguated by their property key. Where clear from context, we will use the property key to denote the corresponding property type. For instance, for the element type p above, we have prop(p) = {content, length, language}, mand(p) = {length} and labels(p) = {Post, Message}. Note that labels(b) is unambiguous for all element types b of a property graph type. Edge type. An edge type et ∈ ET is a triple (s, b, t), where s, b, and t are element types. Exposed (mandatory) property and label sets are defined analogously to node types based on b. Note that s and t need not be node types. This allows a single edge type to be inherited by multiple node types.</p><p>Example. The following snippet of the OpenCypher PG schema DDL creates a property graph type that captures an excerpt of the LDBC SNB <ref type="bibr" target="#b7">[8]</ref>  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Schema Validation</head><p>In this section, we provide a mathematical formalization of our schema notion that, in particular, allows us to interpret a DDL specification as a PG. We present the mathematical definitions of schemas and instances as property graphs in Section 3.1 and then discuss the application of homomorphisms to the schema validation problem in Section 3.2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Schemas and instances as property graphs</head><p>We fix countable sets O, K and V of objects, keys and values respectively. For the purposes of this paper, we assume that V contains (at least) basic types of integers, booleans, strings and dates.</p><p>A property graph is defined to be a tuple (N, E, η, P, ν, M ) where N and E are disjoint, finite subsets of O called nodes and edges; η : E → N × N is a function assigning a source and target node to each edge; P ⊆ (N ∪ E) × K is a finite set of properties; ν ⊆ P × V is a finite relation, assigning sets of values to properties; and M ⊆ P is a set of mandatory properties. The requirement that ν be finite means that each node and each edge has finitely many properties, each of which has a finite set of associated values.</p><p>A schema (BT , N T , ET ) specified in our DDL from Section 2 can be interpreted as a property graph S in the following way. The nodes N S are the node types N T and we have an edge e ∈ E S from n 1 to n 2 in E S if, for some l 1 ∈ labels(n 1 ) and l 2 ∈ labels(n 2 ), there is an edge type (n 1 , e, n 2 ) ∈ ET . Note that a node type always gives rise to a single node of S whereas an edge type may give rise to many edges in the schema graph; this is how inheritance in the DDL syntax is 'expanded out' in the schema graph S interpreting the property graph type. Each node and edge has the (mandatory) properties specified by its corresponding node or edge type. As an example, the schema defined in Section 2 and interpreted as a property graph is illustrated in Figure <ref type="figure" target="#fig_1">1</ref>.  We can view a homomorphism h : G → S as a formalization of the notion schema validation, i.e. that G respects the 'schema' S: each node/edge x of G is an instance of the schema node/edge h(x); edges in S constrain which edges can exist in G; and properties that are mandatory in the schema S are mandatory (so must occur) in G. In the example instance G of Figure <ref type="figure" target="#fig_2">2</ref>, we have used colours to encode the homomorphism h, i.e. all yellow nodes are Comments, etc. In the DDL of Section 2, the fact that all element types are disambiguated by their label would also allow us to determine h provided we include these labels in the instance G.</p><formula xml:id="formula_0">η S • h E = (h N × h N ) • η G . We write h := h N ∪ h E . We further require that (i) if (x, k) ∈ P G then (h(x), k) ∈ P S ; (ii) if ((x, k), v) ∈ ν G then ((h(x), k), v) ∈ ν S ; and (iii) if (h(x), k) ∈ M S then (x, k) ∈ M G .</formula><p>The ReGraph library. The Python library ReGraph<ref type="foot" target="#foot_4">8</ref> provides an implementation of the presented system. It enables us to construct property graphs and structure them into hierarchies (DAGs) of graphs via homomorphisms. In this paper we limit our use of the library to the special case of two graphs connected by a single homomorphism, i.e. h : G → S as this is sufficient to express that G respects the schema S. Our system thus provides an abstraction barrier that gives the illusion that the underlying Neo4j graph is, in fact, two separate graphs-a data graph and a schema-related by a homomorphism that guarantees schema validation. In the next section, we explain briefly how updates to either of these graphs are performed in such a way as to maintain the invariant of schema validation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">graph rewriting</head><p>In our approach, the data graph and its schema are represented as PGs; as such, we can use graph rewriting rules <ref type="bibr" target="#b4">[5]</ref> to perform updates of either. Informally, a rewriting rule consists of a pattern-of which there can be zero, one or many instances in the graph G we wish to modify-together with a collection of modifications to be effected. In the case of PGs, these operations are: addition and deletion of elements; cloning and merging of nodes; and modification of the set of values associated with a property. The rule is applied by selecting an instance in G and performing the associated operations. The effect of a rule application remains localized to the subgraph of G picked out by the choice of instance which, in practice, is very small compared with G itself.</p><p>In general, an update invalidates the homomorphism that previously existed and which guaranteed compliance of the data to the schema. In our mathematical formulation, and its associated implementation discussed briefly below, we automatically recompute a canonically updated homomorphism that restores compliance <ref type="bibr" target="#b8">[9]</ref>. The way in which compliance can be broken-and the process by which we restore it-depends on whether the update was made to the data graph or to the schema.</p><p>In the first case, compliance can be broken by the addition of nodes, edges or properties or by the merging of nodes in the data graph. By default, the addition of a new element e is propagated to the schema, i.e. we add a new element to the schema to type e in the data graph. We can further specify that e is actually typed by an existing element of the schema; this can be done explicitly by the user or, more commonly, computed automatically through the use of labels. However, in the case of the merge of two nodes, their associated typing nodes in the schema must be merged-unless they already had the same type (in which case no change to the schema is necessary).</p><p>In the second case, compliance can be broken by the deletion of an element or by the cloning of nodes in the schema. By default, the cloning of a node n is propagated to the data graph, i.e. we clone all instances of n in the data graph. For some or all instances of n, we may not wish to propagate but rather specify the particular clone of n that should be used to type it, i.e. a concept refinement; again, this can be specified directly by the user or computed automatically through the use of labels. However, in the case of the deletion of an element, we must delete all its instances in the data graph.</p><p>An update of the data graph that propagates to the schema can be blocked in our implementation. This would be appropriate in situations where the schema is already well-developed and we expect all incoming data to comply, i.e. we consider our schema to be prescriptive. However, in an earlier phase of development, the ability to propagate automatically new elements to the schema enables the user to focus simply on gathering their data of interest and allows the schema to adapt appropriately, i.e. the schema is considered to be descriptive. As such, our approach-in addition to providing the guarantee that updates never break schema compliance-also provides support for the natural development cycle of an application.</p><p>In our implementation, a rewriting rule is translated into a Cypher query that manipulates the underlying Neo4j graph in such a way as to preserve the correspondence with the data and schema graphs. As outlined above, an update of one graph may-but need not necessarily-induce a further update of the other to maintain schema validation. A detailed account will be included in the long version of this paper and can be found in the arXiv preprint <ref type="bibr" target="#b3">[4]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Related Work</head><p>Schema evolution <ref type="bibr" target="#b16">[17]</ref> is a well established topic in data management. A set of principles ruling out schema and instance evolution under schema constraints was discussed in <ref type="bibr" target="#b9">[10]</ref>. Various approaches exist to increase usability and efficiency, e.g. schema evolution-aware query languages <ref type="bibr" target="#b17">[18]</ref> or providing a general framework to describe database evolution in the context of evolving applications <ref type="bibr" target="#b6">[7]</ref>. Meta Model Management 2.0 <ref type="bibr" target="#b1">[2]</ref> introduced tools to match, merge and diff given relational schema versions. The resulting mappings couple the evolution of the schema and the data; however, they are complex relationships between heterogeneous schemas, as in data integration and ETL scenarios, i.e. they only deal with schema evolution after the fact. Recently, PRISM <ref type="bibr" target="#b5">[6]</ref> and InVerDa <ref type="bibr" target="#b10">[11]</ref> have provided advanced database schema evolution tools. PRISM focuses on plain database evolution but allows the answering of queries using former schema versions with respect to the current data. InVerDa provides co-existing schema versions via bidirectional transformations with symmetric relational lenses <ref type="bibr" target="#b11">[12]</ref>. However, none of the above approaches goes beyond a prescriptive schema.</p><p>SHACL <ref type="bibr" target="#b13">[14]</ref> is a language for validating RDF graphs. Shapes are used to validate RDF instances against a set of conditions. SHACL supports RDF term restrictions, cardinality constraints, and predicate constraints. Research on ontologies also considered the problem of update propagation to instances using Description Logic mappings <ref type="bibr" target="#b12">[13]</ref>. However, such mappings are quite complex when contrasted with the implicit homomorphisms considered in our work. The distinction between descriptive and prescriptive schemas as carried out in our paper is reminiscent of open and close tuple types as used for instance in JSON <ref type="bibr" target="#b15">[16]</ref>. In particular, the schema flexibility pointed out in our work affects not only types but entire portions of the schemas and as such is more general.</p><p>Graph rewriting has been used in a variety of areas related to knowledge representation and meta-modelling. For example, triple graph grammars <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b14">15]</ref>which correspond very closely to our rewriting rules-provide a means to specify bidirectional model transformations and have been used in various applications such as conformance testing and model synchronization.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Concluding Remarks</head><p>We have presented a schema DDL for PGs following the ASCII-art syntax of Cypher and shown how schema validation and evolution can be simulated via a mathematical framework that enforces and maintains schema validation.</p><p>Our step is to enrich the DDL for the expression of finer constraints and to define a DML for our graph update operations.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>Node type. A node type nt ∈ ET is a 1-tuple (b), where b ∈ BT is an element type. For a node type nt = (b), we define prop(nt) = prop(b), mand(nt) = mand(b), and labels(nt) = labels(b).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: An extract from the SNB schema</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: A valid instance of the SNB schema extract</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>schema 7 .</figDesc><table><row><cell>)</cell></row><row><cell>CREATE GRAPH TYPE snb (</cell></row><row><cell>// element types</cell></row><row><cell>Person {</cell></row><row><cell>firstName : STRING, lastName : STRING</cell></row><row><cell>},</cell></row><row><cell>Message {</cell></row><row><cell>creationDate : TIMESTAMP, browserUsed : STRING</cell></row><row><cell>},</cell></row><row><cell>Comment &lt;: Message {},</cell></row><row><cell>Post &lt;: Message {</cell></row><row><cell>imageFile : STRING?</cell></row><row><cell>},</cell></row><row><cell>// node types</cell></row><row><cell>(Person), (Post), (Comment),</cell></row><row><cell>// edge types</cell></row><row><cell>(Person)-[KNOWS]-&gt;(Person),</cell></row><row><cell>(Person)-[LIKES]-&gt;(Message),</cell></row><row><cell>(Message)-[HAS_CREATOR]-&gt;(Person),</cell></row><row><cell>(Comment)-[REPLY_OF]-&gt;(Message)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_0"><p>https://www.gqlstandards.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_1"><p>http://www.opencypher.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_2"><p>https://s3.amazonaws.com/artifacts.opencypher.org/openCypher9.pdf</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="7" xml:id="foot_3"><p>The complete PG schema encoding of LDBC SNB is reported in<ref type="bibr" target="#b3">[4]</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="8" xml:id="foot_4"><p>https://github.com/Kappa-Dev/ReGraph</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgements. We would like to thank <rs type="person">Petra Selmer</rs> (<rs type="affiliation">Neo4j</rs>) for her careful proof reading and useful feedback. This work was partially funded by a grant from the <rs type="funder">Fédération Informatique de Lyon</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">G-CORE: A core for future graph query languages</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Angles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1421" to="1432" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Model Management 2.0: Manipulating Richer Mappings</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Melnik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="1" to="12" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Querying Graphs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fletcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yakovets</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Synthesis Lectures on Data Management</title>
+		<imprint>
+			<publisher>Morgan &amp; Claypool Publishers</publisher>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Schema Validation and Evolution for Graph Databases</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Furniss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Harmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Oshurko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<idno>CoRR abs/1902.06427</idno>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Sesqui-pushout rewriting</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Corradini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Heindel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Hermann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>König</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Graph Transformation</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="30" to="45" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Graceful Database Schema Evolution: the PRISM Workbench</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Curino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">J</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zaniolo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="761" to="772" />
+			<date type="published" when="2008-08">Aug 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">MeDEA: A database evolution architecture with traceability</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Domínguez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lloret</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Rubio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Zapata</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">DKE</title>
+		<imprint>
+			<biblScope unit="volume">65</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="419" to="441" />
+			<date type="published" when="2008-06">Jun 2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">The LDBC Social Network Benchmark: Interactive Workload</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Erling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Averbuch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Larriba-Pey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chafi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gubichev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prat-Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Boncz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="619" to="630" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Knowledge representation and update in hierarchies of graphs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Harmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Oshurko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Graph Transformation</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Recent advances in schema and ontology evolution</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hartung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Terwilliger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rahm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Schema Matching and Mapping</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="149" to="190" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multi-schema-version data management: data independence in the twenty-first century</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Herrmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">B</forename><surname>Pedersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Lehner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The VLDB Journal</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="547" to="571" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Symmetric Lenses</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hofmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">C</forename><surname>Pierce</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wagner</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>POPL</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Capturing model-based ontology evolution at the instance level: The case of dl-lite</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kharlamov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Zheleznyakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Comput. Syst. Sci</title>
+		<imprint>
+			<biblScope unit="volume">79</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="835" to="872" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Shapes Constraint Language (SHACL)</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Knublauch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kontokostas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">W3C Recommendation</title>
+		<imprint>
+			<date type="published" when="2017-07-20">20 July 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Tool Integration with Triple Graph Grammars -A Survey</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Königs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schürr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Electronic Notes in Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">148</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="113" to="150" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">The SQL++ semi-structured data model and query language: A capabilities survey of sql-on-hadoop, nosql and newsql databases</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">W</forename><surname>Ong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vernoux</surname></persName>
+		</author>
+		<idno>CoRR abs/1405.3631</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">An Online Bibliography on Schema Evolution</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rahm</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGMOD Record</title>
+		<imprint>
+			<biblScope unit="volume">35</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="30" to="31" />
+			<date type="published" when="2006-12">Dec 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">SQL/SE -A Query Language Extension for Databases Supporting Schema Evolution</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Roddick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGMOD Record</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="10" to="16" />
+			<date type="published" when="1992-09">Sep 1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Specification of Graph Translators with Triple Graph Grammars</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schürr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Graph-Theoretic Concepts in Computer Science</title>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<biblScope unit="page" from="151" to="163" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

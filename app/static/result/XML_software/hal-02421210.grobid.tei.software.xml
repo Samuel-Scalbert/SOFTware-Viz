@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Vers un désenchevêtrement de l&apos;ambiguïté de la tâche et de l&apos;incertitude du modèle pour la classification avec option de rejet à l&apos;aide de réseaux neuronaux</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">T</forename><surname>Lorieul</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory" key="lab1">Zenith</orgName>
+								<orgName type="laboratory" key="lab2">LIRMM</orgName>
+								<orgName type="institution">Université de Montpellier</orgName>
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">A</forename><surname>Joly</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory" key="lab1">Zenith</orgName>
+								<orgName type="laboratory" key="lab2">LIRMM</orgName>
+								<orgName type="institution">Université de Montpellier</orgName>
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Vers un désenchevêtrement de l&apos;ambiguïté de la tâche et de l&apos;incertitude du modèle pour la classification avec option de rejet à l&apos;aide de réseaux neuronaux</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">19FA171735CFB58C98C3C9C6179A547D</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Classification with reject option</term>
+					<term>uncertainty estimation</term>
+					<term>neural networks</term>
+					<term>ensembles</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>La classification avec option de rejet est un moyen d'aborder le problème de l'estimation de l'incertitude d'un classifieur. Les approches récentes s'attaquant à ce problème utilisent des critères basés sur une mesure, soit, de confiance, soit, de dispersion. Cependant, aucune d'entre elles ne combine explicitement les deux principales sources d'incertitude : l'ambiguïté de la tâche, intrinsèque à celleci, et l'incertitude du modèle, découlant de l'échantillonnage des données et de la stochasticité de l'apprentissage. Dans cet article, nous explorons comment ces deux quantités peuvent être fusionnées afin d'établir des critères de rejet plus efficaces. En particulier, nous proposons une série de méthodes combinant des mesures de désaccord et des estimations de l'ambiguïté en utilisant un ensemble de modèles. Des expériences sur des jeux de données synthétiques construits pour modéliser différents types d'incertitudes indiquent que ces nouveaux critères ont des performances similaires aux méthodes de référence. Néanmoins, des analyses plus approfondies montrent des indices empiriques qui mettent en avant l'existence d'information supplémentaire dans la distribution des résultats de l'ensemble. Dans les faits, le réjecteur idéal peut être une fonction plus complexe que les critères précédents, et peut même parfois être contre-intuitif.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Il est important de disposer de mesures précises de l'incertitude des prévisions d'un modèle dans de nombreux scénarios pratiques où l'on ne peut pas se permettre de commettre des erreurs. Cela est en particulier vrai dans des applications médicales, de conduite autonome, etc. Cependant, quantifier précisément cette information d'incertitude est un problème difficile, surtout lorsque le processus d'apprentissage n'est pas entièrement compris comme cela est le cas pour les réseaux neuronaux. Une façon d'assouplir cet objectif ambitieux, tout en progressant dans cette direction, est de permettre aux classifieurs de refuser de donner une réponse pour une entrée donnée. Ceci est connu sous le nom de classification avec une option de rejet <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b13">14]</ref>. Cette décision de rejeter peut tirer parti de l'incertitude prédictive sans avoir à la modéliser complètement et ainsi permettre de mieux comprendre ce qui est nécessaire pour construire des modèles fournissant des informations d'incertitude plus complètes. La classification avec option de rejet consiste à fournir deux fonctions : un prédicteur h : X → Y et un réjecteur r : X → {0, 1}, où X et Y sont, respectivement, les espaces d'entrée et de sortie de la tâche. La fonction apprise est alors (h, r)(x) = h(x) si r(x) = 0, sinon (r(x) = 1), où désigne le refus de répondre.</p><p>Parmi les approches classiques du rejet, on peut distinguer deux grandes familles de méthodes. La première considère que h ne donne pas seulement une prédiction en Y mais fournit également une forme d'information de confiance, par exemple dans R, qui peut être utilisée pour effectuer un rejet en seuillant sur sa valeur <ref type="bibr" target="#b0">[1]</ref>. C'est le cas, par exemple, de la régression logistique et des réseaux de neurones qui donnent une distribution de probabilité catégorielle en sortie, ou des SVMs qui fournissent une distance à la frontière de décision. Nous les qualifierons de méthodes basées sur la confiance. L'autre catégorie tente de mesurer les fluctuations du classifieur et favorise le rejet dans les zones de l'espace d'entrée où sa variabilité est la plus élevée. L'hypothèse avancée par ces méthodes est que le prédicteur est plus susceptible d'être incertain dans sa décision dans ces zones-là. Ces approches ont été particulièrement explorées dans le contexte de l'apprentissage actif <ref type="bibr" target="#b20">[21]</ref> et dans les réseaux neuronaux bayésiens <ref type="bibr" target="#b8">[9]</ref>. Nous les qualifierons de méthodes basées sur la dispersion.</p><p>Nous affirmons que, en fait, ces deux approches sont incomplètes dans le sens où elles ne saisissent que partiellement l'information sur l'incertitude. En effet, cette dernière peut être divisée en deux catégories : l'ambiguïté de la tâche et l'incertitude du modèle. La première est intrinsèque à la tâche que nous voulons accomplir. Par exemple, une image de la fleur d'une plante ne contient qu'une information partielle qui peut ne pas être suffisante pour distinguer deux espèces similaires. Cette incertitude provient du bruit de la mesure (prendre une photo dans notre exemple) ainsi que du bruit dans le processus d'annotation. Elle est, en fait, directement liée à la fonction de régression</p><formula xml:id="formula_0">η k (x) = Pr [Y = k | X = x]</formula><p>de l'apprentissage avec un superviseur imparfait. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Formulation du problème et état de l'art</head><p>La classification avec option de rejet a d'abord été introduite et étudiée dans <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref> en utilisant des modèles probabilistes. Des travaux plus récents ont étudié ce problème dans le cadre de la théorie de l'apprentissage statistique en définissant une fonction de risque adaptée. Il est habituellement exprimé pour un coût de rejet donné de λ <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b5">6]</ref> par</p><formula xml:id="formula_1">R λ (h, r) = E X,Y δ h(X) =Y (1 -r(X)) + λr(X)<label>(1)</label></formula><p>et est minimisé pour le classifier de Bayes optimal (h * , r * ) suivant :</p><formula xml:id="formula_2">h * (x) = δ η(x)≥ 1 2 et r * (x) = δ |η(x)-1 2 |&lt; 1 2 -λ .</formula><p>(2) Il s'agit donc d'un compromis entre le taux d'erreur et le taux de rejet pour ce coût λ et favorise le rejet dans les zones où l'ambiguïté de la tâche est plus grande. Beaucoup de travaux théoriques partent de cette formulation et se concentrent principalement sur le cas binaire. Par exemple, <ref type="bibr" target="#b13">[14]</ref> a étudié le taux de convergence des estimateurs plug-in et des minimiseurs du risque empirique. <ref type="bibr" target="#b0">[1]</ref> a proposé une hinge loss pour les réjecteurs basés sur la confiance qui peut être mise en oeuvre dans la pratique et en propose l'étude théorique. <ref type="bibr" target="#b24">[25]</ref> étudie d'autres fonctions objectives convexes tandis que <ref type="bibr" target="#b5">[6]</ref> étend cela à des réjecteurs d'une classe de fonctions différente de celle du prédicteur. Une autre approche consiste à apprendre séquentiellement des classifieurs qui peuvent rejeter avec un coût, une tâche appelée apprentissage séquentiel, comme étudié dans <ref type="bibr" target="#b21">[22]</ref>. Parallèlement, <ref type="bibr" target="#b7">[8]</ref> a utilisé une stratégie basée sur les désaccords pour apprendre un prédicteur parfait dans le cas réalisable, c'est-à-dire en l'absence de bruit et lorsque le classifieur parfait est dans la classe des hypothèses. <ref type="bibr" target="#b22">[23,</ref><ref type="bibr" target="#b23">24]</ref> ont ensuite étudié de telles approches pour le cas agnostique afin d'apprendre ce qu'ils appellent des classifieurs sélectifs point par point, c'est-à-dire que les prédicteurs ont le même taux d'erreur que celui optimal tout en essayant de maintenir le taux de rejet le plus bas possible. De plus, ils proposent de mesurer la performance de ces modèles, non seulement pour un coût de rejet λ donné, qui pourrait ne pas être quantifiable en pratique, mais sur l'ensemble de la courbe de risque/couverture, ce qui revient à comparer la performance pour tous les choix de λ en même temps <ref type="bibr" target="#b7">[8]</ref>. Cependant, ces travaux sont, soit purement théoriques, soit reposent sur une optimisation convexe. Cela peut être un problème pour les réseaux de neurones parce que leur processus d'apprentissage n'est pas encore entièrement compris. Ainsi, de nombreuses études empiriques et heuristiques ont été réalisées autour des critères de rejet et de l'estimation de l'incertitude pour ces modèles. Pour les réseaux neuronaux, les approches basées sur la confiance ont été étudiées depuis longtemps et continuent de l'être jusqu'à récemment dans <ref type="bibr" target="#b16">[17,</ref><ref type="bibr" target="#b15">16]</ref> par exemple. En ce qui concerne les méthodes fondées sur la dispersion, <ref type="bibr" target="#b8">[9]</ref> interprète le dropout comme une approximation de l'inférence bayésienne et propose d'utiliser la variance du résultat comme mesure d'incertitude. Cependant, <ref type="bibr" target="#b9">[10]</ref> montre que ces différentes mesures, basées sur la confiance ou sur la dispersion, peuvent être améliorées en choisissant, pendant la phase d'apprentissage, des modèles mieux adaptés à chaque zone de l'espace d'entrée. Plus largement, dans le contexte de l'apprentissage actif, des mesures basées sur la confiance et sur la dispersion ont été étudiées, <ref type="bibr" target="#b20">[21]</ref> en propose une vue d'ensemble. Les mesures de dispersions que nous introduisons dans ce papier sont basées sur le désaccord entre les modèles d'un ensemble. Cette notion de désaccord est importante dans l'apprentissage et a été exploitée à multiples reprises. En effet, elle a d'abord été utilisée pour obtenir un modèle plus performant que chacun des modèles individuels à travers le bagging <ref type="bibr" target="#b2">[3]</ref> et le boosting <ref type="bibr" target="#b19">[20]</ref>. Certains travaux tels que <ref type="bibr" target="#b10">[11]</ref> fournissent une étude théorique de ces approaches. La notion de désaccord est également importante dans d'autres paradigmes d'apprentissage tels que l'apprentissage actif <ref type="bibr" target="#b12">[13]</ref> ou bien, comme développé précedémment, la classification avec rejet <ref type="bibr" target="#b23">[24]</ref>. Enfin, les différentes sources d'incertitudes sont généralement séparées en incertitudes aléatoriques et épistémiques <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b14">15]</ref>. La première est définie comme la partie irréductible de l'incertitude, par opposition à la seconde qui peut être réduite en collectant plus de données ou en affinant le modèle. Cependant, comme cela est expliqué en détail dans <ref type="bibr" target="#b6">[7]</ref>, la distinction précédente a un sens dans un modèle pour lequel il est explicite quelle incertitude peut être réduite. Nous préférons la terminologie de l'ambiguïté de la tâche et l'incertitude du modèle parce que nous ne considérons pas ici quelle incertitude peut être réduite et comment mais plutôt si elle est intrinsèque à la tâche ou si elle provient du processus d'apprentissage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Deux types d'incertitude</head><p>Dans cette section, nous étudions comment, à la fois, l'ambiguïté des tâches et l'incertitude du modèle peuvent être utilisées pour obtenir de nouveaux critères de classification avec option de rejet.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Incertitude dans le choix du prédicteur</head><p>En raison de la stochasticité de l'apprentissage et des processus d'échantillonnage des données, il y a une incertitude dans le choix de l'hypothèse h. Nous pouvons construire un critère basé sur la variabilité de la prédiction due à cette stochasticité. Comme nous utilisons des classes d'hypothèses paramétrées, l'incertitude dans le choix de h = h θ provient en fait d'une incertitude dans le choix des paramètres θ étant donné les données d'apprentissage</p><formula xml:id="formula_3">D train , c'est- à-dire Pr [θ = θ | D train ].</formula><p>Ainsi, une première approche consiste à modéliser complètement cette distribution de probabilité sur les paramètres et une façon de le faire est d'utiliser des approches bayésiennes <ref type="bibr" target="#b17">[18]</ref>. Dans ce cas, une distribution a priori sur tous les paramètres, Pr [θ = θ ], est définie et sa la distribution a posteriori Pr [θ = θ | D train ] est calculée en appliquant la règle de Bayes. Cependant, selon le modèle utilisé, il peut être difficile d'établir une distribution a priori adaptée, de plus, le calcul de la distribution a posteriori peut s'avérer difficile. Il est possible d'utiliser des méthodes d'approximation mais, dans certaines situations, cela peut ne pas être suffisant. Cela est en particulier le cas pour les réseaux de neurones où l'application des méthodes bayésiennes est un domaine de recherche actif <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b8">9]</ref>. Néanmoins, comme dans le présent article, nous nous intéressons uniquement à la classification avec option de rejet, il n'est pas nécessaire de modéliser cette distribution complexe. Nous pouvons utiliser une approche plus directe pour estimer nos critères en supposant que nous pouvons échantillonner les modèles de notre distribution Pr [θ = θ | D train ]. On peut y parvenir en simulant les différentes sources d'incertitude du modèle, c'est-à-dire :</p><p>• la stochasticité de l'algorithme d'apprentissage en exécutant plusieurs fois l'apprentissage sur les mêmes données</p><p>• l'échantillonnage des données d'entraînement en utilisant des techniques de bootstrap et de souséchantillonage pour simuler la stochasticité du processus de génération des données.</p><p>Une fois qu'il est supposé que nous pouvons échantillonner à partir de Pr [θ = θ | D train ], nous pouvons alors construire des critères basés sur la dispersion. En particulier, nous étudions dans la section suivante un critère basé sur le désaccord entre les prédicteurs de cette distribution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Un critère pratique de désaccord</head><p>Les critères de désaccord ont été théoriquement étudiés dans le contexte de la classification avec option de rejet pour trouver un prédicteur ayant le même taux d'erreur que le classifieur parfait tout en ayant un taux de rejet faible <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b23">24]</ref>, ainsi que dans le cadre de l'apprentissage actif <ref type="bibr" target="#b12">[13]</ref>. Les statégies proposés restent cependant théoriques et ne sont pas implémentables en pratique. Dans cette soussection, nous proposons un moyen de les rendre pratiques et de les généraliser.</p><p>L'idée générale est de quantifier le désaccord entre les modèles (h θ ) θ d'un ensemble de modèles en regardant uniquement leurs prédictions ŷ = h θ (x) ∈ Y. Pour cela, nous définissons la mesure de désaccord ζ(x) comme</p><formula xml:id="formula_4">ζ(x) = Pr Ŷ = 1 | X = x = E θ δ h θ (x)=1 ,</formula><p>étant donné une mesure de probabilité sur l'ensemble des paramètres θ. Notez que cette quantité est différente de la fonction de régression η(x) qui mesure l'ambiguïté de la tâche elle-même, </p><formula xml:id="formula_5">Pr [Y = 1 | X = x],</formula><formula xml:id="formula_6">ζ(x) = θ δ h θ (x)=1 Pr [θ = θ | D train ] dθ .<label>(3)</label></formula><p>Cependant, si nous ne nous intéressons qu'à ζ(x), nous n'avons, en général, pas besoin de modéliser complètement la distribution sur les paramètres, ce qui peut être une tâche complexe comme le montre la sous-section précédente.</p><p>Au lieu de cela, parce que ŷ ∈ Y est discret, si on dispose de C échantillons, θ 1 , . . . , θ C , nous pouvons estimer directement la distribution Pr Ŷ = 1|X = x avec une approche fréquentiste :</p><formula xml:id="formula_7">ζfreq (x) = 1 C C i=1 δ h θ i (x)=1 .<label>(4)</label></formula><p>Néanmoins, bien que cet estimateur soit non biaisé, il pourrait nécessiter beaucoup d'échantillons, soit un grand C, pour réduire sa variance.</p><p>En général, la plupart des modèles h θ peuvent être décomposés en utilisant une fonction paramétrée f θ : X → R sur lequel est appliquée une fonction de décision δ Z : R → {0, 1}. Typiquement, δ Z (z) = δ z≥0 . Lors de l'utilisation d'une fonction de coût logistique, z est appelé logit et nous pouvons même décomposer h un peu plus en appliquant, par-dessus f θ , la fonction sigmoid σ : R → [0, 1] pour transformer z en probabilité avant de prendre la décision qui devient δ P (p) = δ p≥ 1 2 . Ces décompositions peuvent être résumées comme suit :</p><formula xml:id="formula_8">x h θ -→ ŷ ⇔ x f θ -→ z δ Z -→ ŷ ⇔ x f θ -→ z σ -→ p δ P -→ ŷ</formula><p>Sur la base de la décomposition précédente, nous pouvons en fait utiliser une approche intermédiaire entre les deux extrêmes que sont les Équations (3) et <ref type="bibr" target="#b3">(4)</ref>. En effet, parce que ŷ est une fonction (non paramétrique) de z et p, il suffit de modéliser l'incertitude dans l'espace des logits ou de la probabilité. A partir de ces distributions, nous pouvons ensuite dériver la mesure de désaccord en utilisant</p><formula xml:id="formula_9">ζ(x) = z δ z≥0 Pr [Z = z | X = x] dz = 1 -F Z x (0) (5) et ζ(x) = p δ p≥ 1 2 Pr [P = p | X = x] dp = 1 -F P x (<label>1 2 )</label></formula><p>(6) où F Z x et F P x sont respectivement la fonction de répartition de la probabilité conditionnelle dans l'espace des logits et des probabilités. Cette méthode permet d'introduire des hypothèses et des connaissances à priori qui sont plus faciles à tester dans la pratique que la modélisation complète de la distribution des paramètres. En même temps, si ces hypothèses sont vérifiées, l'estimateur résultant convergerait plus rapidement que ζfreq (x), ce qui signifie que nous pourrions choisir un C plus petit, rendant cette approche plus pratique. Finalement, cette formalisation nous permet de mieux comprendre comment fusionner les différentes statistiques et moments, comme le montre la section suivante.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Choix de la distribution</head><p>Nous étudions maintenant quels sont les choix de distributions appropriées dans les espaces des logits et des probabilités. En supposant qu'on nous donne plusieurs logits, z 1 , . . . , z C , pour une entrée x, un choix courant est d'utiliser une loi normale pour modéliser leur distribution. Dans ce cas, nous pouvons ajuster les paramètres de la distribution en utilisant les estimateurs de maximum de vraisemblance habituels μz = 1 2 . L'estimateur de l'Équation (5) devient alors</p><formula xml:id="formula_10">C C i=1 z i et σ2 z = 1 C C i=1 (z i -μz )</formula><formula xml:id="formula_11">ζnorm (x) = 1 -φ - μz σz ,</formula><p>où φ est la fonction de répartition de la distribution normale standard. Fait intéressant, ce critère est une fonction bijective de μz σz . Alternativement, si nous considérons l'espace des distributions binaires p, un choix naturel est la loi bêta. Dans ce cas, il n'existe pas de forme close pour les estimateurs du maximum de vraisemblance de ses paramètres α et β. Il faut soit s'appuyer sur un algorithme itératif, soit utiliser la méthode des moments. Dans ce dernier cas, les estimateurs de la méthode des estimateurs sont égaux à α = μp</p><formula xml:id="formula_12">μp(1-μp) vp -1 et β = (1 -μp ) μp(1-μp) vp -<label>1</label></formula><formula xml:id="formula_13">avec μp = 1 C C i=1 p i et vp = 1 C C i=1 (p i -μp ) 2</formula><p>. L'estimateur de l'Équation (6) est alors égal à ζbeta (x) = 1 -I 1 2 (α, β), où I x est la fonction bêta incomplète régularisée. Maintenant que nous disposons d'une mesure pratique de désaccord, nous pouvons établir un critère de classification avec une option de rejet telle que</p><formula xml:id="formula_14">c disagree (x) = max( ζ(x), 1 -ζ(x)).<label>(7)</label></formula><p>Cependant, il ne s'agit là que d'une mesure de la dispersion des prédictions de l'ensemble, l'incorporation d'une mesure de l'ambiguïté de la tâche pourrait conduire à de meilleurs critères.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Critère de fusion</head><p>Si l'on examine la fonction de risque de la classification avec option de rejet de l'Équation (1), cette quantité est minimisée par le réjecteur optimal de Bayes de l'Équation <ref type="bibr" target="#b1">(2)</ref>. En estimant la fonction de régression η(x), nous pouvons construire une règle plug-in qui nous permettrait d'effectuer un rejet basé sur notre estimateur η(x). Le taux de convergence théorique de cet estimateur plug-in a été étudié dans <ref type="bibr" target="#b13">[14]</ref> où il a été démontré qu'il dépend de la qualité de l'estimateur η(x) et de la structure et du niveau de l'ambiguité η(x). La construction d'un tel estimateur peut se faire en optimisant une fonction de coût strictly proper <ref type="bibr" target="#b11">[12]</ref>. Il s'avère que la fonction de coût logistique est en fait strictly proper, un telle approche a par ailleurs été appliquée aux réseaux neuronaux dans <ref type="bibr" target="#b15">[16]</ref>. Cependant, cette méthode ne tient pas compte de la variabilité de l'estimateur qui change en fonction des zones de l'espace d'entrée. Cette variabilité pourrait donner lieu à une prédiction différente ŷ. En utilisant le critère de désaccord de la sous-section précédente, nous pouvons construire un nouveau critère en marginalisant notre incertitude dans le choix de la prédiction :</p><formula xml:id="formula_15">c fusion (x) = Pr Ŷ = 0 | X = x (1 -η(x)) + Pr Ŷ = 1 | X = x η(x).</formula><p>S'il n'y a pas de désaccord, c'est-à-dire si ζ(x) ∈ {0, 1}, ce critère est simplement l'ambiguïté estimée de la prévision : max(η(x), 1 -η(x)). De plus, pour une valeur égale de η(x), ce critère rejettera d'abord les zones de l'espace d'entrée où le désaccord est le plus fort. Cette quantité a donc des propriétés intéressantes. En injectant notre estimateur de ζ(x) dans l'équation précédente, le critère devient</p><formula xml:id="formula_16">c fusion (x) = (1 -ζ(x))(1 -η(x)) + ζ(x)η(x).<label>(8)</label></formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Expériences synthétiques</head><p>Afin de comparer les différents critères de rejet, nous utilisons des jeux de données synthétiques où nous pouvons contrôler la quantité d'ambiguïté η(x) et la densité des données p(x). Nous utilisons trois jeux de données différents illustrés dans la Figure <ref type="figure" target="#fig_0">1</ref> :</p><p>• Fig. <ref type="figure" target="#fig_0">1a</ref> : absence d'ambiguïté, i.e. η(x) ∈ {0, 1}, mais il existe deux zones de densités uniformes différentes ;</p><p>• Fig. <ref type="figure" target="#fig_0">1b :</ref> x est distribué uniformément mais il y a des zones d'ambiguïté de quantité différente ;</p><p>• Fig. <ref type="figure" target="#fig_0">1c</ref> : mélange des deux scénarios précédents.</p><p>Ces jeux de données permettent de comprendre finement comment les prédictions du modèle et les critères de rejet se comportent sous différentes contraintes d'incertitude.</p><p>La mesure de performance que nous utilisons est la courbe RC <ref type="bibr" target="#b7">[8]</ref> et, en particulier, l'aire sous cette courbe telle que définie dans <ref type="bibr" target="#b9">[10]</ref> que nous désignons RC-AUC. La courbe de risque/couverture (RC) est définie comme suit</p><formula xml:id="formula_17">R(h, r) = E X,Y δ h(X) =Y 1 -r(X) φ(h, r) , φ(h, r) = 1 -E X [r(X)] .</formula><p>Le risque R quantifie le taux d'erreur des échantillons qui ne sont pas rejetés. La couverture φ mesure le taux d'acceptation. Plus cette quantité est faible, meilleur est le compromis entre précision et taux de rejet. Toutes les fonctions de rejet que nous considérons effectuent un seuillage se basant sur un critère c :</p><formula xml:id="formula_18">r(x) = δ c(x)≥τ .<label>(9)</label></formula><p>Nous utilisons comme références les critères suivants :</p><p>• pour les approches basées sur la confiance : moyenne de |µ p -1 2 | dans l'espace de probabilité, notée "prob. mean", et moyenne de |µ z | dans l'espace logit, notée "logit mean" 1</p><p>• pour les approches basées sur la dispersion : la variance de |µ p -1 2 | notée "var. prob." et de |µ z | notée "var. logit" et la moyenne de la divergence de Kullback-Leibler (KL) des prévisions des modèles individuels de l'ensemble comparé à la prévision moyenne telle que définie dans <ref type="bibr" target="#b20">[21]</ref> Notez que pour les critères basés sur la dispersion, c'est leur opposé qui est seuillé. Nous intégrons en outre le classifieur optimal de Bayes de l'Équation (2) pour fournir la plus faible valeur de la RC-AUC réalisable. Nous comparons d'abord les différents critères basés sur les mesures de désaccord des Équations <ref type="bibr" target="#b6">(7)</ref> et <ref type="bibr" target="#b7">(8)</ref> dans la colonne de gauche de la Figure <ref type="figure">2</ref>. Avec suffisamment de données, les critères de désaccord convergent vers le critère optimal en l'absence d'ambiguïté alors qu'en présence d'ambiguïté, ce n'est pas le cas. Cela est attendu car ces critères ne prennent pas en compte cette partie de l'incertitude, mais seulement le désaccord entre les modèles de l'ensemble. L'utilisation du critère de fusion pour incorporer l'ambiguïté à ces critères les améliore et les fait converger vers la performance du critère optimal. Parce que nous utilisons un ensemble de taille 1000, les approches fréquentistes peuvent être considérées comme les meilleurs estimateurs des critères de désaccord et de fusion. Les critères basés sur la loi bêta sont toujours assez proches et, par conséquent, cette dernière peut être considérée comme un bon choix pour modéliser la distribution des probabilités produites par l'ensemble. A contrario, les critères basés sur la loi normale ont une performance médiocre en l'absence d'ambiguïté tout en étant au même niveau ou légèrement meilleurs autrement. Cette loi ne semble donc pas adaptée pour modéliser la distribution dans l'espace des logits.</p><p>1. ici, parce que nous considérons des tâches de classification binaire, les autres critères basés sur ces moyennes, par exemple, l'entropie etc, sont équivalents aux critères que nous utilisons  FIGURE 2 -Aire sous la courbe des courbes risk/couverture (RC-AUC) pour comparer les différents critères en fonction de la taille du jeu d'apprentissage. Les colonnes correspondent aux trois jeux de données synthétiques de la Figure <ref type="figure" target="#fig_0">1</ref>. La première ligne compare les critères de désaccord et les critères de fusion entre eux. La seconde ligne les compare aux critères de base.</p><p>Lorsque ces critères sont comparés à ceux de référence, les critères de fusion donnent des résultats proches de la moyenne de la probabilité et se situent toujours à l'intérieur des fluctuations statistiques comme le montre la colonne de droite de la Figure <ref type="figure">2</ref>. De plus, il est surprenant de constater que les autres critères basés sur la dispersion peuvent avoir de mauvais résultats et, dans certains cas, ils peuvent même ne pas apparaître sur le graphique.</p><p>Deux conclusions principales se dégagent de ces expériences. Premièrement, le bon comportement du critère fondé sur la moyenne de probabilité indique qu'il semble saisir une partie de l'incertitude du modèle, ce qui implique qu'il s'agit d'un estimateur biaisé en ce sens de η(x). Par exemple, en l'absence d'ambiguïté, il est toujours performant alors que l'ambiguïté satisfait η(x) ∈ {0, 1} et n'apporte donc aucune information sur l'incertitude dans ce cas. Deuxièmement, le critère de fusion proposé ne semble pas tenir compte de l'incertitude supplémentaire, du moins dans le cadre de ces expériences synthétiques. Toutefois, dans la section suivante, nous analysons plus en détail ces jeux de données contrôlés afin de comprendre s'il existe effectivement des informations supplémentaires qui peuvent être exploitées et comment y parvenir.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Étude approfondie des rejeteurs 4.1 Visualisation des frontières de décision</head><p>Les critères précédemment étudiés peuvent être considérés comme une simple décision prise par seuillage comme explicité dans l'Équation <ref type="bibr" target="#b8">(9)</ref>. La plupart d'entre eux définissent des frontières de décision, soit sur la moyenne et la variance dans l'espace de probabilité, (µ p , v p ), soit sur la moyenne et l'écart-type dans l'espace logit, (µ z , σ z ). Afin de visualiser la complexité de la frontière de décision idéale, la Figure <ref type="figure" target="#fig_2">3</ref> montre les valeurs de (µ p , v p ) pour x variant sur l'espace d'entrée, de -4 à 4, pour les deux premiers jeux de données synthétiques. À chacun de ces points est associé la probabilité d'erreur en couleur. Ces figures montrent que cette frontière de décision idéale peut en fait être assez complexe et varie en fonction de la taille du jeu d'apprentissage. De plus, la variance de la zone avec moins d'incertitude, c'est-à-dire pour x autour de -2, augmente avec le nombre d'échantillons d'apprentissage et cette zone finit par être celle avec la variance la plus élevée. Au premier abord, cela semble plutôt contre-intuitif. En effet, si l'on s'attend à ce que la variance donne directement l'information de l'incertitude du modèle, cette quantité devrait toujours diminuer au fur et à mesure que la taille des données d'entrainement augmente. De plus, il devrait être plus faible dans la zone de non-ambiguïté parce que le modèle devrait la capturer plus rapidement. Si l'on examine de près la distribution des fonctions de prédiction des modèles dans l'ensemble de la Figure <ref type="figure">4</ref>, cela est en fait logique. Dans les zones où l'ambiguïté est faible, lorsqu'on dispose de suffisamment de données d'apprentissage, l'incertitude de la fonction de prévision est faible et nous savons presque exactement où se produit le passage d'une classe à une autre. Cependant, comme tous les modèles de l'ensemble ont compris qu'il n'y a pas d'ambiguïté, chacun d'entre eux prédit ou bien 0, ou bien 1, avec une "confiance" élevée, ce qui entraîne une variance élevée de cette valeur de confiance à ce point précis tout en ayant un faible risque d'erreur. A contrario, dans les zones ambigües, la variance est plus faible car chaque modèle a connaissance de cette ambiguité mais est incertain sur l'en-droit exact où la transition de la classe 0 à la classe 1 a lieu. La fonction de décision finale semble plus incertaine mais la variance calculée en un point reste relativement faible comparé à la zone non-ambigüe. Les Figure <ref type="figure">5</ref> et Figure <ref type="figure" target="#fig_4">6</ref> montrent les frontières de décision des critères de rejet utilisés dans la section précédente, respectivement, dans l'espace de probabilité et l'espace logit. Les critères de désaccord et de fusion que nous proposons tiennent compte à la fois de la moyenne et de la variance dans ces espaces et sont donc plus susceptibles de rejeter des zones de forte variance même pour une moyenne constante ou le contraire. Cependant, ces graphiques mettent en lumière les limites des différents critères de base et des critères que nous proposons. En effet, aucun d'entre eux n'a une forme adaptée pour effectuer un rejet efficace sur les jeux de données synthétiques. Cela est attendu, car plus la variance est élevée, plus il est probable que nous rejettions. Mais cette hypothèse n'est pas la bonne ici, ce qui souligne la complexité de l'élaboration d'un critère théorique. Cependant, comme on peut le remarquer dans la Figure <ref type="figure" target="#fig_2">3</ref>, les zones de taux d'erreur différents peuvent toujours être séparées dans l'espace de (µ p , v p ). Nous pouvons donc essayer d'apprendre de manière supervisée à mieux rejeter.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Apprentissage supervisé du réjecteur</head><p>Étant donnée que la frontière de décision du réjecteur est une fonction complexe, comme nous l'avons vu dans la sous-section précédente, nous proposons d'essayer de l'apprendre à partir des données en utilisant un jeu de données de calibration. Pour ce faire, nous devons revenir à la fonction de risque de la classification avec option de rejet de l'Équation <ref type="bibr" target="#b0">(1)</ref>. Dans notre cas, h est déjà appris et il suf-  FIGURE 5 -Frontières de décision des différents critères dans l'espace (µ p , v p ) de l'espace de probabilité.</p><p>fit donc d'optimiser le risque précédent par rapport à r. Ce scénario a été étudié dans le contexte de l'apprentissage séquentiel <ref type="bibr" target="#b21">[22]</ref>. Cela revient simplement à apprendre une tâche de classification binaire pondérée</p><formula xml:id="formula_19">R rej λ (h, r) = E X,E w E δ r(X) =E ,<label>(10)</label></formula><p>où E est la variable aléatoire correspondant à une erreur de prédiction, E = δ h(X) =Y , et les poids sont égaux à w 0 = λ et w 1 = 1 -λ.</p><p>Le réjecteur de Bayes optimal est dans ce cas égal à</p><formula xml:id="formula_20">r * (x) = δ η E (x)&gt;λ<label>(11)</label></formula><p>où η E (x) est la fonction de régression de l'Équation <ref type="bibr" target="#b9">(10)</ref> sur le deuxième jeu de données synthétique. La fonction de rejet apprise est en effet bien meilleure que les critères précédents. Cela montre la richesse de l'information contenue dans le plan (µ p , v p ).</p><formula xml:id="formula_21">, c'est-à-dire η E (x) = Pr [Y = h(X) | X = x]</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion et travaux futurs</head><p>Les critères classiques, tels que la valeur maximale de la probabilité prédite par un réseau neuronal, fonctionnent bien dans la pratique, cependant ils n'utilisent pas toute l'information d'incertitude disponible. L'analyse des prédictions d'un ensemble met en lumière certains comportements contre-intuitifs qui soulignent notre mauvaise compréhension de l'information d'incertitude capturée par ces modèles. Trouver un bon critère de rejet qui tire parti de toute cette information et qui généralise à différentes tâches est un problème difficile. Une suite naturelle de ces travaux est d'effectuer des analyses sur des données réelles afin de vérifier que les comportements présentés ici se produisent également dans des jeux de données usuels. De plus, ce travail ouvre la voie à l'élaboration d'un meilleur critère de rejet. Une piste de recherche en ce sens consiste à trouver un espace de représentation plus adapté pour l'apprentissage supervisé des réjeteurs afin de permettre à ces derniers d'être calibrés en  utilisant beaucoup moins de données.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>FIGURE 1 -</head><label>1</label><figDesc>FIGURE 1 -Jeux de données synthétiques avec un degré variable d'ambiguïté et de densité des données. La distribution de densité de probabilité de x est indiquée en pointiés bleus tandis que la fonction de régression η(x) est indiquée en vert.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>FIGURE 3 -</head><label>3</label><figDesc>FIGURE 3 -La moyenne et la variance des prédictions dans l'espace de probabilité, (µ p , v p ), pour chaque point de l'espace d'entrée, c'est-à-dire -4 &lt; x &lt; 4. La couleur de la courbe indique le taux d'erreur pour ces valeurs, le jaune correspondant à un taux d'erreur élevé et le mauve à un taux faible, le blue étant une valeur intermédiaire. Les première et deuxième lignes correspondent respectivement au premier et au deuxième jeu de données synthétique.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>FIGURE 6 -</head><label>6</label><figDesc>FIGURE 6  -Frontières de décision des différents critères dans l'espace (µ z , σ z ) de l'espace des logits.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>FIGURE 7 -</head><label>7</label><figDesc>FIGURE 7 -Aire sous la courbe des courbes RC (RC-AUC) comparant le réjecteur supervisé aux différents autres critères avec une taille du jeu d'apprentissage variable sur le deuxième jeu de données synthétique.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>indépendamment des modèles. De plus, cette quantité n'est pas à proprement parler une probabilité de désaccord, mais elle capture cette information. En effet, le désaccord est maximal quand ζ(x) vaut 0.5 et minimal quand il vaut 0 ou 1.</figDesc><table /><note><p>Si nous modélisons complètement l'incertitude dans les paramètres Pr [θ = θ | D train ], il est alors possible de calculer le désaccord entre ces hypothèses en utilisant</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>.</head><label></label><figDesc>Nous pouvons alors apprendre n'importe quel modèle de classification habituel pour effectuer cette tâche. En faisant varier la valeur de λ, on peut alors reconstituer la courbe RC en réapprenant le réjecteur adapté à chaque fois. Notre but ici n'est pas de construire le meilleur modèle de rejet mais plutôt de montrer qu'en changeant notre espace d'entrée pour le rejet de x ∈ X à (µ p , v p ) ∈ R 2 , nous conservons encore suffisamment d'informations discriminantes pour effectuer le rejet. Nous ne prétendons pas qu'il s'agit du meilleur espace pour accomplir cette tâche mais qu'il est suffisant pour apprendre de meilleurs critères de rejet que les critères précédents. Nous utilisons des classifieurs polynomiaux de degré 3 entrainés avec une fonction de coût logistique. Nous utilisons beaucoup de données d'étalonnage, soit 1000 échantillons, pour apprendre le réjecteur. Ce chiffre n'est pas réaliste dans un scénario réel où nous préférerions utiliser ces don-nées pour améliorer notre prédicteur. Cependant, notre but ici est de comprendre à quel point un dispositif de rejet peut devenir meilleur si nous lui permettons d'être plus complexe et d'être dépendant de la tâche. La Figure7montre la courbe RC-AUC du rejecteur par rapport aux critères précedents et aux réjecteurs de Bayes des Équations (11) et<ref type="bibr" target="#b1">(2)</ref> </figDesc><table /></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Remerciements</head><p>Ce travail a été partiellement financé par le projet <rs type="institution">ANR WeedElec</rs>.</p></div>
+			</div>			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Classification with a reject option using a hinge loss</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">L</forename><surname>Bartlett</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Wegkamp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Weight uncertainty in neural network</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Blundell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Cornebise</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kavukcuoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Bagging predictors</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Breiman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mach. Learn</title>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">An optimum character recognition system using decision functions</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Chow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IRE T. Elec. Comp</title>
+		<imprint>
+			<date type="published" when="1957">1957</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">On optimum recognition error and reject tradeoff</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">K</forename><surname>Chow</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Inf. Theory</title>
+		<imprint>
+			<date type="published" when="1970">1970</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Learning with rejection</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Desalvo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mohri</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<publisher>ALT</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Aleatory or epistemic ? Does it matter ?</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Der Kiureghian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Ditlevsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Struct. Saf</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">On the foundations of noise-free selective classification</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>El-Yaniv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wiener</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Dropout as a Bayesian approximation : representing model uncertainty in Deep Learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Ghahramani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Bias-reduced uncertainty estimation for deep neural classifiers</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Geifman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Uziel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>El-Yaniv</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Risk bounds for the majority vote : from a PAC-Bayesian analysis to a learning algorithm</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Germain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lacasse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Laviolette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Marchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Strictly proper scoring rules, prediction, and estimation</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Gneiting</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Raftery</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Am. Stat. Assoc</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Theory of disagreement-based active learning. Found. and Trends R in Mach</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hanneke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Learn</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Classification with reject option</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Herbei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Wegkamp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Can. J. Stat</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">What uncertainties do we need in Bayesian Deep Learning for Computer Vision ?</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Simple and scalable predictive uncertainty estimation using deep ensembles</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lakshminarayanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pritzel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Blundell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<monogr>
+		<title level="m" type="main">Distance-based confidence score for neural network classifiers</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mandelbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Weinshall</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1709.09844</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">Bayesian learning for neural networks</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Neal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<biblScope unit="volume">118</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Stochastic backpropagation and approximate inference in deep generative models</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Rezende</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mohamed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wierstra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Improved boosting algorithms using confidence-rated predictions</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">E</forename><surname>Schapire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Singer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Mach. Learn</title>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Active learning</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Settles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Synthesis Lectures on Artificial Intelligence and Machine Learning</title>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Supervised sequential classification under budget constraints</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Trapeznikov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Saligrama</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Agnostic selective classification</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wiener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>El-Yaniv</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NeurIPS</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Agnostic pointwise-competitive selective classification</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wiener</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>El-Yaniv</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Classification methods with reject option based on convex risk minimization</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wegkamp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

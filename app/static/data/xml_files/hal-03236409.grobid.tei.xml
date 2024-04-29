@@ -1,0 +1,646 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">DEEP ACTIVE LEARNING FROM MULTISPECTRAL DATA THROUGH CROSS-MODALITY PREDICTION INCONSISTENCY</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">ATERMES Company</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution" key="instit1">IUF</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sébastien</forename><surname>Lefevre</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Univ Bretagne Sud</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution">ATERMES Company</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">DEEP ACTIVE LEARNING FROM MULTISPECTRAL DATA THROUGH CROSS-MODALITY PREDICTION INCONSISTENCY</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">712C9A26BD8983CBF8D8C3FC36F9785A</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Active learning</term>
+					<term>multispectral pedestrian detection</term>
+					<term>semantic segmentation</term>
+					<term>multiple sensor fusion</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Data from multiple sensors provide independent and complementary information, which may improve the robustness and reliability of scene analysis applications. While there exist many large-scale labelled benchmarks acquired by a single sensor, collecting labelled multi-sensor data is more expensive and time-consuming. In this work, we explore the construction of an accurate multispectral (here, visible &amp; thermal cameras) scene analysis system with minimal annotation efforts via an active learning strategy based on the cross-modality prediction inconsistency. Experiments on multiple multispectral datasets and vision tasks demonstrate the effectiveness of our method. In particular, with only 10% of labelled data on KAIST multispectral pedestrian detection dataset, we obtain comparable performance as other fully supervised State-of-the-Art methods.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">INTRODUCTION</head><p>The development of deep learning in computer vision greatly enhances the ability of scene analysis and empowers many intelligent vision systems. For example, object detection and semantic segmentation methods have been applied to autonomous driving and automated video surveillance. However, most of these methods are based on RGB images, and their performance may be compromised in many real life situations (such as nighttime or shaded areas). In order to solve these difficult cases, multispectral systems have been introduced, in two types of camera sensors (e.g. RGB and thermal) are combined to provide complementary information under various illumination conditions. RGB cameras extract colour and texture visual details while the thermal ones provide heat maps (based on temperature) of the scenes.</p><p>In Fig. <ref type="figure">1</ref>, we show some image pairs from visible &amp; thermal cameras of identical scenes and their corresponding monospectral pedestrian detection results. In this figure, the image acquisition and the pedestrian detection from the two modalities are completely independent. We split these multispectral image pairs into two categories: pairs with consistent detections (on the left side of Fig. <ref type="figure">1</ref>) and inconsistent de-</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Consistent detections</head><p>Inconsistent detections Fig. <ref type="figure">1</ref>. Exemplary multispectral image pairs and their corresponding mono-spectral pedestrian detection results.</p><p>tections (on the right side). From these image pairs, we can observe that the detection results from the two modalities are similar in most cases, which indicates the redundancy for a multispectral system; whereas at least one modality is wrong when the detections are contradictory, which demonstrates the complementarity of multispectral systems. While there exist many large-scale benchmarks acquired by a single sensor, collecting labelled multi-sensor data is more expensive and time-consuming. E.g., acquiring wellaligned multispectral image pairs requires specific equipment, and few open datasets acquired with a similar equipment can be used as supplementary data. We suggest relying on the redundancy and complementarity of different sensors for the adaptive selection of multispectral samples to be annotated. Our proposed active criterion is based on the cross-modality prediction inconsistency, defined by the mutual information between predictions from different modalities. To the best of our knowledge, this is the first work in deep active learning within the context of multispectral scene analysis (including object detection and semantic segmentation).</p><p>In Section 2 we review some representative work on multispectral scene analysis and active learning; Section 3 introduces implementation details of our approach; In Section 4, we evaluate our method on three different public multispectral datasets <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b2">3]</ref>; Section 5 concludes the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">RELATED WORK</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Multispectral pedestrian detection</head><p>[4] demonstrated the first application of deep learning-based approach to multispectral pedestrian detection, where a late fusion architecture is adopted for information fusion. Since then, multiple studies <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6]</ref> explore the optimal network architecture for multispectral feature fusion. It turns out that the half-way feature fusion outperforms early or late fusion. Moreover, <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8]</ref> apply attention mechanisms to learn an automatic re-weighting of visible and thermal features in the fusion module; <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b9">10]</ref> utilize illumination information as a guidance for the adaptive fusion of both features; <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b11">12]</ref> alleviate the inconsistency between visible and thermal features to facilitate the optimization of a dual-modality network.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Multispectral semantic segmentation</head><p>MFNet <ref type="bibr" target="#b2">[3]</ref> employs two identical backbone networks for visible and thermal feature extraction and a short-cut block to concatenate the extracted features. Based on that, RTFNet <ref type="bibr" target="#b12">[13]</ref> integrates residual layers into this network architecture to further boost the performance. FuseNet <ref type="bibr" target="#b13">[14]</ref> adopts a similar double feature extraction network for RGB-D semantic segmentation. In this paper, we replace its RGB-D input images by multispectral images for comparison.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Active learning</head><p>Labelled data are critical for today's supervised deep learning applications. Active learning, which aims to relieve human labelling efforts, is thus particularly appealing. The active learning protocol usually starts by pre-training a model on a small subset of the labelled dataset D l . Then, several active learning cycles are repeated. Fig. <ref type="figure" target="#fig_0">2</ref>(a) illustrates a typical active learning cycle. The model inference is performed on the unlabelled dataset D u to select the most informative samples (i.e., multispectral image pairs in our work). These selected samples are then sent to an external oracle for annotation and appended to the labelled dataset D l , where the model is consequently fine-tuned on. The most important component of an active learning cycle is the scoring function which ranks the informativeness of unlabelled samples.</p><p>Most studies on deep active learning in computer vision are based on mono-modal RGB images, including the most recent ones in deep active learning for object detection <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b15">16]</ref> and semantic segmentation <ref type="bibr" target="#b16">[17]</ref>. Conversely to these existing works that score the informativeness of a single image, we aim to score a pair of multispectral images according to their relationships. Our work can be seen as complementary to existing methods, and coupling intra-modality (as done with existing methods) and inter-modality (as proposed here) informativeness scoring could lead to further improvements than what is presented in this paper.   An overview of our network architecture is given in Fig. <ref type="figure" target="#fig_2">3</ref>. It takes a spatially-aligned multispectral image pair as input, then visible and thermal features are extracted independently via the modality-specific feature extraction networks. Afterwards, three prediction branches are used: one based on visible features, one based on thermal features, and the last one based on fused features. These three prediction branches are jointly optimized during the model training phase. Note that in Fig. <ref type="figure" target="#fig_2">3</ref> the prediction networks are used for a pedestrian detection task but can be adapted to other vision tasks such as general object detection or semantic segmentation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Cross-modality prediction inconsistency</head><p>At the selection stage of each active learning cycle, we measure the relevance of labelling a particular image pair by ranking the aforementioned cross-modality prediction inconsistency, i.e., we compare predictions from visible and thermal cameras, then select for labelling the image pairs with the highest prediction difference. More specifically, for each pre-diction p, its inconsistency is defined as:</p><formula xml:id="formula_0">I = H (p) - 1 2 m∈{v,t} H (p m )</formula><p>Where p v and p t denote the prediction from visible and thermal prediction branches; p is the average of both predictions; H is the 2-set entropy function calculated as:</p><formula xml:id="formula_1">H (p) = -p log p -(1 -p) log (1 -p)</formula><p>For a better understanding of this inconsistency calculation, we plot in Fig. <ref type="figure" target="#fig_0">2(b</ref>) the visualization of the inconsistency score with different visible (x-axis) and thermal (y-axis) prediction scores. It can be observed that this inconsistency score varies from 0 (very consistent) to 1 (very different).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Scale-balanced inconsistency aggregation</head><p>After obtaining the inconsistency for one prediction (i.e. classification of an anchor box in object detection or classification of a pixel in semantic segmentation), we adopt the scalebalanced strategy for full-images inconsistency aggregation. This is justified because recent deep learning approaches apply feature pyramid for multi-scale prediction thus, if we directly average all predictions for a given image pair, the inconsistency estimation will be dominated by the scale with the most predictions (i.e., the largest feature map in a feature pyramid). Therefore, we first separately average the inconsistency for each pyramid scale, then average the averaged inconsistency across all scales.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">EXPERIMENTS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Datasets</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>KAIST Dataset</head><p>This well-known multispectral dataset is built for the pedestrian detection task. In order to tackle the misalignment problem between visible-thermal image pairs, <ref type="bibr" target="#b17">[18]</ref> proposes the "paired" annotations by separately relabelling pedestrians for each modality. We remove unpaired images according to the matching of visible and thermal annotations, thus keeping 11,695 images for training. For a fair comparison with other State-of-the-Art methods, we evaluate our model with the Miss Rate metric (lower is better) under the "reasonable" setting, i.e., a test set that does not contain heavily/partially occluded pedestrians or pedestrians smaller than 55 pixels. FLIR Dataset <ref type="bibr" target="#b1">[2]</ref>.</p><p>This thermal dataset is released for general object detection from thermal images within the Advanced Driver Assistance Systems (ADAS) context. Three categories are involved: car, pedestrian and bicycle. <ref type="bibr" target="#b10">[11]</ref> proposes the multispectral version of FLIR dataset 1 by manually aligning corresponding colour-thermal image pairs, resulting 1 This aligned dataset can be downloaded here: http://shorturl.at/ahAY4 in 4,128 multispectral pairs for training. The usual mean Average Precision (mAP) metric is applied for evaluation. TOKYO Dataset <ref type="bibr" target="#b2">[3]</ref>. This dataset provides labelled multispectral image pairs for semantic segmentation within the ADAS context. It contains nine hand-labelled classes. It includes 2,338 multispectral pairs in total. Visible and thermal images are again well aligned. The mean Intersection over Union (mIoU) metric is adopted for evaluation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Implementation details</head><p>Network architecture. We adopt VGG16 <ref type="bibr" target="#b18">[19]</ref> as the feature extraction network, GAFF <ref type="bibr" target="#b7">[8]</ref> as the multispectral feature fusion network and SSD <ref type="bibr" target="#b19">[20]</ref> as the prediction network for the object detection tasks. For the semantic segmentation task, the prediction branch is simply one layer of convolution whose number of output channels is equal to the number of classes. In order not to change the aspect ratio of the original images, input images are resized to 480×384 or 640×512 for KAIST and FLIR datasets (object detection) and 640 × 480 for TOKYO dataset (semantic segmentation). Random cropping, expanding, flipping are adopted for data augmentation. Active learning setting.</p><p>For each active learning experiment, we first randomly initialize a labelled dataset D l with b images and pretrain the model on D l ; then we actively select b images from an unlabelled dataset D u with the most crossmodality prediction inconsistency I for annotation and add these newly labelled images into D l ; afterwards we fine-tune the model with the new D l ; we repeat the previous two steps until the annotation budget B is exhausted. Since semantic segmentation annotations are more difficult to acquire, we set b to 200 and B to 1200 for the object detection tasks, b to 50 and B to 350 for the semantic segmentation task.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Active vs Random.</head><p>Fig. <ref type="figure">4</ref> plots the performance evolutions along all learning cycles for KAIST Dataset (subfigure a and b), FLIR Dataset (c and d) and TOKYO Dataset (e and f). For all multispectral datasets, all tasks, all evaluation metrics and all input resolutions, our active strategy (green lines in the figure) achieves statistically significant better performance than the random strategy (red lines). Active vs SotA. We list in Tables 1, 2 and 3 the comparisons between our active learning results and other State-ofthe-Art methods for each multispectral dataset. With a small quantity of labelled data, our active models achieve comparable results with fully supervised SotA methods, which demonstrates the effectiveness of the proposed method.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4.">Visualization</head><p>We show in Fig. <ref type="figure">5</ref> some image pairs selected by our active method. For each dataset, we plot the separate predictions from the visible or thermal cameras, and their cross-modality inconsistency map: our strategy does select some difficult cases where at least one modality makes mistakes. We believe that adding these informative examples into the labelled dataset for fine-tuning is the main reason for improvements.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">CONCLUSION</head><p>In this paper, we start from the observation of the redundancy and the complementarity of a multispectral system. We build upon these to suggest relying on the cross-modality prediction inconsistency as the criterion to select informative image pairs for labelling within active learning cycles. Extensive experiments on three public multispectral datasets and two scene analysis tasks demonstrate the effectiveness of the proposed method. To the best of our our work is the first applying deep active learning for multispectral scene analysis. We hope that our method could help reduce manual labelling efforts when setting up multispectral or multi-sensor datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Methods</head><p>Miss Rate (lower, better) All Day Night ACF <ref type="bibr" target="#b0">[1]</ref> 47.32% 42.57% 56.17% Halfway Fusion <ref type="bibr" target="#b20">[21]</ref> 25.75% 24.88% 26.59% Fusion RPN+BF <ref type="bibr" target="#b4">[5]</ref> 18.29% 19.57% 16.27% IAF R-CNN <ref type="bibr" target="#b9">[10]</ref> 15.73% 14.55% 18.26% IATDNN+IASS <ref type="bibr" target="#b8">[9]</ref> 14.95% 14.67% 15.72% CIAN <ref type="bibr" target="#b6">[7]</ref> 14.12% 14.77% 11.13% MSDS-RCNN <ref type="bibr" target="#b5">[6]</ref> 11.34% 10.53% 12.94% AR-CNN <ref type="bibr" target="#b17">[18]</ref> 9.34% 9.94% 8.38% MBNet <ref type="bibr" target="#b11">[12]</ref> 8.13%  <ref type="bibr" target="#b2">[3]</ref> 39.7% 36.1% 36.8% FuseNet <ref type="bibr" target="#b13">[14]</ref> 45.6% 41.0% 43.9% RTFNet <ref type="bibr" target="#b12">[13]</ref> 53.2% 45.8% 54.8% Ours (full dataset) 53.6% 46.8% 53.3% Ours (17.99% of data) 51.0% 46.6% 48.9%  </p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Active learning loop diagram (a) and cross-modality prediction inconsistency visualization (b).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Overview of the proposed model for deep active multispectral scene analysis. The blue and green mono-modal branches are used for data informativeness ranking while the purple one provides the final detection</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 .Fig. 5 .</head><label>45</label><figDesc>Fig. 4. Experimental results of models trained by the proposed active learning strategy (green lines) and random selection strategy (red lines) on KAIST Dataset (a, b), FLIR Dataset (c, d) and TOKYO Dataset (e, f). Black dotted lines indicate fully supervised results.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Miss Rate comparisons on KAIST Dataset.</figDesc><table><row><cell></cell><cell></cell><cell>8.28%</cell><cell>7.86%</cell></row><row><cell>Ours (full dataset)</cell><cell cols="2">8.86% 10.01%</cell><cell>6.77%</cell></row><row><cell>Ours (10.26% of data)</cell><cell cols="2">9.32% 10.13%</cell><cell>7.70%</cell></row><row><cell>Methods</cell><cell>mAP</cell><cell>AP50</cell><cell>AP75</cell></row><row><cell>CFR [11]</cell><cell cols="2">-72.4%</cell><cell>-</cell></row><row><cell>GAFF [8]</cell><cell cols="3">37.3% 72.7% 30.9%</cell></row><row><cell>Ours (full dataset)</cell><cell cols="3">37.0% 72.1% 31.2%</cell></row><row><cell cols="4">Ours (29.07% of data) 35.1% 71.0% 30.6%</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>mAP comparisons on FLIR Dataset.</figDesc><table><row><cell>Methods</cell><cell>mIoU (higher, better) All Day Night</cell></row><row><cell>MFNet</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 3 .</head><label>3</label><figDesc>mIoU comparisons on TOKYO Dataset.</figDesc><table><row><cell>Miss Rate (%)</cell><cell cols="2">100 300 500 700 900 1100 1300 Number of images 10 12 14 16 18 20 19.29 16.92 14.64 13.14 11.90 11.79 19.29 14.05 12.85 11.40 11.01 10.48 10.21 Random selection Active learning 1.71 3.42 5.13 6.84 8.55 10.26 Proportion in dataset (%)</cell><cell cols="2">Miss Rate (%)</cell><cell>Number of images 100 300 500 700 900 1100 1300 8 10 12 14 16 18 14.62 12.61 11.41 10.48 9.88 12.76 8.86 11.07 10.46 9.99 9.32 18.63 Active learning Random selection 18.63 1.71 3.42 5.13 6.84 8.55 10.26 Proportion in dataset (%)</cell></row><row><cell></cell><cell></cell><cell>(a) KAIST 480x384</cell><cell></cell><cell></cell><cell>(b) KAIST 640x512</cell></row><row><cell></cell><cell></cell><cell>4.84 9.69 14.53 19.38 24.22 29.07 Proportion in dataset (%)</cell><cell></cell><cell></cell><cell>4.84 9.69 14.53 19.38 24.22 29.07 Proportion in dataset (%)</cell></row><row><cell>mAP (%)</cell><cell cols="2">100 300 500 700 900 1100 1300 Number of images 29 31 33 35 29.9 32.1 33.1 34.1 34.4 34.4 29.9 31.1 32.5 33.2 33.8 34.1 35.1 Active learning Random selection</cell><cell cols="2">mAP (%)</cell><cell>Number of images 100 300 500 700 900 1100 1300 29 31 33 35 37 28.8 32.2 33.2 37.0 34.9 35.1 33.9 33.8 32.9 31.2 31.7 32.2 Active learning Random selection</cell></row><row><cell></cell><cell></cell><cell>(c) FLIR 480x384</cell><cell></cell><cell></cell><cell>(d) FLIR 640x512</cell></row><row><cell>recall (%)</cell><cell>40 43 46 49 52 55 58 61</cell><cell cols="2">25 75 125 175 225 275 325 375 Number of images 42.4 48.8 51.1 52.0 53.7 55.3 55.7 45.3 48.9 49.8 52.0 52.5 53.5 60.6 Active learning Random selection 2.57 5.14 7.71 10.28 12.85 15.42 17.99 Proportion in dataset (%) mIoU (%)</cell><cell cols="2">40 42 44 46 48 50 52 54</cell><cell>Number of images 25 75 125 175 225 275 325 375 40.6 44.5 46.4 47.6 42.4 Random selection Active learning 45.3 46.2 47.8 48.3 49.2 49.2 50.5 51.0 53.6 2.57 5.14 7.71 10.28 12.85 15.42 17.99 Proportion in dataset (%)</cell></row><row><cell></cell><cell></cell><cell>(e) TOKYO recall</cell><cell></cell><cell></cell></row></table><note><p>(f) TOKYO mIoU</p></note></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection: Benchmark dataset and baselines</title>
+		<author>
+			<persName><forename type="first">Soonmin</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaesik</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Namil</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukyung</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">In</forename><surname>So Kweon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Free flir thermal dataset for algorithm training</title>
+		<ptr target="https://www.flir.com/oem/adas/adas-dataset-form/" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Mfnet: Towards real-time semantic segmentation for autonomous vehicles with multi-spectral scenes</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Watanabe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Karasawa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ushiku</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Harada</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection using deep fusion convolutional neural networks</title>
+		<author>
+			<persName><forename type="first">Jörg</forename><surname>Wagner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volker</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Herman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Behnke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">24th European Symposium on Artificial Neural Networks</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fully convolutional region proposal networks for multispectral person detection</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>König</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Adam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Jarvers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Layher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Heiko</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Teutsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE Conference on Computer Vision and Pattern Recognition Workshops, CVPR Workshops</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection via simultaneous detection and segmentation</title>
+		<author>
+			<persName><forename type="first">Chengyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofeng</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">British Machine Vision Conference (BMVC)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Crossmodality interactive attention network for multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shifeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaizhu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Hussain</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Fusion</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Guided attentive feature fusion for multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Lefèvre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)</title>
+		<meeting>the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)</meeting>
+		<imprint>
+			<date type="published" when="2021-01">January 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Fusion of multispectral data through illumination-aware deep neural networks for pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Dayan</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanpeng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlong</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Fusion</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Illumination-aware faster R-CNN for robust multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Chengyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofeng</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multispectral Fusion for Object Detection with Cyclic Fuse-and-Refine Blocks</title>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Lefèvre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICIP 2020 -IEEE International Conference on Image Processing</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Improving multispectral pedestrian detection by addressing modality imbalance problems</title>
+		<author>
+			<persName><forename type="first">Kailai</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Linsen</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xun</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision (ECCV)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">RTFNet: RGB-Thermal Fusion Network for Semantic Segmentation of Urban Scenes</title>
+		<author>
+			<persName><forename type="first">Yuxiang</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weixun</forename><surname>Zuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="2576" to="2583" />
+			<date type="published" when="2019-07">July 2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Fusenet: incorporating depth into semantic segmentation via fusion-based cnn architecture</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hazirbas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Domokos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cremers</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Asian Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2016-11">November 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Localization-aware active learning for object detection</title>
+		<author>
+			<persName><forename type="first">Chieh-Chi</forename><surname>Kao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Teng-Yok</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pradeep</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ming-Yu</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Asian Conference on Computer Vision</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="506" to="522" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Active learning for deep detection neural networks</title>
+		<author>
+			<persName><forename type="first">Abel</forename><surname>Hamed H Aghdam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joost</forename><surname>Gonzalez-Garcia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antonio</forename><forename type="middle">M</forename><surname>Van De Weijer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>López</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE International Conference on Computer Vision</title>
+		<meeting>the IEEE International Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Reinforced active learning for image segmentation</title>
+		<author>
+			<persName><forename type="first">Arantxa</forename><surname>Casanova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pedro</forename><forename type="middle">O</forename><surname>Pinheiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Negar</forename><surname>Rostamzadeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christopher</forename><forename type="middle">J</forename><surname>Pal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Weakly aligned cross-modal learning for multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhen</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ternational Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Very deep convolutional networks for large-scale image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">SSD: single shot multibox detector</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Anguelov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dumitru</forename><surname>Erhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Szegedy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><forename type="middle">E</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng-Yang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision (ECCV)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Multispectral deep neural networks for pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitris</forename><forename type="middle">N</forename><surname>Metaxas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the British Machine Vision Conference 2016, BMVC 2016</title>
+		<meeting>the British Machine Vision Conference 2016, BMVC 2016<address><addrLine>York, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">September 19-22, 2016, 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

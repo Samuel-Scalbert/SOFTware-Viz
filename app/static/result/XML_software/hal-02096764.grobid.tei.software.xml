@@ -1,0 +1,915 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main" />
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">E45BAA1FB8E355A20EA14B66545E56FA</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:51+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>CCS Concepts:</term>
+					<term>Information systems → Data exchange</term>
+					<term>data integration</term>
+					<term>mapping refinement</term>
+					<term>user interactions ACM Reference format: . 2018. Interactive Mapping Specification with Exemplar Tuples. ACM Trans. Datab. Syst</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><head>Interactive Mapping Specification with Exemplar Tuples</head><p>While schema mapping specification is a cumbersome task for data curation specialists, it becomes unfeasible for non-expert users, who are unacquainted with the semantics and languages of the involved transformations.</p><p>In this paper, we present an interactive framework for schema mapping specification suited for non-expert users. The underlying key intuition is to leverage a few exemplar tuples to infer the underlying mappings and iterate the inference process via simple user interactions under the form of boolean queries on the validity of the initial exemplar tuples. The approaches available so far are mainly assuming pairs of complete universal data examples, which can be solely provided by data curation experts, or are limited to poorly expressive mappings.</p><p>We present several exploration strategies of the space of all possible mappings that satisfy arbitrary user exemplar tuples. Along the exploration, we challenge the user to retain the mappings that fit the user's requirements at best and to dynamically prune the exploration space, thus reducing the number of user interactions. We prove that after the refinement process, the obtained mappings are correct. We present an extensive experimental analysis devoted to measure the feasibility of our interactive mapping strategies and the inherent quality of the obtained mappings.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">INTRODUCTION</head><p>Schema mappings <ref type="bibr" target="#b18">[19]</ref> are declarative specifications, typically in first-order logic, of the semantic relationship between elements of a source schema and a target schema. They constitute key data programmability primitives, leading database users to be empowered with programming facilities on top of large shared databases. Mappings are usually specified and tested in enterprise IT and several other domains by data architects, also known as developers of engineered mappings <ref type="bibr" target="#b10">[11]</ref>. Several paradigms have been proposed to aid data architects to specify engineered mappings. The first paradigm relies on visual specification of mappings using user-friendly graphical interfaces, as in several mapping designers <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b29">30]</ref>. Such graphical tools help the data architects design a mapping between schemas in a high-level notation. A major drawback of these approaches is that the generation of mappings in a programming language or in a query language from graphical primitives is dependent of the specific tool. As a consequence, the same graphical specification might be translated into different and incomparable declarative mappings by two different tools, leading to inconsistencies. In order to tackle such impedance mismatch, model management operators have been proposed in <ref type="bibr" target="#b10">[11]</ref> to provide a general-purpose mapping designer that can be adapted F(idF0, town2, town1, idAir0) ∧ F(idF1, town1, town2, idAir1)</p><p>∧ A(idAir0, name1, town1)</p><p>∧ A(idAir1, name2, town2)</p><p>∧ TA(idAg, name3, town1) → ∃idC0, idC1, idC2, idF2, idF3, Co(idC2, name3, town1) ∧ Co(idC0, name1, town1)</p><p>∧ Co(idC1, name2, town2)</p><p>∧ Dpt(town2, idF2, idC0)</p><p>∧ Arr(town1, idF2, idC0)</p><p>∧ Dpt(town1, idF3, idC1)</p><p>∧ Arr(town2, idF3, idC1) (vii) Final mapping after refinement: Σ f inal = {TA(idAg, name 3 , town 1 ) → ∃idC 2 , Co(idC 2 , name 3 , town 1 ); F(idF 0 , town 2 , town 1 ′ , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ′′ ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 ′ , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ′′ )} Fig. <ref type="figure">1</ref>. Running example: exemplar tuples (E 1 S , E 1 T ) and (E 2 S , E 2 T ) (i), (iii), (iv) and (vi), resp.; Canonical mapping (ii) and (v), and Final mapping (vii).</p><formula xml:id="formula_0">Co</formula><p>to a wide variety of tools for data programmability. Model management, however, is also suited for expert users. The third paradigm is to generate the desired mappings from representative data examples <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b23">24]</ref>, i.e., a pair of source and target instances, provided by the expert user. However, such data examples are assumed to be solutions of the mapping at hand and representative of all other solutions. Notwithstanding the progress made in mapping specification thanks to the aforementioned approaches, all the above paradigms have in common the fact that they are intended for expert users. Such users are typically acquainted with mapping specification tools and possess complete knowledge of the mapping domains, the formal semantics of mappings and their solution. Ultimately, they are capable of formulating queries or writing customized code.</p><p>As also observed in <ref type="bibr" target="#b10">[11]</ref>, at the other end of the spectrum lies end-users, who find relationships between data and build mapping examples as they go, as in mining heterogeneous data sources, web search, scientific and personal data management. More and more ordinary users are in fact confronted on a daily basis with user-driven data exploration scenarios, such as those exposed by dataspaces <ref type="bibr" target="#b19">[20]</ref>. As a consequence, the problem of mapping specification for such classes of users is even more compelling.</p><p>To tackle the above problem, in this paper we set forth a novel approach for Interactive Mapping Specification (IMS) that bootstraps with exemplar tuples, corresponding to a limited number of Interactive Mapping Specification with Exemplar Tuples 1:3 tuples provided by non-expert users. Such tuples are employed to challenge the user with simple boolean questions, which are intended to drive the inference process of the mapping that the user has in mind and that is unknown beforehand.</p><p>(IMS) Given exemplar tuples as input pairs {(E 1  S , E 1 T ); . . . ; (E n S , E n T )} provided by a non-expert user and a mapping M that the user has in mind, the Interactive Mapping Specification problem is to discover, by means of boolean interactions, a mapping M ′ such that each (E i S , E i T ) ∈ {(E 1 S , E 1 T ); . . . ; (E n S , E n T )} satisfy M ′ and M ′ generalizes M.</p><p>Notice that the user-provided exemplar tuples may turn to be not well chosen or even ambiguous with respect to the mapping M that the user has in mind. Moreover, exemplar tuples are not supposed to be solutions nor universal solutions of the mapping that needs to be inferred. Whereas a wealth of research on schema mapping understanding and refinement has been conducted in databases <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b32">33]</ref> since the pioneering work of Clio <ref type="bibr" target="#b27">[28]</ref>, these approaches assume more sophisticated input (such as an initial mapping to refine and the schemas and schema constraints) and/or more complex user interactions. Although exemplar tuples reminisce data examples <ref type="bibr" target="#b4">[5]</ref>, they are fundamentally different in that they are not meant to be universal. Furthermore, the mappings we consider in this paper are unrestricted GLAV mappings. We present a detailed comparison with previous work in Section 7, and a comparative analysis with <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b12">13]</ref> in Section 6.</p><p>Query specification has been recognized as challenging for non-expert users and more timeconsuming than executing the query itself <ref type="bibr" target="#b24">[25]</ref>. We argue that mapping specification is even more arduous for such users, merely because mappings embody semantic relationships between inherently complex queries. Despite many recent efforts on query specification for non-expert users <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b26">27]</ref>, these works are not applicable to mapping specification for non-expert users, which we address in this paper (for more details, we refer the reader to <ref type="bibr">Section 7)</ref>.</p><p>Figure <ref type="figure">1</ref> illustrates our running scenario, where a non-expert user needs to establish a mapping between two databases exhibiting travel information. The source database schemas are made of four relations, Airline, Flight, TravelAgency, and Airport (abbreviated respectively as A, F, TA and Airp). The target database schemas contains four relations Company, Departure and Arrival (resp. Co, Dpt and Arr).</p><p>In this scenario, user provide two pairs of source and target exemplar tuples sets : (E 1 S , E 1 T ) and (E 2  S , E 2 T ). For each of this pairs, source and target databases are reported in the left-hand and righthand sides of the Figure <ref type="figure">1</ref>, respectively. We can observe that the number of tuples per each table is small: the user is not intended to provide a complete instance but only a small set of representative tuples. We can also easily identify a few inherent ambiguities within the provided exemplar tuples. For instance, in (E 1  S , E 1 T ), the constant L.A. represents both the town where the travel agency is located (in relation TA, which contains travel agencies information) and the destination of a flight (in the corresponding relation F). If we would consider these exemplar tuples as the ground truth, we would translate them into canonical mapping illustrated in Figure <ref type="figure">1</ref> (ii) and (v). Such mappings, however, reflects the ambiguities of the provided exemplar tuples, by assuming that all solutions must have two airline and that the travel agency (resp. the airport) must be located in the same city than an airline headquarters. Thus, from a logical viewpoint, such mappings are way too specific. Moreover, such mappings can be quite large and unreadable in real-world scenarios, as they embeds all the exemplar tuples altogether. Our mapping specification process builds upon end-user exemplar tuples, which can be ambiguous and ill-defined. Hence, it aims at deriving smaller refined and normalized mappings through simple user interactions, in order to obtain more controllable mappings closer to what the user has in mind (illustrated in Figure <ref type="figure">1</ref> (iv)). The rest of the paper is devoted to explain such a transformation.</p><p>The main contributions of our paper are summarized as follows:</p><p>• We define a mapping specification process for non-expert users that bootstraps with exemplar tuples, and works for general GLAV mappings. The user is challenged with boolean questions over even smaller refinement-driven tuples generated from the initial exemplar tuples. The space of possible solutions is represented as a quasi-lattice, on top of which a dynamic pruning keeps the number of user interactions reasonably low. The introduction of quasi-lattices, instead of separate upper semi-lattices as used in <ref type="bibr" target="#b12">[13]</ref>, allows to avoid redundant explorations and leads to reduce the number of required user interactions. • We prove that the generated mappings have irreducible right-hand sides. Combined with redundant mapping elimination, this guarantees that the obtained refined mappings are in normal form <ref type="bibr" target="#b22">[23]</ref>.</p><p>Intuitively, normalized mapping are more self-explanatory and understandable for end-users compared to monolithic canonical mappings. • We prove that the refinement process always produces a more general mapping than the canonical mapping and is always implied by the mapping expected by the user. As an example, an illustration of the obtained mapping for our running example is in Figure <ref type="figure">1</ref> (iv), which can be confronted with the canonical mappings of Figure <ref type="figure">1</ref> (ii) and (iv). We define the condition under which our system will produce a mapping logically equivalent to the one expected by the user. This is a major improvement of the work done by <ref type="bibr" target="#b12">[13]</ref>, as they provide less formal guarantees about the produced mapping. • We introduce the adoption of integrity constraints (ICs) in order to reduce the number of asked questions, when the approach in <ref type="bibr" target="#b12">[13]</ref> does not allow the use of such constraints. To this end, we present a modified version of the problem statement, namely IMS IC and we study the various classes of allowed ICs. • We experimentally gauge diminution of the number of asked questions induced by the introduction of quasi-lattices compared to the work in <ref type="bibr" target="#b12">[13]</ref>. Moreover, we experimentally gauge the effectiveness of our approach, by comparing the sizes of exemplar tuples with the size of universal solutions. The rest of this paper is organized as follows. Section 2 introduces the notation used in the rest of our paper. Specific background on the mapping generation from exemplar tuples is detailed in Section 3.1. The bulk of our approach is described in Section 3.2. A formal general framework is described in Section 4, as well as proofs of correctness and completeness of this framework and the implementation detailled in previous section. Formal considerations about the use of integrity constraints in order to reduce the number of questions is presened in Section 5 and an extensive experimental study is presented in Section 6. Related work is devoted to Section 7. We conclude the paper in Section 8.</p></div>
+<div><head n="2">PRELIMINARIES</head><p>We briefly introduce various concepts from the data exchange framework <ref type="bibr" target="#b18">[19]</ref> that we use in this paper. Given two disjoint countably infinite sets of constants C and variables V, we assume a bijective function θ , such that if θ (x i ) = c i , then c i ∈ C is the constant associated to the variable x i ∈ V and θ -1 (c) = x. A tuple over a relation R has the form R(c 1 , . . . , c n ) where c i ∈ C, while an atom has the form R(x 1 , . . . , x n ) where x i ∈ V. The bijection θ naturally extends to a bijection between (conjunctions of) atoms and (sets of) tuples.</p><p>A (schema) mapping is a triple M = (S, T, Σ) with S is a source schema, T is a target schema disjoint from S, and Σ is a set of tuple-generating dependency (tgd for short) over schemas S and T. A tgd is a first-order logical formula the form ϕ(x) → ∃y,ψ (x, y) where x and y are vectors of variables, x being universally quantified, and where both ϕ and ψ are conjunctions of atoms. In Interactive Mapping Specification with Exemplar Tuples 1:5 this paper, we only consider source-to-target tgd (s-t tgds for short), in which atoms in ϕ are over relations in S and atoms in ψ are over relation in T. We consider GLAV mappings where a tgd can contain more than one atom in ϕ and in ψ .</p><p>Two tgds σ 1 : ϕ 1 (x 1 ) → ∃y 1 ,ψ 1 (x 1 , y 1 ) and σ 2 : ϕ 2 (x 2 ) → ∃y 2 ,ψ 2 (x 2 , y 2 ) are ψ -equivalent if there exists a morphism µ : ψ 2 (x 2 , y 2 ) → ψ 1 (x 1 , y 1 ) such that ψ 1 ≡ µ(ψ 2 ), and µ match existential variables in y 2 only with existential variables in y 1 and universally quantified variables in x 2 are matched only with universal variables in x 1 . We denote ψ -equivalence between two tgds σ 1 and σ 2 by the following notation:</p><formula xml:id="formula_1">σ 1 ≡ ψ σ 2 .</formula><p>Analogously, two tgds σ 1 :</p><formula xml:id="formula_2">ϕ 1 (x 1 ) → ∃y 1 ,ψ 1 (x 1 , y 1 ) and σ 2 : ϕ 2 (x 2 ) → ∃y 2 ,ψ 2 (x 2 , y 2 ) are ϕ-equivalent if there exists a morphism µ : ϕ 2 (x 2 ) → ϕ 1 (x 1 ) such that ϕ 1 ≡ µ(ϕ 2 ).</formula><p>We denote ϕ-equivalence between two tgds σ 1 and σ 2 by the following notation:</p><formula xml:id="formula_3">σ 1 ≡ ϕ σ 2 .</formula><p>An instance E T over T is a solution for a source instance E S over S under a mapping M = (S, T, Σ) </p><formula xml:id="formula_4">iff (E S , E T ) |= Σ. A mapping M = (S, T, Σ) logically entails a mapping M ′ = (S, T, Σ ′ ), denoted by M |= M ′ , if for every (E S , E T ) if (E S , E T ) |= Σ then (E S , E T ) |= Σ ′ .</formula><formula xml:id="formula_5">E T → E T ′ such that h(c) = c for every constant c appearing both in E T and E T ′ .</formula><p>It was shown in <ref type="bibr" target="#b18">[19]</ref> that the result of chasing E S with Σ is a universal solution. The application of the chase procedure, denoted by chase(Σ, E S ), is as follows: for each tgd ϕ(x) → ∃y,ψ (x, y) ∈ Σ, if there exists a substitution µ of x such that all atoms in ϕ(x) can be mapped to tuples in E S , extend this substitution to µ ′ by picking a fresh new constant for each variable in y and finally add all atoms of ψ (x, y) instantiated to tuples with µ ′ into E T . Another key result of the literature that we use in this paper is borrowed from <ref type="bibr" target="#b8">[9]</ref> and states that Σ |= ϕ(x) → ∃y,ψ (x, y) if and only if there exists a substitution µ ′ extending an arbitrary µ such that µ ′ (ψ (x, y)) ⊆ chase(Σ, µ(ϕ(x))).</p><p>The chase procedure give us a way to test the logical implication of mappings by the use of the following property : M |= M ′ if and only if ∀σ ′ ∈ Σ ′ ,ψ σ ′ ⊆ chase(Σ, ϕ σ ′ ) <ref type="bibr" target="#b25">[26]</ref>.</p><p>Finally, for the schema mapping normalization, we borrow two notions from <ref type="bibr" target="#b22">[23]</ref>: split-reduced mappings and σ -redundant mappings. While split-reduction breaks a tgd into a logically equivalent set of tgds with right-hand sides having non overlapping existentially quantified variables, σredundancy encodes the presence of unnecessary tgds. We report formal definitions below. Let σ : ϕ(x) → ∃y,ψ (x, y) be a tgd. We say that σ is split-reduced if there is no pair of tgds σ 1 :</p><formula xml:id="formula_6">ϕ 1 (x) → ∃y 1 ,ψ 1 (x, y 1 ) and σ 2 : ϕ 2 (x) → ∃y 2 ,ψ (x, y 2 ) such that y 1 ∩ y 2 = ∅ and {σ } ≡ l {σ 1 ; σ 2 }. A mapping (S, T, Σ) is split-reduced if, for all tgd σ ∈ Σ, σ is split-reduced.</formula><p>According to <ref type="bibr" target="#b22">[23]</ref>, given a mapping M, it is always possible to find a split-reduced mapping M ′ that is equivalent to M. Let M = (S, T, Σ) be a schema mapping and σ ∈ Σ a tgd. We say that M is σ -redundant, w.r.t. logical equivalence, iff Σ \ {σ } ≡ l Σ. Such equivalence can be tested using the chase procedure as a proof procedure for the implication problem by checking whether Σ \ {σ } |= σ .</p><p>We briefly recall a few notions on partitions. A partition of a set W is a set P of disjoint and non-empty subsets of V called blocks, such that b ∈ P b = W. The set of all partitions of W is denoted by Part(W). Two objects of W that are in the same block of a partition P are denoted by a ≡ P b. The set of all partitions of W form a complete lattice under the partial order :</p><formula xml:id="formula_7">P 0 ≤ P 1 ⇔ ∀x, y ∈ W, x ≡ P 0 y ⇒ x ≡ P 1 y</formula><p>This partial order formally captures the intuitive notion of refinement of a partition.</p></div>
+<div><head n="3">MAPPING REFINEMENT</head><p>In this section, we describe the key components of our interactive mapping specification process, as depicted in Figure <ref type="figure">2</ref>.</p></div>
+<div><head n="3.1">Exemplar tuples and mappings</head><p>Exemplar tuples are defined as a pair of source and target instances (E S , E T ). Tuples in these two instances can be arbitrary chosen in the sense that there's no need for him to provide an instance E T which is an universal solution to E S through his expected mapping. Instead, given the source instance E S , the user can populate the target instance E T with only few tuples coming from the universal solution to E S through his expected mapping. In other words, The formal definition of such a pair of instance is given in the following definition : Definition 3.1 (Exemplar tuples). Let Σ exp be a mapping. Then an exemplar tuple for Σ exp is a pair of instances (E S , E T ) such that :</p><formula xml:id="formula_8">E T ⊆ chase(Σ exp , E S )</formula><p>Henceforth, they are simply called exemplar tuples whenever Σ exp is clear from the context. A set of exemplar tuples is denoted by the letter E.</p><p>Example 3.2. Given a mapping Σ = {S(x, y) → ∃z,T (x, z); S ′ (x, y) → T (x, z) ∧ T ′ (z, y)}. Given a source instance I = {S(a, b); S(c, d); S ′ (e, f)}. Then, a possible exemplar tuple can be the pair (E S , E T ) with E S = I and : E T ⊆ {T (a, n 1 );T (c, n 2 );T (e, n 3 );T ′ (n 3 , f)} An other exemplar tuple can be the pair ({S(a, b); S(c, d)}, {T (a, n 1 )}), which exemplifies the tgd S(x, y) → ∃z,T (x, z) of Σ.</p><p>A counter example is the pair ({S(a, b); S(c, d)}, {T (a, n 1 );T ′ (n 2 , b)}). Here, the tgd S(x, y) → ∃z,T (x, z) is exemplified by the tuples S(a, b) and T (a, n 1 ), but this pair is not an exemplar tuples because the tuple T ′ (n 2 , b) cannot be deduced from Σ with the source tuples {S(a, b); S(c, d)}, and thus is not consistent with our definition 3.1.</p><p>Given a set of exemplar tuples E, this set is said to be fully-informative for a mapping Σ exp if it respect the following definition : Definition 3.3 (Fully-informative exemplar tuples set). Let Σ exp be a mapping in normal form. Then a fully-informative exemplar tuples set for Σ exp is a set of exemplar tuples E such that each connected component of the tgd in Σ exp is exemplified at least once, i.e. :</p><p>∀σ</p><formula xml:id="formula_9">∈ Σ exp , ∃(E S , E T ) ∈ E, ∃E ′ S ⊆ E S s.t. (chase(σ , E ′ S ) ∅) ∧ (chase(σ , E ′ S ) ⊆ E T )</formula><p>This definition capture the need of having sufficient information conveyed by the set of exemplar tuples provided by the user, in order to allow to retrieve the mapping the user as in mind (or a logically equivalent mapping). This will be proved in Section 4.</p><p>Example 3.4. We reuse the sets Σ and I of the previous example 3.2. As stated in example 3.2, the pair ({S(a, b); S(c, d)}, {T (a, n 1 )}) is an exemplar tuple for Σ. But this example does not exemplify the tgd S ′ (x, y) → T (x, z) ∧ T ′ (z, y), so it violates definition 3.3.</p></div>
+<div><head>Interactive Mapping Specification with Exemplar Tuples 1:7</head><p>In the following set, a pair for the tgd S ′ (x, y) → T (x, z) ∧ T ′ (z, y) is added, leading to a fullyinformative exemplar tuples sets for Σ : ({S ′ (e, f)}, {T (e, n 3 )})} is not fully-informative for Σ as there is no exemplar tuple that exemplifies the connected component of tgd S ′ (x, y) → T (x, z) ∧ T ′ (z, y).</p><p>Given an input pair (E S , E T ), we build a canonical mapping as follows. More precisely, given a pair (E S , E T ), the canonical mapping associated to (E S , E T ) is the tgd ϕ → ψ where ϕ = θ -1 (E S ) and ψ = θ -1 (E T ). Informally, the left-hand side ϕ is constructed from E S by replacing all tuples in E S by their atoms counterparts, with the constants being replaced by variables. The right-hand side of the canonical mapping is obtained in a similar fashion.</p><p>Example 3.5. The canonical mappings corresponding to the exemplar tuples of Figure <ref type="figure">1</ref> are represented in Figure <ref type="figure">1</ref> (ii) and (v).</p><p>However, notice that the canonical mappings of Example 3.5 are extremely rigid. For instance, in the canonical mapping (ii) we can observe that tuples in the source relation TA are mandatorily needed in order to obtain tuples in the target relation Arr.</p><p>This is due to the fact that a canonical mapping is the most specific mapping obtained from the exemplar tuples: it contains all the atoms corresponding to E S on its left-hand side. Since exemplar tuples are not universal by definition<ref type="foot" target="#foot_1">1</ref> , this mapping are far too constrained. The envisioned workaround is to refine the canonical mappings into a less constrained one by leveraging simple user interactions.</p><p>Intuitively, the refinement of the canonical mappings is done through the following steps: the first is a pre-processing that leads to a single normalized mapping, in which each large tgd of a canonical mappings is divided into equivalent set of smaller ones; the second and the third steps revolve around mapping refinement via user interactions that lets simplify the left-hand sides of the tgds. We devote the rest of this subsection to the first step, while we describe the latter steps in the next subsections.</p><p>We define formal criteria that capture the quality of a mapping M intuitively as follows: each tgd in Σ should have a minimal right-hand side and there should be no spurious tgd in Σ. To that purpose, we rely on the two previously introduced notions, i.e. split-reduced mappings and σ -redundant mappings <ref type="bibr" target="#b22">[23]</ref>. The splitting of the original mapping into smaller tgds turns out to be convenient for mapping refinement, in that it lets the user focus only on the necessary atoms implied in the left-hand sides of each reduced tgd. However, as a side effect of split-reduction, we may get redundant tgds in the set Σ. Such redundant tgds are unnecessary and need to be removed to avoid inquiring the user about useless mappings. Finally, we say that (S, T, Σ) is normalized when each tgd in Σ is split-reduced and there is no σ -redundant tgd in Σ. </p><formula xml:id="formula_10">Σ spl it Reduced = { ϕ 1 → ∃idC 2 , Co(idC 2 , name 3 , town 1 ); (1) ϕ 1 → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ); (2)</formula><p>ϕ 1 → ∃idC 1 , idF 3 , Dpt(town 1 , idF 3 , idC 1 ) ∧ Arr(town 2 , idF 3 , idC 1 ) ∧ Co(idC 1 , name 1 , town 2 ); (3) ϕ 2 → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )} (4)</p><p>The σ -redundancy suppression on Σ spl it Reduced allow to suppress the redundant tgd (3), which is logically equivalent to tgd <ref type="bibr" target="#b1">(2)</ref>. The σ -redundancy suppression cannot be applied to tgds (2) and (4) as their left-hand sides are different.</p><p>This lead to the normalized mapping Σ norm :</p><formula xml:id="formula_11">Σ norm = { ϕ 1 → ∃idC 2 , Co(idC 2 , name 3 , town 1 ); (1) ϕ 1 → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ); (2) ϕ 2 → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )} (4)</formula></div>
+<div><head n="3.2">Refinement of mappings</head><p>The previous section has defined the pre-processing step that leads to a normalized canonical mapping. We now introduce the two refinement steps that constitute the core of our proposal. The assumption underlying our approach is that a non-expert user provides a set of exemplar tuples E in input and, during the mapping refinement steps, this user will interacts with our system via simple boolean questions about the validity of small data examples. If the provided set of exemplar tuples is a fully informative set, then the output mapping is guaranteed to be equivalent to the mapping expected by the user, as it will be proved in Section 4.</p><p>In this paper, we assume that the questions about the validity of this data examples are answered by an oracle. This oracle answer question using the following procedure :</p><p>Interactive Mapping Specification with Exemplar Tuples 1:9 Definition 3.7 (oracle answering procedure.). Let M exp = ⟨S,T , Σ exp ⟩ be the mapping expected by the oracle. Let (ϕ → ψ ) be a tgd. Then, the oracle answer true to the question "Are the tuples θ (ϕ) enough to produce θ (ψ )?" if :</p><formula xml:id="formula_12">ψ σ ⊆ chase(ϕ σ , Σ exp )</formula><p>The choice of such a modelisation of users is motivated by the intuition that even if a non-expert user is not able to express the mapping he expects with a logical language, he can rely on domain knowledges to answer if the information contained in a set of source tuples is sufficient to infer a given set of target tuples. In this paper, we don't consider other kinds of users that correspond to a relaxation of the previous conditions and we leave this part to future investigation.</p><p>In the rest of this section, for ease of exposition, we assume that the user provides only two pairs</p><formula xml:id="formula_13">(E 1 S , E 1 T ) and (E 2 S , E<label>2</label></formula><p>T ) of exemplar tuples. However, in practice, the user might provide a larger set of exemplar tuples.</p><p>For a given input pair (E k S , E k T ), the number of mappings satisfying it may be quite large. Therefore, it is important to provide efficient exploration strategies of the space of mappings in order to reduce the number of questions to ask to the user. An important method used here relies on the fact that we can partition the normalized canonical mapping obtained from user's exemplar tuples in blocks of ψ -equivalent tgds. These sets of tgds are handled together to find morphisms between subsets of their left-hand sides. Such morphisms corresponds to equivalent tgds extracted from different exemplar tuples, so we need to avoid exploring them more than once to reduce the size of the explored space. This is a major difference with the refinement presented in <ref type="bibr" target="#b12">[13]</ref>, in which each exemplar tuple is explored separately, leading to redundant superfluous interactions with the user.</p><p>Two successive steps are applied during refinement: the atom refinement step and the join refinement step. We illustrate such steps in Figure <ref type="figure">2</ref>, along with the corresponding user interactions required to obtain the final result, i.e., the refined tgds that meet the user's requirements. The atom refinement step aims at removing unnecessary atoms in the left-hand side of the tgds within the normalized mapping obtained in the pre-processing. The join refinement step applies the removal of unnecessary joins between atoms in each tgd as output by the previous step. During both steps, the user is challenged with specific questions devoted to address ambiguities of the provided exemplar tuples and refine the normalized canonical mapping obtained in the pre-processing step. We focus on the first step in Section 3.3 and we postpone the description of the second step to Section 3.4.</p><p>In our approach, we use universally quantified variables as the targets of the refinement algorithms and assume that the existential variables in the right-hand side of the tgds are unambiguous (and appear as such in the input exemplar tuples). In other words, value invention (e.g., the production of labeled nulls in SQL) in the target exemplar tuples is supposed to be correct and the user is not inquired about them. This also implies that our algorithms do not create fresh existential variables in the tgds. The introduction of such variables would drastically increase the number of mappings to explore and their coverage would entail non-trivial extension of our algorithms, which are beyond the scope of this paper.</p></div>
+<div><head n="3.3">Atom refinement</head><p>As discussed in Section 3.1, the normalization produces a split-reduced mapping from the canonical mapping in which each tgd has a large left-hand side ϕ. However, some atoms in ϕ may be irrelevant, preventing the triggering of a tgd and causing further ambiguities. To alleviate these ambiguities, Algorithm 1 applies atom refinement on each block of the partition of ψ -equivalent tgds. In the following, we explain its key components and properties.</p></div>
+<div><head>Algorithm 1 TgdsAtomRefinement(Σ)</head><p>Input: A set of tgds Σ to be atom refined. Output: A set of tgds Σ ′ where each tgd is atom refined. C inval id ← ∅ for all e ∈ C val id do 20:</p><p>add the tgd (e → ψ ) to Σ ′</p></div>
+<div><head>21:</head><p>end for 22: end for 23: return Σ ′ 3.3.1 Groups of ψ -equivalent tgds. The first step of atom refinement aims at grouping ψequivalent tgds together in order to allow a more efficient exploration of the search space. To this purpose, given Σ norm = {σ 1 . . . σ n } the set of tgds generated during normalisation, we create a partition P norm of Σ norm in which each block is constituted by ψ -equivalent tgds. More formally, we produce the partition P norm such that:</p><formula xml:id="formula_14">∀σ i , σ j ∈ Σ norm , σ i ≡ P nor m σ j ⇔ σ i ≡ ψ σ j 3.3.</formula><p>2 Quasi-lattice for Atom Refinement. The baseline structure for the atom refinement of a block B ∈ P norm is a quasi-lattice. A quasi-lattice is a restriction of a complete lattice to a subset of its nodes, included between an upper and a lower bound.</p><p>In our setting, given {ϕ 1 ; . . . ; ϕ n } the set of the left-hand parts of the tgds in B, the quasi-lattice is build over the complete lattice L = (Pow( n i=1 ϕ i ), ⊆ h ) where Pow( n i=1 ϕ i ) is the powerset of the set of all atoms in the left-hand sides of the tgds in B. For all elements e x and e y of Pow( n i=1 ϕ i ) the least-upper-bound of the set {e x , e y } is their union.</p><p>As atom refinement does not add new constraints in the tgds, we does not create conjunctions which are not subsets of the left-hand side of at least one tgds in B. Thus we can define the upper bound of the quasi-lattice as the set {At(ϕ 1 ); . . . ; At(ϕ n )} where At(ϕ i ) is the set of atoms in the conjunction ϕ i .</p><p>Example 3.8. Considering the tgds in Σ norm of Example 3.6, the left-hand sides are made of conjunction ϕ 1 and ϕ 2 . The elements of the quasi-lattices we consider are the subsets of the two following sets of atoms (respectively, the sets of atoms in ϕ 1 and ϕ 2 ) :</p><p>{F(idF 0 , town 2 , town 1 , idAir 0 ); F(idF 1 , town 1 , town 2 , idAir 1 );</p><p>A(idAir 0 , name 1 , town 1 ); A(idAir 1 , name 2 , town 2 ); TA(idAg, name 3 , town 1 )} {F(idF 0 , town 2 , town 1 , idAir 0 ); F(idF 1 , town 1 , town 2 , idAir 1 ); A(idAir 0 , name 1 , town 1 ); Airp(idAp, name 2 , town 2 ); TA(idAg, name 3 , town 1 )} It is worth to note that many of the subsets of this two sets are homomorphically equivalents. Such an equivalence can be used to leverage common parts of the tgds. Recalling that our system does not create new existentially quantified variables in the tgds, we need to prune each sets of atoms leading to violate this rule. An existential variables in a tgd correspond to a variable occurring only in the right-hand side, i.e., a variable leading to the creation of new value in the target instance. So, each candidate left-hand side conjunction that does not contain the whole set of right-hand side universal variables will be excluded from the set of candidates. Thus, the set of smallest left-hand side conjunctions containing, at least, all the universal variables of the right-hand side conjunction define the lower bound of our quasi-lattice. This restriction takes effect in line 6 of Algorithm 1.</p><p>Example 3.9. We illustrate the atom refinement on Example 3.6. As the process stay analogous for each tgd in Σ norm , we focus on the tgds (2) and ( <ref type="formula">4</ref>) which right-hand side is:</p><formula xml:id="formula_15">ϕ 1 ≡ h ϕ 2 ≡ h ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )</formula><p>The set of universally quantified variables in this conjunction is {town 2 , town 1 , name 1 }. A refined tgd needs to contain at least these variables in its left-hand side. The smallest subsets of the set of atoms given in Example 3.8 for which this assumption is valid are: {F(idF 0 , town 2 , town 1 , idAir 0 ); A(idAir 0 , name 1 , town 1 )}, {F(idF 1 , town 1 , town 2 , idAir 0 ); A(idAir 0 , name 1 , town 1 )} and {A(idAir 0 , name 1 , town 1 ); A(idAir 1 , name 2 , town 2 ))} for tgd (2), and :</p><p>{F(idF 0 , town 2 , town 1 , idAir 0 ); A(idAir 0 , name 1 , town 1 )}, {F(idF 1 , town 1 , town 2 , idAir 0 ); A(idAir 0 , name 1 , town 1 )} and {A(idAir 0 , name 1 , town 1 ); Airp(idAp, name 2 , town 2 )} for tgd (4). This sets constitute the lower bound of our quasi-lattice. Each set which is not a superset of one of these two sets is pruned in line 6 of Algorithm 1.</p><p>In addition, we do not allow the creation of new constraints, this lead to consider left-hand sides of the tgds (2) and ( <ref type="formula">4</ref>) as the upper-bound of our exploration space.</p><p>The explorable part of the resulting quasi-lattice is shown in Figure <ref type="figure">3</ref>.</p></div>
+<div><head n="3.3.3">Exploring the quasi-lattice.</head><p>During the exploration of the space of possible candidates, the user is challenged upon one element of the quasi-lattice at a time, as in line 10 of Algorithm 1. This element can be chosen according to a given exploration strategy, corresponding to the call of SelectAtomSet in line 9. We will experimentally compare four different exploration strategies in Section 6. </p><formula xml:id="formula_16">A 1 = A(idAir, name 1 , town 1 ), A 2 = A(idAir ′ , name 2 , town 2 ), F 0 = F(idF 0 , town 2 , town 1 , idAir), F 1 = F(idF 1 , town 1 , town 2 , idAir ′ ), T A = TA(idAg, name 3 , town 1 ) and Ap = Airp(idAp, name 2 , town 2 ).</formula><p>An important property of the upper semilattice of atom refinement implies that, once the user validates one of the candidates, then all the supersets of such candidate can be excluded from further exploration, thus effectively pruning the search space.</p><p>Example 3.10. Following previous Example 3.9, we are refining tgds ( <ref type="formula" target="#formula_13">2</ref>) and (4). Figure <ref type="figure">3</ref> illustrate the exploration space with the left side corresponding to atom sets specifics to tgd (2), the right side corresponding to atom sets specifics to tgd (4) and the central part corresponding to common atom sets between ( <ref type="formula" target="#formula_13">2</ref>) and ( <ref type="formula">4</ref>).</p><p>Assume, for the sake of the example, that we employ a breadth-first bottom-up strategy, starting the exploration of the upper semilattice in Figure <ref type="figure">3</ref> at its bottom-up level with {A 1 ; A 2 },{A 1 ; F 0 },{A 1 ; F 1 } and {A 1 ; Ap}. The user is asked about the validity of {A 1 ; A 2 } (the bottom left light gray box of Figure <ref type="figure">3</ref>) with the following question: "Are the tuples A(a0, AA, L.A.) and A(a1, MAI, Miami) enough to produce Dpt(Miami, f2, c0), Arr(L.A., f2, c0) and Co(c0, AA, L.A.)?"</p><p>We can observe that a positive answer implies an ambiguity, namely that the second flight company is based in the same town of the departure of the flight, which is not the case in real-world examples. Hence, the user will be likely to answer 'No' to the above question.</p><p>Next, assume now that Algorithm 1 proceeds with {A 1 ; F 0 }. This atom set is common between the tgds (2) and ( <ref type="formula">4</ref>), consequently we can use tuples from</p><formula xml:id="formula_17">(E 1 S , E 1 T ) or (E 2 S , E<label>2</label></formula><p>T ) to generate the question. Here we take tuples from (E 1 S , E 1 T ), leading to the following question: "Are the tuples F(f0, Miami, L.A., a0) and A(a0, AA, L.A.) enough to produce Dpt(Miami, f2, c0), Arr(L.A., f2, c0) and Co(c0, AA, L.A.)?"</p><p>Assuming that the user will answer 'Yes' to this question, the supersets of {A 1 ; F 0 } will be pruned (crossed out boxes of Figure <ref type="figure">3</ref>) and the following tgd will be output by the algorithm:</p><formula xml:id="formula_18">F(idF 0 , town 2 , town 1 , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )<label>(5)</label></formula><p>We continue the exploration of the current level with sets {A 1 ; F 1 } and {A 1 ; Ap}. Assuming that the user does not validate these sets, he will be finally challenged about the last available sets then on the next level of the semilattice, namely on the sets {A 1 ; A 2 ;T A},{A 1 ; A 2 ; F 1 }, {A 1 ; F 1 ;T A}, {A 1 ; F 1 ; Ap}and {A 1 ; Ap;T A} which are also labels as invalid. In the end, for the combination of tgds ( <ref type="formula" target="#formula_13">2</ref>) and ( <ref type="formula">4</ref>), Algorithm 1 will output the single tgd <ref type="bibr" target="#b4">(5)</ref>.</p></div>
+<div><head>Interactive Mapping Specification with Exemplar Tuples 1:13</head><p>We now state that when shifting from the initial canonical mapping to its refined form as given by Algorithm 1, we obtain a more general set of tgds. Lemma 3.11. Let M = (S, T, Σ) be a canonical mapping and let Σ ′ be a mapping obtained from atom refinement of M, then, for all source instances E S , there exists a morphism µ such that µ(chase(Σ, E S )) ⊆ chase(Σ ′ , E S ). By the correctness of the chase procedure, the logical entailment Σ ′ |= Σ holds.</p><p>Proof. For each tgd σ = ϕ → ψ ∈ M there exists at least one tgd σ ′ = ϕ ′ → ψ ∈ M ′ that is an atom refinement of σ . Then, ϕ ′ must correspond to a node in the semilattice, such that ϕ ′ ⊆ ϕ. We introduce an function re f : M → M ′ that associate to each σ in M one of its refinements (that may be arbitrarily chosen if there are several such tgds in M ′ ).</p><p>Let ν be an instantiation mapping to compute chase(M, E S ). That is, there exists a tgd σ = ϕ → ψ ∈ M such that ν (ϕ) ⊆ E S and ν (ψ ) ⊆ chase(M, E S ). Moreover each existential variable in ψ is mapped by ν to a fresh labeled null, which means that is ν -1 is defined for such values. Since ϕ ′ ⊆ ϕ, ν (ϕ ′ ) ⊆ E S . Therefore, there exists an instantiation mapping ν ′ such that (1) <ref type="formula">3</ref>) for all variables x in ϕ ′ , ν ′ (x) = ν (x). However, ν ′ and ν can differ in two ways: the domain of ν ′ can be smaller than the domain of ν and the labeled nulls that are assigned to existential variables in ψ can be different because the chase generate fresh null values at each tgd application. By construction of E p in Algorithm 1, any variable x in ψ is either an existential variable or a universal variable in ϕ ′ . Thus, every variable x in ψ is either mapped to fresh null values by ν and ν ′ or, alternatively, ν (x) = ν ′ (x). We introduce µ ν a morphism from</p><formula xml:id="formula_19">ν ′ (ϕ ′ ) ⊆ E S (2) ν ′ (ψ ′ ) ⊆ chase(M ′ , E S ) and (</formula><formula xml:id="formula_20">ν (ψ ) ⊆ chase(M, E S ) to ν ′ (ψ ) ⊆ chase(M ′ , E S ), defined as µ ν (c) = c if there exists x in ϕ ′ such that ν(x) = c and µ ν (c) = ν ′ (ν -1 (c)) otherwise (that if c is a fresh value generated by chase(M, E S )).</formula><p>Let us consider two instantiation mappings ν 1 and ν 2 used in chase(M, E S ) and their associated morphisms µ ν 1 and µ ν 2 . Let c be a value in dom(µ ν 1 )∩dom(µ ν 2 ). If c is fresh and in dom(µ ν 1 ), it means than it is the image of an existential variable by ν 1 , which means that it cannot be the image of any variable by ν 2 , and thus c dom(µ ν 2 ) which contradicts c ∈ dom(µ ν 1 ) ∩dom(µ ν 2 ). Thus c is not fresh, thus</p><formula xml:id="formula_21">µ ν 1 (c) = c = µ ν 2 (c). We define µ {ν 1 ,ν 2 } as µ {ν 1 ,ν 2 } (c) = µ ν 1 (c) if c ∈ dom(µ ν 1 ) and µ {ν 1 ,ν 2 } (c) = µ ν 2 (c) otherwise. One can remark that µ {ν 1 ,ν 2 } | dom(µ ν 1 ) = µ ν 1 and µ {ν 1 ,ν 2 } | dom(µ ν 2 ) = µ ν 2 .</formula><p>By iterating this construction on the finite set Λ of all instantiation mappings ν used in chase(M, E S ), we can build a morphism µ = µ Λ .</p><p>Let t be a tuple in chase(M, E S ). There exists an instantiation morphism ν used in chase(M, E S ) and a tgd ϕ → ψ such that t ∈ ν (ψ ). Since</p><formula xml:id="formula_22">µ ν (ν (ψ )) ⊆ chase(M ′ , E S ) and µ | dom(µ ν ) = µ ν we deduce µ(t) ∈ chase(M ′ , E S ). □</formula><p>The following Example 3.12 shows that the previous lemma would not hold if Algorithm 1 is allowed to create new existential variables.</p><p>Example 3.12. Given a pair (E S , E T ) such that E S = {R(x, y); S(z)} and E T = {T (x)}. The canonical mapping corresponding to (E S , E T ) is Σ = {R(x, y) ∧ S(z) → T (x)}. Suppose that atom refinement allows the creation of existentially quantified variables. By applying this refinement on Σ, we may obtain the mapping Σ ′ = {S(z) → ∃x,T (x)}. Chasing E S under Σ and Σ ′ will lead to following results:</p><p>chase(E S , Σ) = {T (x)} chase(E S , Σ ′ ) = {T (x1)} for which there is no morphism µ such that µ(chase(E S , Σ)) ⊆ chase(E S , Σ ′ ), because the constant x has to be preserved.</p><p>The following Lemma 3.13 states that the intermediate mappings obtained after the atom refinement step is split-reduced and, at the opposite of the work in <ref type="bibr" target="#b12">[13]</ref>, have no σ -redundant tgds. Lemma 3.13. Given a normalized canonical mapping M = (S, T, Σ), application of atom refinement on the tgds in Σ always produces a mapping which is split-reduced and without σ -redundancy.</p><p>Proof. As M is already normalized, it is split-reduced. During the refinement step, only atoms in the left-hand side are suppressed, so there is no way to break joins between existentially quantified variables as they are located only in the right-hand side. This means that M ′ is split-reduced.</p><p>Also, the refinement use one quasi-lattices for each block of ψ -equivalent tgds. So the only way to create equivalent tgds is to validate two equivalent left-hand sides conjunctions in a same quasi-lattice, and there is no equivalent nodes in such quasi-lattice. This mean that M ′ has no σ -redundant tgds. □ 3.3.4 Questioning about atoms set validity. In the atom refinement algorithm, the user is challenged on the validity of the left-hand side atoms of the canonical mapping at line 10 of Algorithm 1.</p><p>We build on the correspondence between these atoms and the tuples that appear in the sources E S i to ask pertinent questions, as those shown in Example 3. Example 3.14. This example focuses on the generation of the exemplar tuples underlying the questions of Example 3.10 while refining the tgds ( <ref type="formula" target="#formula_13">2</ref>) and ( <ref type="formula">4</ref>). We are challenging the user about the validity of the set of atoms e = {F(idF 0 , town 2 , town 1 , idAir 0 ); A(idAir 0 , name 1 , town 1 )}, which is a subset of the left-hand side of the tgds ( <ref type="formula" target="#formula_13">2</ref>) and ( <ref type="formula">4</ref>). For each tgd, these atoms are built from the sets E 1 ′ S = {F(f0, Miami, L.A., a0); A(a0, AA, L.A.)} and E 2 ′ S = {F(f0, Lyon, Paris, a0); A(a0, AF, Paris)} ,respectively a subset the of instances E 1</p><p>S and E 2 S . We want to challenge the user whether the following generalization of the tgds (2) and ( <ref type="formula">4</ref>) is sufficient:</p><p>σ =F(idF 0 , town 2 , town 1 , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 )</p><p>→ ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )</p><p>The chase procedure applies σ on E 1 ′ S (resp. E 2 ′ S ) to obtain the following instance E 1 ′ T (resp. E 2 ′ T ), from which the first question appearing in Example 3.10 is derived:</p><formula xml:id="formula_23">E 1 ′ T = {Dpt(Miami, f2, c0); Arr(L.A., f2, c0); Co(c0, AA, L.A.)} E 2 ′</formula><p>T = {Dpt(Lyon, f2, c0); Arr(Paris, f2, c0); Co(c0, AF, Paris)}</p></div>
+<div><head n="3.4">Join refinement between variables of a tgd</head><p>In relational data, multiple occurrences of the same value do not necessarily imply a semantic relationship between the attributes containing such a value. An example from our running scenario is the occurrence of the constant L.A. both as the city where an airline company is located, and as the arrival and departure city of flights booked by that airline company. However, the canonical mapping imposes such co-occurrences that may be due to spurious use of the same variable. Thus, the canonical mapping may introduce irrelevant joins in the left-hand side of the tgds. In order to produce the mapping the user has in his mind, we primarily need to distinguish relevant joins from irrelevant ones. This section presets the join refinement step and details the join Algorithm 2 that explores the candidate joins in each tgd by inquiring the user about the validity of such joins. As joins in conjunctive queries are encoded by multiple occurrences of a variable, we refer to these variables as to join variables, refining a join corresponds to replace some occurrences with</p></div>
+<div><head>Algorithm 2 TgdsJoinRefinement(Σ)</head><p>Input: A set of tgds Σ to be join refined. Output: A set of tgds Σ ′ where each tgd is join refined.</p><p>1: Σ ′ ← ∅ 2: for all σ ∈ Σ do 3:</p><formula xml:id="formula_24">let σ = ϕ(x) → ∃y,ψ (x, y) 4: Σ t ← {σ } 5:</formula><p>for all x ∈ x do 6:</p><p>if variable x occurs more than once in ϕ then 7:</p><p>Σ explor ed ← Σ t 8:</p><formula xml:id="formula_25">Σ t ← ∅ 9:</formula><p>for all σ ′ ∈ Σ explor ed do 10:</p><formula xml:id="formula_26">Σ t ← Σ t ∪ VarJoinsRefinement(Σ t , σ ′ , x) 11:</formula><p>end for 12:</p><p>end if</p><formula xml:id="formula_27">13:</formula><p>end for 14:</p><formula xml:id="formula_28">Σ ′ ← Σ ′ ∪ Σ t 15:</formula><p>end for 16: return Σ ′ fresh variables. In Algorithm 2 this replacement of join variables by fresh ones is conducted by the subroutine named VarJoinsRefinement which is detailed in Algorithm 3. The subroutine explores the partitions of these newly introduced variables and questions the user to check if the joins are relevant (some fresh variables are unified) or not (they are kept renamed). A block in the set of all partitions represents the variables to be unified together.</p><p>Example 3.15. Recall tgd (5) from Example 3.10 obtained after the atom-refined mapping below: F(idF 0 , town 2 , town 1 , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 )</p><p>There is an ambiguity on the use of the same town as the town of arrival and departure of flights and the town where a travel agency is located, as shown by the multiple occurrences of the join variable town 1 at four different positions. Each occurrence of town 1 is replaced with a fresh variable (namely town 1 ′ , town 1 ′′ , town 1 ′′′ and town 1 ′′′′ ) yielding the following candidate tgd:</p><formula xml:id="formula_30">F(idF 0 , town 2 , town 1 ′ , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ′′ ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 ′′′ , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ′′′′ )</formula><p>In the corresponding quasi-lattice of the set {town 1 ′ , town 1 ′′ , town 1 ′′′ , town 1 ′′′′ }, the upperbound corresponds to the case where no refinement is needed, all occurrences being replaced with the original town 1 .</p><p>Given a variable x in a tgd σ = ϕ → ψ , we consider the set of its occurrences in ϕ ∪ ψ . Since we do not wish to introduce new existentially quantified variables, each variable occurrence in ψ must be bound to at least one variable occurrence in ϕ. In order to achieve this, we only consider the partitions in which all blocks contain at least one occurrence in ϕ. Those partitions are called well-formed.</p><p>Well-formed partitions are equipped with a quasi-lattice structure: given two partitions P and P ′ , if P ≤ P ′ and P is well-formed, then P ′ is well-formed as well. In particular, if P ≤ P ′ then all unifications encoded by P are also performed encoded in P ′ . This means that if P is acceptable for the user, then it is also the case for P ′ . Conversely, if P ′ is not acceptable for the user (i.e., some joins are missing), then neither is P. We employ these criteria to prune the search space during the exploration of the quasi-lattice of occurrences of x. This quasi-lattice structure allow us to avoid exploration of partitions leading to redundant tgd, which is not the case with the use of separate semilattices as used in <ref type="bibr" target="#b12">[13]</ref> Output: A set of tgds Σ out of join refinements of σ for variable x. 1: generate from σ a tgd σ ′ where occurrences of x are renamed with fresh variables and a morphism µ or iд such that µ or iд (σ ′ ) = σ 2: let σ ′ = ϕ ′ → ψ ′ 3: J cand ← generate set of possibles candidates join partitions from σ ′ 4: J v ← generate supremum of the join lattice from σ ′ 5: while J cand ∅ do 6:</p><formula xml:id="formula_31">P ← SelectPartition(J cand , J v ) 7:</formula><p>σ ′′ ← UnifyVariables(σ ′ , P) </p><formula xml:id="formula_32">σ ′′ ← UnifyVariables(σ ′ , P) 19:</formula><p>add σ ′′ to Σ out 20: end for 21: return Σ out Algorithm 2 implements the join refinement by iterating variable refinements on each universal variable of each tgd. As we do not consider the possibility of creating new joins, but only the suppression of joins which already exists, each original variable is considered separately. However, since each call to VarJoinsRefinement may generate multiple refined tgds, one for each refined join variable, we need to combine these refinements. This is done by verifying that the join partition currently evaluated does not lead to produce a tgd which is redundant or prunable. This is done in Algorithm 3 at line 8, by checking if there's another tgd σ t ∈ Σ t which is a model of the currently evaluated tgd (i.e. σ t is logically equivalent or more general than the evaluated tgd).</p><p>Then, we consider the town 1 variable. A renaming of each of its occurrences leads to the following tgd previously given in Example 3.15:</p><formula xml:id="formula_33">F(idF 0 , town 2 , town 1 ′ , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ′′ ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 ′′′ , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ′′′′ )</formula><p>There are five partitions that do not create new existential variables, namely : Since this partition is acceptable for the user, he will probably answer 'Yes'. Therefore, the upperbound {{town 1 ′ ; town 1 ′′ ; town 1 ′′′ ; town 1 ′′′′ }} of the quasi-lattice is pruned and the following tgd is added to the output:</p><formula xml:id="formula_34">{{town 1 ′ ;</formula><formula xml:id="formula_35">F(idF 0 , town 2 , town 1 ′ , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ′′ ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 ′ , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ′′ )</formula><p>The exploration continues with the remaining candidate partitions. However, as the remaining partitions either relate an airline's headquarters to an arrival or a flight to a company's headquarters, the user will consistently answer 'No' to these questions.</p><p>As formalized in the following Lemma 3.19, the join refinement step preserves the split-reduction property of mappings and, at the opposite of the work in <ref type="bibr" target="#b12">[13]</ref>, does not might introduce σ -redundant tgds. Hence, similarly to the atom refinement step and its associated Lemma 3.13, a normalization step following join refinement is not necessary. Lemma 3.19. Given a normalized mapping M = (S, T, Σ), application of join refinement on the tgds in Σ always produces a mapping which is normalized.</p><p>Proof. By definition, if a tgd σ is split-reduced and contain more than one atom in its righthand side, these atoms (at least two) are joined using existentially quantified variables. Since join refinement only focuses on universal variables, existential variables are preserved. Thus, all atoms in the right-hand side of join refined tgds are joined together using these existential variables, which means that join refined tgds are also split-reduced.</p><p>As Σ is normalized, each of its tgd is split-reduced. Since for each tgd in Σ, the application of the join refinement step results in new tgds that are also split-reduced. Thus, the set Σ ′ of all these refined tgds is a split-reduced mapping.</p><p>As each tgd is produced only if there's no logically equivalent tgd previously produced (Algorithm 3 at line 8), then no additional step of σ -redundancy suppression is needed.</p><p>As the mapping produced is split-reduced and does not contain σ -redundancy, then it is normalized. □</p><p>In the join refinement step, the suppression of joins can generate additional tuples in the target instance. For such a reason, similarly to the generation of questions in the atom refinement step,  the source instance is again chased to generate such additional tuples<ref type="foot" target="#foot_3">2</ref> . Similarly to the subroutine described in Section 3.3.4 for atom refinement, the AskJoinsValidity subroutine that appears in Algorithm 2 constructs a pair (E S σ , E T σ ) by instantiating the left-hand side of a candidate tgd σ to obtain a source instance E S σ and then chasing it to build E T σ .</p><formula xml:id="formula_36">M f inal ≡ M exp is proved in Theorem 4.14</formula><p>Example 3.20. We illustrate the questions asked to the user in Example 3.18. We challenge the user on the validity of the partition P = {{town 1 ′ ; town 1 ′′′ } ; {town 1 ′′ ; town 1 ′′′′ }} in the following tgd: σ =F(idF 0 , town 2 , town 1 ′ , idAir 0 ) ∧ A(idAir 0 , name 1 , town 1 ′′ ) → ∃idC 0 , idF 2 , Dpt(town 2 , idF 2 , idC 0 ) ∧ Arr(town 1 ′ , idF 2 , idC 0 ) ∧ Co(idC 0 , name 1 , town 1 ′′ )</p><p>The instance E S σ obtained from the left-hand side of σ through the bijection θ is the following: At the end of this step, the mapping M f inal is returned to the user as the result of the framework execution.</p><formula xml:id="formula_37">E S σ = {F(</formula></div>
+<div><head n="4">FORMAL GUARANTEES OF THE FRAMEWORK</head><p>In this section, we prove the correctness and the completeness of our interactive mapping specification framework.</p><p>First, we describe the set of questions that can be asked by our framework and the transition rule that describes how the framework rewrites the mapping at each iteration. Then, we show that if the user provides a set of exemplar tuples for his expected mapping, then our framework will converge to a single mapping in the space of all possible inferred mappings. Finally, we show that if the user provides a set of exemplar tuples that fully describe the mapping that he has in mind, then our framework will always return a logically equivalent mapping to the latter mapping. The mains theorems of this section are summarized in Figure <ref type="figure" target="#fig_4">4</ref>, which offers a guideline for the reader through the main theorems.</p><p>The set of all possible tgds explored by our process, and the set of questions about the validity of those tgds are expressed as follows : Definition 4.1 (Explored set of candidates tgds). Let M can be a canonical mapping. The set of candidates tgds is defined as follows :</p><formula xml:id="formula_38">M candidat es = (ϕ→ψ )∈M c an {ϕ ′ → ψ ′ |ϕ ′ ∅ ∧ ψ ′ ∅ ∧ (∃µ such that µ(ϕ ′ ) ⊆ ϕ ∧ µ(ψ ′ ) ⊆ ψ )}</formula><p>Definition 4.2 (Set of asked questions). Let M can be a canonical mapping. Let M candidat es be the set of tgds explored by our framework for M can . The set of questions Q that can be asked by our framework is the set :</p><formula xml:id="formula_39">Q = {"Are the tuples θ (ϕ) enough to produce θ (ψ )?" | (ϕ → ψ ) ∈ M candidat es }</formula><p>Given a previously inferred mapping, a question and the oracle's answer to this question, our framework will produce a new mapping. This is expressed by the following transition rule : Definition 4.3 (Transition rule). Let M inf be a mapping. Let q be a question about the validity of the tgd ϕ → ψ .</p><p>Then we have :</p><formula xml:id="formula_40">M q - → M ′ such that : if answer (q, Oracle) then M ′ = M ∪ (ϕ → ψ ) else M ′ = M Remark 1.</formula><p>The framework is non-deterministic as there are multiple possible questions q that can be asked from a single mapping M.</p><p>Our framework uses the canonical mapping, computed from the user's set of exemplar tuples, as the initial mapping. Then, our framework iteratively rewrites this mapping by asking the questions in the set Q defined in definition 4.2. This exploration can be expressed as a succession of applications of transition rule over Q. More formally : Definition 4.4 (Exploration). Let M can be a canonical mapping. Let Q be the set of questions that can be asked over M can .</p><p>Then, an exploration of the set Q is a series of applications of the transition rule :</p><formula xml:id="formula_41">M can q 1 -→ . . . q n --→ M inf such that {q 1 ; . . . ; q n } ∈ Q M inf is called an inferred mapping.</formula><p>Correctness of the framework. We will now show that, given an expected mapping M exp and a canonical mapping M can obtained from a set of exemplar tuples for M exp , then every mapping M inf inferred by our framework is such that</p><formula xml:id="formula_42">M exp |= M inf |= M can .</formula><p>First, we show that the inferred mappings imply the canonical mapping. This comes from the fact that our framework will relax constraints of the canonical mapping, without introducing new ones. Theorem 4.5. Let M can q 1 -→ . . . q n --→ M inf be an exploration. Then :</p><formula xml:id="formula_43">M inf |= M can</formula><p>Proof. This theorem follows from the definition 4.3. This definition shows that consecutive applications of the rewriting rules will only add new tgds without suppressing tgds in M can . Thus, M inf ⊇ M can , from which follow M inf |= M can . □</p><p>In addition to this theorem, we show that our framework will only produce mappings implied by the expected mapping. This guarantees that the inferred mapping will not produce extraneous tuples that would not be produced by the expected mapping. Theorem 4.6. Let M exp be the expected mapping by Oracle. Let E be a set of exemplar tuples for M exp . Let M can be the canonical mapping computed from E. Let M can q 1 -→ . . . q n --→ M inf be an exploration. Then :</p><formula xml:id="formula_44">M exp |= M inf</formula><p>Proof. The proof is done by induction over an exploration :</p><p>• Suppose that we have an exploration M can q 1 -→ . . .</p><formula xml:id="formula_45">q n --→ M inf such that M exp |= M inf .</formula><p>The application of a new rewriting rule will lead to the following exploration :</p><formula xml:id="formula_46">M can q 1 -→ . . . q n --→ M inf q n+1 ---→ M ′ inf with q n+1 being a question over a tgd ϕ → ψ . -if answer (q n+1 , Oracle) = false then, by definition 4.3, M ′ inf = M inf . By the induction hypothesis : M exp |= M ′ inf . -if answer (q n+1 , Oracle) = true then, by definition 4.3, M ′ inf = M inf ∪ {ϕ → ψ }.</formula><p>Also, by definition 3.7, if the oracle answer true to q n+1 then ψ ⊆ chase(ϕ, M exp ), i.e. M exp |= {ϕ → ψ }. Since M exp |= M inf by induction hypothesis, we obtain M exp |= M ′ inf .</p><p>• From E we have the non-normalized canonical mapping :</p><formula xml:id="formula_47">M can_r aw = { θ -1 (E S ) → θ -1 (E T ) | (E S , E T ) ∈ E}</formula><p>By definition 3.1 of the exemplar tuples we also have :</p><formula xml:id="formula_48">∀(E S , E T ) ∈ E, E T ⊆ chase(M exp , E S )</formula><p>As θ -1 is an isomorphism, we can do the following substitution :</p><formula xml:id="formula_49">∀( θ -1 (E S ) → θ -1 (E T )) ∈ M can_r aw , θ -1 (E T ) ⊆ chase(M exp , θ -1 (E S ))</formula><p>which means, by definition of mapping implication, that M exp |= M can_r aw . By correctness of the normalization rules (split-reduction and σ -redundancy suppression <ref type="bibr" target="#b22">[23]</ref>), we have M can ≡ M can_r aw , and thus M exp |= M can . □ Moreover, our framework will always converge to one unique mapping regardless of the order in which questions are asked. This is shown in the following theorems showing the confluence and the convergence of our framework : Theorem 4.7 (Confluence). Let M be a mapping. Let M q 1 -→ . . .</p><formula xml:id="formula_50">q n --→ M n and M q ′ 1 -→ . . . q ′ m --→ M m be two explorations from M.</formula><p>Then there exists a mapping M ′ such that we can find two explorations :</p><formula xml:id="formula_51">M n q n+1 ---→ . . . q n+k ----→ M ′ and M m q ′ m+1 ----→ . . . q ′ m+k ′ ----→ M ′</formula><p>Proof. When a question is asked, the tgd corresponding to this question will be added or not to the inferred mapping, depending on the oracle answer. This process is completely independent from the previously asked questions and does not modify the set of questions that are asked. Therefore, the order in which questions are asked does not influence the result. Thus, it is easy to construct the two sets questions {q n+1 ; . . . ; q n+k } and {q ′ m+1 ; . . . ; q ′ m+k } as follows : {q n+1 ; . . . ; q n+k } = {q ′ m+1 ; . . . ; q ′ m+k ′ } \ {q 1 ; . . . ; q n } {q ′ m+1 ; . . . ; q ′ m+k } = {q n+1 ; . . . ; q n+k } \ {q ′ 1 ; . . .</p><formula xml:id="formula_52">; q ′ m } □ Theorem 4.8 (Convergence). Let M can q 1 -→ . . . q k --→ M k q k +1</formula><p>---→ . . . be an infinite exploration. Then :</p><formula xml:id="formula_53">∃k ∈ N such that ∀k ′ ≥ k, M k ≡ M k ′</formula><p>Proof. This follows from definition 4.2 of the set of all questions that can be asked, and from Theorem 4.7. If the whole set of questions is explored, then asking one of this question one more time, or asking a question isomorphic to a question of this set, will only lead to an equivalent mapping.</p><p>□</p><p>Following from the convergence theorem, we can define a complete exploration for our framework as follows : Definition 4.9 (Complete exploration). Let M can be a canonical mapping. Let Q be the set of questions that can be asked over M can .</p><p>Then, a complete exploration of the set Q is a series of applications of the transition rules :</p><formula xml:id="formula_54">M can q 1 -→ . . . q n</formula><p>--→ M f inal where {q 1 ; . . . ; q n } ∈ Q</p><formula xml:id="formula_55">such that : ∀q ∈ Q, M f inal q - → M f inal</formula><p>Completeness of the framework. If an user produce a set of exemplar tuples that does not contain the necessary information to derive each tgd in his expected mapping, then it's easily seen that the final mapping obtained after a complete exploration cannot be equivalent to the expected one. However, we will now show that if the user provides a fully informative set of exemplar tuples for his expected mapping, our framework will always return a mapping logically equivalent to the user's expected mapping.</p><p>To do so, we will first show that for every expected mapping, there exists an ideal set of questions such that if they are all asked to the user, then the framework will return a mapping logically equivalent to the expected mapping. Then we show that, for every fully informative set of exemplar tuples for the user's expected mapping, our framework will always ask the ideal set of questions. Definition 4.10 (Ideal exemplar tuples set). Let M be a mapping. Let E be a set of exemplar tuples for M. Then E is an ideal exemplar tuples set if the canonical mapping M can extracted from E is such that M can ≡ M. Lemma 4.11. For all GLAV mapping M, there exists an ideal exemplar tuples set E ideal .</p><p>Proof. W.l.o.g., we suppose that M is normalized. From M we can construct a set :</p><formula xml:id="formula_56">E = {( θ (ϕ), θ (ψ ))|(ϕ → ψ ) ∈ M}</formula><p>As each exemplar tuple (E S , E T ) ∈ E come directly from a tgd σ ∈ M, it follows that E T ⊆ chase(σ , E S ). It follows that E is an exemplar tuples set for M.</p></div>
+<div><head>Interactive Mapping Specification with Exemplar Tuples 1:23</head><p>Also, as the non-normalized canonical mapping M can_r aw is obtained by applying the morphism from tuples to atoms θ -1 to each exemplar tuple in E and by definition of E, we obtain :</p><formula xml:id="formula_57">M can_r aw = {( θ -1 ( θ (ϕ)) → θ -1 ( θ (ψ )))|(ϕ → ψ ) ∈ M} = {(ϕ → ψ )|(ϕ → ψ ) ∈ M} = M</formula><p>We know than the normalization of M can_r aw lead to a mapping M can ≡ M can_r aw , so M can ≡ M. Thus, the set E is an ideal exemplar tuples set for M. □ Lemma 4.12. Let M exp be the mapping expected by the oracle Oracle. Let E be a set of exemplar tuples for M exp . Let M can be the canonical mapping computed from E. Let E ideal be the ideal exemplar tuples set for M exp . Let Q = {q 1 ; ...; q n } be the following set of questions :</p><p>{"Is E S enough to deduce</p><formula xml:id="formula_58">E T ?" | (E S , E T ) ∈ E ideal } Let M can q 1 -→ . . . q 2 -→ . . . q n</formula><p>--→ M f inal be an exploration over the set of questions Q. Then M f inal ≡ M exp Proof. By construction of E ideal (proof of Lemma 4.11), then Oracle will always answer true to each question in Q. We also know by the construction of E ideal that to each tgd in M exp it corresponds to one, and only one, pair (E S , E T ) ∈ E ideal .</p><p>Thus, each application of the transition rule M i q -→ M i+1 over a question q ∈ Q will add a tgd from M exp to M i . At the end of the exploration over Q, we obtain the mapping M f inal = M can ∪ M exp . Thus, M f inal ⊇ M exp and consequently M f inal |= M exp .</p><p>From Theorem 4.6, we also have that M exp |= M f inal , so M f inal ≡ M exp . □ Lemma 4.13. Let M exp be the mapping to describe (supposed in normal form). Let E F I be a fully-informative exemplar tuples set for M exp . Let M can be the canonical mapping constructed from E F I . Let Q be the set of questions asked from M can . Let E ideal be the ideal exemplar tuples set for M exp as described in Lemma 4.11.</p><p>Then we have :</p><formula xml:id="formula_59">E ideal ⊆ Q</formula><p>i.e., our framework leads to explore the ideal exemplar tuples set E ideal .</p><p>Proof. For each tgd (ϕ → ψ ) ∈ M exp there exists an exemplar tuple (E S , E T ) such that :</p><formula xml:id="formula_60">∃E ′ S ⊆ E S s.t. (chase(σ , E ′ S ) ∅) ∧ (chase(σ , E ′ S ) ⊆ E T ) By construction of M can , for each tgd (ϕ → ψ ) ∈ M exp there exists a tgd (ϕ ′ → ψ ′ ) ∈ M can such that : ∃ϕ ′′ ⊆ ϕ ′ s.t. (chase(σ , ϕ ′′ ) ∅) ∧ (chase(σ , ϕ ′′ ) ⊆ ψ )</formula><p>So, there's a substitution µ such that all atoms in ϕ can be mapped to atoms in ϕ ′′ and an extension µ ′ of µ mapping all atoms of ψ to atoms in ψ ′′ = chase(σ , ϕ ′′ ). This lead to :</p><formula xml:id="formula_61">µ(ϕ) ⊆ ϕ ′′ ⊆ ϕ ′ and µ ′ (ψ ) ⊆ ψ ′′ ⊆ ψ ′ .</formula><p>By construction of E ideal , for each tgd (ϕ → ψ ) ∈ M exp there exists (E S , E T ) ∈ E ideal such that ϕ = θ -1 (E S ) and ψ = θ -1 (E T ). Thus, we can find a tgd (ϕ ′ → ψ ′ ) ∈ M can such that there is a morphism µ and its extension µ ′ such that µ( θ -1 (E S )) ⊆ ϕ ′ and µ ′ ( θ -1 (E T )) ⊆ ψ ′ . From this and from Definition 4.1 and Definition 4.2, for all exemplar tuples (E S , E T ) ∈ E ideal the question about the validity of tgd θ -1 (E S ) → θ -1 (E T ) is in the set Q. □ Theorem 4.14 (Our framework can always produce a mapping logically eqivalent to the expected one). Let M exp be the mapping expected by the oracle Oracle. Let E F I be a fully informative exemplar tuples set for M exp . Let M can be the canonical mapping computed from</p><formula xml:id="formula_62">E F I . Let M can q 1 -→ . . . q n</formula><p>--→ M f inal be a complete exploration performed by our framework. Then :</p><formula xml:id="formula_63">M f inal ≡ M exp</formula><p>Proof. In Lemma 4.12 we show that if our framework ask all the questions of the ideal exemplar tuples set for the expected mapping M exp , then the output mapping M will be such that M ≡ M exp . In Lemma 4.13 we show that, given a fully informative exemplar tuples set for M exp , then our framework will ask all questions of the ideal exemplar tuples set for M exp . From this follow our theorem. □</p><p>We will show now that the limitation over the pruning maintain the completeness of the framework. Theorem 4.15. Given an execution of our framework, the pruning does not affect the completeness of our approach.</p></div>
+<div><head>Proof. The pruning work in two ways :</head><p>• if M exp |= σ , then we prune each questions about a tgd σ ′ such that σ |= σ ′ . Trivially, there is no need to explore implied tgd of an already validated tgd as they can be validated by transitivity. Also, there is no need add them to the final mapping, as they can only create redundant tuples. • if M exp ̸ |= σ , trivially we can prune each questions about a tgd σ ′ such that σ ′ |= σ .</p></div>
+<div><head>□</head></div>
+<div><head n="5">EMBEDDING INTEGRITY CONSTRAINTS</head><p>In the previous section, we have described the core of our approach. Now, we will describe how a user can introduce integrity constraints to help the lattice pruning. Integrity constraints provide a way to define guidelines over a database schema, and ensure that the instances over this schema will comply to these guidelines. In practice, the most commonly used integrity constraints are primary keys and foreign keys (a particular case of inclusion dependencies). Such constraints are classic tools of database design, and therefore are easily available in real integration scenarios.</p><p>Introduction of integrity constraints constitutes an extension of our initial (IMS) problem. This Interactive Mapping Specification with Integrity Constraints approach (IMS IC ) can be stated as follows :</p><p>(IMS IC ) Given a set of exemplar tuples E and a (possibly empty) set of constraints Σ IC provided by a non-expert user, given a mapping M that the user has in mind, the Interactive Mapping Specification with Integrity Constraints problem is to discover, by means of boolean interactions, a mapping M ′ such that each (E S , E T ) ∈ E satisfy M ′ , M ′ is valid w.r.t. Σ IC and M ′ generalizes M.</p></div>
+<div><head>Considered schema</head><p>Primary keys Foreign keys Source Not applicable Section 5.1 Target Section 5.2 Beyond scope Fig. <ref type="figure">5</ref>. Summary of the main theorems about our framework (in Section 4).</p><p>The possible cases of use of integrity constraints are summarized in Figure <ref type="figure">5</ref>. Foreign keys over source schema and primary keys over target schema are addressed, respectively, in Section 5.1 and Section 5.2. Primary keys over the source schema cannot be used for our pruning, as this constraint should be satisfied by the source instances provided by users. Else, it will mean that user provided an instance which already violates the constraints over his schema, so this instance cannot be used to exemplify his schema mapping problem. The use of foreign keys over the target schema lead to non-trivial extension that are beyond the scope of this paper.</p></div>
+<div><head n="5.1">Use of foreign keys under source schema</head><p>The introduction of foreign keys constraints (and, more generally, of inclusion dependencies) can inform us about which tuple (containing a foreign key) can only occur in the presence of another tuple (referenced by the foreign key). This information between tuples can be represented by a graph as defined as follows : Definition 5.1 (Foreign key constraint.). Let R be a database schema. Let S and T be two relation symbols such that S, T ∈ R. Let X and Y be two distinct sequences of attributes over, respectively, S and T .</p><p>Then a foreign keys constraint is a constraint such that :</p><formula xml:id="formula_64">S[X ] ⊆ T [Y ]</formula><p>and Y is a key of T Foreign keys are a particular case of inclusion dependencies constraints, for which Y don't need to be a key of T . Our system works with inclusion dependencies, so foreign keys are handled.</p><p>In our algorithm, we use inclusion dependency graphs to represent the constraints conveyed by the provided inclusion constraints over a conjunction of atoms. In such a graph, given each pair of atoms in the conjunction, there exists an directed edge between these atoms if they satisfy a provided inclusion constraint. More formally : Definition 5.2 (Inclusion dependency graph.). Let ϕ be a conjunction of atoms over a schema S. Let Σ I C_S be a set of integrity constraints over S.</p><p>The inclusion dependency graph over ϕ is the directed graph :</p><formula xml:id="formula_65">G ϕ = (atoms(ϕ), E)</formula><p>with :</p><formula xml:id="formula_66">E = {⟨a 1 , a 2 ⟩ | a 1 ∈ ϕ, a 2 ∈ ϕ, ∃σ ∈ Σ IC_S , ⟨ θ (a 1 ), θ (a 2 )⟩ |= σ }</formula><p>In this section, we make use of this graph during the atom refinement step as illustrated in the following example :</p><p>Example 5.3. Given two schemas S = {S(x, y); U (x, y, z); V (z, x);W (z, x)} and T = {T (x)}. Given an exemplar tuple (E S , E T ) over S and T such that : Given the corresponding conjunctions : <ref type="figure">d,</ref><ref type="figure">e</ref>)</p><formula xml:id="formula_67">E S = {S(a, b), U (a, b, c), V (c,</formula><formula xml:id="formula_68">ϕ E S = S(a, b) ∧ U (a, b, c) ∧ V (c, a) ∧ W (c, a) ∧ S(</formula><formula xml:id="formula_69">ψ E T = T (a)</formula><p>and the set of foreign keys over the source schema S:</p><formula xml:id="formula_70">Σ f k = {U .x, U .y ⊆ S.x, S.y; V .z ⊆ U .z;W .z ⊆ U .z}</formula><p>Then we can draw the dependency graph of the atoms in ϕ E S shown in Figure <ref type="figure" target="#fig_6">6</ref> (for the sake of clarity, edges are labeled with the corresponding inclusion dependency even if not used in our algorithm) :</p><p>We can see that S(m, n) it is not linked to any other atom. At the opposite, atom V (z, x) is linked to atom U (x, z), and this last one is linked to atom S(x, y). Therefore, we are sure that a tuple triggering atom V (z, x) will always occur with tuples corresponding to atoms U (x, z) and S(x, y). As a consequence, we can skip exploring conjunctions like V (z, x) and U (x, z) ∧ V (z, x) during atom refinement step.</p><p>To make use of this, we propose Algorithm 4 in order to apply this optimization during atom refinement. In this algorithm, for the sake of clarity, we abuse the notation of G ϕ = (atoms(ϕ), E) by simply writing G when it's obvious. To use it in Algorithm 1, the line</p><formula xml:id="formula_71">C cand ← SourceFk_PruneUselessConjuction(C cand , C valid , Σ sour ce F k )</formula><p>need to be inserted just after line 6. This algorithm takes the set of candidate conjunctions that can be explored and prune it w.r.t. to inclusion dependencies. To achieve that, the algorithm begins by the construction of the dependency graph previously for each upper-bound of the quasi-lattices. Then, for each dependency graphs over an upper-bound, the algorithm check if the candidates that are subsets of this upper-bound respect all the dependencies of the graph. If such a candidate does not respect every dependency, it is pruned from the set of candidates output by the algorithm. In the following, we provide an example that substantiates the informal description of the algorithm.</p><p>Example 5.4 (Pruning of quasi-lattice : the need of evaluating each supremum separately.). Given two schemas S = {S(x, y); S ′ (x, z); U (x, z)} and T = {T (x)}. Given two exemplar tuples over S and T such that :</p><formula xml:id="formula_72">(E 1 S , E 1 T ) = ({S(a, b), U (a, c)}, {T (a)}) (E 2 S , E 2 T ) = ({S ′ (a, b), U (a, c)}, {T<label>(</label></formula><p>a)}) and the set of foreign keys over schema S:</p><formula xml:id="formula_73">Σ f k = {U .x ⊆ S.x; U .x ⊆ S ′ .x }</formula><p>During atom refinement, as these tgds are ψ -equivalent, we will explore the atoms sets quasi-lattice shown in Figure <ref type="figure" target="#fig_7">7a</ref> Algorithm 4 SourceFk_PruneUselessConjuction(C cand , Σ f k )</p><p>Input: A set C cand of the candidate conjunctions to evaluate (as produced by Algorithm 1, line 5) Input: A set C up of the upper bound of the quasi lattice over C cand (as produced by Algorithm 1, line 6) Input: A set of foreign keys or other inclusion dependencies on the source schema Σ f k . Output: A set C ′ cand of a the pruned set of candidates. ▷ Generation of dependency graphs for each upper-bound</p><formula xml:id="formula_74">1: F G ← ∅ 2:</formula><p>for all ϕ up ∈ C up do</p><p>3:</p><formula xml:id="formula_75">E ϕ up ← ∅ 4: for all (R[X ] ⊆ S[Y ]) ∈ Σ f k do 5: E t ← extract the pairs of atoms ⟨a 1 , a 2 ⟩ such that a 1 , a 2 ∈ ϕ up and θ (a 1 )[X ] ⊆ θ (a 2 )[Y ]</formula><p>6:</p><formula xml:id="formula_76">E ϕ up ← E ϕ up ∪ E t 7:</formula><p>end for</p><formula xml:id="formula_77">8:</formula><p>Let G = (atoms(ϕ up ), E ϕ up )</p><p>9:</p><formula xml:id="formula_78">F G ← F G ∪ {G} 10: end for ▷ Pruning of candidates 11: C ′ cand ← C cand 12: for all G ∈ F G do 13: Let G = (atoms(ϕ up ), E ϕ up ) 14: for all c ∈ C ′ cand such that c ⊆ ϕ do 15: if ∃⟨a 1 , a 2 ⟩ ∈ E ϕ up such that a 1 ∈ c ∧ a 2 c then 16: C ′ cand ← C ′ cand \ c 17:</formula><p>end if If we don't produce separate dependency graphs for each element in the upper bound, we will obtain the graph in Figure <ref type="figure" target="#fig_7">7b</ref> (for the sake of clarity, edges are labelled with the corresponding inclusion dependency even if not used in our algorithm): This graph will lead to the pruning of each conjunction except S(a, b) and S ′ a, c). This is due to the fact that the perfectly acceptable conjunction S(a, b) ∧ U (a, c) and S ′ (a, c) ∧ U (a, c) does not contain the whole set of dependencies expressed in the graph, and will be pruned by the condition line 15. In other words, this graph is only usable if the conjunction S ∧ S ′ ∧ U can be accessed during atom refinement.</p><p>To avoid such a case, our algorithm constructs a dependency graph for each element in the upper-bound of the quasi-lattice. This allows to check, for each dependency graph of an element in the upper bound, if a candidate subset of this element does not express each of its dependencies. In our example, this lead to generate the two small dependency graphs shown in Figure <ref type="figure" target="#fig_7">7c</ref>.</p><p>This graphs leads to prune conjunction U (a, c) but not the conjunction S(a, b) ∧ U (a, c) as it respects the dependency of the graph at the left and is not included in the other upper-bound element S ′ (a, c) ∧ U (a, bc) (this prevents to evaluate this conjunction with the dependency graph at the right, which should have led to its pruning). The exact same principle leads to avoid the pruning of the conjunction S ′ (a, c) ∧ U (a, c). Lemma 5.5. Given a quasi-lattice of atoms conjunctions as produced by our atom refinement step. Given the dependency graphs that are generated separately for each element e of the upper-bound of the quasi-lattice. If, for each graph of an element e, this graph is checked on a subset of e, then no valid conjunction will be suppressed.</p><p>Proof. Given an element e and its corresponding graph G, then our algorithm will suppress only candidates that are subsets of e and that violate at least one inclusion dependency represented in G.</p><p>Moreover, given an atom δ ∈ e such that e \ δ violate an inclusion dependency in G, this means that there is an atom γ ∈ e such that there is an inclusion dependency from γ to δ , i.e. γ will always occur with the corresponding atom δ . Thus, there is no need to explore conjunction e \ δ as this conjunction will be triggered as often as conjunctions e. □</p></div>
+<div><head n="5.2">Use of primary keys under target schema</head><p>During the steps of our framework, exploration can lead to evaluate tgds which can lead to break primary key constraints over the target schema as illustrated in the following example :</p><p>Example 5.6. Given exemplar tuples : </p><formula xml:id="formula_79">A Att1 Att2 Att3</formula></div>
+<div><head>Interactive Mapping Specification with Exemplar Tuples 1:29</head><p>To handle that, we propose the Algorithm 5 which, given a set of primary key constraints provided by a user, allow to avoid exploration of candidates which can lead to break these constraints. To use it in algorithm 3, the condition line 8 needs to be changed by : res ← res ∨ t bool 5: end for 6: return res</p><formula xml:id="formula_80">(∄σ t ∈ Σ t , σ t |= σ ′′ ) ∧ AskJoinsValidity(σ ′′ ) ∧ ¬TargetPk_InvalidTgd(σ ′′ , Σ,</formula><p>In the following lemma, we show that the introduction of our optimization over primary keys under target schema only prunes invalid candidates : Lemma 5.7. Given a candidate tgd during join refinement steps, then Algorithm 5 only prune invalid candidates.</p><p>Proof. Our optimization lead to prune candidate tgds which will lead to violate the user's constraint if such tgds are applied to the user's examples. Thus, their invalidity is trivially seen. □</p></div>
+<div><head n="6">EXPERIMENTS</head><p>Our experimental study has three main objectives: (i) to provide a comparative analysis of the quasi-lattice approach with the semi-lattice approach proposed in <ref type="bibr" target="#b12">[13]</ref>, (ii) to evaluate the benefit of using exemplar tuples with respect to universal solutions for mapping refinement, and (iii) to provide a comparative analysis with <ref type="bibr" target="#b5">[6]</ref>. Experimental settings. We have implemented our framework using <software ContextAttributes="used">OCaml</software> 4.03 on a 2.6GHz 4-core, 16Gb laptop running <software ContextAttributes="used">Debian</software> 9. We have borrowed mappings from seven real integration scenarios of the iBench benchmark <ref type="bibr" target="#b7">[8]</ref>. The left part of Table <ref type="table" target="#tab_10">1</ref> reports the size of each considered mapping scenario as the total number of tgds (|Σ|) and the average number of occurrences of their variables ( N ) defined as N = Σ v ∈V N v /|V |, with V being the set of distinct variables and N v the number of occurrences of each v variable within the tgds. Since there exists a bijection between variables and constants, N also stands for the average number of occurrences of constants per instance in the exemplar tuples. Methodology. In all experiments, we consider the iBench mapping scenarios as the ideal mappings that the user has in mind. Starting from these mapping scenarios, we construct exemplar tuples as follows. Each tgd σ ∈ Σ of the form ϕ → ψ is transformed into a pair of instances (E S σ , E T σ ), E S σ (E T σ , resp.) being generated by replacing each atom in ϕ (ψ , resp.) by its tuple counterpart with freshly picked constants for each variable in the tgd. Thus, for each scenario Σ = {σ 1 , . . . , σ n }, we obtain a set of exemplar tuples These exemplar tuples are used as a baseline in our experimental study, as we expect that an "ideal" user, who does not make any mistakes, would actually produce such examples. In order to introduce user ambiguities in the above tuples, we have built alternative test cases, in which the exemplar tuples E Σ are degraded . The degradation procedure is meant to reproduce users' common mistakes while specifying exemplar tuples.</p><formula xml:id="formula_81">E Σ = {(E S σ 1 , E T σ 1 ), . . . , (E S σ n , E T σ n )}.</formula><p>As opposed to <ref type="bibr" target="#b12">[13]</ref>, we only focus here on atom degradation. The reason is that the introduction of quasi-lattice does not add much improvement to the join refinement step, unless in some specific cases as illustrated the following example : Example 6.1. Let the expected mapping be :</p><p>Σ exp = {σ exp : S(x, y, z) → T (x, y, z)}</p><p>Let the exemplar tuples provided by the user be :</p><formula xml:id="formula_82">(E S 1 , E T 1 ) = ({S(a, a, c)}, {T (a, a, c)}) (E S 2 , E T 2 ) = ({S(a, b, a)}, {T (a, b, a)})</formula><p>Then this set of exemplar tuples lead to the following canonical mapping : Σ can = {σ 1 : S(x, x, z) → T (x, x, z); σ 2 : S(x, y, x) → T (x, y, x)} Hence, the occurrences of the constant a to represent variable y in (E S 1 , E T 1 ) and variable z in (E S 2 , E T 2 ) lead to explore the quasi-lattice of tgds shown in Figure <ref type="figure">8</ref> during join refinement of x.</p><p>For our comparison with the approach used in <ref type="bibr" target="#b12">[13]</ref>, we have not created a new degradation method to artificially improve our results. We keep the method in <ref type="bibr" target="#b12">[13]</ref> which is more realistic and give us a fair comparison.</p><p>Atom degradation procedure is parametrized by the total number of extraneous tuples added to E Σ , with the constraint that at most one tuple is added to each individual instance E S σ i . An extraneous tuple is generated by randomly choosing a source instance E S σ i , picking a tuple at random within it, copying it and then replacing one constant of the tuple with a fresh one. For each of the above configurations, we repeated the degradation procedure 30 times in order to obtain an equivalent number of degraded test cases.</p><p>Moreover, we simulate the user's answers during the interactive part of our approach with the following assumption: the user always replies correctly to a given challenge (i.e. an input pair Interactive Mapping Specification with Exemplar Tuples 1:31 (E S , E T )) w.r.t. the original mapping Σ from the scenario. In order to simulate the user answer, E S is chased to obtain E T ′ . 'Yes' is produced as an answer if there exists a substitution µ from E T into E T ′ such that µ(E T ) ⊆ E T ′ , otherwise 'No' is returned. Benefit of quasi-lattices. In the first experiment, we gauge the effectiveness of using quasilattices structures compared to the isolated semi-lattices used in <ref type="bibr" target="#b12">[13]</ref>. We focus on the Breadth-First exploration strategies, both in Top-Down and Bottom-Up versions, as they've been shown to be the more efficient in <ref type="bibr" target="#b12">[13]</ref>. The use of quasi-lattices show to have a statistically significant correlation with the number of questions asked during atom refinement (p -value = 4.74e -14, tested with a MANOVA). In the following, we will analyse the results of our experiments.</p><p>Table <ref type="table" target="#tab_10">1</ref> presents the reduction obtained by the use of quasi-lattices (in percent) over the average number of questions per tgd asked to the user (∆ x), and over the maximum number of questions per tgd (∆x m ) for a scenario. It can be seen that the reduction of the average number of questions by the use of quasi-lattices range from 0% to 12.7%, with a global reduction of 3.2%. Also, the reduction of the maximal number of questions by the use of quasi-lattices range from 0% to 27%, with a global reduction of 11.8%.</p><p>The efficiency of the optimisation is not directly correlated with the number of tgds in a scenario. This is illustrated with scenarios amalgam2 and SDB1-to-SDB3, where the biggest one (amalgam2) lead to a small amelioration, when the other one lead to the highest reduction of the number of questions asked. This can be explained by the structure of the tgds contained by the scenarios. When scenarios contain numerous but non overlapping tgds (i.e., our degraded exemplar tuples sets lead to few ψ -equivalent tgds), most of the quasi-lattices cover one tgd at a time and consequently are equivalent to the semi-lattices used in <ref type="bibr" target="#b12">[13]</ref>. In the other case, even with less tgds than in amalgam2, the use of quasi-lattices during refinement of scenario SDB1-to-SDB3 lead to an important reduction of the number of question asked because this scenario contains tgds which are differentiated by more subtle differences than in amalgam2. Such scenarios with numerous ψ -equivalent tgds leads to exemplar tuples sets which are efficiently handled by the use of quasi-lattices.</p><p>Figure <ref type="figure">9</ref> illustrates the number of questions asked for each configuration. We recall that, in a boxplot : the central bar correspond to the median; the lower and upper edges are, respectively, the first and fourth quartiles; the lower and upper whisker are, respectively, the minimum and maximum values excluding outliers; the isolated points are the outliers.</p><p>The boxplots shown that in the worst case values stay unchanged, and in the scenarios with the highest number of questions asked (such as SDB1-to-SBD3 and amalgam2) the use of quasi-lattice leads to efficiently decrease the number of questions asked. This is shown by the decrease of the fourth quartiles value (i.e., the value such that 75% of data have a lower value) and by the suppression (complete or partial) of outliers occurrences.</p><p>It is worth to note that, in some cases such as the scenario GUS-to-BIOSQL with 2 degradations in Figure <ref type="figure">9</ref>.(d), the use of quasi-lattices lead to a greater upper whisker for the same degraded scenarios. This is due to the fact that upper whisker does not consider outliers. Hence, for degraded scenarios leading to outliers without the use of quasi-lattices, the reduction of the number of questions with the use of quasi-lattice lead to datapoints that are no more classified as outliers and increase the upper whisker value. This can be seen in Figure <ref type="figure">9</ref> on scenario GUS-to-BIOSQL with 2 degradations, In this scenario, the case without quasi-lattices leads to outliers values up to 16 question, when the use of quasi-lattice. over the same degraded scenario reduce the number of interactions to a maximum of 13 questions (which is not an outlier value). Benefit of (non-universal) exemplar tuples. Our second experiment aims to evaluate the benefit of using exemplar tuples as opposed to universal examples adopted in <ref type="bibr" target="#b5">[6]</ref> for the mapping inference process. For each scenario, we apply the chase to all the source instances E i S to obtain  chase(M, E i S ). This lets us compute the number of universal exemplar tuples, which we compare with the number of targets (non-universal) exemplar tuples used in our approach. Concretely, for exemplar tuples {(E 1 S , E 1 T ); . . . ; (E n S , E n T )} and the corresponding expected mapping M, we calculate the ratio r =</p><formula xml:id="formula_83">Σ n i =1 | chase(M, E i S ) | Σ n i =1 |E i T |</formula><p>-1 of additional atoms in the generated solution. In order to get a comprehensive view of the effects of atom and join degradations, both degradations occur together in this experiment. Precisely, in Figure <ref type="figure">10</ref>, we present the results where an equal number of atom and join degradations are used. The x axis corresponds to the total number of degradations (e.g., the value 20 corresponds to the case with 10 atoms and 10 join degradations), while the y axis corresponds to the aforementioned ratio r . In all the employed scenarios, we can observe the effectiveness and practicality of using exemplar tuples as opposed to the universal data examples of <software ContextAttributes="used">EIRENE</software>: universal exemplar tuples are from 30% to 458% larger than the non-universal ones used in our approach. Moreover, in all scenarios, we can observe a strong linear correlation between the number of degradations and the number of additional target tuples needed by universal examples. Hence, the more degradations the exemplar tuples have, the larger is the benefit of using our approach. Notice that the scenario that is the less sensitive to the variation of the number of degradations is amalgam2, which is also the scenario with the greatest number of tgds. Such a scenario is also among those that exhibited the maximum benefit of using fewer exemplar tuples rather. Although the precise amount of gain is clearly dependent on the dataset and on the number of degradations, we can observe that, in all scenarios, the advantage of using non-universal exemplar tuples is non-negligible, thus making our approach a practical solution for mapping specification. Relative benefit of interactivity. A key contribution of our mapping specification method is that it helps the user to interactively correct errors (e.g., unnecessary atoms during atom refinement, collisions of constants during join refinement) that may appear in the exemplar tuples. In this section, we aim at quantifying this benefit via a comparison with a baseline approach, i.e., the one in which refinement steps are disabled. As a baseline, we adopted the canonical GLAV generation performed in <software ContextAttributes="used">EIRENE</software> <ref type="foot" target="#foot_4">3</ref>  had to make sure that exemplar tuples in our case are an acceptable input for <software ContextAttributes="used">EIRENE</software>, in particular that they pass the so-called "homomorphism extension test". In other words, we bootstrap our algorithms on universal exemplar tuples (E S , E T ) in order to warrant such comparison. We use the sum of the number of left-hand side atoms of the tgds as the comparison criterion: the larger it is, the more "complex" is the mapping for the end user. This optimality criterion is inspired by a compound measure proposed in <ref type="bibr" target="#b22">[23]</ref>. Notice that this comparison only deals with extraneous atoms during atom refinement and does not consider collision of values, which is done during join refinement. For such a reason, and also due to the fact that here we are compelled to use universal data examples instead of few arbitrary exemplar tuples in order to compare with <software ContextAttributes="used">EIRENE</software>, this comparison should be taken with a grain of salt.</p><p>The obtained results are presented in Table <ref type="table" target="#tab_11">2</ref>. If no extraneous atom is added to the left-hand sides of mappings, then there is no qualitative difference between the two approaches. However, when extraneous atoms are introduced, a remarkable difference can be observed: <software ContextAttributes="used">EIRENE</software>'s canonical mapping is about 20% larger on average (across all scenarios) when 5 such atoms are introduced, and goes up to 30% on average with 10 atoms. Hence, our mappings are noticeably simpler than <software ContextAttributes="used">EIRENE</software>'s ones. Such an improvement is both beneficial for the readability of mappings as well as for their efficiency because spurious atoms are eliminated.</p></div>
+<div><head n="7">RELATED WORK</head><p>A pioneering work on the usage of data examples in mapping understanding and refinement <ref type="bibr" target="#b32">[33]</ref> relies on Clio's <ref type="bibr" target="#b27">[28]</ref> schema correspondences as specified in a graphical user interface. By leveraging such correspondences, Yan et al. <ref type="bibr" target="#b32">[33]</ref> propose alternative data associations among relevant source instances leading to construct mappings in an incremental fashion with the intervention of the mapping designer. The dichotomy between the expected user instance and the generated instance has been further investigated in Routes <ref type="bibr" target="#b16">[17]</ref>. The input required by Routes consists of both a source instance and a mapping that the user readily intends to debug. The user then builds test cases for the mapping at hand by probing values in the target instance, and the system returns a provenance trace to explain how and why the probed values are computed. This approach closely resembles testing as done for software development. By opposite, our method requires as inputs a source and target exemplar tuples and no prior mapping connecting them. The final objective of our approach, which especially targets users unfamiliar with schema mappings, is to build the mapping that the user had in mind via simple boolean user interactions. To draw a comparison with software development, our method generates a specification (i.e. a mapping expressed in first-order logic) starting solely from supplied unit test cases (i.e. small exemplar tuples).</p><p>As in Yan et al. <ref type="bibr" target="#b32">[33]</ref>, Muse <ref type="bibr" target="#b3">[4]</ref> leverages data examples to differentiate between alternative mapping specifications of the designer and drives the mapping design process based on the designer's actions. However, the techniques proposed in <ref type="bibr" target="#b3">[4]</ref> are more sophisticated than the ones in <ref type="bibr" target="#b32">[33]</ref>, in that they address the problem of the grouping semantics of mappings and their alternative semantics in case of ambiguity. Muse also poses a number of yes/no questions to the designer to clarify the grouping semantics. However, the number of questions are driven by the schema elements along with schema constraints that are used to reduce the number of questions. In our approach, we do not assume prior knowledge of the schema constraints. TRAMP <ref type="bibr" target="#b20">[21]</ref> and Vagabond <ref type="bibr" target="#b21">[22]</ref> focus on the understandability of user errors in mappings by using provenance. However, explanations returned by Vagabond are to be interpreted by users who are familiar with the mapping language and its underlying semantics.</p><p>The use of data examples as evaluation tools has begun in <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b30">31]</ref>, which investigated the possibility of uniquely characterizing a schema mapping by means of a set of data examples. Hence, such unique characterization, up to logical equivalence of the obtained mappings, using a finite set of universal data examples was shown to be possible only in the case of LAV dependencies and for fragments of GAV dependencies <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b30">31]</ref>. As a negative result, it was shown in <ref type="bibr" target="#b2">[3]</ref> that already simple s-t tgds mappings, such as copy E(x, y) → F (x, y), cannot be characterized by a finite set of universal data examples under the class of GLAV mappings. Given the impossibility of uniquely characterizing GLAV mappings in real settings, <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6]</ref> made the choice of being less specific. Precisely, they decided to characterize, for a given schema mapping, the set of valid "non-equivalent" mappings with respect to the class of GLAV. To achieve that, they rely on the notion of "most general mapping". It was shown that, given a schema mapping problem, a most general mapping always exists in the class of GLAV mappings if there exists at least one valid mapping for the considered problem <ref type="bibr" target="#b4">[5]</ref>.</p><p>In <software ContextAttributes="created">EIRENE</software> <ref type="bibr" target="#b5">[6]</ref>, the authors show how the user can generate a mapping that fits universal data examples given as input. Whereas <software ContextAttributes="created">EIRENE</software> expects a set of universal data examples, we lift the universality assumption arguing that universal data examples are hard to be produced by a nonexpert user. Moreover, as we have shown in Section 6, universal target instances tend to be significantly larger than our exemplar tuples. One previous work targeting non-expert users is <software ContextAttributes="created">MWeaver</software> <ref type="bibr" target="#b28">[29]</ref>, where the user is asked to toss tuples in the target instance by fetching constants within the available complete source instance. However, this work has different assumptions with respect to ours: it aims at searching a source sample among all possible samples satisfying the provided target tuples, focusing on GAV mappings only. Our system inspects a few input tuples, on which interactive refinement is enabled, and expressive GLAV mappings can be inferred via simple user feedback. As mentioned in the introduction, we significantly improve the approach in <ref type="bibr" target="#b12">[13]</ref> by providing formal guarantees of the quality of the obtained mappings, a more efficient data structure to explore the search space and the adoption of integrity constraints as metadata in order to reduce the number of user interactions.</p><p>All the aforementioned approaches are meant to produce the best exact mapping. However, one can use data examples to produce approximate mappings. Gottlob and Senellart propose a cost-based method to estimate the best approximate mapping given a set of possible repairs of the initial mapping <ref type="bibr" target="#b23">[24]</ref>. The cost function takes account for the length of the generated tgds and the number of repairs that are needed to obtain a tgd that fully explain the instance E T . Approximation of schema mappings has been considered recently in <ref type="bibr" target="#b14">[15]</ref> by considering more expressive fragments of GLAV and GAV.</p><p>Interactive Mapping Specification with Exemplar Tuples 1:37 Cate et al. <ref type="bibr" target="#b13">[14]</ref> show how computational learning (i.e., the exact learning model introduced by D. Angluin <ref type="bibr" target="#b6">[7]</ref> and the Probably Approximately Correct model introduced by L. Valiant <ref type="bibr" target="#b31">[32]</ref>) can be used to infer mappings from data examples. Their analysis is restricted to GAV schema mappings. Recently, Cate et al. <ref type="bibr" target="#b15">[16]</ref> have employed active learning to learn GAV mappings and proved its utility in practice.</p><p>Besides mapping specification and learning, researchers have investigated the problem of inferring relational queries <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b26">27]</ref>. The work in <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b1">2]</ref> focuses on learning quantified Boolean queries by leveraging schema information under the form of primary-foreign key relationships between attributes. Their goal is to disambiguate a natural language specification of the query, whereas we use raw tuples to guess the unknown mapping that the user has in mind. In <ref type="bibr" target="#b11">[12]</ref>, the problem of inferring join predicates in relational queries is addressed. Consistent equi-join predicates are inferred by questioning the user on a unique denormalized relation. We differ from their work as follows: we focus on mapping specification and consider the broad class of GLAV mappings whereas they focus on query specification for a limited fragment of (equi-join) queries. Finally, <ref type="bibr" target="#b26">[27]</ref> presents the exemplar query evaluation paradigm, which relies on exemplar queries to identify a user sample of the desired result of the query and a similarity function to identify database structures that are similar to the user sample. For the latter, the input database is assumed to be known, which is not an assumption in our framework. Since exemplar queries are answered upon an input database, they are considered as unambiguous, whereas this is not necessarily the case in our framework, whose goal is to refine and disambiguate exemplar tuples to derive the unknown mapping that the user has in mind.</p></div><figure xml:id="fig_1"><head>{</head><label /><figDesc>({S(a, b); S(c, d)}, {T (a, n 1 )}); ({S ′ (e, f)}, {T (e, n 3 );T ′ (n 3 , f)})} By opposite, the set : {({S(a, b); S(c, d)}, {T (a, n 1 )});</figDesc></figure>
+<figure xml:id="fig_2"><head>1 : 4 : 5 : 6 :</head><label>1456</label><figDesc>P Σ ← generate partition of ψ -equivalent tgds from Σ 2: Σ ′ ← ∅ 3: for all b ∈ P Σ do let b be ψ -equivalent over ψ b C cand ← generate set of possibles left-hand side candidates from b C val id ← generate the upper bound of the quasi-lattice over b 7:</figDesc></figure>
+<figure xml:id="fig_3"><head /><label /><figDesc>10. The AskAtomSetValidity(e,ψ b ) subroutine that appears in Algorithm 1 constructs a pair (E S e,ψ b , E T e,ψ b ) by transforming the candidate subset e into E S e,ψ b , formally E S e,ψ b = θ (a)|a ∈ e ). Then the chase procedure is used to compute E T e,ψ b , formally E T e,ψ b = chase(e → ψ b , E S e,ψ b ).</figDesc></figure>
+<figure xml:id="fig_4"><head>Fig. 4 .</head><label>4</label><figDesc>Fig. 4. Summary of the main theorems about our framework (in Section 4).</figDesc></figure>
+<figure xml:id="fig_5"><head /><label /><figDesc>f0, Miami, L.A. ′ , a0); A(a0, AA, L.A. ′′ )} Chasing E S σ with σ leads to: E T σ = {Dpt(Miami, f2, c0); Arr(L.A. ′ , f2, c0); Co(c0, AA, L.A. ′′ )} Those exemplar tuples are finally rewritten into questions as shown in Example 3.18.</figDesc></figure>
+<figure xml:id="fig_6"><head>Fig. 6 .</head><label>6</label><figDesc>Fig. 6. Dependency graph of the atoms in ϕ E S (Example 5.3).</figDesc></figure>
+<figure xml:id="fig_7"><head>Fig. 7 .</head><label>7</label><figDesc>Fig. 7. Explored quasi-lattice and dependency graphs of Example 5.4</figDesc></figure>
+<figure xml:id="fig_8"><head /><label /><figDesc>The join refinement of variable a will explore the following possibilities :σ : A(a, b, a) → B(a, b, a) chase(σ , E S ) = {B(a, b, a); B(c, b, c)} σ 1 : A(a, b, a ′ ) → B(a, b, a ′ ) chase(σ 1 , E S ) = {B(a, b, a); B(a, b, c); B(c, b, c)} σ 2 : A(a, b, a ′ ) → B(a ′ , b, a) chase(σ 2 , E S ) = {B(a, b, a); B(c, b, a); B(c, b, c)} σ 3 : A(a, b, a ′ ) → B(a, b, a) chase(σ 3 , E S ) = {B(a, b, a); B(c, b, c)} σ 4 : A(a, b, a ′ ) → B(a ′ , b, a ′ ) chase(σ 4 , E S ) = {B(a, b, a); B(c, b, c)} Knowing that the pair of attributes (B.Att4, B.Att5) is a primary key allow us to prune σ 1 and σ 2 as the result of chasing the source instance A with σ 1 and σ 2 will lead, respectively, to instances {B(a, b, a); B(a, b, c; B(c, b, c)} and {B(a, b, a); B(c, b, c; B(c, b, c)} which violate the constraint.</figDesc></figure>
+<figure xml:id="fig_9"><head>σ 1 :Fig. 8 .</head><label>18</label><figDesc>Fig. 8. Quasi-lattice of Example 6.1</figDesc></figure>
+<figure xml:id="fig_10"><head>Example 6 . 2 .</head><label>62</label><figDesc>By applying the degradation procedure on the tgd σ from Example 3.20, the following exemplar tuples may be yielded (E S ′σ , E T ′σ ). An extraneous F ′ atom is added, the degradation being underlined:E S ′σ = {F(f0, Miami, L.A. ′ , a0); F ′ (f0, Miami, L.A. ′ , a0); A(a0, AA, L.A. ′′ )} E T ′σ = {Dpt(L.A. ′ , f2, c0); Arr(L.A. ′ , f2, c0); Co(c0, AA, L.A. ′′ )}In our experimental study, we have deteriorated each initial set of examples E Σ by adding 0, 2, 5, 8 or 10 tuples.</figDesc></figure>
+<figure xml:id="fig_11"><head>Fig. 9 .Fig. 10 .</head><label>910</label><figDesc>Fig.9. Comparison of the number of questions per tgd asked during atom refinement step, with and without use of the quasi-lattices, from 0 to 10 atom degradations.</figDesc></figure>
+<figure type="table" xml:id="tab_1"><head /><label /><figDesc>Two mappings M and M ′ are logically equivalent, denoted by M ≡ l M ′ , if M |= M ′ and M ′ |= M. When comparing mappings, we say that M is more general than M ′ if M |= M ′ . Informally, this means that tgds in M are triggered more often than those in M ′ .</figDesc><table /><note><p>Let E S and E S ′ be two instances over the same schema. A homomorphism from E S to E S is a function h from constants in E S to constants in E S ′ such that for any tuple R(c 1 , . . . , c n ) in the instance E S , the tuple R(h(c 1 ), . . . , h(c n )) belongs to E S . An instance E T is an universal solution for the instance E S under a mapping M if E T is a solution for E S and if for each solution E T ′ for E S under M, there exists a homomorphism h :</p></note></figure>
+<figure type="table" xml:id="tab_2"><head /><label /><figDesc>The split-reduction on the canonical mappings of Figure1(ii) and (v) leads to the following set of tgds Σ spl it Reduced :ϕ 1 =F(idF 0 , town 2 , town 1 , idAir 0 ) ∧ F(idF 1 , town 1 , town 2 , idAir 1 ) ∧ A(idAir 0 , name 1 , town 1 )∧ A(idAir 1 , name 2 , town 2 ) ∧ TA(idAg, name 3 , town 1 )ϕ 2 =F(idF 0 , town 2 , town 1 , idAir 0 ) ∧ F(idF 1 , town 1 , town 2 , idAir ′ ) ∧ A(idAir 0 , name 1 , town 1 )∧ Airp(idAp, name 2 , town 2 ) ∧ TA(idAg, name 3 , town 1 )</figDesc><table><row><cell>Input: set of input</cell><cell>(E 1 S , E 1 T )...(E n S , E n T )</cell><cell>Normalization</cell><cell>Σnorm</cell><cell>Atom</cell><cell>Σat Re f</cell><cell>Join</cell><cell>Σf inal</cell><cell>Output: refined mapping</cell></row><row><cell>pairs</cell><cell /><cell /><cell /><cell>refinement</cell><cell>(normalized)</cell><cell>refinement</cell><cell>(normalized)</cell><cell>Σ f inal</cell></row><row><cell /><cell /><cell /><cell /><cell cols="2">Answer:</cell><cell cols="2">Answer:</cell><cell /></row><row><cell /><cell /><cell /><cell /><cell>Question</cell><cell /><cell>Question</cell><cell /><cell /></row><row><cell /><cell /><cell /><cell /><cell cols="2">Yes or No</cell><cell cols="2">Yes or No</cell><cell /></row><row><cell /><cell /><cell cols="5">Fig. 2. Interactive mapping specification process.</cell><cell /><cell /></row><row><cell cols="2">Example 3.6.</cell><cell /><cell /><cell /><cell /><cell /><cell /><cell /></row></table></figure>
+<figure type="table" xml:id="tab_5"><head /><label /><figDesc>. Subroutine:VarJoinsRefinement(Σ t , σ , x)Input: A set of previously join refined tgds Σ t .</figDesc><table><row><cell cols="5">Example 3.16. Following Example 3.15, town 1</cell><cell>′′′ and town 1</cell><cell>′′′′ must be in a partition containing</cell></row><row><cell cols="2">either town 1</cell><cell cols="2">′ or town 1</cell><cell>′′ . This means that partitions containing one of the blocks {town 1</cell><cell>′′′ },</cell></row><row><cell>{town 1</cell><cell cols="2">′′′′ } or {town 1</cell><cell cols="2">′′′ , town 1</cell><cell>′′′′ } are not well-formed and will be excluded.</cell></row><row><cell cols="3">Algorithm 3</cell><cell /></row></table><note><p>Input: A tgd σ . Input: A variable x ∈ σ on which the refinement is made.</p></note></figure>
+<figure type="table" xml:id="tab_6"><head>8 :</head><label>8</label><figDesc>if (∄σ t ∈ Σ t , σ t |= σ ′′ ) ∧ AskJoinsValidity(σ ′′ ) then</figDesc><table><row><cell>9:</cell><cell>add P to J v</cell></row><row><cell>10:</cell><cell>remove upper partitions of P from J v</cell></row><row><cell>11:</cell><cell>remove P and its upper partitions from J cand</cell></row><row><cell>12:</cell><cell>else</cell></row><row><cell>13:</cell><cell>remove P and its lower partitions from J cand</cell></row><row><cell>14:</cell><cell>end if</cell></row><row><cell cols="2">15: end while</cell></row><row><cell cols="2">16: Σ out ← ∅</cell></row><row><cell cols="2">17: for all P ∈ J v do</cell></row><row><cell>18:</cell><cell /></row></table></figure>
+<figure type="table" xml:id="tab_8"><head /><label /><figDesc>M inf |= M can is proved in Theorem 4.5 M exp |= M inf is proved in Theorem 4.6</figDesc><table><row><cell cols="4">Interactive Mapping Specification with Exemplar Tuples</cell><cell>1:19</cell></row><row><cell /><cell>M can</cell><cell /><cell>Given a mapping M exp expected by an user :</cell></row><row><cell /><cell>|=</cell><cell /><cell /></row><row><cell /><cell /><cell /><cell cols="2">Confluence to a mapping M f inal is proved in Theorem 4.7</cell></row><row><cell>. . .</cell><cell>M inf</cell><cell>. . .</cell><cell>Convergence is proved in Theorem 4.8</cell></row><row><cell /><cell>|=</cell><cell /><cell /></row><row><cell /><cell>M exp</cell><cell /><cell /></row><row><cell /><cell /><cell /><cell cols="2">If a fully informative exemplar tuples set is provided :</cell></row><row><cell /><cell>∅</cell><cell /><cell /></row></table></figure>
+<figure type="table" xml:id="tab_9"><head /><label /><figDesc>Input: A tgd σ to evaluate. Input: A set of primary key constraints Σ t ar дet P k . Input: A set of source instance {E 1 S ; . . . ; E n S } provided by the user (sources of the exemplar tuples and/or other sources). Output: return true if the conjunction can be pruned, else return false.</figDesc><table><row><cell /><cell>{E 1 S ; . . . ; E n S })</cell></row><row><cell cols="2">Algorithm 5 TargetPk_InvalidTgd(σ , Σ, {E 1 S ; . . . ; E n S })</cell></row><row><cell cols="2">1: for all E i S ∈ {E 1 S ; . . . ; E n S } do</cell></row><row><cell>2:</cell><cell>let E i T = chase(σ , E i S )</cell></row><row><cell>3:</cell><cell>t bool ← evaluate if E i T violates a primary key in Σ t ar дet P k</cell></row><row><cell>4:</cell><cell /></row></table></figure>
+<figure type="table" xml:id="tab_10"><head>Table 1 .</head><label>1</label><figDesc>Scenarios characteristics; reduction of the number of asked questions obtained with use of quasilattices over average (∆ x) and maximum (∆x m ) number of questions per tgd and for each dataset.</figDesc><table><row><cell /><cell /><cell /><cell cols="2">Reduction obtained with</cell></row><row><cell /><cell>Scenarios</cell><cell /><cell /><cell /></row><row><cell /><cell /><cell /><cell cols="2">use of quasi-lattice</cell></row><row><cell>name</cell><cell cols="2">Degradations |Σ| N</cell><cell>∆ x</cell><cell>∆x m</cell></row><row><cell /><cell>0</cell><cell>8 2.5</cell><cell>0%</cell><cell>0%</cell></row><row><cell>a1-to-a2</cell><cell>2</cell><cell>8 2.5</cell><cell>3%</cell><cell>13.3%</cell></row><row><cell /><cell>5</cell><cell>8 2.5</cell><cell>4.2%</cell><cell>16%</cell></row><row><cell /><cell>8</cell><cell>8 2.5</cell><cell>5.6%</cell><cell>17.2%</cell></row><row><cell /><cell>0</cell><cell>71 1.3</cell><cell>0%</cell><cell>0%</cell></row><row><cell /><cell>2</cell><cell>71 1.3</cell><cell>0.5%</cell><cell>9.1%</cell></row><row><cell>amalgam2</cell><cell>5</cell><cell>71 1.3</cell><cell>1%</cell><cell>19.9%</cell></row><row><cell /><cell>8</cell><cell>71 1.3</cell><cell>0.8%</cell><cell>8.8%</cell></row><row><cell /><cell>10</cell><cell>71 1.3</cell><cell>0.9%</cell><cell>7.7%</cell></row><row><cell /><cell>0</cell><cell>10 1.4</cell><cell>0%</cell><cell>0%</cell></row><row><cell /><cell>2</cell><cell>10 1.4</cell><cell>0.2%</cell><cell>12.5%</cell></row><row><cell>dblp-amalgam</cell><cell>5</cell><cell>10 1.4</cell><cell>0.8%</cell><cell>14.3%</cell></row><row><cell /><cell>8</cell><cell>10 1.4</cell><cell>1%</cell><cell>6.7%</cell></row><row><cell /><cell>10</cell><cell>10 1.4</cell><cell>1.6%</cell><cell>8.7%</cell></row><row><cell /><cell>0</cell><cell>8 1.5</cell><cell>0%</cell><cell>0%</cell></row><row><cell>GUS-to-BIOSQL</cell><cell>2</cell><cell>8 1.5</cell><cell>1.7%</cell><cell>18.75%</cell></row><row><cell /><cell>5</cell><cell>8 1.5</cell><cell>2.3%</cell><cell>15%</cell></row><row><cell /><cell>8</cell><cell>8 1.5</cell><cell>2.2%</cell><cell>11.5%</cell></row><row><cell /><cell>0</cell><cell>10 1.5</cell><cell>0%</cell><cell>0%</cell></row><row><cell /><cell>2</cell><cell>10 1.5</cell><cell>1.7%</cell><cell>15.8%</cell></row><row><cell>SDB1-to-SDB2</cell><cell>5</cell><cell>10 1.5</cell><cell>3.2%</cell><cell>16%</cell></row><row><cell /><cell>8</cell><cell>10 1.5</cell><cell>4.6%</cell><cell>16.6%</cell></row><row><cell /><cell>10</cell><cell>10 1.5</cell><cell>5.1%</cell><cell>14.7%</cell></row><row><cell /><cell>0</cell><cell cols="2">11 1.5 12.7%</cell><cell>14.3%</cell></row><row><cell /><cell>2</cell><cell cols="2">11 1.5 12.4%</cell><cell>20%</cell></row><row><cell>SDB1-to-SDB3</cell><cell>5</cell><cell cols="2">11 1.5 12.1%</cell><cell>22%</cell></row><row><cell /><cell>8</cell><cell cols="2">11 1.5 12.4%</cell><cell>26.9%</cell></row><row><cell /><cell>10</cell><cell cols="2">11 1.5 11.6%</cell><cell>27%</cell></row><row><cell /><cell>0</cell><cell>9 2.1</cell><cell>0%</cell><cell>0%</cell></row><row><cell /><cell>2</cell><cell>9 2.1</cell><cell>0.4%</cell><cell>12.5%</cell></row><row><cell>SDB2-to-SDB3</cell><cell>5</cell><cell>9 2.1</cell><cell>1.2%</cell><cell>9.1%</cell></row><row><cell /><cell>8</cell><cell>9 2.1</cell><cell>1.4%</cell><cell>11.1%</cell></row><row><cell /><cell>10</cell><cell>9 2.1</cell><cell>1.6%</cell><cell>9.5%</cell></row><row><cell>Mean</cell><cell /><cell /><cell>3.2%</cell><cell>11.8%</cell></row></table></figure>
+<figure type="table" xml:id="tab_11"><head>Table 2 .</head><label>2</label><figDesc>. As EIRENE is not intended to handle errors in its input data examples, we Relative difference (in percent) between EIRENE and our system.</figDesc><table><row><cell>Scenarios</cell><cell cols="5">Number of extraneous atoms added</cell></row><row><cell /><cell>0</cell><cell>2</cell><cell>5</cell><cell>8</cell><cell>10</cell></row><row><cell cols="5">SDB2-to-SDB3 0 12.4 27.0 36.9</cell><cell>-</cell></row><row><cell cols="5">SDB1-to-SDB2 0 11.1 23.8 33.3</cell><cell>38.5</cell></row><row><cell cols="5">SDB1-to-SDB3 0 7.3 16.2 23.6</cell><cell>28.0</cell></row><row><cell cols="5">dblp-amalgam 0 12.2 25.3 35.5</cell><cell>40.7</cell></row><row><cell cols="5">GUS-to-BIOSQL 0 11.7 25.8 35.7</cell><cell>-</cell></row><row><cell>a1-to-a2</cell><cell cols="4">0 8.3 18.5 26.6</cell><cell>-</cell></row><row><cell>amalgam2</cell><cell cols="4">0 3.1 7.5 10.9</cell><cell>12.8</cell></row><row><cell>Average</cell><cell cols="4">0 9.5 20.6 28.9</cell><cell>30</cell></row></table></figure>
+			<note place="foot" xml:id="foot_0"><p>ACM Transactions on Database Systems, Vol. 1, No. 1, Article 1. Publication date: May 2018.</p></note>
+			<note place="foot" n="1" xml:id="foot_1"><p>If exemplar tuples (E S , E T ) were universal, then (E S , E T ) |= σ where σ is the canonical mapping associated to (E S , E T ). ACM Transactions on Database Systems, Vol. 1, No. 1, Article 1. Publication date: May</p></note>
+			<note place="foot" n="2018" xml:id="foot_2"><p /></note>
+			<note place="foot" n="2" xml:id="foot_3"><p>We recall that the chase is polynomial for Σ consisting of only s-t tgds. Thus, repeating it several times as additional tuples come, is appropriate.ACM Transactions onDatabase Systems, Vol. 1, No. 1, Article 1. Publication date: May 2018.</p></note>
+			<note place="foot" n="3" xml:id="foot_4"><p>For the sake of fairness, <software>EIRENE</software>'s canonical GLAV are split-reduced and σ -redundant tgds are suppressed. ACM Transactions on Database Systems, Vol. 1, No. 1, Article 1. Publication date: May 2018.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="8">CONCLUSIONS</head><p>We have addressed the problem of interactive schema mapping inference starting from arbitrary sets of exemplar tuples, as provided by non-expert users. We have shown that simplification of the mappings is possible by alternating normalization and refinement steps, the latter under the form of simple boolean questions. Compared to [13], we provide more tight formal guarantees, quasi-lattices to explore the space of possible mappings and the adoption of integrity constraints in order to reduce the number of questions that need to be asked to the user.</p><p>This paper lays the foundations of a practical framework that makes data exchange feasible for the masses. Much work is left to be done in order to make mapping specification an activity for non-expert users, for instance by adding features like error acceptance in user responses. Different gradients of users with more or less expertise can be captured with user modeling, which is beyond the scope of our work. Another future direction is to leverage machine learning techniques, such as Inductive Logic Programming, to automatically explore the space of mappings and confront their results with those obtained in our framework.</p></div>
+			</div>			<div type="annex">
+<div><p>Interactive Mapping Specification with Exemplar Tuples 1:17 Subroutine VarJoinsRefinement(σ , x) explores the part of the quasi-lattice of a variable x corresponding to a tgd σ , asking questions to the user in order to determine the proper join refinement. In line 1, occurrences of x are replaced with fresh variables yielding a tgd σ ′ and a morphism µ or iд such that µ or iд (σ ′ ) = σ . Line 3 initializes the quasi-lattice by excluding malformed partitions as stated above. The SelectPartition subroutine selects a partition in the set of partitions and encodes the specific exploration strategy on top of the quasi-lattice. Any suitable exploration strategy can be plugged in here, as shown in the experimental study presented in Section 6. Function UnifyVariables(σ , P) (lines 7 and 18 of the Algorithm) returns a tgd corresponding to σ where variables from the same block of a partition P are unified. The user is asked about the validity of this unification in line 8 and the search space and results are pruned according to his answer in lines 10, 11 and 13. One can easily prove the following Lemma, which is the counterpart of Lemma 3.11 for join refinement. Hence, Lemma 3.17 establishes the logical entailment of the join-refined mapping. Lemma 3.17. Let Σ be a mapping and let Σ ′ be a mapping obtained from Σ after join refinement, then Σ ′ |= Σ.</p><p>Proof. Let σ = ϕ → ψ be a tgd and x be a universal variable in σ . First, we prove that for all σ ′′ ∈ VarJoinsRefinement(σ , x), σ ′′ |= σ .</p><p>Let σ ′ = ϕ ′ → ψ ′ be the tgd obtained from σ by replacing occurrences of x with a fresh variable, and µ or iд be the morphism such that µ or iд (σ ′ ) = σ . Let σ ′′ = ϕ ′ → ψ ′ . As σ ′′ results from the unification of fresh variables in σ ′ , there is a morphism µ unif such that µ unif (σ ′ ) = σ ′′ . Let µ σ ′′ be the morphism defined by: µ σ ′′ (y) = x if y results from the unification of fresh variables in σ ′ , µ σ ′′ (y) = y otherwise. By construction, µ σ ′′ (σ ′′ ) = σ . One can remark that existential variables in ψ ′′ are the same as the ones in ψ , thus µ σ ′′ is injective for these variables.</p><p>In Algorithm 2, Σ t contains tgds that are either elements of Σ or obtained by applying Var-Refinement to previous elements of Σ t . Because of line 8, VarRefinement always returns at least one tgd. Thus, for each initial tgd σ in Σ, there is a tgd σ ′ in Σ ′ coming from successive calls of VarRefinement starting with σ . By transitivity of |= we deduce that σ ′ |= σ . Thus, Σ ′ |= σ . Since this holds for all tgds in Σ, we conclude that Σ ′ |= Σ. □ Example 3.18. We recall the tgd (5) from Example 3.10:</p><p>Its set of universal variables is x = {idF 0 , town 2 , town 1 , idAir 0 , name 1 }. As Algorithm 2 only considers variables that appears several times (line 6), we only consider town 1 and idAir 0 of x. Considering first the idAir 0 variable, a renaming of each of its occurrences to idAir 0 ′ and idAir 0 ′′ leads to the following tgd:</p><p>The quasi-lattice contains two partitions {{idAir 0 ′ } ; {idAir 0 ′′ }} and {{idAir 0 ′ ; idAir 0 ′′ }}. The user is asked about the validity of {{idAir 0 ′ } ; {idAir 0 ′′ }}, i.e., to have the identifier of an airline company unrelated to its flight. The user will likely answer 'No' to the above question, thus keeping the upper-bound {{idAir 0 ′ ; idAir 0 ′′ }} of the quasi-lattice valid. Since these join is relevant, the tgd is not modified.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Learning and verifying quantified boolean queries by example</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abouzied</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Angluin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">H</forename><surname>Papadimitriou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Hellerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Silberschatz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of PODS</title>
+		<meeting>PODS</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="49" to="60" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Playful query specification with dataplay</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Abouzied</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Hellerstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Silberschatz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1938" to="1941" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Characterizing schema mappings via data examples</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Alexe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">T</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TODS</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Muse: Mapping understanding and design by example</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Alexe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chiticariu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ICDE</title>
+		<meeting>the ICDE</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="10" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Designing and refining schema mappings via data examples</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Alexe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of SIGMOD</title>
+		<meeting>SIGMOD</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="133" to="144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Eirene: Interactive design and refinement of schema mappings via data examples</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Alexe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of VLDB</title>
+		<meeting>VLDB</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Queries and concept learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Angluin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="319" to="342" />
+			<date type="published" when="1987">1987</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">The ibench integration metadata generator</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Arocena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Glavic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ciucanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of VLDB</title>
+		<meeting>VLDB</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="108" to="119" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">A proof procedure for data dependencies</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Beeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="718" to="741" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Schema Matching and Mapping</title>
+	</analytic>
+	<monogr>
+		<title level="m">Data-Centric Systems and Applications</title>
+		<editor>
+			<persName><forename type="first">Z</forename><surname>Bellahsene</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Rahm</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Model management 2.0: Manipulating richer mappings</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Bernstein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Melnik</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Learning join queries from user examples</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ciucanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="24" />
+			<date type="published" when="2016-01">Jan. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Interactive mapping specification with exemplar tuples</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Comignani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Coquery</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Thion</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM International Conference on Management of Data, SIGMOD '17</title>
+		<meeting>the 2017 ACM International Conference on Management of Data, SIGMOD '17<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="667" to="682" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Learning schema mappings</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">T</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dalmau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TODS</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page">28</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Approximation Algorithms for Schema-Mapping Discovery from Data Examples</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">T</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1" to="12" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Active learning of gav schema mappings</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">T</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of PODS</title>
+		<meeting>PODS</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Debugging schema mappings with routes</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chiticariu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32 nd international conference on Very large data bases</title>
+		<meeting>the 32 nd international conference on Very large data bases</meeting>
+		<imprint>
+			<publisher>VLDB Endowment</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="79" to="90" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Sparqlbye: Querying RDF data by example</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">I</forename><surname>Diaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Benedikt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">13</biblScope>
+			<biblScope unit="page" from="1533" to="1536" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Data exchange: semantics and query answering</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Popa</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">336</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="89" to="124" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">A first tutorial on dataspaces</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Franklin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Halevy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Maier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="1516" to="1517" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Tramp: Understanding the behavior of schema mappings through provenance</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Glavic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Haas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="1314" to="1325" />
+			<date type="published" when="2010-09">Sept. 2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Debugging data exchange with vagabond</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Glavic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Alonso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Haas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1383" to="1386" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Normalization and optimization of schema mappings</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pichler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Savenkov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">VLDB J</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="277" to="302" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Schema mapping discovery from data instances</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Senellart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page">6</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Making database systems usable</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">V</forename><surname>Jagadish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Chapman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Elkiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jayapandian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nandi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of SIGMOD</title>
+		<meeting>SIGMOD</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="13" to="24" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Testing Implications of Data Dependencies</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Maier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">O</forename><surname>Mendelzon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sagiv</surname></persName>
+		</author>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="455" to="469" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Exemplar queries: Give me an example of what you need</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mottin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lissandrini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Velegrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Palpanas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="365" to="376" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Translating web data</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Popa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Velegrakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Hernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of VLDB</title>
+		<meeting>VLDB</meeting>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="598" to="609" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Sample-driven schema mapping</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Cafarella</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jagadish</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of SIGMOD</title>
+		<meeting>SIGMOD</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="73" to="84" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">A survey of schema-based matching approaches</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Shvaiko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Euzenat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal on Data Semantics</title>
+		<imprint>
+			<biblScope unit="page" from="146" to="171" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Database constraints and homomorphism dualities</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-C</forename><surname>Tan</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>CP. Springer</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">A theory of the learnable</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Valiant</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1134" to="1142" />
+			<date type="published" when="1984-11">Nov. 1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Data-driven understanding and refinement of schema mappings</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Haas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of SIGMOD</title>
+		<meeting>SIGMOD</meeting>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="485" to="496" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1462 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">XEM: An explainable-by-design ensemble method for multivariate time series classification</title>
+				<funder>
+					<orgName type="full">)</orgName>
+				</funder>
+				<funder ref="#_wMPVjb6">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Kevin</forename><surname>Fauvel</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Véronique</forename><surname>Masson</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Philippe</forename><surname>Faverdin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Alexandre</forename><surname>Termier</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Élisa</forename><surname>Fromont</surname></persName>
+						</author>
+						<title level="a" type="main">XEM: An explainable-by-design ensemble method for multivariate time series classification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7837ED107D88BE5E0044F8FE4E3C180B</idno>
+					<note type="submission">Submitted on 7 Mar 2022</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Classification</term>
+					<term>Ensemble Learning</term>
+					<term>Explainability</term>
+					<term>Multivariate Time Series</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>et à la diffusion de documents scientifiques de niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The prevalent deployment and usage of sensors in a wide range of sectors generate an abundance of multivariate data which has been proven to be instrumental for researches, businesses and policies <ref type="bibr" target="#b14">[Esteva et al., 2019</ref><ref type="bibr" target="#b35">, Ransbotham et al., 2019</ref><ref type="bibr" target="#b8">, Cussins Newman, 2019]</ref>. In particular, multivariate data that integrates temporal evolution has received significant interests over the past decade, driven by automatic and high-resolution monitoring applications (e.g., healthcare <ref type="bibr" target="#b28">[Li et al., 2018]</ref>, mobility <ref type="bibr" target="#b23">[Jiang et al., 2019]</ref>, natural disasters <ref type="bibr">[Fauvel et al., 2020a]</ref>).</p><p>In our study, we focus on the issue of multivariate data classification, which consists of learning the relationship between a multivariate sample and its label. Specifically, we study the Multivariate Time Series (MTS) classification setting. A time series is a sequence of real values ordered according to time; and when a set of coevolving time series are recorded simultaneously by a set of sensors, it is called an MTS.</p><p>In addition to prediction performance, machine learning methods have to be assessed on how they can support their predictions with explanations in many cases (e.g., decision support, legal requirement, model validation). In particular, machine learning methods have to be assessed on how they can provide faithful explanations. Faithfulness is critical as it corresponds to the level of trust an end-user can have in the explanations of model predictions, i.e. the level of relatedness of the explanations to what the model actually computes. The best performing state-of-theart MTS classifiers on the public UEA archive <ref type="bibr" target="#b0">[Bagnall et al., 2018]</ref> are "black-box" models (MLSTM-FCN <ref type="bibr" target="#b24">[Karim et al., 2019]</ref>, WEASEL+MUSE <ref type="bibr" target="#b40">[Schäfer and Leser, 2017]</ref>), i.e. complicated-to-understand models <ref type="bibr" target="#b29">[Lipton, 2016]</ref>. Nonetheless, blackbox models like MLSTM-FCN and WEASEL+MUSE cannot support their predictions with faithful explanations as they can only rely on explainability methods providing explanations from any machine learning model <ref type="bibr" target="#b38">[Rudin, 2019]</ref> (post hoc model-agnostic explainability methods). Therefore, we propose a new MTS classifier that combines performance and faithful explainability. Our new approach generates features which enable it to outperform the state-of-the-art MTS classifiers on the UEA datasets, while providing faithful explainability-by-design through identifying the time window used to classify the whole MTS.</p><p>Some feature-based MTS classifiers exist in the state-of-the-art (gRSF <ref type="bibr" target="#b25">[Karlsson et al., 2016]</ref>, LPS <ref type="bibr" target="#b2">[Baydogan and Runger, 2016]</ref>, mv-ARF <ref type="bibr" target="#b47">[Tuncel and Baydogan, 2018]</ref>, SMTS <ref type="bibr" target="#b1">[Baydogan and Runger, 2014]</ref> and WEASEL+ MUSE <ref type="bibr" target="#b40">[Schäfer and Leser, 2017]</ref>). However, the features generated by these MTS classifiers cannot be used as explanations to support the models' predictions as they do not allow, by design, the identification of the regions of the input data that are important for predictions. First, the shapelet-based approach gRSF creates a blackbox classifier (a forest of decision trees) over randomly extracted subsequences (shapelets), which prevents the direct extraction from the model of shapelets important for predictions. Then, the bag-of-words approaches (LPS, mv-ARF, SMTS, WEASEL+MUSE) convert time series into a bag of discrete words, and use a histogram of words representation to perform the classification. The bag of discrete words generated by these approaches (symbolic representations from decision trees predictions, unigrams/bigrams extraction following a Symbolic Fourier Approximation <ref type="bibr" target="#b39">[Schäfer and Högqvist, 2012]</ref>) are difficult to understand and cannot be mapped to the regions of the input data that are important for predictions. Therefore, we propose a new MTS classifier that generates features allowing the direct identification of the MTS time window that is important for prediction. These features correspond to the confidence levels of a classifier on each MTS subsequence of a predefined length. The subsequence where the classifier is the most confident is used for classification and provided to the end-user as faithful explanation to support the MTS prediction. Thus, our new MTS classifier relies on the development of a well-performing classifier that is applied to MTS subsequences. As in <ref type="bibr" target="#b1">[Baydogan and Runger, 2014]</ref>, we have chosen a tabular classifier because it fulfills two needs simultaneously: first, the need to handle the relationship between the variables; second, the need to handle really small time series according to the predefined time window length of interest (e.g., time series length of 2). Most MTS classifiers fail to meet the second need.</p><p>To undertake the task of the tabular multivariate classification, no single classifier can claim to be superior to any of the others <ref type="bibr" target="#b50">[Wolpert, 1996]</ref> (known as the "No Free Lunch theorem"). Thus, the combination of different classifiers -an ensemble method -is often considered a good method to obtain a better generalizing classifier. There are three main reasons that justify the use of ensembles over single classifiers <ref type="bibr" target="#b10">[Dietterich, 2000]</ref>: statistical (reduce the risk of choosing the wrong classifier by averaging when the amount of training data available is too small compared to the size of the hypothesis space), computational (local search from many different starting points may provide a better approximation to the true unknown function than any of the individual classifier), and representational (expansion of the space of representable functions).</p><p>The construction of an ensemble method involves combining accurate and diverse individual classifiers. There are two complementary ways to generate diverse classifiers. First, each individual classifier can be set to learn a different part of the original training data <ref type="bibr" target="#b32">[Masoudnia and Ebrahimpour, 2014]</ref>. For example, Local Cascade (LC) <ref type="bibr" target="#b19">[Gama and Brazdil, 2000</ref>] is a state-of-the-art method adopting this first diversification way. LC learns different part of the training data to capture new relationships that cannot be discovered globally based on a divide-and-conquer strategy (a decision tree). Then, LC manages the bias-variance trade-off faced by machine learning models through the use, at each level of the tree, of classifiers with different behaviors. However, methods relying on learning different parts of the training data like LC do not benefit from the second diversification way, which consists of generating classifiers by perturbing the distribution of the original training data <ref type="bibr" target="#b45">[Sharkey and Sharkey, 1997]</ref>. <ref type="bibr">Sharkey et al. argued</ref> that training classifiers using different training sets produces low correlated errors. Within this way, there are two well-known methods that modify the distribution of the original training data with complementary effects on the bias-variance trade-off: bagging <ref type="bibr" target="#b4">[Breiman, 1996]</ref> (variance reduction) and boosting <ref type="bibr" target="#b41">[Schapire, 1990]</ref> (bias reduction). We call an ensemble method which fully adopts these two ways to generate diverse classifiers a hybrid ensemble method. As far as we have seen, we have developed in <ref type="bibr" target="#b15">[Fauvel et al., 2019]</ref> the first hybrid ensemble method (Local Cascade Ensemble -LCE). The new hybrid ensemble method combines a boosting-bagging approach to handle the bias-variance trade-off (second diversification way) and, as LC, a divide-and-conquer approach -a decision tree -to learn different parts of the training data (first diversification way).</p><p>However, <ref type="bibr" target="#b15">[Fauvel et al., 2019]</ref> does not show how LCE behaves on public tabular multivariate datasets (e.g., UCI repository) since it was only applied to a proprietary dataset. Therefore, in this paper, we first present in detail and thoroughly examine the behavior of LCE. Then, we present how LCE is used to form an eXplainable Ensemble method for MTS classification (XEM) combining both performance and faithful explainability. Finally, we highlight some interesting properties of XEM, and in particular that XEM is robust with varying MTS input data quality (different MTS length, missing data and noise), which often arises in continuous data collection systems. Summarizing our main contributions:</p><p>• We detail the presentation of LCE algorithm introduced in <ref type="bibr" target="#b15">[Fauvel et al., 2019]</ref>,</p><p>in particular with regard to its properties and time complexity; • We examine the behavior of LCE on a public benchmark, as LCE was only applied to a proprietary dataset in <ref type="bibr" target="#b15">[Fauvel et al., 2019]</ref>. Our study shows that LCE outperforms the state-of-the-art tabular classifiers on the public UCI datasets <ref type="bibr" target="#b12">[Dua and Graff, 2017</ref>]; • Leveraging LCE, we present a new eXplainable Ensemble method for MTS classification (XEM) combining performance and faithful explainability. XEM outperforms the state-of-the-art MTS classifiers on the public UEA datasets <ref type="bibr">[Bag-nall et al., 2018]</ref> and provides faithful explainability-by-design through identifying the time window used to classify the whole MTS; • We show that XEM manifests robust performance when faced with challenges arising from continuous data collection (different MTS length, missing data and noise). The rest of this paper is organized as follows: Section 2 presents the related work concerning classification, MTS classification and explainability; Section 3 details LCE and XEM; Section 4 presents our evaluation method; and finally, Section 5 discusses our results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Background and Related Work</head><p>In this section we first introduce the background of our study. Then, we present the state-of-the-art tabular classification methods on which we position our algorithm LCE, and we end with a similar presentation for MTS classification.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1">Background</head><p>We address the issue of supervised learning for classification. Classification consists of learning a function that maps an input data to its label: given an input space X, an output space Y , an unknown distribution P over X × Y , a training set sampled from P , and a 0-1 loss function 0-1 compute function h * as follows:</p><formula xml:id="formula_0">h * = arg min h E (x,y)∼P [ 0-1 (h, (x, y))]<label>(1)</label></formula><p>Our classifier LCE is based on a new way to handle the bias-variance trade-off in ensemble methods. The bias-variance trade-off defines the capacity of the learning algorithm to generalize beyond the training set. The bias is the component of the classification error that results from systematic errors of the learning algorithm. A high bias means that the learning algorithm is not able to capture the underlying structure of the training set (underfitting). The variance measures the sensitivity of the learning algorithm to changes in the training set. A high variance means that the algorithm is learning too closely the training set (overfitting). The objective is to minimize both the bias and variance.</p><p>We perform classification on two types of datasets: traditional (tabular) multivariate data and MTS. In the traditional multivariate data setting, in contrast to the MTS one, there is no explicit relationship among samples or variables and every sample has the same set of variables (also called attributes or dimensions). A Multivariate Time Series (MTS) M = {x 1 , ..., x d } ∈ R d * l is an ordered sequence of d ∈ N streams with x i = (x i,1 , ..., x i,l ), where l is the length of the time series and d is the number of multivariate dimensions. We address MTS generated from automatic sensors with a fixed and synchronized sampling along all dimensions. An example of an MTS dataset is given at the top of Figure <ref type="figure" target="#fig_0">2</ref>. This dataset contains n MTS with 2 dimensions and a time series length of 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2">Classification</head><p>In machine learning, the most popular (and often best performing) classifiers belong to the following classes: regularized logistic regressions, support vector machines, neural networks and ensemble methods. As previously discussed, ensemble methods are usually well generalizing classifiers and thus, we position our approach into this class. The other classes constitute our competitors and the algorithms evaluated are presented in section 4.2.1.</p><p>Ensemble methods are structured around two approaches (explicit, implicit) which have their own strengths and limitations. Therefore a hybrid ensemble method is encouraged <ref type="bibr" target="#b32">[Masoudnia and Ebrahimpour, 2014]</ref>. The implicit approach involves creating diverse classifiers on the original training data, whereas the explicit approach emphasizes classifiers diversity through the creation of different training sets by probabilistically changing the distribution of the original training data.</p><p>There are two methods adopting an implicit approach: Mixture of Experts (ME) <ref type="bibr" target="#b22">[Jacobs et al., 1991]</ref> and Negative Correlation Learning (NCL) <ref type="bibr" target="#b30">[Liu and Yao, 1999]</ref>. ME uses a divide-and-conquer algorithm to split the problem space, and each individual classifier learns a part of the training data. The advantage of this method is that each individual classifier is concerned with its own individual error. However, individual classifiers are trained independently so there is no control over the bias-variance trade-off. Next, NCL is an ensemble method which is trained on the entire training data simultaneously and interactively to adjust the bias-variance trade-off. Individual classifiers interact through the correlation penalty terms of their error functions. The correlation penalty term is a regularization term that is integrated into the error function of each individual classifier. This term quantifies the amount of error correlation and is minimized during the training, which leads to negatively correlated individual classifiers and balances the bias-variance trade-off. The disadvantage of this method is that each classifier is concerned with the whole ensemble error due to the training of each classifier on the same data. Some studies like Local Cascade <ref type="bibr" target="#b19">[Gama and Brazdil, 2000]</ref> combine NCL and ME features to address their limitations.</p><p>However, a combination of implicit approaches does not benefit from the diversification of generating classifiers by perturbing the distribution of the original training data (explicit approach). There are two methods adopting an explicit approach with complementary effects on the bias-variance trade-off (bagging <ref type="bibr" target="#b4">[Breiman, 1996]</ref> -variance reduction, boosting <ref type="bibr" target="#b41">[Schapire, 1990]</ref> -bias reduction). Bagging is a method for generating multiple versions of a predictor (bootstrap replicates) and using these to get an aggregated predictor. Boosting is a method for iteratively learning weak classifiers and adding them to create a final strong classifier. After a weak learner is added, the data weights are readjusted, allowing future weak learners to focus more on the examples that previous weak learners misclassified. Bagging and boosting methods have been combined <ref type="bibr" target="#b27">[Kotsiantis and Pintelas, 2005]</ref> but without integrating the diversification benefit of an implicit approach.</p><p>There is a study which combines the explicit boosting method with the implicit ME divide-and-conquer principle <ref type="bibr" target="#b13">[Ebrahimpour et al., 2012]</ref>. Nonetheless, the only bias reduction distribution change of boosting does not ensure a bias-variance trade-off. Hence, we propose the first hybrid ensemble method called Local Cascade Ensemble (LCE). LCE combines an explicit boosting-bagging approach to handle the bias-variance trade-off and an implicit divide-and-conquer approach (decision tree) to learn different parts of the training data.</p><p>Therefore, in this work we choose to evaluate the performance of the first hybrid ensemble method LCE in comparison to:</p><p>• A simple ensemble method on the original data combining some state-of-theart classifiers with a majority vote (Naïve Bayes <ref type="bibr" target="#b52">[Zhang, 2004]</ref>, Elastic Net <ref type="bibr" target="#b54">[Zou and Hastie, 2005]</ref>, CART <ref type="bibr" target="#b6">[Breiman et al., 1984]</ref>); • The state-of-the-art ensemble methods adopting an explicit approach (Random Forest <ref type="bibr" target="#b5">[Breiman, 2001]</ref>, Extreme Gradient Boosting <ref type="bibr" target="#b7">[Chen and Guestrin, 2016]</ref> and the combination of bagging and boosting <ref type="bibr" target="#b27">[Kotsiantis and Pintelas, 2005]</ref>); • The state-of-the-art implicit approach Local Cascade <ref type="bibr" target="#b19">[Gama and Brazdil, 2000]</ref> (starting point of LCE -detailed in section 3); • The state-of-the-art ensemble method combining the explicit boosting method with the implicit ME divide-and-conquer principle (Boost-Wise Pre-Loaded Mixture of Experts <ref type="bibr" target="#b13">[Ebrahimpour et al., 2012]</ref>); • The best-in-class of the other classes (regularized logistic regressions, support vector machines and neural networks) as presented in section 4.2.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3">MTS Classification</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MTS Classifiers</head><p>We can categorize the state-of-the-art MTS classifiers into three families: similarity-based, feature-based and deep learning methods. Similarity-based methods make use of similarity measures (e.g., Euclidean distance) to compare two MTS. Dynamic Time Warping (DTW) has been shown to be the best similarity measure to use along k-NN <ref type="bibr" target="#b44">[Seto et al., 2015]</ref>, this approach is called kNN-DTW. There are two versions of kNN-DTW for MTS: dependent (DTW D ) and independent (DTW I ). Neither dominates over the other <ref type="bibr" target="#b46">[Shokoohi-Yekta et al., 2017]</ref>. DTW I measures the cumulative distances of all dimensions independently measured under DTW. DTW D uses a similar calculation with singledimensional time series; it considers the squared Euclidean cumulated distance over the multiple dimensions.</p><p>Feature-based methods include shapelets and bag-of-words (BoW) models. Shapelets models use subsequences (shapelets) to transform the original time series into a lower-dimensional space that is easier to classify. gRSF <ref type="bibr" target="#b25">[Karlsson et al., 2016]</ref> and UFS <ref type="bibr" target="#b49">[Wistuba et al., 2015]</ref> are the current state-of-the-art shapelets models in MTS classification. They relax the major limiting factor of the time to find discriminative subsequences in multiple dimensions (shapelet discovery) by randomly selecting shapelets. gRSF creates decision trees over randomly extracted shapelets and shows better performance than UFS on average (14 MTS datasets) <ref type="bibr" target="#b25">[Karlsson et al., 2016]</ref>. On the other hand, BoW models (LPS <ref type="bibr" target="#b2">[Baydogan and Runger, 2016]</ref>, mv-ARF <ref type="bibr" target="#b47">[Tuncel and Baydogan, 2018]</ref>, SMTS <ref type="bibr" target="#b1">[Baydogan and Runger, 2014]</ref> and WEASEL+MUSE <ref type="bibr" target="#b40">[Schäfer and Leser, 2017]</ref>) convert time series into a bag of discrete words, and use a histogram of words representation to perform the classification. WEASEL+MUSE shows better results compared to gRSF, LPS, mv-ARF and SMTS on average (20 MTS datasets) <ref type="bibr" target="#b40">[Schäfer and Leser, 2017]</ref>. WEASEL+MUSE generates a BoW representation by applying various sliding windows with different sizes on each discretized dimension (Symbolic Fourier Approximation <ref type="bibr" target="#b39">[Schäfer and Högqvist, 2012]</ref>) to capture features (unigrams, bigrams, dimension idenfication). Following a feature selection with chi-square test, it classifies the MTS based on a logistic regression.</p><p>Finally, deep learning methods (FCN <ref type="bibr" target="#b48">[Wang et al., 2017]</ref>, MLSTM-FCN <ref type="bibr" target="#b24">[Karim et al., 2019]</ref>, ResNet <ref type="bibr" target="#b21">[He et al., 2016]</ref>, TapNet <ref type="bibr" target="#b53">[Zhang et al., 2020]</ref> and TST <ref type="bibr" target="#b51">[Zerveas et al., 2021]</ref>) use Long-Short Term Memory (LSTM), Convolutional Neural Networks (CNN) or Transformers. According to the results published and our experiments, the current state-of-the-art model (MLSTM-FCN) is proposed in <ref type="bibr" target="#b24">[Karim et al., 2019]</ref> and consists of a LSTM layer and a stacked CNN layer along with squeeze-and-excitation blocks to generate latent features. A recent network, Tap-Net <ref type="bibr" target="#b53">[Zhang et al., 2020]</ref>, also consists of a LSTM layer and a stacked CNN layer, followed by an attentional prototype network. However, TapNet shows lower accuracy results<ref type="foot" target="#foot_3">1</ref> on average on the 30 public UEA MTS datasets than MLSTM-FCN (MLSTM-FCN results presented in Table <ref type="table" target="#tab_14">7</ref>).</p><p>Therefore, in this work we choose to evaluate the performance of XEM in comparison to the similarity-based methods results published in the UEA archive (ED, DTW D , DTW I ) <ref type="bibr" target="#b0">[Bagnall et al., 2018]</ref> and to the best-in-class for each featurebased and deep learning category (WEASEL+MUSE and MLSTM-FCN classifiers). As a method aggregating features which are the output of multiple predictors, XEM can be categorized as an ensemble method.</p><p>As previously introduced, in addition to meeting the performance requirement, MTS classifiers are facing two particular challenges: the lack of faithful explainability supporting their predictions and the varying input data quality (different TS length, missing data, noise).</p><p>Explainability There is no mathematical definition of explainability. A definition proposed by <ref type="bibr" target="#b33">[Miller, 2019]</ref> states that the higher the explainability of a machine learning algorithm, the easier it is for someone to comprehend why certain decisions or predictions have been made. Three categories of explainability methods are usually recognized: explainability-by-design, post hoc model-specific explainability and post hoc model-agnostic explainability <ref type="bibr" target="#b11">[Du et al., 2020]</ref>. First, some machine learning models provide explainability-by-design. These self-explanatory models incorporate explainability directly to their structures. This category includes, for example, decision trees, rule-based models and linear models. Next, post hoc model-specific explainability methods are specifically designed to extract explanations for a particular model. These methods usually derive explanations by examining internal model structures and parameters. For example, a method has been designed to identify the regions of input data that are important for predictions in CNNs using the class-specific gradient information <ref type="bibr" target="#b42">[Selvaraju et al., 2019]</ref>. Finally, post hoc model-agnostic explainability methods provide explanations from any machine learning model. These methods treat the model as a black-box and does not inspect internal model parameters. The main line of work consists in approximating the decision surface of a model using an explainable one (e.g., LIME <ref type="bibr" target="#b36">[Ribeiro et al., 2016]</ref>, SHAP <ref type="bibr" target="#b31">[Lundberg and Lee, 2017]</ref>, Anchors <ref type="bibr" target="#b37">[Ribeiro et al., 2018]</ref>, LORE <ref type="bibr" target="#b20">[Guidotti et al., 2019]</ref>). These different explainability methods come with their own form of explanations. Therefore, we have proposed in <ref type="bibr">[Fauvel et al., 2020b]</ref> a framework to assess and benchmark machine learning methods with respect to their performance and explainability. The framework details a set of characteristics (performance, model comprehensibility, granularity of the explanations, information type, faithfulness and user category) that systematize the performance-explainability assessment of machine learning methods. According to this framework, none of the state-of-the-art MTS classifiers reconciles per-formance and faithful explainability. Similarity-based methods provide faithful explainability-by-design but they are often less accurate than other MTS classification methods. WEASEL+MUSE and MLSTM-FCN classifiers show better performance than similarity-based methods but they are not explainable-by-design and, as far as we have seen, they do not have a post hoc model-specific explainability method. Thus, WEASEL+MUSE and MLSTM-FCN cannot provide faithful explanations as they can only rely on post hoc model-agnostic explainability methods <ref type="bibr" target="#b38">[Rudin, 2019]</ref>, which could prevent their use on numerous applications. Our approach XEM proposes to reconcile performance and faithful explainability (by design) through identifying the time window used to classify the whole MTS. We detail the assessment of XEM in the performance-explainability framework and identify ways to further enhance XEM explainability in section 5.2.5.</p><p>Input Data Quality Finally, none of the state-of-the-art MTS classifiers handles the three varying data quality aspects (different TS length, missing data, noise).</p><p>Table <ref type="table" target="#tab_0">1</ref> presents an overview of the challenges addressed by the state-of-the-art MTS classifiers and how we position our new ensemble method XEM. We evaluate the classification performance of XEM and its ability to handle the challenges MTS classification faces in section 5.2. We first explain how the hybrid ensemble method LCE has been designed and then how LCE is used to form the MTS classifier XEM. Finally, we detail XEM properties and implementation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">LCE</head><p>First of all, LCE is an improved hybrid (explicit and implicit) version of an implicit cascade generalization approach <ref type="bibr" target="#b43">[Sesmero et al., 2015]</ref>: Local Cascade (LC) <ref type="bibr" target="#b19">[Gama and Brazdil, 2000</ref>]. Among the implicit approaches, LC is one of the easiest to augment with explicit techniques. LC uses a decision tree as a divide-and-conquer method, which is compatible with the explicit bagging/boosting approaches. This criteria has motivated the choice of LC algorithm as the starting point for our hybrid ensemble method. We present in this section LC and our proposed LCE. Figure <ref type="figure">1</ref> illustrates the algorithms. </p><formula xml:id="formula_1">H 0 D 0 =D+H 0 (D) H 1 H 1 H 2 H 2 H 2 H 2 D 11 =D 01 + H 1 (D 01 ) D 12 =D 02 + H 1 (D 02 ) H 2 (D 111 ) H 2 (D 112 ) H 2 (D 121 ) H 2 (D 122 ) D 01 D 02 Implicit Explicit Predictions Dataset D 1 Predictions Dataset D n ME . . . LC H b D 0 =D 1 +H b (D 1 ) H b H b H b H b H b H b D 11 =D 01 + H b (D 01 ) D 12 =D 02 + H b (D 02 ) H b (D 111 ) H b (D 112 ) H b (D 121 ) H b (D 122 ) D 01 D 02 BOOSTING H b D 0 =D n +H b (D n ) H b H b H b H b H b H b D 11 =D 01 + H b (D 01 ) D 12 =D 02 + H b (D 02 ) H b (D 111 ) H b (D 112 ) H b (D 121 ) H b (D 122 ) D 01 D 02 BOOSTING Fig. 1: Local Cascade (LC) versus Local Cascade Ensemble (LCE). H i -</formula><p>base classifier trained on a dataset at a tree depth of i (H b : eXtreme Gradient Boosting <ref type="bibr" target="#b7">[Chen et al., 2016]</ref>), D i -dataset at a tree depth of i augmented with the class probabilities of the base classifier H i , NCL -Negative Correlation Learning, ME -Mixture of Experts.</p><p>Local Cascade LC is a combined implicit approach (negative correlation learning and mixture of experts) based on a cascade generalization. Cascade generalization uses a set of classifiers sequentially and at each stage adds new attributes to the original dataset. The new attributes are derived from the class probabilities given by a classifier, called a base classifier (e.g., class probabilities H 0 (D), H 1 (D 01 ) in Figure <ref type="figure">1</ref>). The bias-variance trade-off is obtained by negative correlation learning: at each stage of the sequence, classifiers with different behaviors are selected. It is recommended in cascade generalization to begin with a low variance algorithm like Naïve Bayes <ref type="bibr" target="#b52">[Zhang, 2004]</ref> to draw stable decision surfaces (H 0 in Figure <ref type="figure">1</ref>) and then use a low bias algorithm like boosting <ref type="bibr" target="#b18">[Freund and Schapire, 1996]</ref> to fit more complex ones (H 1 in Figure <ref type="figure">1</ref>). LC applies cascade generalization locally following a divide-and-conquer strategy based on mixture of experts. The objective of this approach is to capture new relationships that cannot be discovered globally. The LC divide-and-conquer method is a decision tree. When growing the tree, new attributes (class probabilities from a base classifier) are computed at each decision node and propagated down the tree. In order to be applied as a predictor, local cascade stores, in each node, the model generated by the base classifier.</p><p>Local Cascade Ensemble The contribution of LCE intervenes in the explicit manner of handling the bias-variance trade-off. Whereas LC approach is implicit, alternating between base classifiers behaviors (bias reduction, variance reduction) at each level of the tree, LCE is a hybrid ensemble method which combines an explicit boosting-bagging approach to handle the bias-variance trade-off and, as LC, an implicit divide-and-conquer approach -a decision tree. Firstly, LCE reduces bias across decision tree divide-and-conquer approach through the use of boosting-based classifiers as base classifiers (H b in Figure <ref type="figure">1</ref>). A boosting-based classifier iteratively changes the data distribution with its reweighting scheme which decreases the bias. We adopt the best performing state-of-the-art boosting algorithm (eXtreme Gradient Boosting -XGB <ref type="bibr" target="#b7">[Chen and Guestrin, 2016]</ref>) as base classifier. In addition, boosting is propagated down the tree by adding the class probabilities of the base classifier as new attributes to the dataset. Class probabilities indicate the ability of the base classifier to correctly classify a sample. At the next tree level, class probabilities added to the dataset are exploited by the base classifier as a weighting scheme to focus more on previously misclassified samples. Then, the overfitting generated by the boosted decision tree is mitigated by the use of bagging. Bagging provides variance reduction by creating multiple predictors from random sampling with replacement of the original dataset (see D 1 . . . D n in Figure <ref type="figure">1</ref>). Trees are aggregated with a simple majority vote.</p><p>The hybrid ensemble method LCE allows to balance bias and variance while benefiting from the improved generalization ability of explicitly creating different training sets (bagging, boosting). Furthermore, LCE implicit divide-and-conquer method ensures that classifiers are learned on different parts of the training data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">XEM</head><p>As previously introduced, MTS classification has received significant interests over the past decade driven by automatic and high-resolution monitoring applications. A subset of the MTS can be characteristic of the event we aim to predict and can be adequate for the prediction. Thus, we propose to leverage LCE tabular classifier to identify the discriminative part of an MTS and form an eXplainable-by-design Ensemble method for MTS classification (XEM) combining both performance and faithful explainability. We have chosen a tabular classifier as the classifier of the MTS subsequences needs to learn the relation between the variables and potentially handle small time windows (e.g., length of 2), which prevents the use of most MTS classifiers. Plus, we have selected LCE as it outperforms the state-of-the-art tabular classifiers on the public UCI datasets (see section 5.1). The time window size is set as a parameter of XEM, which gives the estimated size of the discriminative part of an MTS. In our evaluation, without having prior knowledge on the time window size which would suit the classification tasks, we set the time window size using grid search with cross-validation (see section 4.3). In the following sections, we first present how dividing the time series into time windows is used to help XEM classify MTS based on their discriminative part and then, how it provides explainability-by-design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1">MTS Dataset Transformation</head><p>XEM trains LCE on subsequences of MTS to identify the discriminative time window, which requires a transformation of the original MTS dataset. This transformation is presented in Figure <ref type="figure" target="#fig_0">2</ref>. Using a sliding window, all subsequences corresponding to the time window size are generated (MTS lengthtime window size + 1 subsequences). The time aspect is managed by setting the different timestamps as column dimensions. Each subsequence is considered as a new sample, labeled as the original MTS. For example in Figure <ref type="figure" target="#fig_0">2</ref>, 4 subsequences (samples) are generated from the first MTS, composed of 2 timestamps (time window size) with 2 dimensions each (4 attributes columns). The 4 subsequences are calculated as: 5 (MTS length) -2 (time window size) + 1. We present in the next sections how we compute the classification performance with the transformed dataset and how this configuration allows explainability.  win size -time window size. In this example: T=5, d=2 and win size=2.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MTS ID</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2">Classification</head><p>As seen in the previous section, XEM trains LCE on samples corresponding to subsequences of MTS which sizes are controlled by the time window size parameter. Then, XEM assigns LCE class probabilities to all subsequences of the MTS. For example, on the upper part of Figure <ref type="figure">3</ref>, XEM assigns LCE class probabilities for each of the 4 subsequences of an MTS. Finally, XEM determines the class of an MTS based on the subsequence on which LCE is the most confident. For each MTS, the maximum class probability over the different subsequences is selected to determine the whole MTS classification output. For example, on the middle part of Figure <ref type="figure">3</ref>, we can observe that XEM assigns the class 1 to the first MTS (MTS ID=1) based on the highest class probability (0.95 versus 0.6 and 0.7) obtained with the classification of the third subsequence of the MTS. In the case where XEM is the most confident for a subsequence of an MTS which is not discriminative, it means that the time window size value is not suited for the classification problem and it would lead to poor classification accuracy of XEM on the training set. A time window size better suited for the classification problem would lead to better accuracy on the training set and would therefore be selected.</p><p>The transformation presented and the performance evaluation procedure allow any traditional (tabular) classifier to perform MTS classification. Therefore, we compare in section 5.2.1 the performance of XEM to the best two state-of-the-art tabular classifiers applying the same transformation as LCE and to the state-ofthe-art MTS classifiers. Fig. <ref type="figure">3</ref>: XEM prediction computation on the example from Figure <ref type="figure" target="#fig_0">2</ref> with the identification of the discriminative time window for the MTS 1. And, an illustration of the explanation provided to the end-user to support XEM prediction for this MTS (highlighted in bold).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.3">Explainability</head><p>XEM prediction for an MTS is based on the subsequence that has the highest class probability -the subsequence on which LCE is the most confident. Thus, XEM provides explainability-by-design through the identification of the time window used to classify the MTS. We illustrate the explainability of XEM with the previous section example in the lower part of Figure <ref type="figure">3</ref>. We observe that for the first MTS (MTS ID=1), after performing a grouping by MTS ID and taking the maximum, class 1 has the highest probability (0.95). We can trace back to the subsequence from which XEM is predicting this class probability (third subsequence), and show it to the end-user. This subsequence can help the end-user to understand why the MTS classifier attributed a particular label to the whole MTS (explainability).</p><p>In this case, the subsequence associated with XEM prediction of the first MTS contains a steep increase of attribute 2 (black line -Figure <ref type="figure">3</ref>), which surpasses attribute 1 (blue line -Figure <ref type="figure">3</ref>). We further illustrate the explainability property of XEM in section 5.2.2 on a synthetic and two UEA datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Properties</head><p>In addition to its explainability-by-design, XEM has other interesting properties: phase invariance, interplay of dimensions, different MTS length compatibility, missing data management, noise robustness and scalability.</p><p>• Phase Invariance: XEM is not sensitive to the position of the discriminative subsequence in the MTS due to the selection of the subsequence which has the highest class probability to classify the whole MTS. This property improves the generalization ability of the algorithm: in the possible cases when the sequences of events in an MTS change, the classification result is not modified. For example, the classification result would be the same if the discriminative subsequence appears at the beginning or at the end of the MTS;  <ref type="bibr" target="#b6">[Breiman et al., 1984]</ref>. Similar to extreme gradient boosting <ref type="bibr" target="#b7">[Chen and Guestrin, 2016]</ref>, XEM excludes missing values for the split and uses block propagation. During a node split, block propagation sends all samples with missing data to the side minimizing the error, i.e. the node (left or right) which gets the highest score (accuracy score in this paper). We evaluate this property in our experiments in section 5.2.3; • Noise Robustness: the bagging component of XEM provides noise robustness through variance reduction by creating multiple predictors from random sampling with replacement of the original dataset. We discuss this property in our experiments in section 5.2.4; • Scalability: as a tree-based ensemble method, XEM is scalable. Its time complexity is detailed in section 3.4.</p><p>Most of the properties of XEM are coming from LCE. The properties shared between LCE and XEM are interplay of dimensions, missing data management, noise robustness and scalability.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Time Complexity</head><p>XEM time complexity corresponds to LCE time complexity plus the dataset transformation which is linear in the number of samples. LCE time complexity is determined by the time complexity of multiple decision trees learning and extreme gradient boosting. The time complexity of building a single tree is O(ndD t ), where n is the number of samples, d is the number of dimensions and D t is the maximum depth of the tree. So the time complexity of creating multiple decision trees with bagging is O(N t ndD t ), where N t is the number of trees. Extreme gradient boosting has a time complexity of O(N b D b x 0 log(n)) where N b is the number of trees, D b is the maximum depth of the trees and x 0 is the number of non-missing entries in the data. Therefore, LCE has a time complexity of O(N t ndD t 2 Dt N b D b x 0 log(n)), where 2 Dt represents the maximum number of nodes in a binary tree. Table <ref type="table" target="#tab_5">2</ref> shows the time complexity of LCE in comparison with RF, XGB and LC.  for D (j) ∈ P(D ) do 17:</p><formula xml:id="formula_2">O(N nd D) XGB O(N log(n) x 0 D) LC O(ndD2 D T Base ) LCE O(N ndD2 D T Base )</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5">Implementation</head><p>T ree j = XEM Tree(D (j) , H, max depth, depth) 18:</p><p>return tree containing one decision node, storing classifier H depth (D) and descendant subtrees T ree j</p><p>We present XEM pseudocode in Algorithm 1 and make available our implementation 2 in Python 3.6. A function (XEM Tree) builds a tree and the second one (XEM) builds the forest of trees through bagging, after having transformed the dataset. There are 2 stopping criteria during a tree building phase: when a node has an unique class or when the tree reaches the maximum depth. We set the range of tree depth from 0 to 2 in XEM as in LCE. This hyperparameter is used to control overfitting. Low bias boosting-based classifier as base classifier justifies the maximum depth of 2. The set of low bias base boosting-based classifiers is limited to the best performing state-of-the-art boosting algorithm (XGB <ref type="bibr" target="#b7">[Chen and Guestrin, 2016]</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Evaluation</head><p>In this section, we present the methodology employed (datasets, algorithms, hyperparameters and metrics) to evaluate LCE and XEM. In the experiments, we benchmarked LCE on the UCI datasets <ref type="bibr" target="#b12">[Dua and Graff, 2017]</ref>. We randomly selected one dataset per category available on the repository and obtained 26 UCI datasets. The categories are defined according to the number of instances (less than 100, 100 to 1,000 and greater than 1,000) and the number of dimensions (less than 10, 10 to 100 and greater than 100). The characteristics of each dataset are presented in Table <ref type="table" target="#tab_7">3</ref>. There is no train/test split provided on the repository so we decided to perform a stratified 3-fold cross-validation. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.2">Multivariate Time Series</head><p>We benchmarked XEM on the 30 currently available UEA MTS datasets <ref type="bibr" target="#b0">[Bagnall et al., 2018]</ref>. We kept the train/test splits provided in the archive. The characteristics of each dataset are presented in Table <ref type="table" target="#tab_9">4</ref>. As presented in section 2.2, we evaluate the performance of LCE in comparison to:</p><p>• Bagging and Boosting -BB (ensemble method -explicit): we implemented the algorithm based on the description of the paper <ref type="bibr" target="#b27">[Kotsiantis and Pintelas, 2005]</ref> with 25 sub-classifiers for both bagging and boosting. We used the Bagging-Classifier 3 with the DecisionTreeClassifier 4 and the AdaBoostClassifier 5 public implementations <ref type="bibr" target="#b34">[Pedregosa et al., 2011</ref>]; • Boost-Wise Pre-Loaded Mixture of Experts -BP (ensemble method -explicit boosting + implicit): we implemented the algorithm based on the description of the paper <ref type="bibr" target="#b13">[Ebrahimpour et al., 2012]</ref>, with one hidden layer per MLP expert and the recommended learning rates (experts: 0.1, gating network: 0.05). We used the AdaBoostClassifier 5 <ref type="bibr" target="#b34">[Pedregosa et al., 2011]</ref> and the Keras 8 public implementations; • Elastic Net -EN (regularized logistic regression): the logistic regression combining L1 and L2 regularization methods. We used the SGDClassifier 6 public implementation <ref type="bibr" target="#b34">[Pedregosa et al., 2011</ref>]; to the limited size of the datasets and the absence of pretrained networks. We used the implementation available in the package Keras 8 and limit the neural network architecture to 3 layers; • Random Forest -RF (ensemble method -explicit): we used the RandomForest-Classifier 9 public implementation <ref type="bibr" target="#b34">[Pedregosa et al., 2011]</ref>; • Simple Ensemble Method -SE: we used the DecisionTreeClassifier 4 , GaussianNB 7</p><p>and SGDClassifier 6 public implementations <ref type="bibr" target="#b34">[Pedregosa et al., 2011]</ref>; • Support Vector Machine -SVM: we used the SVC 10 public implementation <ref type="bibr" target="#b34">[Pedregosa et al., 2011]</ref>; • Extreme Gradient Boosting -XGB (ensemble method -explicit): we used the implementation available in the xgboost package for Python 11 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.2">MTS Classifiers</head><p>We compare our algorithm XEM to the best two tabular classifiers from the previous evaluation applying the same transformation as LCE and to the state-of-theart MTS classifiers.</p><p>• DTW D , DTW I and ED -with and without normalization (n): we report the results published in the UEA archive <ref type="bibr" target="#b0">[Bagnall et al., 2018</ref> We used the public implementation 11 with the transformation presented in section 3.2.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Hyperparameters Optimization</head><p>Classifiers and MTS classifiers hyperparameters have been set for each dataset based on a stratified 3-fold cross-validation on the training sets. More specifically, hyperparameters of LC, LCE, MLSTM-FCN and XEM have been set by grid search. WEASEL+MUSE hyperparameters are set by the solver L2R LR DUAL as recommended by the authors. Then, the hyperparameters of all the other classifiers (BB, BP, EN, MLP, SE, SVM, RF, XGB) are set by hyperopt, a sequential model-based optimization using a tree of Parzen estimators search algorithm <ref type="bibr" target="#b3">[Bergstra et al., 2011]</ref>. Hyperopt chooses the next hyperparameters decision from both the previous choices and a tree-based optimization algorithm. Tree of Parzen estimators meet or exceed grid search and random search performance for hyperparameters setting. We use the implementation available in the Python package hyperopt<ref type="foot" target="#foot_7">14</ref> and hyperas<ref type="foot" target="#foot_8">15</ref> wrapper for Keras.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.4">Metrics</head><p>For each dataset, we compute the classification accuracy. Then, we present the average rank and the number of wins/ties to compare the different classifiers on the same datasets. Finally, we present the critical difference diagram <ref type="bibr" target="#b9">[Demšar, 2006]</ref>, the statistical comparison of multiple classifiers on multiple datasets based on the nonparametric Friedman test, to show the overall performance of LCE and XEM. The diagram represents the average rank of the classifiers, and the classifiers whose performance are not significantly different (inferior to the critical difference) are linked by a bar. An example of critical difference diagram can be seen in Figure <ref type="figure" target="#fig_1">4</ref>. We use the implementation available in R package scmamp<ref type="foot" target="#foot_9">16</ref> .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Results</head><p>In this section, we begin by evaluating the performance of LCE compared to the state-of-the-art classifiers. Next, we compare the performance of XEM to the other MTS classifiers. Then, we show that the explainability of XEM can give insights to the end-user about XEM predictions. Finally, we assess the robustness of XEM (missing data, noise) and position it into the performance-explainability framework introduced in <ref type="bibr">[Fauvel et al., 2020b]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">LCE</head><p>Table <ref type="table" target="#tab_12">5</ref> shows the classification results of the 10 classifiers on the 26 UCI datasets.</p><p>The best accuracy for each dataset is denoted in boldface. We observe that the top 3 classifiers are ensemble methods: LCE obtains the best average rank (2.8), followed by RF in second position (rank: 3.0) and XGB in third position (rank: 3.3). First of all, LCE obtains the best average rank with the first position on 35% of the datasets (9 wins/ties). Based on the categorization of the UCI datasets presented in Table <ref type="table" target="#tab_7">3</ref>, we do not observe any influence of the number of instances, dimensions or classes on the performance of LCE relative to other classifiers.</p><p>Then, we observe that the second ranked classifier RF obtains the same number of wins/ties as LCE (9 win/ties). RF gets around 60% of its wins/ties on small datasets (train size &lt; 1000). We can infer that the bagging only (variance reduction) of RF can provide better generalization than LCE bagging-boosting combination on small datasets (wins/ties on small datasets -54% of the datasets: LCE 5, RF 5). The third ranked classifier XGB gets 6 wins/ties. We do not see any influence of the different dataset categories on XGB wins/ties relative to LCE. Therefore, we conclude that LCE bagging and boosting combination to handle the bias-variance trade-off exhibits better generalization on average than the bagging only (RF) and boosting only (XGB) algorithms on the UCI datasets.</p><p>Next, LC algorithm gets the fifth rank with one win/tie. We do not see any particular influence of the different dataset categories on LC performance. So, the outperformance of LCE compared to LC on the UCI datasets confirms the better generalization ability of a hybrid (explicit and implicit) versus an implicit only approach. The comparison in Table <ref type="table" target="#tab_13">6</ref> aims to underline the superior performance of LCE compared to LC on the UCI datasets. In order to be comparable, the depth of a tree is set to 1 for LC and LCE and, as presented in section 4.2.1, the low bias base classifier in LC and LCE is the best performing state-of-theart boosting algorithm -XGB. The results correspond to the average accuracy on test sets with the corresponding standard error. Results show a comparable accuracy variability of LCE compared to LC when the number of trees is set to 1 (standard error of 4.6% versus 4.8%). However, LCE on 1 tree exhibits a higher accuracy than LC (71.8% versus 65.9%). Additionally, through bagging, we observe LCE variability reduction as well as an increase of accuracy (71.8±4.6 with 1 tree versus 74.9±4.1 with 60 trees versus 65.9±4.8 with LC). Therefore, this comparison affirms the superiority of our explicit bias-variance trade-off approach compared to the implicit approach of LC on the UCI datasets. Moreover, LCE hybrid approach shows better average performance than the remaining ensemble methods, and in particular the combination of explicit methods -BB, as well as the combination of the explicit boosting method with an implicit approach -BP (rank: LCE 2.8 , BB 4.1, SE 6.0, BP 7.0). LCE outperforms BB, SE and BP on both small (rank: LCE 2.5, BB 3.4, SE 5.6, BP 7.6) and large datasets (rank: LCE 3.2, BB 4.9, SE 6.5, BP 6.2).</p><p>Concerning the other classifiers, EN obtains only one win/tie but gets a better rank on average than SVM (3 wins/ties) and MLP (3 wins/ties).</p><p>Finally, we analyze a statistical test to evaluate the performance of LCE compared to other classifiers. We present in Figure <ref type="figure" target="#fig_1">4</ref> the critical difference plot with alpha equals to 0.05 from results shown in Table <ref type="table" target="#tab_12">5</ref>. The values correspond to the average rank and the classifiers linked by a bar do not have a statistically significant difference. The plot confirms the top 3 ranking as presented before (LCE: 1, RF: 2, XGB: 3). We also observe that LCE and RF have a significant performance difference compared to SE. Therefore, considering that LCE transformation to multivariate time series classification is also applicable to other traditional (tabular) classifiers, we evaluate the performance of RF and XGB with the same transformation as LCE in comparison to the state-of-the-art MTS classifiers in the next section. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">XEM</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.1">Classification Performance</head><p>The classification results of the 11 MTS classifiers are presented in Table <ref type="table" target="#tab_14">7</ref>. A blank in the table indicates that the approach ran out of memory or the accuracy is not reported <ref type="bibr" target="#b0">[Bagnall et al., 2018]</ref>. The best accuracy for each dataset is denoted in boldface. We observe that XEM obtains the best average rank (3.0), followed by RFM in second position (rank: 3.7) and MLSTM-FCN in third position (rank: 3.8). XEM gets the first position in one third of the datasets. Using the categorization of the datasets published in the archive website<ref type="foot" target="#foot_10">17</ref> , we do not see any influence from the different train set sizes, MTS lengths, dimensions and number of classes on XEM performance relative to the other classifiers on the UEA datasets. Nonetheless, XEM exhibits weaker performance on average on human activity recognition (rank: 3.6, 30% of all datasets) and motion classification (rank: 5.0, 13% of all datasets) datasets.</p><p>Then, we observe that the better generalization of LCE bagging-boosting combination compared to bagging only (RF) and boosting only (XGB) is also valid on the MTS datasets (average rank: XEM 3.0, RFM 3.7, XGBM 4.8). The adaptation of ensemble methods to the MTS datasets (see section 3.2.1) is well performing: the three ensemble methods obtain the highest number of wins/ties (ensemble methods for MTS: 17 -57% of all datasets, MLSTM-FCN: 11 -37% of all datasets, WEASEL+MUSE: 4 -13% of all datasets). The 6 wins/ties of RFM are obtained on small datasets (train size &lt; 500). As seen in section 5.1, we can infer that the bagging only (variance reduction) of RFM can provide better generalization than XEM bagging-boosting combination on small datasets (wins/ties on small datasets -77% of the datasets: XEM 8, RFM 6). On the time window sizes used, we observe that the choice of XEM time window is a trade-off between its bagging and boosting components. XEM and XGBM use the same time window size on 70% of the datasets. When the time window size is different, XEM obtains a better accuracy than XGBM on 90% of the cases. Moreover, XEM employs the same time window size as RFM on half of the UEA datasets. On the other half of the datasets, RFM adopts a slightly bigger time window size than XEM. RFM uses a bigger time window in 75% of the time with an average time window difference of 29% between XEM and RFM. The different choice of XEM time window size leads to a better accuracy on 75% of the cases compared to RFM. These observations prove that XEM bias-variance trade-off can refine the time window size of boosting only and bagging only to obtain a better generalization ability on average.</p><p>Specifically, with regard to the hyperparameter win size of XEM, Figure <ref type="figure">5</ref> shows the average relative drop in performance across the datasets when using the other time window sizes than the one used in the best configuration given in Table <ref type="table" target="#tab_9">4</ref>. In order to evaluate the relative impact with respect to the range of performance, we have defined three categories of datasets: datasets with XEM original accuracy &lt; 50%, datasets with 50% ≤ accuracy &lt; 90% and datasets with accuracy ≥ 90%. First, as expected, we observe that the average relative impact of using suboptimal time window sizes is higher when XEM level of performance is low (average relative drop in accuracy: 15.1% when XEM accuracy &lt; 50% versus 4.5% when XEM accuracy ≥ 90%). Then, the average relative drop in accuracy when using suboptimal time window sizes is not negligible but remains limited in all the cases. This drop is below 16% on average on the category where XEM has the lowest level of accuracy (15.1% ± 5.3%) and below 10% on average across all the datasets (9.9% ± 1.8%). Fig. <ref type="figure">5</ref>: XEM average relative accuracy drop across the UEA datasets when using other time window sizes than the one used in the best configuration given in Table <ref type="table" target="#tab_9">4</ref>. The performance drop is presented across three categories of datasets, defined according to XEM levels of accuracy shown in Table <ref type="table" target="#tab_14">7</ref>. Acc -Accuracy.</p><p>Concerning the state-of-the-art MTS classifiers, we observe a performance difference between the third (MLSTM-FCN) and fourth (WEASEL+MUSE) classifiers on datasets sizes. MLSTM-FCN outperforms WEASEL+MUSE (rank: 2.6 versus 4.6 for WEASEL+MUSE) on the largest datasets (train size ≥ 500, 23% of all datasets) whereas WEASEL+MUSE slightly outperforms MLSTM-FCN (rank 4.0 versus 4.2 for MLSTM-FCN) on the smallest datasets (train size &lt; 500, 77% of all datasets). XEM shows the same performance as MLSTM-FCN on the largest datasets (rank 2.6) while outperforming WEASEL+MUSE on the smallest datasets (rank: 3.2 versus 4.0 for WEASEL+MUSE). Therefore, XEM is better than the state-of-the-art MTS classifiers on both the small and large UEA datasets. Last, similarity-based methods obtain the lowest wins/ties counts. Euclidean distance is never in the first position on the UEA datasets. The wins/ties of DTW (DTW D normalized: 2, DTW D : 3) stem from their outperformance on human activity recognition datasets.</p><p>Next, we performed a statistical test to evaluate the performance of XEM compared to other MTS classifiers. We present in Figure <ref type="figure">6</ref> the critical difference plot with alpha equals to 0.05 from results shown in Table <ref type="table" target="#tab_14">7</ref>. The values correspond to the average rank and the classifiers linked by a bar do not have a statistically significant difference. The plot confirms the top 3 ranking as presented before (XEM: 1, RFM: 2, MLSTM-FCN: 3). We notice that XEM is the only classifier with a significant performance difference compared to DTW D normalized. Fig. <ref type="figure">6</ref>: Critical difference plot of the MTS classifiers on the UEA datasets with alpha equals to 0.05.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.2">XEM Explainability</head><p>This section presents XEM explainability-by-design results. First, we illustrate the explainability of XEM on a synthetic dataset. The construction of a synthetic dataset allows us to know the expected discriminative time window. Then we show which windows have been used by XEM on the UEA datasets of section 5.2.1 and present the explainability results on two UEA datasets. We do not know the expected discriminative time windows on the UEA datasets so it is worth noting that the explanations provided on these two UEA datasets are given as illustrative in nature. In addition, for each dataset, we compare XEM explainability-bydesign results with the ones from certain post hoc model-agnostic explainability methods. The current best performing state-of-the-art MTS classifiers (MLSTM-FCN, WEASEL+MUSE) are black-box classifiers, which can only rely on post hoc model-agnostic explainability methods. Therefore, in order to emphasize the value coming from XEM explainability-by-design, we study the difference between XEM explainability results and the ones obtained from certain post hoc model-agnostic explainability methods applied to XEM. Multiple post hoc model-agnostic explainability methods exist (e.g., LIME <ref type="bibr" target="#b36">[Ribeiro et al., 2016]</ref>, SHAP <ref type="bibr" target="#b31">[Lundberg and Lee, 2017]</ref>, Anchors <ref type="bibr" target="#b37">[Ribeiro et al., 2018]</ref>, LORE <ref type="bibr" target="#b20">[Guidotti et al., 2019]</ref>, features tweaking <ref type="bibr" target="#b26">[Karlsson et al., 2020]</ref>). Among the post hoc model-agnostic explainability methods, we have chosen the type with feature importance as it is the most popular one, and similarly to XEM, it identifies the regions of the input data that are important for a particular prediction. Specifically, we have chosen Local Interpretable Model-Agnostic Explanations (LIME) and SHapley Additive exPlanations (SHAP), the current state-of-the-art methods offering local explainability under the form of feature importance. These methods use an explainable surrogate model, a model that aims to mimic the predictions of the original one. More specifically, LIME describes the local behavior of the model using a linearly weighted combination of the input features, learned on perturbations of an instance. SHAP also adopts a linear surrogate model: an additive feature attribution method that uses simplified inputs (conditional expectations) assuming feature independence. Thus, these methods provide how much each variable (features+time) impacts predictions. We cannot apply LIME and SHAP methods at a higher granularity to obtain explanations at windows level (like XEM) as their surrogate models would combine information from multiple windows to mimic the performance of XEM, when XEM only uses one window to perform classification. For each dataset, in order to compare explainability results, we represent on the input data the identified regions that are important for predictions from XEM explainability-by-design, LIME and SHAP results.</p><p>Synthetic Dataset First of all, we show that XEM uses and identifies the expected time window to perform the classification on an MTS synthetic dataset. We design a dataset composed of 20 MTS (50%/50% train/test split) with a length of 100, 2 dimensions and 2 balanced classes. The difference between the 10 MTS belonging to the negative class and the one belonging to the positive class stems from a 20% time window of the MTS. As illustrated in Figure <ref type="figure" target="#fig_2">7</ref>, negative class MTS are sine waves and positive class MTS are sine waves with a square signal on 20% of the dimension 1 (see timestamps between 60 and 80). The classification results show that XEM with a time window size parameter set to 20% is enough to correctly classify the 10 MTS of the test set (accuracy: 100%n trees: 10, max depth: 1). Moreover, the classification results for the positive class MTS are based on the 20% time window with a square signal on dimension 1. We observe that the maximum class probability for the MTS of positive class is 100% and this probability is reached for samples on the range [62,100] (maximum class probability on the range [0,61]: 92.6%). This range is the expected range. As explained in section 3.2.1, all the samples of the dataset obtained with a 20% sliding window have a piece of the square signal for the timestamps in the range [62,100], which is the information sufficient to correctly classify the MTS in the positive class. Furthermore, a time window size set below 20% also leads to 100% accuracy on the test set as a piece of the square signal (20% of the MTS) is enough to correctly classify the MTS of the positive class. For example, using the minimum window size (2%), we observe that the maximum class probability obtained by XEM (accuracy: 100%n trees: 10, max depth: 1) for the MTS of positive class is 100% and this probability is reached for samples in the range <ref type="bibr">[61,</ref><ref type="bibr">81]</ref> (maximum class probability on the range [0,60] and [82,100]: 97.8%). This is also the expected discriminative range. Therefore, XEM can classify an MTS based on the minimal discriminative window; and by taking all the samples of the dataset with the maximum class probability, XEM can identify the full parts of the MTS which are characteristic of a class (e.g., the square signal on 20% of the dimension 1 in Figure <ref type="figure" target="#fig_2">7</ref>). Then, we compare XEM explainability-by-design results with the ones from the post hoc model-agnostic explainability methods LIME and SHAP applied to XEM. Figure <ref type="figure" target="#fig_3">8</ref> shows the results from LIME and SHAP for a sample belonging to the positive class, with the darker the red color the higher the importance to the predictions. First, we can see that, unlike XEM explainability-by-design (see Figure <ref type="figure" target="#fig_2">7</ref>), LIME and SHAP do not homogeneously identify the discriminative square signal in Dimension 1 (interval <ref type="bibr">[60,</ref><ref type="bibr">80]</ref>) as important to the prediction. SHAP identifies the timestamps at the beginning and at the end of the discriminative window as more important to the prediction than the other ones, therefore explaining to the end-user that the interval <ref type="bibr">[65,</ref><ref type="bibr">75]</ref> is less discriminative to the prediction, which is not the expected result. A comparable observation can be made on LIME results. Second, LIME and SHAP provide some non-null importance values for the Dimension 2, which is not discriminative as the sine wave is common to both classes, therefore generating a misleading explanation for the end-user. Thus, this example, based on the same XEM model and a known ground truth with regard to the expected explanation, emphasizes that the explanations coming from the surrogate models of some post hoc model-agnostic explainability methods like LIME and SHAP are not perfectly faithful, and demonstrates the interest to have the combination of performance and explainability-by-design of XEM which provides the discriminative time window as explanation. Time Window Size Percentages on UEA We then present the XEM explainability results on the UEA datasets. We begin with illustrating in Figure <ref type="figure" target="#fig_4">9</ref> the distribution of the time window size percentage used by XEM on the UEA archive per dataset type. We observe that XEM has a tendency to use particular time window size percentages per dataset type. Most of audio spectra, EEG/MEG and motion datasets have been classified on a time window size &gt; 60% of the MTS lengths. Meanwhile, most ECG and human activity recognition datasets have been classified on a time window size ≤ 60% of the MTS lengths. Therefore, we can induce that the information provided by the whole MTS is useful to discriminate between the different classes on the audio spectra, EEG/MEG and motion datasets. Concerning the ECG and human activity recognition datasets, we can infer that the discriminative information is located in a particular part of the MTS. Atrial Fibrilation Dataset For example, XEM obtains its best performance on the two ECG datasets using a time window size of 20%. Therefore, we assume that the information necessary for XEM to classify the MTS in ECG datasets are really condensed compared to the entire MTS available. We illustrate it in Figure 10 by highlighting the 20% time window of the first MTS sample per class in the Atrial Fibrilation test set to gain insights on XEM classification result. Atrial Fibrilation dataset is composed of two channels ECG on a 5 second period (128 samples per second). MTS are labeled in 3 classes: non-terminating atrial fibrilation, atrial fibrilation terminates one minute after and atrial fibrilation terminates immediately. XEM correctly predicts the 3 MTS based on the one second time window (20%) highlighted in Figure <ref type="figure" target="#fig_5">10</ref>. There is a unique window for each MTS with the highest class probability (class non-terminating atrial fibrilation: 94.6%, atrial fibrilation terminates one minute after: 97.7%, atrial fibrilation terminates immediately: 97.4%). We can observe in the non-terminating atrial fibrilation MTS that the time window highlighted reveals an abnormal constant increase on channel 2 (black line) during one second whereas the other channel keeps the same motif as other windows. On the atrial fibrilation terminates one minute after MTS, we observe a smaller decrease in channel 2 than in other windows and a low peak in channel 1. These particular 20% time windows inform the end-user about XEM classification outcome, thus providing important information to domain experts. Then, we also compare XEM explainability-by-design results presented in Figure <ref type="figure" target="#fig_5">10</ref> with the ones from the post hoc model-agnostic explainability methods LIME and SHAP applied to XEM. Figure <ref type="figure" target="#fig_6">11</ref> shows the results from LIME and SHAP for a sample belonging to the non-terminating atrial fibrilation class, with the darker the red color the higher the importance to the predictions. As observed on the synthetic dataset, the regions with high importance provided by LIME and SHAP are discontinued on channel 2, rendering it difficult for the end-user to interpret this explanation. Moreover, for both LIME and SHAP, only one or two points are identified as important on channel 1 without a clear interpretation associated to them, and can therefore be considered as noise. This example also supports the interest of XEM explainability-by-design which provides the discriminative time window as explanation.</p><formula xml:id="formula_3">A S E C G E E G / M E G H A R M o t i o n O t h e</formula><p>Racket Sports Dataset The second category of datasets where XEM obtains its best results on a time window size ≤ 60% of the MTS lengths is human activity recognition. As previously done with Atrial Fibrilation, we illustrate it in Figure <ref type="figure" target="#fig_7">12</ref> by highlighting the 60% time window of the first MTS sample per class in the Racket Sports test set to gain insights on XEM classification result. Racket Sports dataset is composed of 6 dimensions, x/y/z coordinates for both the gyroscope and accelerometer of an android phone, on a 3 second period (10 samples per second). MTS are labeled in 4 classes: badminton smash, badminton clear, squash forehand boast and squash backhand boast. We illustrate the explainability of XEM on the two classes relative to the squash: squash forehand boast and squash backhand boast. XEM correctly predicts the 2 MTS based on the 1.8 seconds time window (60%) highlighted in Figure <ref type="figure" target="#fig_5">10</ref>. There is a unique window for each MTS with the highest class probability (squash forehand boast: 90.3%, squash backhand boast: 86.7%). We can observe that for these 2 MTS the window highlighted well correspond to the period of the full movement. Then, we can see a simultaneous steep peak on red and orange dimensions with a steep decrease on green dimension for squash forehand boast. Whereas, we can see a simultaneous steep decrease on red and orange dimensions without a particular variation on the green dimension for squash backhand boast. These particular 60% time windows inform the end-user about XEM classification outcome, thus providing important information to domain experts.</p><p>Finally, we compare XEM explainability-by-design results presented in Figure <ref type="figure" target="#fig_7">12</ref> with the ones from the post hoc model-agnostic explainability methods LIME and SHAP applied to XEM. Figure <ref type="figure" target="#fig_8">13</ref> shows the results from LIME and SHAP for a sample belonging to the squash forehand boast class, with the darker the red color the higher the importance to the predictions. As observed on the synthetic dataset, LIME and SHAP results only identify part of the discriminative features (e.g., do not identify steep peak on red and orange dimensions) and put some importance on non relevant parts of the time series (e.g., most of high LIME and SHAP importance values are after timestamp 18 -when the movement is finished). Such observations underline the imperfect faithfulness limitation of some post hoc model-agnostic explainability methods like LIME and SHAP, and the interest for XEM explainability-by-design. Nonetheless, XEM explainability-bydesign faces some limitations coming from the use of a fixed-length time window, and these limitations are discussed in section 5.3.</p><p>These two examples show how XEM outperforms other MTS classifiers (rank 1 on Atrial Fibrilation and Racket Sports) while offering faithful explainabilityby-design on its predictions.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.3">Effect of Missing Data</head><p>None of the state-of-the-art MTS classifiers handles missing data. Missing data are interpolated, which adds a parameter to the problem. Similar to extreme gradient boosting <ref type="bibr" target="#b7">[Chen and Guestrin, 2016]</ref>, XEM excludes missing values for the split and uses block propagation. Block propagation sends all samples with missing data to the node maximizing the accuracy score. We present in this section an experiment to illustrate the performance of XEM in the case of missing data compared to the second and third ranked MTS classifiers (RFM and MLSTM-FCN -see Table <ref type="table" target="#tab_14">7</ref>) with an imputation method for missing values. We have selected three datasets from the most representing type of UEA datasets (human activity recognition, 30% of the datasets); it is also a type on which XEM does not obtain the best performance comparing to the other classifiers (rank: 3.6). We choose the three datasets according to the performance of XEM to show the evolution of accuracies according to different starting points: Basic Motions (XEM accuracy: 100%, no error), Racket Sports (94.1%, ]0,10] percent of error) and U Wave Gesture Library (89.7%, ]10,100] percent of error). Then, we randomly removed an increasing proportion of the values for each time series ({5%, 10%, ..., 50%}) of the datasets before transformation (see section 3.2.1). For RFM and MLSTM-FCN, missing values are filled with zeros. Classifiers are trained following the methodology described in section 4 and the error rates on test sets over 10 replications are presented in Figure <ref type="figure" target="#fig_9">14</ref>. First, we observe that missing data does not have an effect on XEM performance (100% accuracy) on the dataset Basic Motions. On the other two datasets, the error rates of XEM increase progressively with the proportion of missing data. The error rate induced by missing data never exceeds 5% on these 2 datasets when half the data is missing (accuracy difference from 0% to 50% missing data: Racket Sports +3.7% and U Wave Gesture Library +1.9%). Finally, XEM performance is stable: the error rates remain roughly the same across the 10 replications on all proportions of missing values (mean of standard error across Racket Sports/U Wave Gesture Library: 0.34%).</p><p>Then, we can see that missing data has a stronger effect on RFM classification performance than XEM on the three datasets (error difference from 0% to 50% missing data: Basic Motions +0.25% versus 0%, Racket Sports +6.4% versus +3.7% and U Wave Gesture Library +3.2% versus +1.9%). Nonetheless, the effect of missing data on XEM and RFM performance remains below 10%. This observation is not applicable to MLSTM-FCN which is highly impacted by the missing data. MLSTM-FCN performance drops sharply on all datasets and it is not able to learn anymore from the data when the proportion of missing values exceed 25% (same performance as a random classifier -accuracy of one over the number of classes). Considering that MLSTM-FCN and RFM have the same imputation method, we can assume that using the window on which RFM is the most confident for prediction confers a higher robustness to missing values.</p><p>Therefore, this experiment highlights the interest of classifying based on the subsequence on which XEM is the most confident and the advantage conferred by its natural way to handle missing values compared to its competitors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.4">Effect of Gaussian Noise</head><p>In this section, we evaluate the robustness of XEM to Gaussian noise compared to the second and third ranked MTS classifiers. Therefore, we compare the performance of XEM to RFM and MLSTM-FCN, with RFM proven to be robust to noise based on bagging <ref type="bibr" target="#b4">[Breiman, 1996]</ref>.</p><p>Following the same logic as the section on missing values, we performed an experiment on the same three datasets. These three datasets are from the most representing type of UEA datasets (human activity recognition, 30% of the datasets) and from different XEM accuracy categories: Basic Motions (XEM accuracy: 100%, no error), Racket Sports (94.1%, ]0,10] percent of error) and U Wave Gesture Library (89.7%, ]10,100] percent of error). Then, after z-normalization of these datasets on each dimension (standard deviation of 1), we added an increasing Gaussian noise with a standard deviation of 0 to 1 to each dimension, which is equivalent to noise levels of 0% to 100%. The average error rates with standard errors on these three datasets are presented in Figure <ref type="figure" target="#fig_10">15</ref>. We observe that XEM fully exploits its bagging component and is as robust to noise as RFM. XEM shows lower error rates than RFM on 60% of the noise levels, without having a greater variability across the datasets (average standard error: XEM 3.7% versus RFM 3.5%). Moreover, XEM is more robust to noise than MLSTM-FCN. XEM exhibits lower error rates than MLTSM-FCN on 80% of the noise levels with a lower variability across the datasets (average standard error: XEM 3.7% versus MLSTM-FCN 5.3%).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.5">Performance-Explainability Framework</head><p>As previously presented, XEM is the first MTS classifier reconciling performance and faithful explainability. In this section, we position XEM in the performanceexplainability framework <ref type="bibr">[Fauvel et al., 2020b]</ref> in comparison with the state-ofthe-art MTS classifiers (DTW I /DTW D , MLTSM-FCN and WEASEL+MUSE), and identify ways to further enhance XEM explainability.</p><p>The performance-explainability framework details a set of 6 characteristics (performance, model comprehensibility, granularity of the explanations, information type, faithfulness and user category) to assess and benchmark machine learning methods. The results of the framework are represented in a parallel coordinates plot in Figure <ref type="figure">16</ref>. Fig. <ref type="figure">16</ref>: Parallel coordinates plot of XEM and the state-of-the-art MTS classifiers. Performance evaluation method: predefined train/test splits and an arithmetic mean of the accuracies on the 30 public UEA datasets <ref type="bibr" target="#b0">[Bagnall et al., 2018]</ref>. As presented in section 2.3, the models evaluated in the benchmark are: DTW D , DTW I , FCN, gRSF, LPS, MLSTM-FCN, mv-ARF, ResNet, SMTS, TapNet, UFS, WEASEL+MUSE and XEM.</p><p>Firstly, DTW I classifies MTS samples based on the label of their nearest sample. The similarity is calculated as the cumulative distances of all dimensions independently measured under DTW. For an individual MTS, the explanations supporting the prediction are the ranking of features and timestamps in decreasing order of their DTW distance with the nearest MTS. Based on the results presented in section 5.2.1, DTW I underperforms the current state-of-the-art MTS classifiers (Performance: Below ) as it has a statistically significant lower perfor-mance than MLSTM-FCN. In addition, the model DTW I conveys limited information (Information: Features+Time) that needs to be analyzed by a domain expert to ensure that they are meaningful for the application (User: Domain Expert). However, DTW I model is comprehensible (Comprehensibility: White-Box ) and provides faithful explanations (Faithfulness: Perfect) for each MTS (Granularity: Local ).</p><p>Then, MLTSM-FCN and WEASEL+MUSE can be analyzed together. First, based on the results presented in section 5.2.1, MLSTM-FCN exhibits the third best performance followed by WEASEL+MUSE without showing a statistically significant performance difference with XEM (Performance: Similar ). Second, they are both "black-box" classifiers without providing explainability-by-design or, as far we have seen, having a post hoc model-specific explainability method. Therefore, their explainability characteristics depend on the choice of the post hoc model-agnostic explainability method. Using the popular state-of-the-art post hoc model-agnostic explainability method SHAP, it allows WEASEL+MUSE and MLS-TM-FCN to outperform DTW I while reaching explanations with a comparable level of information (Information: Features+Time, DTW I : Features+Time), in the meantime remaining accessible to a domain expert (User: Domain Expert, DTW I : Domain Expert). However, as opposed to DTW I , SHAP as a surrogate model does not provide perfectly faithful explanations (Faithfulness: Imperfect, DTW I : Perfect).</p><p>Finally, XEM exhibits the best performance (Performance: Best) while providing faithful (Faithfulness: Perfect, MLSTM-FCN/WEASEL+MUSE: Imperfect, DTW I : Perfect) and more informative explanations as it provides the time window used to classify the whole MTS (Information: Uni Sequences, MLSTM-FCN/ WEASEL+MUSE: Features+Time, DTW I : Features+Time). However, the explanations supporting XEM predictions are only available per MTS (Granularity:</p><p>Local ) and the level of information could be further enhanced. It would be interesting to analyze the time windows characteristic of each class in the training set in order to determine if they contain some common multidimensional sequences (Information: Multi Sequences, Granularity: Both Global &amp; Local ). Such patterns could also broaden the audience as they would synthesize the important information in the discriminative time windows.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Discussion</head><p>We have presented our new eXplainable Ensemble method for MTS classification (XEM), which relies on the new hybrid ensemble method LCE. We have shown that LCE outperforms the state-of-the-art classifiers on the UCI datasets and that XEM outperforms the state-of-the-art MTS classifiers on the UEA datasets. In addition, XEM provides faithful explainability-by-design and manifests robust performance when faced with challenges arising from continuous data collection (different MTS length, missing data and noise). However, our new method XEM has some limitations due to the use of a fixed-length time window to classify an MTS.</p><p>Firstly, some limitations arise from the consideration of only one window. Depending on the dataset, XEM can face (i) a drop in the precision of the explanation or (ii) fail to identify the discriminant window. Specifically, (i) XEM can face a drop in the precision of the explanation in case of discriminative features located on non-consecutive time windows. The precision can be defined as the fraction of explanations that is relevant to the prediction. XEM uses one window to identify the discriminative part of an MTS. Nevertheless, some MTS can be solely distinguished based on the combination of several non-consecutive time windows. In this case, in order to include all discriminative information to correctly perform the classification, XEM selects a time window covering all necessary non-consecutive time windows, therefore altering the precision of the explanation provided to the end-user by including some unnecessary information. We illustrate this scenario based on the experiment performed on the synthetic dataset in section 5.2.2. Here, the difference between the 10 MTS belonging to the negative class and the one belonging to the positive class stems from the presence of one (t1=9) or two square signals (t1=9 and t2=72, see Figure <ref type="figure" target="#fig_11">17</ref>). Each square signal is of size 12, therefore a window size below 63% (72-9) does not allow the discrimination between the two MTS classes; a window covering both square signals is necessary to perform this task. We observe that XEM correctly identifies the discriminative time window by obtaining a 100% accuracy using an 80% time window (accuracy of 50% with a time window in {20%, 40%, 60%}). Nonetheless, the explanation communicated to the end-user (80% time window <ref type="bibr">[5,</ref><ref type="bibr">85]</ref>) to support the prediction contains 56 timestamps which are not relevant -sine wave, inducing a drop in the precision of the explanation (precision: 30% = 2*12/80 versus 100% in the case of consecutive discriminative parts). Therefore, to circumvent this limitation, it would be interesting to develop a method that would synthetize under the form of patterns the time windows characteristic of each class (as suggested in the previous section as well), and so provide to the end-user solely the discriminative parts of an MTS as explanation. In addition, (ii) XEM can fail to identify the discriminative time window in case of a window with high proximity to another class. XEM predicts the class of an MTS based on the window on which it is the most confident, without considering the predictions on the other windows. Some datasets can contain MTS with different windows close to the characteristics of different classes. Therefore, XEM can have high class probabilities on multiple windows; and when the window on which XEM is the most confident is characteristic of another class than the expected one, XEM incorrectly classifies the MTS. To illustrate it, we present in Figure <ref type="figure" target="#fig_9">14</ref> two MTS of the UEA Libras test set. XEM performed poorly on this dataset and obtained the rank 10/11 (see section 5.2.1). The Libras dataset contains 15 classes of 24 instances each, where each class references a hand movement type in the Brazilian sign language Libras. The hand movement is represented as a bi-dimensional curve performed by the hand in a period of time. We can observe in Figure <ref type="figure" target="#fig_12">18</ref> that the two MTS belonging to the same class have comparable evolution across time but XEM classifies them into two different classes. The first MTS is correctly classified based on the time window <ref type="bibr">[23,</ref><ref type="bibr">40]</ref> with a class probability equals to 93.5%. We can assume that the evolution on this window is characteristic of the class 6 (circle movement). The second MTS also contains a comparable window on the range <ref type="bibr">[23,</ref><ref type="bibr">40]</ref> but is incorrectly classified based on another window (range [0,17]) with a class probability of 94.5%. Therefore, XEM is the most confident on a window characteristic of another class (class 4: anti-clockwise arc). XEM did not consider the predictions on the other windows to take its decision. More particularly, XEM did not consider the expected window <ref type="bibr">[23,</ref><ref type="bibr">40]</ref>, where it also gets a high-class probability of 86.3%. So, it would be interesting to improve our hybrid ensemble method for MTS classification by considering in the final decision the predictions on the different windows of an MTS.  Secondly, the choice of a time window with a fixed length can be another limitation. We assume in XEM that a unique window size is suitable to discriminate the different classes. Nonetheless, we can imagine that different classes can be characterized by signals of different lengths. This assumption leads XEM to select the window size associated with the class having the largest discriminative features, and affects the precision of explanation in case of other classes with smaller discriminative parts. For example, Figure <ref type="figure" target="#fig_13">19</ref> shows an augmented version of the previous synthetic dataset (see Figure <ref type="figure" target="#fig_11">17</ref>) with a third class having a triangle wave in <ref type="bibr">[72,</ref><ref type="bibr">84]</ref>. On this dataset and as seen in the previous example, XEM selects a window size of 80% to correctly classify the different MTS, the window size covering both square signals of class 3. However, a window size of 20% is sufficient to discriminate MTS from class 1 (triangle wave). Thus, given a window size of 80% for this dataset, the explanation given to the end-user for an MTS sample belonging to the class 1 would contain information which is not discriminative (sine waves). Plus, adding some information/noise by taking a larger window than necessary for some of the classes can generate misclassifications for certain datasets. Therefore, it would also be valuable to improve XEM by integrating the possibility of multiple window sizes.  We have presented our new eXplainable-by-design Ensemble method for MTS classification (XEM), which relies on the new hybrid ensemble method LCE. LCE exhibits a better average rank than the state-of-the-art classifiers on the public UCI datasets and XEM shows a better average rank than the state-of-the-art MTS classifiers on the public UEA datasets. As tree-based ensemble methods, LCE and XEM can scale well on larger datasets than the ones tested. In addition, XEM addresses the challenges MTS classification usually faces. First, it provides faithful explainability-by-design through the identification of the time window used to classify the whole MTS. Then, XEM is robust when faced with challenges arising from continuous data collection (different MTS length, missing data and noise).</p><p>With regard to future work, we would like to adapt XEM approach to the regression task and evaluate it against the state-of-the-art regression methods. To further improve the explainability of XEM, we also plan to work on a method that would analyze the time windows characteristic of each class in the training set to determine if they contain some common multidimensional sequential patterns. Such patterns would enhance the level of information, the granularity of explanations (both global &amp; local) and could also broaden the audience as they would synthesize the important information in the discriminative time windows.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: The dataset transformation (from original MTS to a flat dataset). AttributeX -value of attribute X, d -number of attributes, ID -sample identifier, MTS ID -MTS identifier, n -number of MTS, T -time series length, win size -time window size. In this example: T=5, d=2 and win size=2.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Critical difference plot of the classifiers on the UCI datasets with alpha equals to 0.05.</figDesc><graphic coords="22,141.14,230.45,207.43,97.41" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: The two MTS types of the synthetic dataset, with the XEM time window used for the classification of MTS belonging to the positive class highlighted in bold, which serves as the explanation for the end-user (win size: 20%).</figDesc><graphic coords="26,72.00,350.09,345.71,121.93" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: XEM with LIME and SHAP feature importance results from an MTS of the synthetic dataset belonging to the positive class.</figDesc><graphic coords="27,72.00,469.61,172.98,99.59" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 9 :</head><label>9</label><figDesc>Fig. 9: Heatmap of the proportion of the time window size percentages (win size) used by XEM per UEA dataset type.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 10 :</head><label>10</label><figDesc>Fig. 10: First MTS sample per class of Atrial Fibrilation test set with the XEM time window used for classification highlighted in bold, which serves as explanation for the end-user (win size: 20%).</figDesc><graphic coords="29,170.76,179.59,148.13,88.92" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 11 :</head><label>11</label><figDesc>Fig. 11: XEM with LIME and SHAP feature importance results from the first MTS of the Atrial Fibrilation test set belonging to the non-terminating atrial fibrilation class.</figDesc><graphic coords="30,81.67,209.28,176.47,101.58" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 12 :</head><label>12</label><figDesc>Fig. 12: First MTS sample per class of Squash Racket Sports test set with the XEM time window used for classification highlighted in bold, which serves as explanation for the end-user (win size: 60%).</figDesc><graphic coords="31,85.02,199.94,167.03,101.29" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 13 :</head><label>13</label><figDesc>Fig. 13: XEM with LIME and SHAP feature importance results from the first MTS of the Racket Sports test set belonging to the squash forehand boast class.</figDesc><graphic coords="31,72.00,364.20,171.34,96.73" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Fig. 14 :</head><label>14</label><figDesc>Fig. 14: Evolution of XEM, RFM and MLSTM-FCN error rates with standard errors according to the proportion of missing values on three Human Activity Recognition datasets.</figDesc><graphic coords="32,164.89,312.51,159.93,103.25" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Fig. 15 :</head><label>15</label><figDesc>Fig. 15: Evolution of the top three MTS classifiers average error rates with standard errors on three Human Activity Recognition datasets (Basic Motions, Racket Sports, U Wave Gesture Library) according to the level of noise.</figDesc><graphic coords="33,141.14,412.60,207.42,126.47" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head>Fig. 17 :</head><label>17</label><figDesc>Fig. 17: Two MTS samples of the synthetic dataset with the positive class having two square signals.</figDesc><graphic coords="37,72.00,132.50,345.71,121.93" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Fig. 18 :</head><label>18</label><figDesc>Fig. 18: Two MTS samples of Libras test set belonging to the same class with XEM predictions and the time windows used for classification highlighted in bold, which serves as explanation for the end-user (win size: 40%).</figDesc><graphic coords="37,72.00,318.43,345.70,106.61" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head>Fig. 19 :</head><label>19</label><figDesc>Fig. 19: The three MTS types of the synthetic dataset.</figDesc><graphic coords="38,166.41,239.46,156.89,104.17" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Overview of the state-of-the-art MTS classifiers.</figDesc><table><row><cell cols="2">Similarity Based</cell><cell>Deep Learning</cell><cell>Feature Based</cell><cell>Ensemble</cell></row><row><cell>ED</cell><cell>DTW</cell><cell>MLSTM FCN</cell><cell>WEASEL+ MUSE</cell><cell>XEM</cell></row><row><cell>Output</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Performance</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Faithful Explainability</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Input</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Varying TS Length</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Missing Data</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>Noise</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>3 Algorithm</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>•</head><label></label><figDesc>Interplay of Dimensions: XEM exploits the relationships among the dimensions through the use of boosting-based classifier as base classifier. It allows XEM to exploit complex interactions among dimensions at different timestamps to perform classification;</figDesc><table /><note><p><p>• Different MTS Length Compatibility: XEM handles it in two different ways. If an MTS length is inferior to the maximum length of the MTS in a dataset multiplied by the window size selected, XEM uses padding of 0 values. Otherwise, no padding is necessary, less samples are generated per MTS but the performance evaluation procedure presented in 3.2.2 remains valid;</p>• Missing Data Management: XEM naturally handles missing data through its tree-based learning</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 2 :</head><label>2</label><figDesc>Time complexities of the ensemble methods. d -number of dimensions, d -number of dimensions in RF subset of dimensions, D -maximum depth of a tree, n -number of samples, N -number of trees, T Base -time complexity of a base classifier, x 0 -number of non-missing entries in the data.</figDesc><table><row><cell>Algorithm</cell><cell>Time Complexity</cell></row><row><cell>RF</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head>Table 3 :</head><label>3</label><figDesc>UCI datasets. Dims -Dimensions.</figDesc><table><row><cell>Datasets</cell><cell>Instances</cell><cell>Dims</cell><cell>Classes</cell><cell>LCE Parameters Trees Depth</cell></row><row><cell>Absenteeism at Work</cell><cell>740</cell><cell>19</cell><cell>19</cell><cell>100</cell></row><row><cell>Banknote Authentification</cell><cell>1372</cell><cell>4</cell><cell>2</cell><cell>5</cell></row><row><cell>Breast Cancer Coimbra</cell><cell>116</cell><cell>9</cell><cell>2</cell><cell>60</cell></row><row><cell>CNAE-9</cell><cell>1,080</cell><cell>856</cell><cell>9</cell><cell>20</cell></row><row><cell>Congressional Voting</cell><cell>435</cell><cell>16</cell><cell>2</cell><cell>1</cell></row><row><cell>Drug Consumption (quantified)</cell><cell>1,185</cell><cell>12</cell><cell>7</cell><cell>5</cell></row><row><cell>Electrical Grid Stability</cell><cell>10,000</cell><cell>13</cell><cell>2</cell><cell>40</cell></row><row><cell>Gas Sensor</cell><cell>58</cell><cell>432</cell><cell>4</cell><cell>100</cell></row><row><cell>HTRU2</cell><cell>17,898</cell><cell>8</cell><cell>2</cell><cell>60</cell></row><row><cell>Iris</cell><cell>150</cell><cell>4</cell><cell>3</cell><cell>20</cell></row><row><cell>Leaf</cell><cell>340</cell><cell>13</cell><cell>30</cell><cell>5</cell></row><row><cell>LSVT Voice Rehabilitation</cell><cell>126</cell><cell>310</cell><cell>2</cell><cell>5</cell></row><row><cell>Lung Cancer</cell><cell>32</cell><cell>56</cell><cell>3</cell><cell>60</cell></row><row><cell>Mice Protein Expression</cell><cell>1,080</cell><cell>77</cell><cell>8</cell><cell>60</cell></row><row><cell>Musk V1</cell><cell>476</cell><cell>166</cell><cell>2</cell><cell>5</cell></row><row><cell>Musk V2</cell><cell>6,598</cell><cell>166</cell><cell>2</cell><cell>5</cell></row><row><cell>p53 Mutants</cell><cell>31,159</cell><cell>5,408</cell><cell>2</cell><cell>10</cell></row><row><cell>Page Blocks Classification</cell><cell>5473</cell><cell>10</cell><cell>5</cell><cell>80</cell></row><row><cell>Parkinson Disease</cell><cell>756</cell><cell>753</cell><cell>2</cell><cell>5</cell></row><row><cell>Semeion Handwritten Digit</cell><cell>1,593</cell><cell>256</cell><cell>10</cell><cell>20</cell></row><row><cell>Ultrasonic Flowmeter</cell><cell>181</cell><cell>43</cell><cell>4</cell><cell>60</cell></row><row><cell>User Knowledge Modeling</cell><cell>403</cell><cell>5</cell><cell>5</cell><cell>40</cell></row><row><cell>Wholesale Customers</cell><cell>440</cell><cell>6</cell><cell>2</cell><cell>40</cell></row><row><cell>Wine</cell><cell>178</cell><cell>13</cell><cell>3</cell><cell>100</cell></row><row><cell>Wine Quality</cell><cell>1,599</cell><cell>11</cell><cell>6</cell><cell>100</cell></row><row><cell>Yeast</cell><cell>1,484</cell><cell>8</cell><cell>10</cell><cell>80</cell></row><row><cell>4.1 Datasets</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>4.1.1 Multivariate Data</cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head></head><label></label><figDesc>Table 3 also shows the values of LCE hyperparameters (n trees, max depth) set by grid search for each dataset during our experiments (see section 4.3 for hyperparameters optimization).</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_9"><head>Table 4 :</head><label>4</label><figDesc>Table 4 also shows the values of XEM hyperparameters (n trees, max depth, win size) set by grid search for each dataset during our experiments (see section 4.3 for hyperparameters optimization). UEA MTS datasets. AS -Audio Spectra, C -Number of classes, De -Depth, Di -Dimensions, ECG -Electrocardiogram, EEG -Electroencephalogram, HAR -Human Activity Recognition, L -Time Series Length, MEG -Magnetoencephalography, Parameters -XEM Parameters, T -Number of trees, W -Time Window (%).</figDesc><table><row><cell>Datasets</cell><cell>Type</cell><cell cols="2">Train Test</cell><cell>L</cell><cell>Di</cell><cell>C</cell><cell cols="2">Parameters W T De</cell></row><row><cell>Articulary Word Recognition</cell><cell>Motion</cell><cell>275</cell><cell>300</cell><cell>144</cell><cell>9</cell><cell>25</cell><cell>40</cell><cell>5</cell></row><row><cell>Atrial Fibrilation</cell><cell>ECG</cell><cell>15</cell><cell>15</cell><cell>640</cell><cell>2</cell><cell>3</cell><cell>20</cell><cell>1</cell></row><row><cell>Basic Motions</cell><cell>HAR</cell><cell>40</cell><cell>40</cell><cell>100</cell><cell>6</cell><cell>4</cell><cell>20</cell><cell>1</cell></row><row><cell>Character Trajectories</cell><cell>Motion</cell><cell>1,422</cell><cell>1,436</cell><cell>182</cell><cell>3</cell><cell>20</cell><cell>80</cell><cell>10</cell></row><row><cell>Cricket</cell><cell>HAR</cell><cell>108</cell><cell>72</cell><cell cols="2">1,197 6</cell><cell>12</cell><cell>40</cell><cell>20</cell></row><row><cell>Duck Duck Geese</cell><cell>AS</cell><cell>60</cell><cell>40</cell><cell>270</cell><cell cols="2">1,345 5</cell><cell cols="2">100 20</cell></row><row><cell>Eigen Worms</cell><cell>Motion</cell><cell>128</cell><cell>131</cell><cell cols="2">17,984 6</cell><cell>5</cell><cell cols="2">100 20</cell></row><row><cell>Epilepsy</cell><cell>HAR</cell><cell>137</cell><cell>138</cell><cell>206</cell><cell>3</cell><cell>4</cell><cell>20</cell><cell>1</cell></row><row><cell>Ering</cell><cell>HAR</cell><cell>30</cell><cell>30</cell><cell>65</cell><cell>4</cell><cell>6</cell><cell>20</cell><cell>1</cell></row><row><cell>Ethanol Concentration</cell><cell>Other</cell><cell>261</cell><cell>263</cell><cell>1751</cell><cell>3</cell><cell>4</cell><cell>20</cell><cell>1</cell></row><row><cell>Face Detection</cell><cell cols="2">EEG/MEG 5,890</cell><cell>3,524</cell><cell>62</cell><cell cols="2">144 2</cell><cell cols="2">100 5</cell></row><row><cell>Finger Movements</cell><cell cols="2">EEG/MEG 316</cell><cell>100</cell><cell>50</cell><cell>28</cell><cell>2</cell><cell>60</cell><cell>5</cell></row><row><cell>Hand Movement Direction</cell><cell cols="2">EEG/MEG 320</cell><cell>147</cell><cell>400</cell><cell>10</cell><cell>4</cell><cell>80</cell><cell>20</cell></row><row><cell>Handwriting</cell><cell>HAR</cell><cell>150</cell><cell>850</cell><cell>152</cell><cell>3</cell><cell>26</cell><cell>20</cell><cell>10</cell></row><row><cell>Heartbeat</cell><cell>AS</cell><cell>204</cell><cell>205</cell><cell>405</cell><cell>61</cell><cell>2</cell><cell>80</cell><cell>10</cell></row><row><cell>Insect Wingbeat</cell><cell>AS</cell><cell cols="3">30,000 20,000 200</cell><cell>30</cell><cell>10</cell><cell cols="2">100 10</cell></row><row><cell>Japanese Vowels</cell><cell>AS</cell><cell>270</cell><cell>370</cell><cell>29</cell><cell>12</cell><cell>9</cell><cell>40</cell><cell>5</cell></row><row><cell>Libras</cell><cell>HAR</cell><cell>180</cell><cell>180</cell><cell>45</cell><cell>2</cell><cell>15</cell><cell>40</cell><cell>60</cell></row><row><cell>LSST</cell><cell>Other</cell><cell>2,459</cell><cell>2,466</cell><cell>36</cell><cell>6</cell><cell>14</cell><cell>60</cell><cell>10</cell></row><row><cell>Motor Imagery</cell><cell cols="2">EEG/MEG 278</cell><cell>100</cell><cell cols="2">3,000 64</cell><cell>2</cell><cell cols="2">100 20</cell></row><row><cell>NATOPS</cell><cell>HAR</cell><cell>180</cell><cell>180</cell><cell>51</cell><cell>24</cell><cell>6</cell><cell>40</cell><cell>10</cell></row><row><cell>PenDigits</cell><cell>Motion</cell><cell>7,494</cell><cell>3,498</cell><cell>8</cell><cell>2</cell><cell>10</cell><cell>80</cell><cell>80</cell></row><row><cell>PEMS-SF</cell><cell>Other</cell><cell>267</cell><cell>173</cell><cell>144</cell><cell cols="2">963 7</cell><cell cols="2">100 20</cell></row><row><cell>Phoneme</cell><cell>AS</cell><cell>3315</cell><cell>3353</cell><cell>217</cell><cell>11</cell><cell>39</cell><cell>80</cell><cell>1</cell></row><row><cell>Racket Sports</cell><cell>HAR</cell><cell>151</cell><cell>152</cell><cell>30</cell><cell>6</cell><cell>4</cell><cell>60</cell><cell>20</cell></row><row><cell>Self Regulation SCP1</cell><cell cols="2">EEG/MEG 268</cell><cell>293</cell><cell>896</cell><cell>6</cell><cell>2</cell><cell cols="2">100 5</cell></row><row><cell>Self Regulation SCP2</cell><cell cols="2">EEG/MEG 200</cell><cell>180</cell><cell>1152</cell><cell>7</cell><cell>2</cell><cell cols="2">100 20</cell></row><row><cell>Spoken Arabic Digits</cell><cell>AS</cell><cell>6,599</cell><cell>2,199</cell><cell>93</cell><cell>13</cell><cell>10</cell><cell>80</cell><cell>10</cell></row><row><cell>Stand Walk Jump</cell><cell>ECG</cell><cell>12</cell><cell>15</cell><cell cols="2">2,500 4</cell><cell>3</cell><cell>20</cell><cell>1</cell></row><row><cell>U Wave Gesture Library</cell><cell>HAR</cell><cell>120</cell><cell>320</cell><cell>315</cell><cell>3</cell><cell>8</cell><cell>60</cell><cell>1</cell></row><row><cell>4.2 Algorithms</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>4.2.1 Classifiers</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_10"><head></head><label></label><figDesc>• Local Cascade -LC (ensemble method -implicit): we implemented the algorithm based on the description of the paper<ref type="bibr" target="#b19">[Gama and Brazdil, 2000]</ref> (hyperparameter: maximum depth of the tree [0, 5]). The low bias base classifier is set to XGB 11 and the low variance base classifier to Naïve Bayes 7<ref type="bibr" target="#b34">[Pedregosa et al., 2011</ref>]; • Local Cascade Ensemble -LCE (ensemble method -hybrid): the algorithm has been implemented in Python 3.6 2 (hyperparameters: n trees {1, 5, 10, 20, 40, 60, 80, 100}, max depth {0, 1, 2}). The base classifier is set to XGB 11 ; • Multilayer Perceptron -MLP (neural network): we consider small MLPs due</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head></head><label></label><figDesc>BaggingClassifier 4 sklearn.tree.DecisionTreeClassifier 5 sklearn.ensemble.AdaBoostClassifier 6 sklearn.linear model.SGDClassifier 7 sklearn.naive bayes.GaussianNB 8 https://keras.io/ 9 sklearn.ensemble.RandomForestClassifier 10 sklearn.svm.SVC 11 https://xgboost.readthedocs.io/en/latest/python/ • MLSTM-FCN: we used the implementation available 12 and ran it with the parameter settings recommended by the authors in the paper [Karim et al., 2019] (128-256-128 filters, kernel sizes 8/5/3, initialization of convolution kernels Uniform He, reduction ratio of 16, 250 training epochs, dropout of 0.8, Adam optimizer) and with the following hyperparameters: batch size {8, 64, 128}, number of LSTM cells {8, 64, 128}; • RFM: Random Forest for Multivariate time series classification. We used the public implementation 9 with the transformation presented in section 3.2.1; • WEASEL+MUSE: we used the implementation available 13 and ran it with the parameter settings recommended by the authors in the paper [Schäfer and XGBM: Extreme Gradient Boosting for Multivariate time series classification.</figDesc><table><row><cell>Leser, 2017] (chi=2, bias=1, p=0.1, c=5 and L2R LR DUAL solver) and with</cell></row><row><cell>the following hyperparameters: SFA word lengths {2, 4, 6}, SFA quantization</cell></row><row><cell>method {equi-depth, equi-frequency}, windows length [4, max(MTS length)];</cell></row><row><cell>• XEM: the algorithm has been implemented in Python 3.6 2 with the follow-</cell></row><row><cell>ing hyperparameters: n trees {1, 5, 10, 20, 40, 60, 80, 100}, max depth {0, 1, 2},</cell></row><row><cell>win size {20%, 40%, 60%, 80%, 100%};</cell></row></table><note><p><p>];</p>3 sklearn.ensemble.•</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_12"><head>Table 5 :</head><label>5</label><figDesc>Accuracy results on the UCI datasets. MP -MLP, SV -SVM, XB -XGB</figDesc><table><row><cell>Datasets</cell><cell cols="5">LCE LC XB RF SE</cell><cell cols="5">BB BP MP SV EN</cell></row><row><cell>Absenteeism at Work</cell><cell cols="10">42.7 27.6 44.2 42.0 29.9 38.1 21.8 28.3 28.7 31.7</cell></row><row><cell>Banknote Authentification</cell><cell cols="10">99.3 98.9 99.6 99.1 97.7 99.1 98.9 89.5 100 98.8</cell></row><row><cell>Breast Cancer Coimbra</cell><cell cols="10">71.4 65.5 64.6 64.5 49.2 57.8 54.3 48.4 55.2 57.5</cell></row><row><cell>CNAE-9</cell><cell cols="10">86.2 51.0 84.1 91.6 90.9 87.4 95.5 95.6 30.4 92.2</cell></row><row><cell>Congressional Voting</cell><cell cols="10">97.0 94.0 96.8 96.6 95.2 96.8 91.7 79.5 87.8 91.7</cell></row><row><cell>Drug Consumption (quantified)</cell><cell cols="10">34.6 27.9 37.8 38.5 27.3 37.2 40.2 40.3 40.3 39.3</cell></row><row><cell>Electrical Grid Stability</cell><cell cols="10">100 99.9 100 100 98.4 99.9 94.9 88.5 79.3 96.8</cell></row><row><cell>Gas Sensor</cell><cell cols="10">74.4 63.3 74.6 89.6 88.1 86.1 75.6 78.7 61.5 70.4</cell></row><row><cell>HTRU2</cell><cell cols="10">97.9 97.8 97.9 97.8 97.8 97.8 97.5 96.8 91.1 97.6</cell></row><row><cell>Iris</cell><cell cols="10">96.7 90.2 96.7 96.7 96.1 96.7 75.4 44.4 95.4 83.0</cell></row><row><cell>Leaf</cell><cell cols="8">52.5 48.7 61.6 71.7 30.6 37.9 10.2 8.5</cell><cell cols="2">35.2 56.0</cell></row><row><cell>LSVT Voice Rehabilitation</cell><cell cols="10">81.0 57.1 77.0 81.0 69.0 76.9 66.7 66.7 66.7 66.7</cell></row><row><cell>Lung Cancer</cell><cell cols="10">41.1 47.2 34.4 37.2 45.6 45.6 46.1 37.2 36.7 52.8</cell></row><row><cell>Mice Protein Expression</cell><cell cols="10">56.7 40.1 43.1 53.1 35.9 46.1 35.1 13.9 14.4 42.9</cell></row><row><cell>Musk V1</cell><cell cols="10">73.3 63.5 76.1 72.5 70.6 75.2 66.8 57.4 56.5 72.3</cell></row><row><cell>Musk V2</cell><cell cols="10">78.8 74.5 78.4 77.5 78.6 77.2 78.3 84.6 84.7 76.3</cell></row><row><cell>p53 Mutants</cell><cell cols="10">96.6 82.7 94.8 95.6 83.8 91.1 85.4 99.5 86.5 81.7</cell></row><row><cell>Page Blocks Classification</cell><cell cols="10">97.3 90.8 96.5 96.0 94.2 95.4 93.6 90.4 91.1 94.2</cell></row><row><cell>Parkinson Disease</cell><cell cols="10">82.7 74.2 82.5 83.2 75.5 82.4 74.6 58.2 74.6 41.4</cell></row><row><cell>Semeion Handwritten Digit</cell><cell cols="10">90.3 43.2 90.0 92.2 77.3 83.9 90.8 92.1 36.4 75.8</cell></row><row><cell>Ultrasonic Flowmeter</cell><cell cols="10">59.0 40.2 45.2 49.6 42.8 48.4 36.9 24.4 29.8 45.1</cell></row><row><cell>User Knowledge Modeling</cell><cell cols="10">85.6 80.4 85.6 85.6 79.4 85.9 57.8 29.8 80.4 74.6</cell></row><row><cell>Wholesale Customers</cell><cell cols="10">91.8 88.6 92.5 91.6 85.2 91.6 76.3 77.0 67.7 83.0</cell></row><row><cell>Wine</cell><cell cols="10">92.8 96.1 91.1 92.8 89.4 87.6 39.9 35.4 42.7 75.4</cell></row><row><cell>Wine Quality</cell><cell cols="10">55.5 49.2 54.5 56.9 46.7 53.7 46.9 42.1 41.9 45.9</cell></row><row><cell>Yeast</cell><cell cols="10">57.1 35.3 59.2 59.6 47.6 57.5 34.1 28.9 58.9 53.2</cell></row><row><cell>Average Rank</cell><cell>2.8</cell><cell>6.8</cell><cell>3.3</cell><cell>3.0</cell><cell>6.0</cell><cell>4.1</cell><cell>7.0</cell><cell>7.6</cell><cell>7.3</cell><cell>6.5</cell></row><row><cell>Wins/Ties</cell><cell>9</cell><cell>1</cell><cell>6</cell><cell>9</cell><cell>0</cell><cell>2</cell><cell>0</cell><cell>3</cell><cell>3</cell><cell>1</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_13"><head>Table 6 :</head><label>6</label><figDesc>Average accuracy score of LCE versus LC on test sets of the UCI datasets with the corresponding standard error.</figDesc><table><row><cell>Trees</cell><cell>1</cell><cell>5</cell><cell>10</cell><cell>20</cell><cell>40</cell><cell>60</cell><cell>80</cell></row><row><cell>LCE</cell><cell>71.8</cell><cell>74.1</cell><cell>73.6</cell><cell>72.8</cell><cell>73.2</cell><cell>74.9</cell><cell>73.9</cell></row><row><cell></cell><cell>±4.6</cell><cell>±4.3</cell><cell>±4.4</cell><cell>±4.4</cell><cell>±4.5</cell><cell>±4.1</cell><cell>±4.2</cell></row><row><cell>LC</cell><cell></cell><cell></cell><cell></cell><cell>65.9 ± 4.8</cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_14"><head>Table 7 :</head><label>7</label><figDesc>Accuracy results on the UEA MTS datasets. D D -DTW D , D I -DTW I , MF -MLSTM-FCN, RM -RFM, WM -WEASEL+MUSE, XG -XGBM, XM -XEM</figDesc><table><row><cell>Datasets</cell><cell cols="8">XM XG RM MF WM ED D I D D</cell><cell>ED (n)</cell><cell>D I (n)</cell><cell>D D (n)</cell></row><row><cell>Articulary Word Recognition</cell><cell cols="11">99.3 99.0 99.0 98.6 99.3 97.0 98.0 98.7 97.0 98.0 98.7</cell></row><row><cell>Atrial Fibrilation</cell><cell cols="11">46.7 40.0 33.3 20.0 26.7 26.7 26.7 20.0 26.7 26.7 22.0</cell></row><row><cell>Basic Motions</cell><cell cols="11">100 100 100 100 100 67.5 100 97.5 67.6 100 97.5</cell></row><row><cell>Character Trajectories</cell><cell cols="11">97.9 98.3 98.5 99.3 99.0 96.4 96.9 99.0 96.4 96.9 98.9</cell></row><row><cell>Cricket</cell><cell cols="11">98.6 97.2 98.6 98.6 98.6 94.4 98.6 100 94.4 98.6 100</cell></row><row><cell>Duck Duck Geese</cell><cell cols="11">37.5 40.0 40.0 67.5 57.5 27.5 55.0 60.0 27.5 55.0 60.0</cell></row><row><cell>Eigen Worms</cell><cell cols="9">52.7 55.0 100 80.9 89.0 55.0 60.3 61.8 54.9</cell><cell></cell><cell>61.8</cell></row><row><cell>Epilepsy</cell><cell cols="11">98.6 97.8 98.6 96.4 99.3 66.7 97.8 96.4 66.6 97.8 96.4</cell></row><row><cell>Ering</cell><cell cols="11">20.0 13.3 13.3 13.3 13.3 13.3 13.3 13.3 13.3 13.3 13.3</cell></row><row><cell>Ethanol Concentration</cell><cell cols="11">37.2 42.2 43.3 29.4 31.6 29.3 30.4 32.3 29.3 30.4 32.3</cell></row><row><cell>Face Detection</cell><cell cols="9">61.4 62.9 61.4 57.4 54.5 51.9 51.3 52.9 51.9</cell><cell></cell><cell>52.9</cell></row><row><cell>Finger Movements</cell><cell cols="11">59.0 53.0 56.0 61.0 54.0 55.0 52.0 53.0 55.0 52.0 53.0</cell></row><row><cell>Hand Movement Direction</cell><cell cols="11">64.9 54.1 50.0 37.8 37.8 27.9 30.6 23.1 27.8 30.6 23.1</cell></row><row><cell>Handwriting</cell><cell cols="11">28.7 26.7 26.7 54.9 53.1 37.1 50.9 60.7 20.0 31.6 28.6</cell></row><row><cell>Heartbeat</cell><cell cols="11">76.1 69.3 80.0 71.4 72.7 62.0 65.9 71.7 61.9 65.8 71.7</cell></row><row><cell>Insect Wingbeat</cell><cell cols="4">22.8 23.7 22.4 10.5</cell><cell></cell><cell>12.8</cell><cell></cell><cell cols="2">11.5 12.8</cell><cell></cell><cell></cell></row><row><cell>Japanese Vowels</cell><cell cols="11">97.8 96.8 97.0 99.2 97.8 92.4 95.9 94.9 92.4 95.9 94.9</cell></row><row><cell>Libras</cell><cell cols="11">77.2 76.7 78.3 92.2 89.4 83.3 89.4 87.2 83.3 89.4 87.0</cell></row><row><cell>LSST</cell><cell cols="11">65.2 63.3 61.2 64.6 62.8 45.6 57.5 55.1 45.6 57.5 55.1</cell></row><row><cell>Motor Imagery</cell><cell cols="9">60.0 46.0 55.0 53.0 50.0 51.0 39.0 50.0 51.0</cell><cell></cell><cell>50.0</cell></row><row><cell>NATOPS</cell><cell cols="11">91.6 90.0 91.1 96.7 88.3 85.0 85.0 88.3 85.0 85.0 88.3</cell></row><row><cell>PenDigits</cell><cell cols="11">97.7 95.1 95.1 99.0 96.9 97.3 93.9 97.7 97.3 93.9 97.7</cell></row><row><cell>PEMS-SF</cell><cell cols="4">94.2 98.3 98.3 69.9</cell><cell></cell><cell cols="6">70.5 73.4 71.1 70.5 73.4 71.1</cell></row><row><cell>Phoneme</cell><cell cols="11">28.8 18.7 22.2 27.5 19.0 10.4 15.1 15.1 10.4 15.1 15.1</cell></row><row><cell>Racket Sports</cell><cell cols="11">94.1 92.8 92.1 89.4 91.4 86.4 84.2 80.3 86.8 84.2 80.3</cell></row><row><cell>Self Regulation SCP1</cell><cell cols="11">83.9 82.9 82.6 86.7 74.4 77.1 76.5 77.5 77.1 76.5 77.5</cell></row><row><cell>Self Regulation SCP2</cell><cell cols="11">55.0 48.3 47.8 52.2 52.2 48.3 53.3 53.9 48.3 53.3 53.9</cell></row><row><cell>Spoken Arabic Digits</cell><cell cols="11">97.3 97.0 96.8 99.4 98.2 96.7 96.0 96.3 96.7 95.9 96.3</cell></row><row><cell>Stand Walk Jump</cell><cell cols="11">40.0 33.3 46.7 46.7 33.3 20.0 33.3 20.0 20.0 33.3 20.0</cell></row><row><cell>U Wave Gesture Library</cell><cell cols="11">89.7 89.4 90.0 86.3 90.3 88.1 86.9 90.3 88.1 86.8 90.3</cell></row><row><cell>Average Rank</cell><cell cols="11">3.0 4.8 3.7 3.8 4.1 7.6 6.3 5.3 7.9 6.7 5.7</cell></row><row><cell>Wins/Ties</cell><cell>10</cell><cell>4</cell><cell>6</cell><cell>11</cell><cell>4</cell><cell>0</cell><cell>1</cell><cell>3</cell><cell>0</cell><cell>1</cell><cell>2</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Inria, Univ Rennes, CNRS, IRISA, France</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Univ Rennes, IUF, Inria, CNRS, IRISA, France</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>PEGASE, INRAE, AGROCAMPUS OUEST, France</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_3"><p>https://github.com/xuczhang/xuczhang.github.io/blob/master/papers/aaai20 tapnet full.pdf</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_4"><p>https://github.com/XAIseries/XEM</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="12" xml:id="foot_5"><p>https://github.com/houshd/MLSTM-FCN</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="13" xml:id="foot_6"><p>https://github.com/patrickzib/SFA</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="14" xml:id="foot_7"><p>https://github.com/hyperopt/hyperopt</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="15" xml:id="foot_8"><p>https://github.com/maxpumperla/hyperas</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="16" xml:id="foot_9"><p>https://www.rdocumentation.org/packages/scmamp/versions/0.2.55/topics/plotCD</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="17" xml:id="foot_10"><p>http://www.timeseriesclassification.com/dataset.php</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work was supported by the <rs type="funder">French National Research Agency</rs> under the <rs type="programName">Investments for the Future Program</rs> (<rs type="grantNumber">ANR-16-CONV-0004</rs>) and the <rs type="projectName">Inria Project Lab Hybrid Approaches for Interpretable AI (HyAIAI</rs><rs type="funder">)</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_wMPVjb6">
+					<idno type="grant-number">ANR-16-CONV-0004</idno>
+					<orgName type="project" subtype="full">Inria Project Lab Hybrid Approaches for Interpretable AI (HyAIAI</orgName>
+					<orgName type="program" subtype="full">Investments for the Future Program</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">The UEA UCR Time Series Classification Archive</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagnall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Learning a Symbolic Representation for Multivariate Time Series Classification</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baydogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Runger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="400" to="422" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Time Series Representation and Similarity Based on Local Autopatterns</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baydogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Runger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="476" to="509" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Algorithms for Hyper-Parameter Optimization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Bergstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Bardenet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kégl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th International Conference on Neural Information Processing Systems</title>
+		<meeting>the 25th International Conference on Neural Information Processing Systems</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Bagging Predictors</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Breiman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning</title>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+			<biblScope unit="page" from="123" to="140" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Random Forests</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Breiman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Machine Learning</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="5" to="32" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Classification and Regression Trees</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Breiman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Friedman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Stone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Olshen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Wadsworth and Brooks-Cole statistics-probability series</title>
+		<imprint>
+			<publisher>Taylor &amp; Francis</publisher>
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">XGBoost: A Scalable Tree Boosting System</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Toward AI Security: Global Aspirations for a More Resilient Future</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Cussins</forename><surname>Newman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Center for Long-Term Cybersecurity</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Statistical Comparisons of Classifiers over Multiple Data Sets</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Demšar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="1" to="30" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Ensemble Methods in Machine Learning</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Dietterich</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Multiple Classifier Systems</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="1" to="15" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Techniques for Interpretable Machine Learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Graff</surname></persName>
+		</author>
+		<title level="m">UCI Machine Learning Repository</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Boost-Wise Pre-Loaded Mixture of Experts for Classification Tasks</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ebrahimpour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sadeghnejad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Arani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mohammadi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computing and Applications</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="365" to="377" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A Guide to Deep Learning in Healthcare</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Esteva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Robicquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ramsundar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kuleshov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Depristo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Thrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Medicine</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="page" from="24" to="29" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Towards Sustainable Dairy Management -A Machine Learning Enhanced Method for Estrus Detection</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fauvel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Masson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">É</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Faverdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Termier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">A Distributed Multi-Sensor Machine Learning Approach to Earthquake Early Warning</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fauvel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Balouek-Thomert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Melgar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Simonet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Antoniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Costan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Masson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Parashar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Rodero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Termier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th AAAI Conference on Artificial Intelligence</title>
+		<meeting>the 34th AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">A Performance-Explainability Framework to Benchmark Machine Learning Methods: Application to Multivariate Time Series Classifiers</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Fauvel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Masson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">É</forename><surname>Fromont</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IJCAI-PRICAI Workshop on Explainable Artificial Intelligence</title>
+		<meeting>the IJCAI-PRICAI Workshop on Explainable Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Experiments with a New Boosting Algorithm</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Freund</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Schapire</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 13th International Conference on Machine Learning</title>
+		<meeting>the 13th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Cascade Generalization</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Brazdil</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">41</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="315" to="343" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Factual and Counterfactual Explanations for Black Box Decision Making</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Guidotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Monreale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giannotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pedreschi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruggieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Turini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intelligent Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="14" to="23" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Deep Residual Learning for Image Recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2016 IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the 2016 IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Adaptive Mixtures of Local Experts</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jacobs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Nowlan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computation</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="79" to="87" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">DeepUrbanEvent: A System for Predicting Citywide Crowd Dynamics at Big Events</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Shibasaki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Multivariate LSTM-FCNs for Time Series Classification</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Karim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Majumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Darabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Harford</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">116</biblScope>
+			<biblScope unit="page" from="237" to="245" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Generalized Random Shapelet Forests</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Papapetrou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Boström</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1053" to="1085" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Locally and Globally Explainable Time Series Tweaking</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Karlsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rebane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Papapetrou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gionis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowledge and Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">62</biblScope>
+			<biblScope unit="page" from="1671" to="1700" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Combining Bagging and Boosting</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kotsiantis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pintelas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computational Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="372" to="381" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">TATC: Predicting Alzheimer&apos;s Disease with Actigraphy Data</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Rong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Meng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Kwok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Cheng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">The Mythos of Model Interpretability</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Lipton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ICML Workshop on Human Interpretability in Machine Learning</title>
+		<meeting>the ICML Workshop on Human Interpretability in Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Ensemble Learning via Negative Correlation</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Yao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Networks</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="1399" to="1404" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">A Unified Approach to Interpreting Model Predictions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st International Conference on Neural Information Processing Systems</title>
+		<meeting>the 31st International Conference on Neural Information Processing Systems</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Mixture of Experts: a Literature Survey</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Masoudnia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ebrahimpour</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence Review</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="275" to="293" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Explanation in Artificial Intelligence: Insights from the Social Sciences</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">267</biblScope>
+			<biblScope unit="page" from="1" to="38" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Scikit-Learn: Machine Learning in Python</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pedregosa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Varoquaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gramfort</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Thirion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Grisel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Blondel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Prettenhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dubourg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vanderplas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Passos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cournapeau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Brucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Perrot</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Duchesnay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title level="m" type="main">Winning With AI</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ransbotham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khodabandeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fehling</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Lafountain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kiron</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+		<respStmt>
+			<orgName>MIT Sloan Management Review and Boston Consulting Group</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Explaining the Predictions of Any Classifier</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note>Why Should I Trust You?</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Anchors: High-Precision Model-Agnostic Explanations</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd AAAI Conference on Artificial Intelligence</title>
+		<meeting>the 32nd AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Stop Explaining Black Box Machine Learning Models for High Stakes Decisions and Use Interpretable Models Instead</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rudin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="206" to="215" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">SFA: A Symbolic Fourier Approximation and Index for Similarity Search in High Dimensional Datasets</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Högqvist</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 15th International Conference on Extending Database Technology</title>
+		<meeting>the 15th International Conference on Extending Database Technology</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="516" to="527" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<monogr>
+		<title level="m" type="main">Multivariate Time Series Classification with WEASEL+MUSE</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Schäfer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Leser</surname></persName>
+		</author>
+		<idno>arXiv</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">The Strength of Weak Learnability</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Schapire</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page" from="197" to="227" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Selvaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Das</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Vedantam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cogswell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Parikh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Batra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Vision</title>
+		<imprint>
+			<biblScope unit="volume">128</biblScope>
+			<biblScope unit="page" from="336" to="359" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Generating Ensembles of Heterogeneous Classifiers Using Stacked Generalization</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sesmero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ledezma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sanchis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="21" to="34" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Multivariate Time Series Classification Using Dynamic Time Warping Template Selection for Human Activity Recognition</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Seto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 IEEE Symposium Series on Computational Intelligence</title>
+		<meeting>the 2015 IEEE Symposium Series on Computational Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Combining Diverse Neural Nets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharkey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sharkey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Knowledge Engineering Review</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="231" to="247" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Generalizing DTW to the Multi-Dimensional Case Requires an Adaptive Approach</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Shokoohi-Yekta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Hu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Keogh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Data Mining and Knowledge Discovery</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="page" from="1" to="31" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Autoregressive Forests for Multivariate Time Series Modeling</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tuncel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Baydogan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognition</title>
+		<imprint>
+			<biblScope unit="volume">73</biblScope>
+			<biblScope unit="page" from="202" to="215" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Time Series Classification from Scratch with Deep Neural Networks: A Strong Baseline</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Oates</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 International Joint Conference on Neural Networks</title>
+		<meeting>the 2017 International Joint Conference on Neural Networks</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Ultra-Fast Shapelets for Time Series Classification</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wistuba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grabocka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Schmidt-Thieme</surname></persName>
+		</author>
+		<idno>arXiv</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">The Lack of A Priori Distinctions Between Learning Algorithms</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Wolpert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computation</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1341" to="1390" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">A Transformer-Based Framework for Multivariate Time Series Representation Learning</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zerveas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Jayaraman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bhamidipaty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Eickhoff</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</title>
+		<meeting>the 27th ACM SIGKDD Conference on Knowledge Discovery and Data Mining</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">The Optimality of Naïve Bayes</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th Florida Artificial Intelligence Research Society Conference</title>
+		<meeting>the 17th Florida Artificial Intelligence Research Society Conference</meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">TapNet: Multivariate Time Series Classification with Attentional Prototypical Network</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th AAAI Conference on Artificial Intelligence</title>
+		<meeting>the 34th AAAI Conference on Artificial Intelligence</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Regularization and Variable Selection via the Elastic Net</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hastie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Royal Statistical Society. Series B (Statistical Methodology)</title>
+		<imprint>
+			<biblScope unit="volume">67</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="301" to="320" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

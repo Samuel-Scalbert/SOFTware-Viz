@@ -1,0 +1,688 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Guided Attentive Feature Fusion for Multispectral Pedestrian Detection</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Univ Rennes</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">IRISA</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff3">
+								<orgName type="institution">ATERMES company</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Univ Rennes</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution">IRISA</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff4">
+								<orgName type="institution" key="instit1">IUF</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sébastien</forename><surname>Lefevre</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">Univ Bretagne Sud</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">ATERMES company</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Guided Attentive Feature Fusion for Multispectral Pedestrian Detection</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">595158EC6C24B5D93BEECB40226E89FC</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:53+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Multispectral image pairs can provide complementary visual information, making pedestrian detection systems more robust and reliable. To benefit from both RGB and thermal IR modalities, we introduce a novel attentive multispectral feature fusion approach. Under the guidance of the inter-and intra-modality attention modules, our deep learning architecture learns to dynamically weigh and fuse the multispectral features. Experiments on two public multispectral object detection datasets demonstrate that the proposed approach significantly improves the detection accuracy at a low computation cost.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Introduction</head><p>Real world pedestrian detection applications require accurate detection performance under various conditions, such as darkness, rain, fog, etc. In these conditions, it is difficult to perform precise detection using only standard RGB cameras. Instead, multispectral systems try to combine the information coming from e.g. thermal and visible cameras to improve the reliability of the detections.</p><p>Deep learning-based methods, more specifically, twostream convolutional neural networks, nowadays largely dominate the field of multispectral pedestrian detection <ref type="bibr" target="#b6">[6,</ref><ref type="bibr" target="#b9">9,</ref><ref type="bibr" target="#b10">10,</ref><ref type="bibr" target="#b11">11,</ref><ref type="bibr" target="#b14">14,</ref><ref type="bibr" target="#b18">18,</ref><ref type="bibr" target="#b19">19,</ref><ref type="bibr" target="#b20">20]</ref>. As illustrated in Fig. <ref type="figure" target="#fig_1">1</ref>, a typical two-stream pedestrian detection network consists of two separate spectra-specific feature extraction branches, a multispectral feature fusion module and a pedestrian detection network operating on the fused features. The system uses some aligned thermal-visible image pairs as input and outputs the joint detection results on each image pair.</p><p>Thermal and visible cameras have different imaging characteristics under different conditions. As shown in Fig. <ref type="figure" target="#fig_2">2</ref>, visible cameras provide precise visual details (such as color and texture) in a well-lit environment, while thermal cameras are sensitive to temperature changes, which is extremely useful for nighttime or shadow detection. An adaptive fusion of thermal and visible features should take such differences into account, and should identify and lever-   age the information from the most relevant modality.</p><p>An intuitive solution to adapt the feature fusion to the different weather and lighting conditions is to manually identify multiple usage scenarios and design a specific solution for each scenario. For example, <ref type="bibr" target="#b6">[6]</ref> proposes an illumination-aware network consisting of a day illumination sub-network and a night illumination sub-network. The detection results from the two sub-networks are then fused according to the prediction of the illumination context. Such a kind of hand-crafted fusion mechanism improves the resilience of the model to a certain extent, nonetheless, there are still two limitations: firstly, cherry-picked scenarios may not cover all conditions, e.g., different illumination/season/weather conditions; Secondly, the situation may be completely different even in the same usage scenario, e.g., at nighttime, lighting conditions in urban areas are different from those in rural areas.</p><p>In this paper, we propose a novel and fully adaptive multispectral feature fusion approach, named Guided Attentive Feature Fusion (GAFF). By combining the intra-and intermodality attention modules, the proposed approach allows the network to learn the adaptive weighing and fusion of multispectral features. These two attention mechanisms are guided by the prediction and comparison of the pedestrian masks in the multispectral feature fusion stage. Specifically, at each spatial position, thermal or visible features are enhanced when they are located in the area of a pedestrian (intra-modality attention) or when they possess a higher quality than in the other modality (inter-modality attention). To the best of our knowledge, GAFF is the first work that regards the multispectral feature fusion as a sub-task in the network optimization and that introduces a specific guidance in this task to improve the multispectral pedestrian detection. Extensive experiments on KAIST multispectral pedestrian detection dataset <ref type="bibr" target="#b8">[8]</ref> and FLIR ADAS dataset <ref type="bibr" target="#b1">[1]</ref> demonstrate that, compared with common feature fusion methods (such as addition or concatenation), GAFF brings important accuracy gains at a low computational cost.</p><p>This paper is organized as follows: Section 2 reviews some representative work applying static/adaptive feature fusion for multispectral pedestrian detection; Section 3 introduces implementation details on how to integrate GAFF into a typical two-stream convolutional neural network; In Section 4, we evaluate our methods on two public multispectral object detection datasets <ref type="bibr" target="#b8">[8,</ref><ref type="bibr" target="#b1">1]</ref>, then we provide an extensive ablation study and visualization results to discuss the reasons of the accuracy improvements; Section 5 concludes the paper.</p></div>
+<div><head n="2.">Related Work</head></div>
+<div><head n="2.1.">Static multispectral feature fusion</head><p>KAIST released the first large-scale multispectral pedestrian detection dataset <ref type="bibr" target="#b8">[8]</ref>, which contains approximately 95k well-aligned and manually annotated thermal-visible image pairs captured during daytime and nighttime. Some example image pairs are shown in Fig. <ref type="figure" target="#fig_2">2</ref>. Then <ref type="bibr" target="#b18">[18]</ref> demonstrated the first application of deep learning-based solutions in multispectral pedestrian detection. They compared the early and late fusion architectures and found that the late fusion architecture is superior to the early one and the traditional ACF method <ref type="bibr" target="#b4">[4]</ref>. This late-stage fusion architecture can be regarded as a prototype of a two-stream neural network, in which multispectral features are fused through concatenation operations. Both <ref type="bibr" target="#b14">[14]</ref> and <ref type="bibr" target="#b9">[9]</ref> adapted Faster R-CNN <ref type="bibr" target="#b16">[16]</ref> to a two-stream network architecture for multispectral pedestrian detection. They compare different multispectral fusion stages and came to the conclusion that the fusion in the middle stage outperforms the fusion in the early or late stage. Based on this, MSDS-RCNN <ref type="bibr" target="#b10">[10]</ref> adopted a two-stream middle-level fusion architecture and combined the pedestrian detection task and the semantic segmentation task to further improve the detection accuracy.</p></div>
+<div><head n="2.2.">Adaptive multispectral feature fusion</head><p>As mentioned in Section 1, thermal and visible cameras have different imaging characteristics and the adaptive multispectral fusion can improve the resilience and the detection accuracy of the system. This has become the main focus of the multispectral pedestrian detection research in recent years. Both <ref type="bibr" target="#b11">[11]</ref> and <ref type="bibr" target="#b6">[6]</ref> use the illumination information as a clue for the adaptive fusion: they train a separate network to estimate the illumination value from a given image pair, then <ref type="bibr" target="#b11">[11]</ref> uses the predicted illumination value to weigh the detection results from both the thermal and visible images. <ref type="bibr" target="#b6">[6]</ref> uses the illumination value to weigh the detection results from a day illumination sub-network and a night illumination sub-network. As mentioned in the previous section, such a handcrafted weighing scheme is limited and produces sub-optimal performance. CIAN <ref type="bibr" target="#b20">[20]</ref> applies the channel-level attention in the multispectral feature fusion stage to model the cross-modality interaction and weigh each feature map extracted from the different spectrum. This network realizes a fully adaptive fusion of thermal and visible features, however, in this approach, the fusion module is optimized directly while solving the pedestrian detection task which means that the network uses information about what (pedestrian or background) and where (bounding box) relevant elements are in the images but it does not use the fact that some features may contain more relevant information than others. We believe and we show that with these additional information (that we include in our method through the guidance mechanism), we can improve the detection precision.</p></div>
+<div><head n="3.">Proposed approach</head><p>The proposed Guided Attentive Feature Fusion (GAFF), shown in Fig. <ref type="figure" target="#fig_4">3</ref>, takes place in the multispectral feature fusion stage of a two-stream convolutional neural network. It consists of two components: an intra-modality attention module and an inter-modality one.  </p></div>
+<div><head n="3.1.">Intra-modality attention module</head><p>The intra-modality attention module aims at enhancing the thermal or visible features in a monospectral view. Specifically, as illustrated by the yellow paths on Fig. <ref type="figure" target="#fig_4">3</ref>, features of an area with a pedestrian are highlighted by multiplying the learnt features with the predicted pedestrian mask. Moreover, in order to avoid directly affecting the thermal or visible features, the highlighted features are added as a residual to enhance the mono-spectral features. This procedure can be formalized as:</p><formula xml:id="formula_0">f t intra = f t ⊗ (1 + m t intra ) f v intra = f v ⊗ (1 + m v intra )<label>(1)</label></formula><p>where</p><formula xml:id="formula_1">m t intra = σ(F t intra (f t )) m v intra = σ(F v intra (f v ))<label>(2)</label></formula><p>Superscripts (t or v) denote the thermal (t) or visible (v) modality; ⊗ denotes the element-wise multiplication; σ represents the sigmoid function; F intra represents a convolution operation to predict the intra-modality attention masks (pedestrian masks) m intra ; f and f intra represent the original and enhanced features, respectively.</p><p>The prediction of the pedestrian masks is supervised by the semantic segmentation loss, where the ground truth mask (m gt intra ) is converted from the object detection annotations. As illustrated in Fig. <ref type="figure" target="#fig_4">3</ref> the bounding box annotations are transformed into some filled ellipses to approximate the shape of the true pedestrians.</p></div>
+<div><head n="3.2.">Inter-modality attention module</head><p>Thermal and visible cameras have their own imaging characteristics, and under certain conditions, one sensor has superior imaging quality (i.e. is more relevant for the considered task) than the other. To leverage both modalities, we propose the inter-modality attention module, which adaptively selects thermal or visible features according to the dynamic comparison of their feature quality. Concretely, an inter-modality attention mask is predicted based on the combination of thermal and visible features. This predicted mask has two values for each pixel, corresponding to the weights for thermal and visible features (summing to 1). This attention module is illustrated as the red paths in Fig. <ref type="figure" target="#fig_4">3</ref>. It can be formulated as:</p><formula xml:id="formula_2">f t inter = f t ⊗ (1 + m t inter ) f v inter = f v ⊗ (1 + m v inter )<label>(3)</label></formula><p>where</p><formula xml:id="formula_3">m t inter , m v inter = δ(F inter ([f t , f v ]))<label>(4)</label></formula><p>Here, δ denotes the softmax function; [•] denotes the feature concatenation operation; F inter represents a convolution operation to predict the inter-modality attention mask m inter . At each spatial position of the mask, the sum of m t inter and m v inter equals to 1. Note that this formalization could theoretically allow for more than two modalities to be fuse following the same principles.</p><p>The inter-modality attention module allows the network to adaptively select the most reliable modality. However, in order to train this module, we should need a costly ground truth information about the best pixel-level modality quality. Our solution to relieve the annotation cost is to assign labels according to the prediction of the pedestrian masks from the intra-modality attention module, i.e., we force the network to select one modality if its intra-modality mask prediction is better (i.e. closer to the ground truth pedestrian mask) than the other. Specifically, we first calculate an error mask for each spectrum with the following formula:</p><formula xml:id="formula_4">e t intra = | m t intra -m gt intra | e v intra = | m v intra -m gt intra |<label>(5)</label></formula><p>then the label for the modality selection is defined as:</p><formula xml:id="formula_5">m gt inter =    1, 0 if (e v intra -e t intra ) &gt; margin 0, 1</formula><p>if (e t intra -e v intra ) &gt; margin ignored otherwise (6) Here, | • | denotes the absolute function; e intra represents the error mask, defined by the L1 distance between the predicted intra-modality mask m intra and the ground truth intra-modality mask m gt intra ; m gt inter is the ground truth mask for inter-modality attention (2 values at each mask position); margin is a hyper-parameter to be tuned.</p><p>An example of the label assignment for the intermodality attention mask is shown in Fig. <ref type="figure" target="#fig_4">3</ref>. If the intramodality pedestrian masks are predicted as shown in the yellow paths, the inter-modality (weak) ground truth masks are then defined as the ones shown on the red paths, where white, black and gray areas denote the classification labels 1,0 and ignored, respectively. Here, the thermal features produce a better intra-modality mask prediction for the pedestrians on the left side of the input images in Fig. <ref type="figure" target="#fig_4">3</ref>. Therefore, according to Eq. 6, the label for the intermodality mask on this area is assigned as 1,0 (1 for the thermal mask and 0 for the visible mask). For regions where the two intra-modality masks have comparable prediction qualities (i.e., the difference between prediction errors is smaller than the predefined margin), the optimization of the inter-modality attention mask prediction on these areas are ignored (i.e., do not participate in the loss calculation).</p></div>
+<div><head n="3.3.">Combining intra-and inter-modality attention</head><p>The intra-modality attention module enhances features on areas with pedestrians and the inter-modality attention module adaptively selects features from the most reliable modality. When these two modules are combined, the fused features are obtained by:</p><formula xml:id="formula_6">f f used = f t hybrid + f v hybrid 2<label>(7)</label></formula><p>where</p><formula xml:id="formula_7">f t hybrid = f t ⊗ (1 + m t intra ) ⊗ (1 + m t inter ) f v hybrid = f v ⊗ (1 + m v intra ) ⊗ (1 + m v inter )<label>(8)</label></formula><p>Here, m intra and m inter are predicted intra-and intermodality attention masks from Eq. 2 and Eq. 4; f hybrid represents features enhanced by both attention modules; f f used represents the final fused features.</p><p>As mentioned in Section 2, the optimization of the multispectral feature fusion task may not benefit enough from the sole optimization of the object detection task (as done e.g. in <ref type="bibr" target="#b20">[20]</ref>). In GAFF, we propose two specific feature fusion losses, including the pedestrian segmentation loss for the intra-modality attention and the modality selection loss for the inter-modality attention, to guide the multispectral feature fusion task. These losses are jointly optimized with the object detection loss. The final training loss L total is:</p><formula xml:id="formula_8">L total = L det + L intra + L inter<label>(9)</label></formula><p>where, L det , L intra and L inter are the pedestrian detection, the intra-and inter-modality attention loss, respectively.</p></div>
+<div><head n="4.">Experiments</head><p>In this section, we conduct experiments on KAIST Multispectral Pedestrian Detection Dataset <ref type="bibr" target="#b8">[8]</ref> and FLIR ADAS Dataset <ref type="bibr" target="#b1">[1]</ref> to evaluate the effectiveness of the proposed method. Moreover, we attempt to interpret the reasons for improvements by visualizing the predicted attention masks. Finally, we provide inference speed analysis on two different target platforms.</p></div>
+<div><head n="4.1.">Datasets</head><p>KAIST dataset contains 7,601 training image pairs and 2,252 pairs testing ones. Some example image pairs from this dataset are shown in Fig. <ref type="figure" target="#fig_2">2</ref>. <ref type="bibr" target="#b10">[10]</ref> proposes a "sanitized" version of the annotations, where numerous annotation errors are removed. Our experiments are conducted with the original as well as the "sanitized" version of annotations for fair comparisons with our competitors. We found out that the "sanitized" annotations substantially improve the detection accuracy for different network architectures. All models are evaluated with the improved testing annotations from <ref type="bibr" target="#b14">[14]</ref> and the usual pedestrian detection metric: logaverage Miss Rate over the range of [10 -2 , 10 0 ] false positives per image (FPPI) under a "reasonable" setting <ref type="bibr" target="#b5">[5]</ref>, i.e., only pedestrians taller than 50 pixels under no or partial occlusions are considered <ref type="foot" target="#foot_0">1</ref> .</p><p>We also conduct experiments on FLIR ADAS Dataset <ref type="bibr" target="#b1">[1]</ref>. <ref type="bibr" target="#b19">[19]</ref> proposed an "aligned" version of the dataset for multispectral object detection. This new version contains 5,142 well-aligned multispectral image pairs (4,129 pairs for training and 1,013 pairs for testing). FLIR covers three object categories: "person", "car" and "bicycle". Models are evaluated with the usual object detection metric introduced with MS-COCO <ref type="bibr" target="#b13">[13]</ref>: the mean Average Precision (mAP) averaged over ten different IoU thresholds.</p></div>
+<div><head n="4.2.">Implementation details</head><p>The proposed GAFF module can be included in any type of two-stream convolutional neural networks. In these experiments, we choose RetinaNet <ref type="bibr" target="#b12">[12]</ref> as our base detector. It is transformed into a two-stream convolutional neural network by adding an additional branch for the extraction of thermal features. A ResNet18 <ref type="bibr" target="#b7">[7]</ref> or a VGG16 <ref type="bibr" target="#b17">[17]</ref> network is pre-trained on ImageNet <ref type="bibr" target="#b2">[2]</ref>, then adopted as our backbone network. The input image resolution is fixed to 640×512 for training and evaluation. Our baseline detector applies the basic addition as the multispectral feature fusion method. GAFF is implemented by adding the intra-and inter-modality attention modules, corresponding to the yellow and the red branches in Fig. <ref type="figure" target="#fig_4">3</ref>. Focal loss <ref type="bibr" target="#b12">[12]</ref> and Balanced L1 loss <ref type="bibr" target="#b15">[15]</ref> are adopted as the classification loss and the bounding box regression loss to optimize the object detection task. In order to introduce our specific guidance, we adopt the DICE <ref type="bibr" target="#b3">[3]</ref> loss as the pedestrian segmentation loss (L intra in Eq. 9) and the cross-entropy loss as the modality selection loss (L inter in Eq. 9).  by comparing in Table <ref type="table" target="#tab_1">2</ref> the Miss Rate of GAFF where the attention masks are directly applied to mono-spectral features (f intra = f ⊗ m intra and f inter = f ⊗ m inter ) or added as residual (as in Eq. 1 and Eq. 3).</p></div>
+<div><head n="4.3.">Ablation study</head></div>
+<div><head>Necessity of attention.</head><p>We compare in Tab. 3 the detection accuracy on KAIST dataset with different attention settings, different backbone networks, and different annotation settings (original and "sanitized"). When conducting experiments with inter-modality but without intra-modality attention, the pedestrian masks are predicted but are not multiplied with the corresponding mono-spectral features. For each backbone network or annotation setting, both intraand inter-modality attention modules consistently improve the baseline detection accuracy, and their combination leads to the lowest overall Miss Rate under all experimental settings. The present findings confirm the effectiveness of the proposed guided attentive feature fusion modules.</p><p>Necessity of guidance. To explore the effect of the proposed multispectral feature fusion guidance, we compare our guided approach to one with a similar architecture as ours but where the optimization of the specific fusion losses (L intra and L inter in Eq. 9) are removed from the training process, i.e., the fusion is only supervised by the object detection loss (as done with <ref type="bibr" target="#b20">[20]</ref>). We report in Tab. 4 the detection performance with and without guidance, under different backbone networks and annotations settings. The results confirm our assumption that the object detection loss is not relevant enough for the multispectral feature fusion task: even though the non-guided attentive fusion module improves the baseline Miss Rate to some degree (e.g., with the "sanitized" annotations and VGG16 backbone, non-guided model improves the base detector's Miss Rate from 9.28% to 8.38%), it could be further improved when the specific fusion guidance is added (from 8.38% to 6.48%).</p><p>Attention mask interpretation. Fig. <ref type="figure" target="#fig_6">4</ref> provides the visualization results of the intra-modality, the inter-modality and the hybrid attention masks during daytime and nighttime. For each figure, the top and bottom two rows of images are visualization results of guided and non-guided attentive feature fusions, respectively. We can see on the    intra-modality attention masks that the guided attention mechanism focuses on pedestrian areas, even though, sometimes, it is not accurate from a single mono-spectral view. For example, the traffic cone is misclassified as a pedestrian   <ref type="bibr" target="#b8">[8]</ref> with both annotation settings.</p><p>due to its human-like shape on the thermal image of Fig. <ref type="figure" target="#fig_6">4a</ref>, and the pedestrian in the middle right position is missed due to insufficient lighting on the RGB image of Fig. <ref type="figure" target="#fig_6">4b</ref>. For inter-modality attention masks, it appears that the guided attentive fusion tends to select visible features on well-lit areas (such as upside of images in Fig. <ref type="figure" target="#fig_6">4b</ref>) and brightly coloured areas (e.g., traffic cone, road sign, speed bump, car tail light, etc), and to select thermal features on dark areas and uniform areas (such as sky and road). Note that these attention preferences are automatically learnt via our intermodality attention guidance. On the contrary, despite the fact that the non-guided attention mechanism brings some accuracy improvements, the predicted attention masks are  quite difficult to interpret. More visualization results are shown in Fig. <ref type="figure" target="#fig_8">5</ref>. Besides, an interesting error case is shown in Fig. <ref type="figure" target="#fig_8">5c</ref>, where the pedestrian on the steps is not detected with the guided model but detected with the non-guided model. As mentioned earlier, GAFF selects thermal features on uniform areas, which is intuitive since thermal cameras are sensitive to temperature change and there exist few objects on uniform areas of the thermal image. However, in this particular case, the pedestrian is not captured on the thermal image, which leads to the final detection error.  From the plot, we can conclude that thermal images are generally better for recognition than visible images. This observation is consistent with our mono-spectral experiments, where thermal-only model reaches 18.8% of Miss Rate while visible-only model achieves 20.74% (both trained with "sanitized" annotations). Interestingly, as the segmentation accuracy increases for both images, the modality selection task becomes more and more challenging. Note that this accuracy is irrelevant at the beginning of the training, where predicted pedestrian masks are almost zero for both thermal and visible features, thus the difference between their error masks is minor and the set of margin makes most areas ignored for modality selection optimization. Such mechanism avoids the "cold start" problem.</p><p>Runtime analysis In Tab. 5 we report the total number of learnable parameters and the average inference runtime on two different computation platforms. Specifically, the models are implemented with <software>Pytorch</software> (TensorRT) framework  for an inference time testing on the Nvidia GTX 1080Ti (Nvidia TX2) platform. Since GAFF only involves 3 convolution layers, the additional parameters and computation cost is low, i.e., it represents less than 0.1% of additional parameters and around 0.5ms (1.5ms) of inference time on 1080Ti (TX2). Note that the time for post-processing treatments (such as Non-Maximum Suppression) is not taken into account for the benchmarking. Our model meets the requirement of real-time treatment on embedded devices, which is essential for many applications.</p></div>
+<div><head n="4.4.">Comparison with State-of-the-art Multispectral Pedestrian Detection Methods</head><p>KAIST Dataset Tab. 6 shows the detection results of existing methods and our GAFF with the original and "sanitized" annotations on KAIST. It can be observed that GAFF achieves state-of-the-art performance on this dataset (it is slightly less accurate than CFR <ref type="bibr" target="#b19">[19]</ref>, which applies cascaded Fuse-and-Refine blocks for sequential feature enhancement and needs more computation than GAFF (see Methods Platform Runtime ACF+T+THOG <ref type="bibr" target="#b8">[8]</ref> <software ContextAttributes="used">MATLAB</software> 2730ms Halfway Fusion <ref type="bibr" target="#b14">[14]</ref> Titan X 430ms Fusion RPN+BF <ref type="bibr" target="#b14">[14]</ref> <software ContextAttributes="used">MATLAB</software> 800ms IAF R-CNN <ref type="bibr" target="#b11">[11]</ref> Titan X 210ms IATDNN+IASS <ref type="bibr" target="#b6">[6]</ref> Titan X 250ms CIAN <ref type="bibr" target="#b20">[20]</ref> 1080Ti 70ms MSDS-RCNN <ref type="bibr" target="#b10">[10]</ref> Titan X 220ms CFR <ref type="bibr" target="#b19">[19]</ref> 1080Ti 50ms GAFF (ours) 1080Ti 9.34ms Table <ref type="table">8</ref>: Detection results on FLIR dataset <ref type="bibr" target="#b1">[1]</ref>.</p><p>Table <ref type="table" target="#tab_8">7</ref>). According to Tab. 7, thanks to the lightweight design of GAFF, our model has substantial advantage in terms of inference speed compared to e.g. <ref type="bibr" target="#b19">[19]</ref>.</p><p>FLIR Dataset Tab. 8 reports the detection results with and without GAFF on FLIR dataset. We can observe that the average precision is improved for all IoU thresholds with GAFF (around 1% of mAP improvement for both backbone networks), which shows that our method can generalize well to different types of images. For comparison, the more costly CFR <ref type="bibr" target="#b19">[19]</ref> reaches 72.39% of AP50 on this dataset, whereas our best result is 72.9%.</p></div>
+<div><head n="5.">Conclusion</head><p>We argue that the lack guidance is a limitation for efficient and effective multispectral feature fusion, and we propose Guided Attentive Feature Fusion (GAFF) to guide this fusion process. Without hand-crafted assumptions or additional annotations, GAFF realizes a fully adaptive fusion of thermal and visible features. Experiments on KAIST and FLIR datasets demonstrate the effectiveness of GAFF and the necessity of attention and guidance in the feature fusion stage. We noticed that certain thermal-visible image pairs are slightly misaligned in the above datasets, such a problem could be more critical in real life applications. Our future research is devoted to the development of a real-time feature calibration module based on the predicted attention masks from GAFF.</p></div><figure xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Multispectral pedestrian detection via a twostream convolutional neural network.</figDesc><graphic coords="1,479.72,285.01,64.76,52.43" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Typical examples of thermal-visible image pairs captured during the day (first two rows) and night (bottom row). For each pair, the thermal image is on the left and the RGB image is on the right.</figDesc></figure>
+<figure xml:id="fig_4"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The overall architecture of Guided Attentive Feature Fusion (GAFF). Green, blue and purple blocks represent thermal, visible and fused features. Yellow and red paths represent the intra-and inter-modality attention modules, respectively.</figDesc></figure>
+<figure xml:id="fig_6"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Visualization examples of attention masks on KAIST dataset. Zoom in to see details.</figDesc></figure>
+<figure xml:id="fig_8"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: More visualization examples of attention masks on KAIST dataset. Zoom in to see details.</figDesc></figure>
+<figure xml:id="fig_9"><head /><label /><figDesc>inter-modality attention accuracy evolution Modality selection accuracy</figDesc></figure>
+<figure xml:id="fig_10"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Intra-and inter-modality attention accuracy evolution during training.</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Detection results of GAFF with different margin values in the inter-modality attention module.</figDesc><table><row><cell>M argin</cell><cell>All</cell><cell>Miss Rate Day</cell><cell>Night</cell></row><row><cell>0.05</cell><cell cols="3">6.92% 8.47% 3.68%</cell></row><row><cell>0.1</cell><cell cols="3">6.48% 8.35% 3.46%</cell></row><row><cell>0.2</cell><cell cols="3">7.47% 9.31% 4.22%</cell></row><row><cell cols="4">Hyper-parameter tuning. As reported in Table 1, we</cell></row><row><cell cols="4">conduct experiments with different margin values in the</cell></row><row><cell cols="4">inter-modality attention module on KAIST dataset [8] with</cell></row><row><cell cols="4">"sanitized" annotations. The Miss Rate scores on the</cell></row><row><cell cols="4">Reasonable-all, Reasonable-day and Reasonable-night sub-</cell></row><row><cell cols="4">sets are listed. We observe that the optimal Miss Rate is</cell></row><row><cell cols="4">achieved when margin = 0.1. Thus, we use margin =</cell></row><row><cell cols="3">0.1 for all the following experiments.</cell><cell /></row></table><note><p>Residual attention. As mentioned in Section 3, attention enhanced features are added as residual to avoid directly affecting the thermal or visible features. We verify this choice</p></note></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Detection results of GAFF where the attention masks are directly applied or added as residual.</figDesc><table /></figure>
+<figure type="table" xml:id="tab_3"><head>Table 3</head><label>3</label><figDesc /><table><row><cell>: Ablation study of two attentive fusion modules on</cell></row><row><cell>KAIST dataset [8] with original (top) or "sanitized" (bot-</cell></row><row><cell>tom) annotations.</cell></row></table></figure>
+<figure type="table" xml:id="tab_5"><head>Table 4 :</head><label>4</label><figDesc>Comparison between guided and non-guided models on KAIST dataset</figDesc><table /></figure>
+<figure type="table" xml:id="tab_6"><head>Table 5 :</head><label>5</label><figDesc>Runtime on different computing platforms.</figDesc><table><row><cell>Methods</cell><cell>All</cell><cell>Miss Rate Day</cell><cell>Night</cell></row><row><cell>ACF+T+THOG [8]</cell><cell cols="3">47.24% 42.44% 56.17%</cell></row><row><cell cols="4">Halfway Fusion [14] 26.15% 24.85% 27.59%</cell></row><row><cell cols="4">Fusion RPN+BF [14] 16.53% 16.39% 18.16%</cell></row><row><cell>IAF R-CNN [11]</cell><cell cols="3">16.22% 13.94% 18.28%</cell></row><row><cell>IATDNN+IASS [6]</cell><cell cols="3">15.78% 15.08% 17.22%</cell></row><row><cell>CIAN [20]</cell><cell cols="3">14.12% 14.77% 11.13%</cell></row><row><cell>MSDS-RCNN [10]</cell><cell cols="3">11.63% 10.60% 13.73%</cell></row><row><cell>CFR [19]</cell><cell>10.05%</cell><cell>9.72%</cell><cell>10.80%</cell></row><row><cell>GAFF (ours)</cell><cell cols="3">10.62% 10.82% 10.14%</cell></row><row><cell cols="3">(a) Original annotations</cell><cell /></row><row><cell>Methods</cell><cell>All</cell><cell>Miss Rate Day</cell><cell>Night</cell></row><row><cell>MSDS-RCNN [10]</cell><cell>7.49%</cell><cell>8.09%</cell><cell>5.92%</cell></row><row><cell>CFR [19]</cell><cell>6.13%</cell><cell>7.68%</cell><cell>3.19%</cell></row><row><cell>GAFF(ours)</cell><cell>6.48%</cell><cell>8.35%</cell><cell>3.46%</cell></row><row><cell cols="3">(b) "Sanitized" annotations</cell><cell /></row></table></figure>
+<figure type="table" xml:id="tab_7"><head>Table 6 :</head><label>6</label><figDesc /><table /><note><p><p><p>Detection results on KAIST dataset</p><ref type="bibr" target="#b8">[8]</ref> </p>with original (top) or "sanitized" (bottom) annotations.</p></note></figure>
+<figure type="table" xml:id="tab_8"><head>Table 7 :</head><label>7</label><figDesc>Runtime comparisons with different methods on KAIST dataset<ref type="bibr" target="#b8">[8]</ref>.</figDesc><table><row><cell>Backbone GAFF</cell><cell>mAP</cell><cell>AP75</cell><cell>AP50</cell></row><row><cell>ResNet18</cell><cell cols="3">36.6% 31.9% 72.8% 37.5% 32.9% 72.9%</cell></row><row><cell>VGG16</cell><cell cols="3">36.3% 30.2% 71.9% 37.3% 30.9% 72.7%</cell></row></table></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>We use the evaluation code provided by<ref type="bibr" target="#b10">[10]</ref>: https://github.com/Li-Chengyang/MSDS-RCNN/tree/master/lib/datasets/KAISTdevkit-matlabwrapper</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title />
+		<author>
+			<persName><forename type="first">Gaff</forename><surname>Backbone</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Param</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Runtime 1080Ti TX2 ResNet</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">23</biblScope>
+			<biblScope unit="page" from="705" to="709" />
+			<date>3ms 31,430</date>
+		</imprint>
+	</monogr>
+	<note>VGG. .6ms References</note>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<ptr target="https://www.flir.com/oem/adas/adas-dataset-form/" />
+		<title level="m">Free flir thermal dataset for algorithm training</title>
+		<imprint />
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">ImageNet: A Large-Scale Hierarchical Image Database</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L.-J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR09</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Measures of the amount of ecologic association between species</title>
+		<author>
+			<persName><forename type="first">Lee</forename><forename type="middle">R</forename><surname>Dice</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Ecology</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="297" to="302" />
+			<date type="published" when="1945">1945</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fast feature pyramids for object detection</title>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ron</forename><surname>Appel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Pattern Anal. Mach. Intell</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1532" to="1545" />
+			<date type="published" when="2014-08">Aug. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Pedestrian detection: An evaluation of the state of the art</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Dollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wojek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schiele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Perona</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="743" to="761" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Fusion of multispectral data through illumination-aware deep neural networks for pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Dayan</forename><surname>Guan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanpeng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiangxin</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yanlong</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Ying</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yang</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Fusion</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="page" from="148" to="157" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2016 IEEE Conference on Computer Vision and Pattern Recognition, CVPR 2016</title>
+		<meeting><address><addrLine>Las Vegas, NV, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">June 27-30, 2016. 2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection: Benchmark dataset and baselines</title>
+		<author>
+			<persName><forename type="first">Soonmin</forename><surname>Hwang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jaesik</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Namil</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukyung</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">In</forename><surname>So Kweon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Fully convolutional region proposal networks for multispectral person detection</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>König</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Adam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jarvers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Layher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Neumann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Teutsch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)</title>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+			<biblScope unit="page" from="243" to="250" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection via simultaneous detection and segmentation</title>
+		<author>
+			<persName><forename type="first">Chengyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofeng</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">British Machine Vision Conference 2018</title>
+		<meeting><address><addrLine>Newcastle, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">September 3-6, 2018. 2018</date>
+			<biblScope unit="page">225</biblScope>
+		</imprint>
+		<respStmt>
+			<orgName>Northumbria University</orgName>
+		</respStmt>
+	</monogr>
+	<note>BMVC 2018</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Illumination-aware faster R-CNN for robust multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Chengyang</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruofeng</forename><surname>Tong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Tang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognition</title>
+		<imprint>
+			<biblScope unit="volume">85</biblScope>
+			<biblScope unit="page" from="161" to="171" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Focal loss for dense object detection</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Priya</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><forename type="middle">B</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Computer Vision, ICCV 2017</title>
+		<meeting><address><addrLine>Venice, Italy</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">October 22-29, 2017. 2017</date>
+			<biblScope unit="page" from="2999" to="3007" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Microsoft COCO: Common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Larry</forename><surname>Zitnick</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV. European Conference on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2014-09">September 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Multispectral deep neural networks for pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Jingjing</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoting</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dimitris</forename><forename type="middle">N</forename><surname>Metaxas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the British Machine Vision Conference 2016, BMVC 2016</title>
+		<meeting>the British Machine Vision Conference 2016, BMVC 2016<address><addrLine>York, UK</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">September 19-22, 2016, 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Libra r-cnn: Towards balanced learning for object detection</title>
+		<author>
+			<persName><forename type="first">Jiangmiao</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Faster R-CNN: towards real-time object detection with region proposal networks</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>Shaoqing Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><forename type="middle">B</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems 28: Annual Conference on Neural Information Processing Systems 2015</title>
+		<meeting><address><addrLine>Montreal, Quebec, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">December 7-12, 2015. 2015</date>
+			<biblScope unit="page" from="91" to="99" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Very deep convolutional networks for large-scale image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Multispectral pedestrian detection using deep fusion convolutional neural networks</title>
+		<author>
+			<persName><forename type="first">Jörg</forename><surname>Wagner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Volker</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Herman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sven</forename><surname>Behnke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">24th European Symposium on Artificial Neural Networks, ESANN 2016</title>
+		<meeting><address><addrLine>Bruges, Belgium</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">April 27-29, 2016, 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Multispectral Fusion for Object Detection with Cyclic Fuse-and-Refine Blocks</title>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Lefèvre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICIP 2020 -IEEE International Conference on Image Processing</title>
+		<meeting><address><addrLine>Abou Dabi, United Arab Emirates</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-10">Oct. 2020</date>
+			<biblScope unit="page" from="1" to="5" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Cross-modality interactive attention network for multispectral pedestrian detection</title>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiyong</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shifeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hong</forename><surname>Qiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaizhu</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Hussain</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Fusion</title>
+		<imprint>
+			<biblScope unit="volume">50</biblScope>
+			<biblScope unit="page" from="20" to="29" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

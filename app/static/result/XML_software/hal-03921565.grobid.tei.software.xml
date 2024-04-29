@@ -1,0 +1,361 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">REVISITING ARTISTIC STYLE TRANSFER FOR DATA AUGMENTATION IN A REAL-CASE SCENARIO</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Stefano</forename><surname>D'</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Frédéric</forename><surname>Precioso</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Fabien</forename><surname>Gandon</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<orgName type="institution" key="instit4">I3S</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">REVISITING ARTISTIC STYLE TRANSFER FOR DATA AUGMENTATION IN A REAL-CASE SCENARIO</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">AF0EDB0F89B7E5CB617580784CD98F58</idno>
+					<idno type="DOI">10.1109/ICIP46576.2022.9897728</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Neural Style Transfer</term>
+					<term>Image Segmentation</term>
+					<term>Image-to-Image Translation</term>
+					<term>Artistic Style Transfer</term>
+					<term>Photorealism</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>A tremendous number of techniques have been proposed to transfer artistic style from one image to another. In particular, techniques exploiting neural representation of data; from Convolutional Neural Networks to Generative Adversarial Networks. However, most of these techniques do not accurately account for the semantic information related to the objects present in both images or require a considerable training set. In this paper, we provide a data augmentation technique that is as faithful as possible to the style of the reference artist, while requiring as few training samples as possible, as artworks containing the same semantics of an artist are usually rare. Hence, this paper aims to improve the state-of-the-art by first applying semantic segmentation on both images to then transfer the style from the painting to a photo while preserving common semantic regions. The method is exemplified on Van Gogh's paintings, shown to be challenging to segment.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">INTRODUCTION</head><p>Witnessing the impressive results Deep Learning techniques have provided to other sciences, more and more non-AIexperts are considering these methods in their own field. Museum curators are progressively keen on benefiting from the potential of Deep Learning in the tedious task of analyzing artworks, maintaining thesaurus and databases, and combining unstructured content with metadata to bring analysis to another level <ref type="bibr" target="#b0">[1]</ref>. In order to support the level of requirement from very precise analysis of artworks by curators, the need for a faithful data augmentation method is immediate. Indeed, if one wants to apply a deep network to analyze artwork semantic content, it is obviously better to get a network better fitted to the data <ref type="bibr" target="#b0">[1]</ref>, for instance by fine-tuning an existing architecture on the target artworks. A previous work <ref type="bibr" target="#b0">[1]</ref> showed that data scarcity for some types of art pieces hindered transfer learning. Standard base CNN models (VGG, ResNet, ...) were not providing an accurate classification/detection of objects and the fine-tuning was not satisfactory either, due to the lack of training data. Thus, without data augmentation, transfer learning and fine-tuning could not provide the expected support to the work of curators -in particular the automation of cultural data quality maintenance.</p><p>When Vincent Van Gogh painted Starry Night, he saw none other than a beautiful landscape, and he captured his impression of the scene on the painting by applying his unique style. Luckily, his style is not completely lost, since Deep Learning has lately enabled one to be able to capture artistic style and to transfer it to a new image <ref type="bibr" target="#b1">[2]</ref>. However, most of the current methods rely on (very) large training sets to build a relevant neural model for style transfer. Furthermore, the consistency with the original art style is most often global which leads to many visual artefacts in the generated artwork from a real photo. This article contributes a new method to enable semantic style transfer by first applying semantic segmentation on both images, and then transferring the style from the painting to a photo while preserving common semantic regions.</p><p>In Sec. 2, we position our work with respect to the stateof-the-art, while in Sec. 3, we detail our approach. The experimental results are presented in Sec. 3, and we then conclude the paper in Sec. 5.</p></div>
+<div><head n="2.">NEURAL STYLE TRANSFER</head><p>Neural Style Transfer is an area of application of Imageto-Image translation. The goal is to transfer the style of an image, called style image, to another image, called content image. This field has been widely explored, and many methods have been proposed <ref type="bibr" target="#b1">[2]</ref>. The seminal neural model in the state-of-the-art has been developed by Gatys et al. <ref type="bibr" target="#b2">[3]</ref>, and consists of: (i) first, providing the content image as input of a fixed pre-trained VGG19 network (on ImageNet), then to train another VGG19 network from scratch by providing a white noise image as input and aligning its feature maps with those of the former network; (ii) second, applying almost the same procedure to the style image, but aligning the Gram matrices of their feature maps rather than the feature maps themselves. A further improvement was proposed in <ref type="bibr" target="#b3">[4]</ref> by combining the CNN architecture with a Markov Random Field,</p></div>
+<div><head>4178</head><p>Authors' version a regularizer that maintains local patterns of the "style" exemplars. These models still struggle to correctly transfer the style, often resulting in an overlap between content and style images and thus, in many local artefacts. One branch of style transfer architectures that has made some improvements is the one involving unpaired datasets containing samples from two different domains (the source domain and the target domain). This is a point of advantage over previous architectures, as it is always a tedious task to pair the samples. In this branch, the predominant models are Generative Adversarial Networks (GANs), whose properties have been exploited to generate "fake" images mapping together the two different domains. This is the case of <software ContextAttributes="used">GANilla</software> <ref type="bibr" target="#b4">[5]</ref>, an architecture consisting of a CNN based on Resnet18 used in an autoencoder structure to learn a latent space and skip connections allowing to translate the input image from the source domain to the target domain. In <software ContextAttributes="used">CycleGAN</software> <ref type="bibr" target="#b5">[6]</ref> the network not only translates the input image from the source domain to the target domain but also translates the resulting image back to the source domain, enforcing the visual consistency between the two images in the source domain: the initial image and the image resulting from two consecutive translation steps. However, the problem with these methods is that they are not semantic-aware. In practice, they make little distinction between objects in an image. Moreover, they do not exploit the specific mapping that exists between images of paired datasets.</p><p>Several other models have tried to include semantic information when transferring the style. Liao et al., for example, enforced mapping between source and target images at different feature map levels <ref type="bibr" target="#b6">[7]</ref>. Their results are convincing when the source and domain contents are already fairly semantically aligned. In a more recent work <ref type="bibr" target="#b7">[8]</ref>, soft semantic masks of regions that should match between source and target, are extracted. Here again, the existing alignment between semantic regions that should match impacts the quality of the results greatly. One of the most impressive recent achievements in this field is based on advances in deep semantic segmentation which aim to identify the classes in both source and target images. The two two segmentation masks are then semantically aligned, after which they are integrated into the transfer <ref type="bibr" target="#b8">[9]</ref>. However, as with the previous models, Park et al.'s model</p><p>is not yet able to handle paintings in which the shape of the objects is very far from reality. In Van Gogh's paintings, for example, the line is not used to describe reality but has an expressive function -transfiguring reality itself.</p></div>
+<div><head n="3.">PROPOSED APPROACH</head><p>Different to other methods, the approach presented here uses a paired dataset, which consists of pairs of images sharing a similar visual content. Its main strength is based on the fact that it can exploit the one-to-one mapping between im-ages of each pair to guarantee results that are more relevant to the style contained in a specific painting. The starting point was hence the dataset used by Zhu et al. to train <software ContextAttributes="used">Cy-cleGAN</software> <ref type="bibr" target="#b5">[6]</ref>, where Van Gogh's paintings have been retrieved from WikiArt, while real photos have been downloaded from <software ContextAttributes="used">Flickr</software> by using landscapes-related hashtags. Then, images were manually paired in order to match them as best as possible.</p><p>Since all the pre-trained segmentation models have been trained on real pictures, it is hard to directly segment paintings. Hence, a pre-processing step precedes the actual training phase and consists of first converting paintings to real images and then extracting segmentation masks in the real image domain according to the approach coined by Penhouët et al. <ref type="bibr" target="#b9">[10]</ref>. The latter uses image segmentation and semantic grouping to merge minority classes in order for the masks of each pair of images to match. The resulting masks are then simply mapped back onto the painting image to provide a reliable semantic segmentation of both the painting and the target real image.</p><p>This pre-processing phase is also the main novelty brought by this paper to the current style transfer literature, since it solves the main issue of semantically segmenting paintings.</p><p>Results have been then evaluated according to how similar they look to Van Gogh's artworks, or, in other words, how "fake" they are. All the code is publicly available at this GitHub repository, including the one for results evaluation.</p></div>
+<div><head n="3.1.">Pre-processing</head><p>Before applying style transfer, a pre-processing phase has been studied and applied. Since all the pre-trained models for image segmentation have been trained on real pictures, we cannot expect good results if the segmentation is directly applied to paintings. Hence, a strategy to overcome this issue consists of converting paintings into real photos. For this purpose, a <software ContextAttributes="used">CycleGAN</software> has been trained on two sets: the set of Van Gogh's paintings, consisting of 400 samples (set A), and the set of photographs (set B), containing 6853 images. The model has been trained with the default parameters used in the original paper ( <ref type="bibr" target="#b5">[6]</ref>) for a total of 120 epochs. Results and benefits of this pre-processing phase are discussed in Sec. <ref type="bibr" target="#b3">4</ref>.</p><p><software ContextAttributes="used">CycleGAN</software> has been chosen for this task because it ensures cycle consistency: when we translate from one domain to the other and back again, we should arrive where we started. Its loss is composed of two terms: the adversarial loss and cycle consistency loss. The first is used to improve the quality of fake images generated from one domain to the other while the second loss, instead, incentivizes the cycle consistency. For further details on CycleGANs refer to <ref type="bibr" target="#b5">[6]</ref>.</p><p>Once all images have been converted, a subset of 21 Van Gogh's paintings have been selected and paired with real photographs. Then, all the selected images have been segmented using the approach of Penhouët et al. <ref type="bibr" target="#b9">[10]</ref>, which is composed of two parts: first, a pre-trained CNN called Pyramid Scene Parsing Network (PSPNet) creates a segmentation image; secondarily, a Knowledge Graph from a Python <software ContextAttributes="used">library</software>, called <software ContextAttributes="used">Sematch</software>, measures the similarity between two class words (e.g.: sky and ground). The purpose of this second part is to semantically group similar classes into a wider class, so that both the content and the style image share the same classes. Semantic grouping is regulated by a parameter θ ∈ [0, 1] called semantic threshold, which groups similar classes together, thereby allowing both the content and style masks to have the same number of classes. When θ = 1 no grouping is applied, while with θ = 0 all the classes are merged into a single class. Here, θ = 0.6 as is in the original paper ( <ref type="bibr" target="#b9">[10]</ref>), which shows how quality of segmentation masks varies when θ deviates from this value. Fig. <ref type="figure" target="#fig_0">1</ref> illustrates what the preprocessing phase looks like for a single pair of images. Note that in this paper, when segmentation masks are mentioned, we are referring to the semantically grouped masks.</p></div>
+<div><head n="3.2.">Style Transfer</head><p>The architecture presented here is based on both Penhouët et al.'s Automated Deep Photo Style Transfer (ADPST) model <ref type="bibr" target="#b9">[10]</ref>, and the classical Neural Style Transfer (NST) model <ref type="bibr" target="#b2">[3]</ref>. The former was introduced in Sub-Sec. 3.1, while the latter in Sec. 2. In brief, NST extracts features from a VGG19 for both style and content images, then jointly minimizes their losses L c and L s :</p><formula xml:id="formula_0">L total ( - → p , - → a , - → x ) = αL c ( - → p , - → x ) + βL s ( - → a , - → x ),<label>(1)</label></formula><p>where α and β are the weighting factors for content and style reconstruction, while -→ p , -→ a , and -→ x are the photograph, the artwork, and the generated image, respectively <ref type="bibr" target="#b2">[3]</ref>. ADPST model is based on Deep Photo Style Transfer ( <ref type="bibr" target="#b10">[11]</ref>), with the difference that in ADPST segmentation masks are created automatically. The objective is to minimize the following loss:</p><formula xml:id="formula_1">L = L l=1 α l L l c + Γ L l=1 β l L l s + λL m + ηL a ,<label>(2)</label></formula><p>where L c , L s , L m , L a are the content loss of NST (Eq. 1), the augmented style loss, the affine loss, and the image assessment loss, respectively, which are all regulated by different parameters.</p><p>Fig. <ref type="figure">2</ref>. Schema of the architecture.</p><p>The loss is minimized for a certain number of iterations, which, according to Penhouët et al., should be at least 1000. The authors also observed that good results are achieved with about 2000 iterations and improvements after 4000 iterations are most of the time negligible; therefore, the number of iterations was here set to 3000. As mentioned above, the workflow presented in this Section combines both ADPST and NST models, and is shown in Fig. <ref type="figure">2</ref>. Each pair of content and pre-processed style images is fed into the ADPST architecture, which transfers the style in the photorealistic domain. In this way, we are able to exploit the segmentation masks of both the images, mainly transferring the palette and the semantic content of the painting. However, we still need to map the resulting image to the paintings domain. To accomplish this task, we resorted to the NST architecture due to its loss function which is the foundation of ADPST's loss, as evident from Equations ( <ref type="formula" target="#formula_0">1</ref>) and (2). Hence, the final painting-like fake Van Gogh is the result of a style transfer from the original (not pre-processed) painting to the photorealistic fake Van Gogh obtained from ADPST.</p></div>
+<div><head n="4.">EXPERIMENTAL RESULTS</head><p>Three baselines were chosen to compare the outcomes of the architecture presented in this paper with the state-of-the-art: (i) the classical NST model <ref type="bibr" target="#b2">[3]</ref>, (ii) CNNMRF architecture <ref type="bibr" target="#b3">[4]</ref> due to it being similar to NST, but rather focusing on different patches of images, and (iii) <software ContextAttributes="used">CycleGAN</software> <ref type="bibr" target="#b5">[6]</ref>, which involves the usage of an unpaired dataset. In Fig. <ref type="figure">3</ref> the results of our model are, at first glance, those that balance content and style better. A closer look shows that style is more correctly transferred between two semantically similar areas of the images. Concerning the three baselines, Fig. <ref type="figure">3</ref>. Some of the results compared to three state-of-the-art models.</p><p>with a visual assessment we can easily observe that results of CNNMRF are too close to the content image, in the sense that the style is in general poorly transferred. <software>CycleGAN</software> generates the most differing images compared to all the others, because it takes elements from all photos in the dataset. Indeed, due to the nature of GANs, the style is not captured by a precise correlation between content and style image, but is rather dispersed throughout each image. Results of NST are, instead, more visually appealing than in the other models, which is especially impressive because it is the oldest model. Still, the images it generates are too simplistic. In fact, since the objective of this model is to jointly minimize only the content and style losses, the final image tends to be the result of a trade-off between content and style. A numerical evaluation of the results further confirmed the effectiveness of our work. Indeed, we fine-tuned the classifier of a pre-trained Resnet18 to predict whether a painting was real or generated, and our model yielded the highest error, thus fooling the CNN more than the other three architectures.</p><p>As previously mentioned, the novelty this paper wants to bring to current literature is mostly inherent to the preprocessing phase, where the conversion of paintings to real photographs allows one to have a better mapping of semantic information between each pair of images. The intermediate results to be interpreted are derived from the pre-processing Fig. <ref type="figure">4</ref>. Benefits of painting to photo conversion. phase itself. The advantages of this are easily seen in the quality of the semantic masks generated by the style images, which depends on both the quality of the photorealistic conversion and the semantic grouping applied. In Fig. <ref type="figure">4</ref>, the style mask extracted from the photorealistic painting is clearly closer to the actual content of the painting itself. Indeed, in the mask generated directly from the original artwork the sky is segmented in multiple instances. Furthermore, the ground is confused with the greenery, as we can see from the mixture of purple and green in the style mask. This is not the case when the mask is instead generated from the converted style image, whose result is more pertinent to the content of the painting.</p></div>
+<div><head n="5.">DISCUSSION AND CONCLUSION</head><p>In this paper, we presented a new way of generating fauxrealistic paintings of an artist, moving towards a precise augmentation of data. This could be used to pre-train a more faithful CNN and then use it to support the work of museum curators in the classification and analysis of artworks.</p><p>The simple novel idea we propose here is to first convert the style image into a real image such that a more precise semantic segmentation can be extracted. Mapping the resulting semantic regions back onto the style image is then straightforward. Thanks to this precise semantic segmentation of the style image, we can better map semantics between the painting and real photo, leading to a highly improved style transfer.</p><p>To improve the results, a future work might focus on improving the quality of semantic masks. Indeed, the segmentation in ADPST is optimized for "Scene Parsing", obtaining the best results for landscape paintings. Therefore, a first possible solution is to include photos containing common objects in our dataset. By doing so, <software>CycleGAN</software> will be aware of how to pre-process those kinds of images, and the results may be refined. We could also consider tuning the parameters of the ADPST model. A final option would be to use our model as a generator in a GAN architecture, fine-tuning the generation of images according to the performance of the discriminator.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Visual summary of the pre-processing phase.</figDesc></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Learning and Reasoning for Cultural Metadata Quality</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bobasheva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Precioso</surname></persName>
+		</author>
+		<ptr target="https://hal.archives-ouvertes.fr/hal-03363442" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal on Computing and Cultural Heritage</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<publisher>ACM JOCCH</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Neural style transfer: A review</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ye</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Visualization &amp; Computer Graphics</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="3365" to="3385" />
+			<date type="published" when="2020-11">nov 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Gatys</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Ecker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bethge</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1508.06576</idno>
+		<title level="m">A neural algorithm of artistic style</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Combining Markov Random Fields and Convolutional Neural Networks for Image Synthesis</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting><address><addrLine>Las Vegas, NV, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2016-06">Jun. 2016</date>
+			<biblScope unit="page" from="2479" to="2486" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Ganilla: Generative adversarial networks for image to illustration translation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hicsonmez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Samet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Akbas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Duygulu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Image and Vision Computing</title>
+		<imprint>
+			<biblScope unit="volume">95</biblScope>
+			<biblScope unit="page">103886</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Unpaired image-to-image translation using cycle-consistent adversarial networks</title>
+		<author>
+			<persName><forename type="first">J.-Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Isola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Efros</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE International Conference on Computer Vision (ICCV)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2242" to="2251" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Visual attribute transfer through deep image analogy</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Liao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">B</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Transactions on Graphics (TOG)</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="15" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Automatic semantic style transfer using deep convolutional neural networks and soft masks</title>
+		<author>
+			<persName><forename type="first">H.-H</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">L</forename><surname>Rosin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-K</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y.-N</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Visual Computer</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1307" to="1324" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Semantic-aware neural style transfer</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">H</forename><surname>Park</surname></persName>
+		</author>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/S0262885619300435" />
+	</analytic>
+	<monogr>
+		<title level="j">Image and Vision Computing</title>
+		<imprint>
+			<biblScope unit="volume">87</biblScope>
+			<biblScope unit="page" from="13" to="23" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Automated deep photo style transfer</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Penhouët</surname></persName>
+		</author>
+		<idno>abs/1901.03915</idno>
+		<ptr target="http://arxiv.org/abs/1901.03915" />
+	</analytic>
+	<monogr>
+		<title level="j">CoRR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Deep Photo Style Transfer</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Luan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Paris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Shechtman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting><address><addrLine>Honolulu, HI</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2017-07">Jul. 2017</date>
+			<biblScope unit="page" from="6997" to="7005" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

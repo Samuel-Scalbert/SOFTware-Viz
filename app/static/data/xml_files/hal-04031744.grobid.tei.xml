@@ -1,0 +1,829 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Framework to Include and Exploit Probabilistic Information in SHACL Validation Reports</title>
+				<funder ref="#_FqySCpH">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Rémi</forename><surname>Felin</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<address>
+									<addrLine>I3S</addrLine>
+									<settlement>Sophia-Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Catherine</forename><surname>Faron</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<address>
+									<addrLine>I3S</addrLine>
+									<settlement>Sophia-Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Andrea</forename><forename type="middle">G B</forename><surname>Tettamanzi</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Université Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<address>
+									<addrLine>I3S</addrLine>
+									<settlement>Sophia-Antipolis</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Framework to Include and Exploit Probabilistic Information in SHACL Validation Reports</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7C8B94AA3BC4AFBCE16F0D82A5BB4EF0</idno>
+					<idno type="DOI">10.1007/978-3-031-33455-9_6</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>RDF</term>
+					<term>SHACL</term>
+					<term>Shape Testing</term>
+					<term>Data Validation</term>
+					<term>Probabilistic Assessment</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>The Shapes Constraint Language (SHACL) is a W3C recommendation which allows to represent constraints in RDF-shape graphs -, and validate RDF data graphs against these constraints. A SHACL validator produces a validation report whose result is false for a shape graph as soon as there is at least one node in the RDF data graph that does not conform to the shape. This Boolean result of the validation of an RDF data graph against an RDF shape graph is not suitable for discovering new high-potential shapes from the RDF data. In this paper, we propose a probabilistic framework to accept shapes with a realistic proportion of nodes in an RDF data graph that does not conform to it. Based on this framework, we propose an extension of the SHACL validation report to express a set of metrics including the generality and likelihood of shapes and we define a method to test a shape as a hypothesis test. Finally, we present the results of experiments conducted to validate a test RDF data graph against a set of shapes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The notable growth of the semantic Web has led to the emergence of new research areas such as the quality of RDF data. SHACL is the language recommended by the W3C to express patterns that RDF data must respect in order to ensure the dataset consistency.</p><p>We observe that violations generated during a SHACL validation of a shape are a significant factor. As soon as we observe at least one violation the shape is inconsistent with the RDF data. Considering a large collaborative RDF dataset with a massive and constant increase of RDF triples (e.g., DBPedia), we assume that a large number of RDF data violations against a set of shapes seems inevitable due to incomplete and/or incorrect data. In practice, a more in-depth investigation of the data seems necessary. An expert could develop a strategy for updating the data or the shapes depending on the rate or the nature of the violations. This problem has a direct impact on SHACL shape mining and limits domain knowledge learning. We tackle the following research question:</p><p>How to design a validation process considering physiological errors in real-life data?</p><p>Our contribution addresses the problem by suggesting a framework based on a probabilistic model to consider a rate of violations p assumed to be contained in an RDF dataset. p represents the proportion of errors that RDF data contains. We define a measure of likelihood to observe a given number of violations. We assess a given RDF dataset against a set of shapes to verify the consistency of the dataset considering a theoretical error rate.</p><p>This paper is organized as follows: In Section 2, we summarise the related work and the positioning of our work. In Section 3 we present our probabilistic model <ref type="bibr">(3.1)</ref>, our extension of the SHACL validation report model (3.2), and our proposal of an extended shape validation process as a test of hypothesis <ref type="bibr">(3.3)</ref>. We present the results of our experiments in Section 4. We conclude and discuss further research in Section 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Given that SHACL is a fairly new recommendation, dating from 2017 <ref type="bibr" target="#b12">[13]</ref>, its interactions with other standards are subject to ongoing research. In particular, we find work on the interactions with inference rules <ref type="bibr" target="#b19">[20]</ref>, with OWL <ref type="bibr" target="#b1">[2]</ref>, description logic reasoning <ref type="bibr" target="#b14">[15]</ref> and Ontology Design Pattern <ref type="bibr" target="#b17">[18]</ref>. Moreover, extensions regarding SHACL validation are emerging, e.g., a SHACL validation engine based on the study of the connectivity of a given RDF graph and the collection of data in this same graph <ref type="bibr" target="#b10">[11]</ref>. The expressiveness and semantics of SHACL is a rich subject in the literature <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b14">15]</ref>: it highlights a semantics based on SROIQ, one of the most expressive description logics.</p><p>The validation of RDF data with SHACL is a timely research question largely addressed in the literature <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b6">7,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b18">19]</ref>. All these works consider a standard use of SHACL: an RDF dataset is valid against a shape if it verifies the expressed constraints. Our approach extends the standardized SHACL validation process to overcome its binary character by considering a possible acceptable violation rate.</p><p>SHACL constraint generation <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b22">23]</ref> can be carried out in several ways, some using data-based and statistical approaches, others based on ontologies <ref type="bibr" target="#b4">[5]</ref>. The different approaches lead to different ways of tackling the validation of these shapes: The statistical-based approach requires expert analysis to define the consistency of a shape, while the ontology-based approach relies on the described RDF Schema properties (rdfs:range; rdfs:domain; . . . ) to provide a set of shapes based on this ontology, which can be validated if the quality of the ontology is assured. Knowledge graph profiling <ref type="bibr" target="#b20">[21]</ref> is an important issue in order to induce constraints from large KGs <ref type="bibr" target="#b16">[17]</ref>. The work presented in this article is focused on RDF data validation against shapes and is in line with the logic of providing expertise on the consistency of RDF data by considering the inescapable errors that they may contain, against a set of shapes that may be generated automatically or provided by an expert.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">A Probabilistic Framework for Shape Assessment</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Probabilistic Model</head><p>In a real-life context, RDF datasets are imperfect, incomplete (in the sense that expected data is missing) and containing errors of various natures. The quality control of RDF data and efficient data integration guaranteeing RDF data consistency are use cases that can be tackled using SHACL. In another respect, SHACL shapes mining from RDF data is a promising approach to learn domain knowledge (domain constraints). Candidate SHACL shapes are those triggering a few violations in the data, but this is directly correlated with the quality (error rate, which, however, is unknown) of the RDF dataset considered.</p><p>We propose to extend the evaluation of RDF data against SHACL shapes by considering a physiological theoretical error proportion p in real-life RDF data. In this context, mathematical modeling of the SHACL evaluation process, combined with an error proportion p, is based on a probabilistic model. Definition 1. The cardinality (or support) of a shape s, υ s , is the set of RDF triples targeted by s and tested during the validation. We define its cardinality as the reference cardinality: ||υ s ||.</p><p>The confirmations and violations of a shape s, respectively υ + s and υ - s , υ + s ∩ υ - s = ∅, are the disjoint sets that correspond, respectively, to the triples that are consistent with s and those that violate s. Remark 1. The sum of the number of confirmations and the number of violations of a shape s equals to the total number of triples targeted by s:</p><formula xml:id="formula_0">υ s = υ + s ∪ υ - s (<label>1</label></formula><formula xml:id="formula_1">)</formula><p>The modelling is based on the assessment process where we define a random variable X which conceptualises a set of observations from the validation of a shape s, i.e., a set of triples υ s ; each triple t ∈ υ s can be either a confirmation, t ∈ υ + s , or a violation, t ∈ υ - s . Let us assume a single selection among υ s for which we have two possible values:</p><formula xml:id="formula_2">1 if υ 1 ∈ υ -</formula><p>s , 0 otherwise. We conclude that a binomial distribution models this probabilistic approach, with X ∼ B(n, p) where n = ||υ s || and p corresponds to the unavoidable theoretical error proportion, i.e. X ∼ B(||υ S ||, p). Definition 2. Considering X as a random variable with the following binomial distribution X ∼ B(n, p) and Ω = {0, 1, . . . , n}, the probability to obtain exactly k success among n attempts is:</p><formula xml:id="formula_3">∀k ∈ Ω, P (X = k) = n k • p k • (1 -p) n-k (2)</formula><p>The likelihood measure L k determines the plausibility of obtaining k violations, i.e. k = ||υ - S ||, under the hypothesis of following a binomial distribution. The calculation is based on Formula 2 (see Definition 3). </p><formula xml:id="formula_4">L ||υ - S || = P (X = ||υ - S ||) = ||υ S || ||υ - S || • p ||υ - S || • (1 -p) ||υ + S || . (<label>3</label></formula><formula xml:id="formula_5">)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Extension of the SHACL Validation Report Model</head><p>We propose an enriched model of the SHACL validation report to express additional information for each shape considered in the report. We defined an extension to the SHACL Validation Report Vocabulary denoted by prefix psh. 1  For each source shape considered in the validation of an RDF graph we generate additional triples: property psh:summary links the validation report to a blank node of type psh:ValidationSummary which is the subject of several properties whose values are the result of the computation of various metrics relative to the source shape.</p><p>The focus shape is the value of property psh:focusShape. It is the source shape of the validation result further described in the validation summary.</p><p>The reference cardinality of a shape s ||υ s || is the value of property psh:referenceCardinality (see Definition 1).</p><p>The numbers of confirmations and violations of a shape s, respectively ||υ + s || and ||υ - s ||, are the values of properties psh:numConfirmation and psh:num-Violation.</p><p>The generality G(s) ∈ [0, 1] of a shape s measures the representativeness of s considering the whole RDF graph υ:</p><formula xml:id="formula_6">G(s) = ||υ s || ||υ|| . (<label>4</label></formula><formula xml:id="formula_7">)</formula><p>It is the value of property psh:generality.</p><p>The likelihood of a shape s in an RDF graph υ as defined in Section 3.1 is the value of property psh:likelihood. Figure <ref type="figure" target="#fig_1">1</ref> presents an excerpt of an example validation report where:</p><p>the SHACL shape s 1 is described by URI :s1; the cardinality of the RDF graph being validated is ||υ|| = 1000; the parameter of the binomial distribution is p = 0.1.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Data Graph Validation Against a Shape as a Hypothesis Test</head><p>The decision-making process for a given shape S is based on the probabilistic model proposed in Section 3.1, which is based on the hypothesis that a given observation follows a binomial distribution, such that X ∼ B(||υ S ||, p). However, the question concerning the consistency of the model is relevant as it can lead to incorrect conclusions. We propose an approach based on hypothesis testing which highlights the consistency of our hypothesis and a methodology to validate our shapes.</p><p>The acceptance of a SHACL Shape s considers the proportion of violations for s, i.e p = ||υ - s || ||υs|| . We suggest accepting the shape s as consistent with the RDF data if the observed proportion is smaller than the theoretical violation proportion:</p><formula xml:id="formula_8">p ≤ p =⇒ KG |= s. (<label>5</label></formula><formula xml:id="formula_9">)</formula><p>In the case where the observed proportion is greater than the theoretical proportion, we minimize the distance of this probability from the maximum values of the mass function of the binomial distribution B(||υ s ||, p) by using hypothesis testing. Figure <ref type="figure" target="#fig_0">3</ref> shows the proportion of the number of violations that we accept compared to the number that we reject with our method.</p><p>The Null and Alternate Hypothesis are (respectively) H 0 : data follow the given distribution, i.e. the frequency of observed violations p =</p><formula xml:id="formula_10">||υ - S ||</formula><p>||υ S || is in line with the expected proportions of violations p and X ∼ B(||υ S ||, p). Finally, H 1 indicates that data do not follow the given distribution.</p><p>@prefix sh : &lt; http :// www . w3 . org / ns / shacl # &gt; . @prefix psh : &lt; http :// ns . inria . fr / probabilistic -shacl / &gt; . @prefix : &lt; http :// www . example . com / myDataGraph # &gt; .   The testing for Goodness of Fit verifies the alignment of our observations with a theoretical distribution: we define X 2 s the test statistic for a shape s which follows χ 2 k-1,α assuming H 0 , i.e. X 2 s ∼ χ 2 k-1,α (a chi-square distribution with k -1 degrees of freedom and a level of significance 1 -α) if X 2 s verifies Definition 4. This test is performed at the α level defined at 5%. It considers k the total number of groups, i.e. k = 2, n i the observed number of individuals and T i the theoretical number of individuals. The test statistic X 2 s is defined by</p><formula xml:id="formula_11">#</formula><formula xml:id="formula_12">X 2 s = k i=1 (n i -T i ) 2 T i ∼ χ 2 k-1;α . (<label>6</label></formula><formula xml:id="formula_13">)</formula><p>Remark 2. A shape s for which we observe very small support ||υ s || (let us say ||υ s || = 5) implies a proportion of violations and/or confirmations that are less than 5. Thus, the hypothesis test cannot be applied because the sample is not sufficiently representative of a Chi-square distribution (see Definition 4).</p><p>Definition 4. The testing for goodness of fit is applicable (Formula 6) if ∀i ∈</p><formula xml:id="formula_14">[1, k], T i ≥ 5.</formula><p>The critical region i.e. the rejection region of H 0 , is defined by the value χ 2 k-1;α . Considering α = 0.05 and k = 2, we define the critical value: χ 2 k-1;α = χ 2 1;α=0.05 = 3.84.</p><p>Remark 3. An alternative formula considers the acceptance interval I a of a χ 2 distribution, i.e.</p><formula xml:id="formula_15">I a = [0, χ 2 k-1;α ] which accept H 0 if X 2 s ∈ I a .</formula><p>The acceptance of the null hypothesis , i.e., X ∼ B(||υ s ||, p), implies that the value of our test statistic X<ref type="foot" target="#foot_0">2</ref> s is not included in the rejection zone of the χ 2 k=1 distribution, such that</p><formula xml:id="formula_16">X 2 s ≤ χ 2 k-1;α . (<label>7</label></formula><formula xml:id="formula_17">)</formula><p>The acceptance of H 0 implies the acceptance of the considered shape s, i.e.,</p><formula xml:id="formula_18">X 2 s ≤ χ 2 k-1;α =⇒ KG |= s. (<label>8</label></formula><formula xml:id="formula_19">)</formula><p>Let us consider the case shown in Figure <ref type="figure" target="#fig_2">2</ref> as an example of an application. We observe a proportion of violations that is slightly higher than expected, i.e.,</p><formula xml:id="formula_20">p = ||υ - s 1</formula><p>|| ||υs 1 || = 0.11 and p &gt; p: an analysis through the hypothesis test determines if this observation is inconsistent with the null hypothesis, and in which case we would reject H 0 and the shape :s1. We assume α = 5% to assess X 2 s1 : We accept H 0 and validate the adequacy of this hypothesis, i.e. the assumption that our observations from the validation of :s1 follow a binomial distribution X ∼ B(200, 0.1), with a level of significance of 1 -α, i.e., 95%.</p><formula xml:id="formula_21">X 2 s1 = (22</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head><p>These contributions lead to an extension of the validation report to cover the generation of a degree of probability expressed under the hypothesis that the samples follow a binomial distribution with a cardinality defined by the SHACL shapes (i.e. ||υ s ||) and a probability p defined empirically corresponding to the assumed proportion of violations that we accept from some RDF data. At the same time, we investigate whether such an approach can capture the knowledge domain in a larger way, i.e., a broader spectrum of accepted shapes for which they are considered consistent despite the observed violations. Considering a shape graph representative of an RDF dataset, the conclusion of an error rate p for which it is reasonable to consider the acceptance of shapes on a subset of the global dataset seems a relevant perspective for the evaluation of this work. This implies a detailed analysis of the characteristics of the considered subset, the proportions of accepted or rejected shapes and the impact of hypothesis testing on acceptance.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental Setup</head><p>Our experiments use the CovidOnTheWeb dataset 2 <ref type="bibr" target="#b15">[16]</ref> against a set of 377 shapes from a translation of the experimental results of Cadorel &amp; al. <ref type="bibr" target="#b3">[4]</ref> which are considered as representative shapes of the whole CovidOnTheWeb dataset. We run the probabilistic SHACL validation engine (see Section 3.2) implemented in the Corese semantic web factory. We will conduct an analysis of the theoretical error rate in order to find an optimal rate: we assume the values of p empirically such that p ∈ {0.05, 0.1, 0.15, . . . , 0.95, 1}, which gives 20 values for p to be tested. The experiments were performed on a Dell Precision 3561 equipped with an Intel(R) 11th Gen Core i7-11850H processor, with 32 GB of RAM running under the Fedora Linux 35 operating system. The source code is available in a public repository. 3   CovidOnTheWeb is an RDF knowledge graphs produced from COVID-19 Open Research Dataset (CORD-19). It targets articles, described by URIs and named entities identified in these articles, disambiguated by Entity-Fishing and linked to Wikidata entities. Figure <ref type="figure" target="#fig_4">4</ref> shows an excerpt of RDF description in CovidOnTheWeb in turtle format and Table <ref type="table" target="#tab_3">1</ref> shows the characteristics of the RDF dataset. We consider a subset containing approximately 18.79% of the articles and 0.01% of the named entities. rdfs : label " methyl " @en . entity : Q10876 rdfs : label " bacteria " @en .  The candidate shapes describe association rules obtained by <ref type="bibr">Cadorel &amp; al. [4]</ref> from a subset of the CovidOnTheWeb dataset. These rules are not necessarily perfect, so we are interested in using them in our probabilistic approach. From the experimental results of Cadorel &amp; al., we extracted the named entities corresponding to the antecedents and the consequents of these association rules. We have carried out a treatment allowing the conversion of these rules into SHACL shapes. We target articles belonging to a named entity, representing the antecedent, with the property sh:targetClass. Among the articles considered, we are interested in determining the affiliation to another named entity, representing the consequent: we use a constraint applied on the articles' type and target a named entity with the property sh:hasValue. In this context, a violation will invoke a violation of type sh:HasValueConstraintComponent for the current shape. An example of a shape formed after treatment is shown in Figure <ref type="figure">5</ref>.</p><p>@prefix : &lt; http :// www . example . com / myDataGraph # &gt; . @prefix sh : &lt; http :// www . w3 . org / ns / shacl # &gt; . @prefix entity : &lt; http :// www . wikidata . org / entity / &gt; .</p><p>:1 a sh : NodeShape ; sh : targetClass entity : Q10295810 ; sh : property [ sh : path rdf : type ; sh : hasValue entity : Q43656 ; ] .</p><p>Fig. <ref type="figure">5</ref>: Example SHACL shape representing an association rule with entity:Q10295810 ("hypocholesterolemia"@en) as an antecedent and entity:Q43656 ("cholesterol"@en) as a consequent.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Results</head><p>Table <ref type="table" target="#tab_4">2</ref> shows the first experimental results, notably the generality score which is relatively low, indicating a low average cardinality compared to the number of total triples in our dataset: approximately 106 RDF triples on average are targeted by our shapes (0.047% of the RDF triples). The rate of violations is relatively high but is nuanced by the rate of confirmations (33.19%). It highlights the interest in a probabilistic approach in order to check the consistency of our RDF dataset against the shape graph considering varying p error rates and understand how we can consider a reasonable error rate and a consistent number of valid shapes.</p><p>Figure <ref type="figure" target="#fig_6">6a</ref> shows an increasing evolution of the likelihood measure up to the value p = 0.5 and then a decrease. It appears that the most reasonable error rate is 50%, as it maximises the mean likelihood value (0.0362%).    <ref type="figure" target="#fig_6">6b</ref>). Further analysis of the results obtained with p = 0.5 shows that 63 shapes among the 187 accepted shapes are accepted after performing a hypothesis test, i.e. 33.7% of the accepted shapes. These same tests accepted 25.7% of the shapes that were tested, which shows its ability to efficiently filter with a risk of α = 0.05 or 5% of being incorrect.</p><p>The production of the results in HTML format was performed with a STTL transformation <ref type="bibr" target="#b5">[6]</ref>. STTL is an extension to the SPARQL query language to transform RDF in any template-specified text result format, which is populated with the results of a SPARQL query. In our case, we provided an HTML template including the desired values in its structure. An excerpt of 20 out of 377 results obtained for a theoretical error proportion of p = 0.5 is presented in Figure <ref type="figure" target="#fig_9">8</ref>.</p><p>We compared the computation time of our proposed probabilistic validation framework with that of standard validation. For our base of 377 shapes and our extract of CovidOnTheWeb (226,647 triples), we observed an overall computation time of 1 minute 35 seconds for the probabilistic validation framework against 1 minute 29 seconds for standard validation: the probabilistic framework takes 6,31% more time than standard validation and it is linear which makes it practical and scalable.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>In this article, we propose a probabilistic framework for SHACL validation, thus contributing to RDF data quality control. We extend the SHACL validation report to express the likelihood measure for the number of violations observed and we propose a decision model for a probabilistic acceptance of RDF triples against SHACL shapes. Our experiments show the capabilities of our approach to validate a real-world RDF dataset against a set of SHACL shapes while accepting a reasonable error rate p. As future work, we plan to extend our proposed framework to complex shapes, especially recursive shapes which are the focus of ongoing research <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b7">8,</ref><ref type="bibr" target="#b18">19]</ref>. We also plan to investigate the automatic extraction or generation of SHACL shapes from reference RDF datasets, to capture domain knowledge as constraints.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Definition 3 .</head><label>3</label><figDesc>The likelihood to observe a number of violations ||υ - S || among the nodes concerned by a shape S, i.e. ||υ S ||, considering X ∼ B(||υ S ||, p) is</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Structure of the extended SHACL validation report.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 2 :</head><label>2</label><figDesc>Fig. 2: Example of an extended SHACL validation report for a shape :s1 with ||υ|| = 1000 and p = 0.1.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: Acceptance zone of shape s 1 , considering X ∼ B(||υ s1 ||, p) where ||υ s1 || = 200 and p = 0.1.</figDesc><graphic coords="8,134.77,115.84,345.83,185.55" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Example of RDF data extracted from CovidOnTheWeb.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>3</head><label></label><figDesc>https://github.com/RemiFELIN/RDFMining/tree/eswc_2023</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Fig. 6 :</head><label>6</label><figDesc>Fig. 6: Average value of (a) likelihood measures and (b) statistic test as functions of the theoretical error proportion p.</figDesc><graphic coords="12,307.68,208.90,172.91,92.77" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 7</head><label>7</label><figDesc>Figure 7 presents the set of decisions made on shapes (acceptance, rejection) as a function of the theoretical error proportion p and clearly shows the importance of hypothesis testing. The number of tests performed increases until p = 0.3 and then decreases. Similarly, hypothesis testing tends to reject shapes for "small" values of p and the trend reverses as p increases: the number of accepted shapes increases and the value of the test statistic decreases (see Figure6b). Further analysis of the results obtained with p = 0.5 shows that 63 shapes among the 187 accepted shapes are accepted after performing a hypothesis test, i.e. 33.7% of the accepted shapes. These same tests accepted 25.7% of the shapes that were tested, which shows its ability to efficiently filter with a risk of α = 0.05 or 5% of being incorrect.The production of the results in HTML format was performed with a STTL transformation<ref type="bibr" target="#b5">[6]</ref>. STTL is an extension to the SPARQL query language to transform RDF in any template-specified text result format, which is populated with the results of a SPARQL query. In our case, we provided an HTML template including the desired values in its structure. An excerpt of 20 out of 377 results obtained for a theoretical error proportion of p = 0.5 is presented in Figure8.We compared the computation time of our proposed probabilistic validation framework with that of standard validation. For our base of 377 shapes and our extract of CovidOnTheWeb (226,647 triples), we observed an overall computation time of 1 minute 35 seconds for the probabilistic validation framework against 1 minute 29 seconds for standard validation: the probabilistic framework takes 6,31% more time than standard validation and it is linear which makes it practical and scalable.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Shapes acceptance as a function of the theoretical error proportion p (HT= Hypothesis Testing).</figDesc><graphic coords="13,134.77,153.94,345.83,185.55" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: SHACL validation report in HTML format for p = 0.5.</figDesc><graphic coords="13,134.77,457.54,345.83,145.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 1 :</head><label>1</label><figDesc>Summary of the CovidOnTheWeb RDF subgraph considered for the experiment.</figDesc><table><row><cell cols="2">#RDF triples</cell><cell></cell><cell>226,647</cell></row><row><cell cols="2">#distinct articles</cell><cell></cell><cell>20,912</cell></row><row><cell cols="3">#distinct named entities</cell><cell>6,331</cell></row><row><cell cols="4">avg. #named entities per article 10.52</cell></row><row><cell cols="4">@prefix rdf : &lt; http :// www . w3 . org /1999/02/22 -rdf -syntax -ns # &gt; .</cell></row><row><cell cols="4">@prefix rdfs : &lt; http :// www . w3 . org /2000/01/ rdf -schema # &gt; .</cell></row><row><cell>@prefix covid :</cell><cell cols="3">&lt; http :// ns . inria . fr / covid19 / &gt; .</cell></row><row><cell>@prefix entity :</cell><cell cols="3">&lt; http :// www . wikidata . org / entity / &gt; .</cell></row><row><cell>covid : ec1 [...] 2 c5</cell><cell>rdf : type</cell><cell cols="2">entity : Q4407 .</cell></row><row><cell>covid : fff [...] 86 d</cell><cell>rdf : type</cell><cell cols="2">entity : Q10876 .</cell></row><row><cell>[...]</cell><cell></cell><cell></cell></row><row><cell>entity : Q4407</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head>Table 2 :</head><label>2</label><figDesc>Summary of the SHACL shape graph considered in the experiment.</figDesc><table><row><cell>#named entities represented</cell><cell>337 (5.32% )</cell></row><row><cell>avg. reference cardinality</cell><cell>106.69 (0.0470% )</cell></row><row><cell>avg. #confirmations</cell><cell>33.19 (31.11% )</cell></row><row><cell>avg. #violations</cell><cell>73.50 (70.89% )</cell></row><row><cell>avg. generality G(S) (Formula 4)</cell><cell>0.0005%</cell></row><row><cell>(a) L ||υ -S || average</cell><cell>(b) X 2 S average</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://github.com/Wimmics/CovidOnTheWeb</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgements This work has been partially founded by the <rs type="programName">3IA Côte d'Azur "Investments in the Future</rs>" project managed by the <rs type="funder">National Research Agency (ANR)</rs> with the reference number <rs type="grantNumber">ANR-19-P3IA-0002</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_FqySCpH">
+					<idno type="grant-number">ANR-19-P3IA-0002</idno>
+					<orgName type="program" subtype="full">3IA Côte d&apos;Azur &quot;Investments in the Future</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Expressiveness of shacl features</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bogaerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jakubowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">V</forename><surname>Den Bussche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Shacl: A description logic in disguise</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bogaerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Jakubowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Van Den Bussche</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Semantics and Validation of Shapes Schemas for RDF</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Boneva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">G</forename><surname>Labra Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">G</forename><surname>Prud 'hommeaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ISWC2017 -16th International semantic web conference</title>
+		<meeting><address><addrLine>Vienna, Austria</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017-10">Oct 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Mining rdf data of covid-19 scientific literature for interesting association rules</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cadorel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tettamanzi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/WIC/ACM International Joint Conference on Web Intelligence and Intelligent Agent Technology</title>
+		<meeting><address><addrLine>WI-IAT</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">2020. 2020</date>
+			<biblScope unit="page" from="145" to="152" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Astrea: Automatic generation of shacl shapes from ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Cimmino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fernández-Izquierdo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>García-Castro</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Harth</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Kirrane</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Ngonga Ngomo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Paulheim</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Rula</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Gentile</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Haase</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Cochez</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="497" to="513" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">STTL: A SPARQL-based Transformation Language for RDF</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Faron Zucker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">11th International Conference on Web Information Systems and Technologies</title>
+		<meeting><address><addrLine>Lisbon, Portugal</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015-05">May 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Validating shacl constraints over a sparql endpoint</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Florenzano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Reutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Savkovic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Workshop on the Semantic Web</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Semantics and validation of recursive shacl</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Corman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Reutter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Savković</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ISWC 2018</title>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Vrandečić</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Bontcheva</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">C</forename><surname>Suárez-Figueroa</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Presutti</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Celino</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Sabou</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Kaffee</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">E</forename><surname>Simperl</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="318" to="336" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Reusable shacl constraint components for validating geospatial linked data</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Debruyne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Mcglinn</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">GeoLD@ESWC</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note>short paper</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Automatic extraction of shapes using shexer</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fernandez-Álvarez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">E</forename><surname>Labra-Gayo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gayo-Avello</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.knosys.2021.107975</idno>
+		<ptr target="https://www.sciencedirect.com/science/article/pii/S0950705121010972" />
+	</analytic>
+	<monogr>
+		<title level="j">Knowledge-Based Systems</title>
+		<imprint>
+			<biblScope unit="volume">238</biblScope>
+			<biblScope unit="page">107975</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Trav-shacl: Efficiently validating networks of shacl constraints</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Figuera</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">D</forename><surname>Rohde</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Vidal</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3442381.3449877</idno>
+		<ptr target="https://doi.org/10.1145/3442381.3449877" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Conference 2021</title>
+		<meeting>the Web Conference 2021<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="3337" to="3348" />
+		</imprint>
+	</monogr>
+	<note>WWW &apos;21</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Modelling construction scheduling constraints using shapes constraint language (shacl)</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Soman</surname></persName>
+		</author>
+		<idno type="DOI">10.35490/EC3.2019.170</idno>
+		<ptr target="https://doi.org/10.35490/EC3.2019.170" />
+		<imprint>
+			<date type="published" when="2019-07">07 2019</date>
+			<biblScope unit="page" from="351" to="358" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kontokostas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Knublauch</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/2017/REC-shacl-20170720/" />
+		<title level="m">Shapes constraint language (SHACL). W3C recommendation, W3C</title>
+		<imprint>
+			<date type="published" when="2017-07">Jul 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Constraint checking of skills using shacl</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Köcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">M</forename><surname>Vieira Da Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fay</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Deciding shacl shape containment through description logics reasoning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leinberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Seifer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rienstra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lämmel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staab</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ISWC 2020</title>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Tamma</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Amato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Janowicz</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Fu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Polleres</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">O</forename><surname>Seneviratne</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Kagal</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="366" to="383" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Covid-on-the-Web: Knowledge Graph and Services to Advance COVID-19 Research</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Michel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ah-Kane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bobasheva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Cabrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corby</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gazzotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Giboin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Marro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Mayer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Simon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Villata</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Winckler</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-030-62466-8\_19</idno>
+		<ptr target="https://doi.org/10.1007/978-3-030-62466-8\_19" />
+	</analytic>
+	<monogr>
+		<title level="m">ISWC 2020 -19th International Semantic Web Conference</title>
+		<meeting><address><addrLine>Athens / Virtual, Greece</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-11">Nov 2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Rdf shape induction using knowledge base profiling</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Mihindukulasooriya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R A</forename><surname>Rashid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Rizzo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>García-Castro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Corcho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Torchiano</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3167132.3167341</idno>
+		<ptr target="https://doi.org/10.1145/3167132.3167341" />
+	</analytic>
+	<monogr>
+		<title level="m">SAC &apos;18</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1952" to="1959" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Using ontology design patterns to define shacl shapes</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pandit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>O'sullivan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WOP@ISWC</title>
+		<meeting><address><addrLine>Monterey California, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="67" to="71" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">A review of shacl: From data validation to schema reasoning for rdf graphs</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pareti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Konstantinidis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Reasoning Web</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Shacl constraints with inference rules</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pareti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Konstantinidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Norman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Şensoy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ISWC 2019</title>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Ghidini</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">O</forename><surname>Hartig</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Maleshkova</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Svátek</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Cruz</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Song</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Lefrançois</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">F</forename><surname>Gandon</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="539" to="557" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Abstat-hd: a scalable tool for profiling very large knowledge graphs</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Principe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maurino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Palmonari</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ciavotta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Spahiu</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00778-021-00704-2</idno>
+		<ptr target="https://doi.org/10.1007/s00778-021-00704-2" />
+	</analytic>
+	<monogr>
+		<title level="j">The VLDB Journal</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">09</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Shacl and shex in the wild: A community survey on validating shapes generation and adoption</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Rabbani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lissandrini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hose</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3487553.3524253</idno>
+		<ptr target="https://doi.org/10.1145/3487553.3524253" />
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings of the Web Conference</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2022">2022. 2022</date>
+			<biblScope unit="page" from="260" to="263" />
+		</imprint>
+	</monogr>
+	<note>WWW &apos;22</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Schímatos: A shacl-based web-form generator for knowledge graph editing</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Rodríguez Méndez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Haller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Taylor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Omran</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-3-030-62466-8_5</idno>
+		<ptr target="https://doi.org/10.1007/978-3-030-62466-8_5" />
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ISWC 2020</title>
+		<editor>
+			<persName><forename type="first">J</forename><forename type="middle">Z</forename><surname>Pan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>Tamma</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Amato</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Janowicz</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename><surname>Fu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Polleres</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">O</forename><surname>Seneviratne</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Kagal</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Cham</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="65" to="80" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Conditional Multi-Task learning for Plant Disease Identification</title>
+				<funder>
+					<orgName type="full">Agropolis Fondation, Numev, Cemeb</orgName>
+				</funder>
+				<funder ref="#_KdTJEbE">
+					<orgName type="full">DigitAG</orgName>
+				</funder>
+				<funder ref="#_UEwKxQk">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+				<funder ref="#_ubg3ebw">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Sue</forename><forename type="middle">Han</forename><surname>Lee</surname></persName>
+							<email>shlee@swinburne.edu.my</email>
+							<affiliation key="aff0">
+								<orgName type="institution">Swinburne University of Technology Sarawak Campus</orgName>
+								<address>
+									<addrLine>Jalan Simpang Tiga</addrLine>
+									<postCode>93350</postCode>
+									<settlement>Kuching</settlement>
+									<region>Sarawak</region>
+									<country key="MY">Malaysia</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Hervé</forename><surname>Goëau</surname></persName>
+							<email>herve.goeau@cirad.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">CIRAD</orgName>
+								<orgName type="institution">UMR AMAP Montpellier</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Bonnet</surname></persName>
+							<email>pierre.bonnet@cirad.fr</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">CIRAD</orgName>
+								<orgName type="institution">UMR AMAP Montpellier</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Alexis</forename><surname>Joly</surname></persName>
+							<email>alexis.joly@inria.fr</email>
+							<affiliation key="aff3">
+								<orgName type="institution">INRIA Montpellier</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Conditional Multi-Task learning for Plant Disease Identification</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">B69CF21734F61AE27C30CBDB99F427C5</idno>
+					<idno type="DOI">10.1109/ICPR48806.2021.9412643</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>plant disease identification, multi-task learning</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Several recent studies have proposed an automatic plant disease identification system based on deep learning. However, these approaches are generally based on learned classification models with target classes of joint host species-disease pairs that may not allow optimal use of the available information. This is because these approaches require distinguishing between similar host species or diseases, and more importantly, they have limited scalability due to the size of a network gradually increases as new classes are added, despite the fact that information on host species or diseases is already available. This constraint is all the more important as it can be difficult to collect/establish a specific list of all diseases for each host plant species in an actual application. In this paper, we address the problems by proposing a new conditional multi-task learning (CMTL) approach which allows the distribution of host species and disease characteristics learned simultaneously with a conditional link between them. This conditioning is formed in such a way that the knowledge to infer the prediction of one concept (the diseases) depends on the other concept (the host species), which corresponds to the way plant pathologists used to infer the diseases of the host species. We show that our approach can improve the performance of plant disease identification compared to the usual species-disease pair modeling in the previous studies. Meanwhile, we also compose a new dataset on plant disease identification that could serve as an important benchmark in this field.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Plant diseases are a major threat to agricultural production, causing a severe food recession and affecting crop quality <ref type="bibr" target="#b1">[2]</ref>. To detect diseases in crops, plant pathologists generally use molecular and serological methods or measurements of various parameters such as morphological change, temperature change, change in transpiration rates and emission of volatile organic compounds from infected plants <ref type="bibr" target="#b2">[3]</ref>. Expert consultation is one of the major way to control plant diseases, but it is time consuming and expensive, and it is not always easy to find an available pathologist, specialist of the target crop or disease. In recent years, automated plant disease identification has been introduced into plant taxonomy to potentially fill gaps in human disease identification capabilities. Researchers use deep learning techniques to automatically identify diseases of single or multiple host species. In this paper, the scope of research is not limited to diseases of a single host species, but Fig. <ref type="figure">1</ref>. The identification of plant diseases is based on two main concepts which are host species and diseases. These two concepts are closely related and can be structurally linked in such a way that knowledge of one concept (j) depends on the other (i). In this case, i is equivalent to the host species concept while j is the disease concept. Such modeling corresponds to the way plant pathologists use species information to infer associated diseases <ref type="bibr" target="#b0">[1]</ref>.</p><p>to a large number of diseases of several host species in order to increase the flexibility of applications in different fields.</p><p>To learn the representation of diseases of multiple host species <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, in all cases, researchers trained standard convolutional neural network (CNN) models to distinguish characteristics based on joint species-disease classes, for example: Grape Black rot, Apple Apple scab and Apple Black rot. Although successfully, it requires that the size of the network gradually increases when new classes are added, even though there is already information on crops or diseases. In addition, we consider that it would be very difficult, if not impossible, in a real application to collect a complete set of images illustrating each species-disease pair. In fact, it may not be easy to establish a specific list of all diseases for each host species. We note that pathogens with a wide host range can infect many different host species. For example, as reported in <ref type="bibr" target="#b6">[7]</ref>, nearly 200 plant species can be infected by bacterial wilt (Ralstonia solanacearum). Therefore, a new strategy is needed to improve the efficiency of plant disease identification modelling in order to increase the flexibility to transfer knowledge from one disease context to another.</p><p>In this paper, we propose to use a conditional multi-task learning (CMTL) in the identification of plant diseases, replacing previous modelling approaches <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref> with joint host species-disease pairs. More specifically, we propose to model two main concepts/tasks which are host species and diseases through multi-task learning, and each concept is represented by its own feature distribution but they are strongly linked by a specific conditional structure, as shown in Fig. <ref type="figure">1</ref>. This structured process corresponds not only to the fundamental building block of human intelligence to reason for everyday visual input on the basis of related prior knowledge <ref type="bibr" target="#b7">[8]</ref>, but more importantly, corresponds to the way plant pathologists use species information to infer the associated diseases <ref type="bibr" target="#b0">[1]</ref>. Therefore, unlike previous works on large-scale multitasking <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b10">[11]</ref>, in this paper, we aim to solve the problem of plant disease identification tasks where the tasks are interrelated of which the representation of one task is considered an obvious indicator for inferring the other task.</p><p>In short, the contributions of the paper are as follows:</p><p>1) This paper presents a new method for classifying plant diseases. It deploys a multi-task learning mechanism and proposes a conditional scheme strongly adapted to the context of plant disease identification.</p><p>2) The experimental results show that our proposed conditional multi-task learning can improve the performance of plant disease identification compared to the traditional joint species-disease pair modeling. 3) We compose a new dataset that is used for benchmarking the accuracy of plant disease identification. To our knowledge, this is the first plant disease identification dataset that covers the largest number of host species and diseases. In exact, we have 1145 joint species-disease classes, 311 host species and 289 diseases, which is larger than the well-known PlantVillage dataset <ref type="bibr" target="#b3">[4]</ref> with only 38 joint species-disease, 14 host species and 20 number of diseases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. RELATED WORKS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Plant disease identification</head><p>Early studies on automated identification of plant diseases focused primarily on one single host species and relied on hand-crafted approaches, but as deep learning techniques have demonstrated extremely high recognition capabilities in many image recognition tasks, multi-host species and diseases based models are receiving increasing attention <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref>. To form a multi-host species and diseases model, a straightforward approach is to consider target classes as joint species-diseases <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b15">[16]</ref>, as shown in Fig. <ref type="figure" target="#fig_0">2c</ref>. Although successful, there remains a doubt as to whether the characteristics learned from such model are optimal for identifying plant diseases, especially when the model is trained to discriminate similar host species or diseases. A potentially undesirable effect that may occur is that the model learns more from the content related to the species than the visual content related to the disease <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b12">[13]</ref>. This adverse effect can potentially be amplified if a species has a very pronounced characteristics while the disease's features are not very visible. In addition, it requires that the size of the network gradually increases when new classes are added, even though there is already information on crops or diseases. Although <ref type="bibr" target="#b12">[13]</ref> addressed the problem by proposing a symptoms oriented feature modelling strategy by considering only diseases without considering host species, this strategy may not be consistent with the perception of expertise in distinguishing plant diseases, particularly when information on host species is often needed to delineate lists of diseases associated with host species <ref type="bibr" target="#b0">[1]</ref>. This observation prompts us to examine methods that could use prior knowledge of host species to assist disease inference. Therefore, to overcome these limitations, in this work, we study an alternative approach to the usual modeling of joint species-disease pairs by proposing a new approach based on conditional multi-task learning (CMTL). We individually model the distribution of the host species and diseases, and train them simultaneously using our proposed CMTL method. The hypothesis is that such intuitive modeling will engage the model to learn better individual characteristics of the host species and the disease, while exploiting the relationship between them based on a conditional learning scheme that will be explained in Sec. III.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Multi-task learning (MTL)</head><p>Inspired by the ability of humans to generalize and transfer knowledge acquired in one type of activity to other related tasks, MTL has been widely explored in the field of artificial intelligence to accelerate up the learning process and improve the generalization performance of multiple tasks. It has been successfully applied from speech and natural language processing to computer vision, bioinformatics, health informatics, web applications and ubiquitous computing <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref>. There are multiple learning tasks in MTL, each of which can be a general learning task such as supervised tasks (classification and regression problems), unsupervised tasks (clustering problem), semi-supervised tasks, reinforcement learning tasks, etc. Among these learning tasks, it is assumed that all or at least a subset of them are related to each other. In fact, there is evidence that joint learning of these tasks can lead to a considerable improvement in performance compared to learning them individually <ref type="bibr" target="#b19">[20]</ref>, <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref>. General approaches based on deep learning can be categorised into soft and hard parameters sharing <ref type="bibr" target="#b20">[21]</ref>, <ref type="bibr" target="#b21">[22]</ref>. In the soft parameter sharing, each task is modeled by its own parameters, while for the hard parameter sharing approach, the hidden layer parameters are shared between all tasks while keeping several output layers specific to the tasks. Since in the case of soft parameter sharing, the size of the network increases linearly with the number of tasks (which is not so effective in terms of parameters compared to the hard parameter sharing), and since hard parameter based approach has been recognised as the most commonly used approach for MTL <ref type="bibr" target="#b17">[18]</ref>, we use it to test our concept. Next, to adapt this context to the identification of plant diseases, we improvise the classical MTL approach (Fig. <ref type="figure" target="#fig_0">2a</ref>) by introducing CMTL strategy (Fig. <ref type="figure" target="#fig_0">2e</ref>), and by experimental analysis, we show that CMTL approaches can achieve better performance compared to MTL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. METHODOLOGY A. Definitions and Preliminaries</head><p>In the general framework of MTL, given an entry x with several classification tasks t i where i = 1,2,...,k, the predictive modeling can be formulated by <ref type="bibr" target="#b22">[23]</ref>:</p><formula xml:id="formula_0">P (t 1 , .., t k /f (x)) = P (t 1 /f (x))...P (t k /f (x)) (1)</formula><p>where f (x) is neural network function that takes into account x and is parameterized by a weight vector w. The w consist of the trainable shared weights w sh and the task-specific weights w ts .</p><p>In this paper, we aim to solve two related classification tasks in the identification of plant diseases by giving an input image x. These two related classification tasks are the identification of diseases and host species. We present a new strategy, called CMTL, in which it introduces a conditional learning mechanism of task relationship where the learning of the characteristics of a task is conditioned by another task. Thus, unlike the traditional formulation in Eqn. (1), predictive modeling is formulated in such a way that:</p><formula xml:id="formula_1">P (t s , t d /f (x)) = P (t s /f s (x))P (t d /f s (x), f d (x))<label>(2)</label></formula><p>where s and d represent the host species and disease respectively. To achieve the conditional probability</p><formula xml:id="formula_2">P (t d /f s (x), f d (x))</formula><p>, we learn the conditional function f c (x) by employing two different approaches which are the conditional feature fusion and conditional feature-wise linear modulation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Conditional feature fusion</head><p>The feature fusion based approach is responsible to softly forward the disease-specific features conditioning on the species-specific features for the disease predictive modeling via feature fusion. We test with two common fusion strategies: sum fusion and cascade fusion.</p><p>1) Sum fusion: In sum fusion (Fig. <ref type="figure" target="#fig_1">3a</ref>), it learns functions of H σ and H γ which output σ and γ as a function of w ts s (x) and w ts d (x) respectively, and both signals are modulated via the following functions:</p><formula xml:id="formula_3">σ = H σ (w ts s (x)) γ = H γ (w ts d (x))<label>(3)</label></formula><formula xml:id="formula_4">f c (x) = tanh(σ + γ)<label>(4)</label></formula><p>w ts i is the function of the first embedding layer of task i, producing hidden units w ts i (x) ∈ R 1×N and N is the number of hidden units. H σ and H γ can be arbitrary functions such as neural networks while in this case are formed using fully connected layers.</p><p>2) Cascade fusion: Different from the sum fusion, both the output neurons σ and γ are cascaded and then pass through a reduction layer before the logits layer, as illustrated in Fig. <ref type="figure" target="#fig_1">3b</ref>. More formally, the function is formulated as follows:</p><formula xml:id="formula_5">σ = H σ (w ts s (x)) γ = H γ (w ts d (x))<label>(5)</label></formula><formula xml:id="formula_6">f c (x) = relu(H β ([σ, γ]))<label>(6)</label></formula><p>where the cascaded features have size R 1×2N and H β is the reduction function formed using fully connected layer. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Conditional feature-wise linear modulation</head><p>Feature-wise linear modulation (FiLM), considered as a conditional normalization method <ref type="bibr" target="#b23">[24]</ref>, has been widely used in several recent works proposing conditioning networks. For example, conditional image synthesis <ref type="bibr" target="#b24">[25]</ref>, image-based question answering <ref type="bibr" target="#b23">[24]</ref> and conditional auto encoder for open set recognition <ref type="bibr" target="#b25">[26]</ref>. In this work, we use the same approach to modulate the features of the disease at the fully connected layer, conditioned by information on the host species, as shown in Fig. <ref type="figure" target="#fig_1">3c</ref>. As a function of input host species features w ts s (x), the FiLM conditioning layer on the disease features w ts d (x) is formulated as follows:</p><formula xml:id="formula_7">σ j = H σ (w ts s (x)) β j = H β (w ts s (x))<label>(7)</label></formula><formula xml:id="formula_8">f c (x) = σ j H γ (w ts d,j (x)) + β j<label>(8)</label></formula><p>where H σ and H β are fully connected layers learned as a function of w ts s (x) while H γ is fully connected learned as a function of w ts d (x), subscript j is refer to the j th neurons and the defines the Hadamard product. Fig. <ref type="figure" target="#fig_1">3c</ref> illustrates the FiLM conditioning configuration.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Identical mapping</head><p>With the features F output from the conditional layer f c , we introduce an identical function to allow the disease embedding features w ts d (x) and F to be combined as input to the next layer as follows:</p><formula xml:id="formula_9">y = relu(F + w ts d (x))<label>(9)</label></formula><p>The function is illustrated by the dotted contents in Fig. <ref type="figure" target="#fig_1">3a-c</ref>. This approach builds on the work on residual learning <ref type="bibr" target="#b26">[27]</ref> to ensure that the performance of the model with conditional learning mechanism is not degraded compared to a model without conditional learning. In addition, such a skip architecture could help to enrich the features of the final layer of the disease with the information that has been captured in the initial layers. We provide a detailed performance analysis in Sec. V.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. Training objective</head><p>This paper aims to solve multi-task classification in the identification of plant diseases by giving an input image of x. The output of the last hidden layer corresponding to the i-th task is normalized by the softmax function</p><formula xml:id="formula_10">P i (r|x) = e sr,i<label>(x)</label></formula><p>M m=1 e sm,i(x) <ref type="bibr" target="#b9">(10)</ref> where M and r represent the total number of classes and the target class respectively, while s(x) represents the final activation of the x input image obtained in the last hidden layer/logits layer. After performing the softmax operation, we find the maximum likelihood of the sample by applying the objective function, L i = -logP i (r|x). To optimize both tasks t s and t d , we simply add up both losses L = L s + L d .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. PLANT DISEASE DATASET</head><p>In the area of identification of plant diseases for multiple host species, there are not many publicly available datasets with which researchers can work and, in many cases, researchers must develop their own datasets. The process, from the collection of samples to verification by the plant's experts, can take several hours or days of work. To date, only two main datasets with trusted labels are available online: PlantVillage (PV) <ref type="bibr" target="#b3">[4]</ref> and Digipathos <ref type="bibr" target="#b27">[28]</ref>. The majority of studies are based on the PV dataset <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b3">[4]</ref>, which is currently the largest dataset containing 54305 number of images. However, PV images are collected in a constrained environment with a homogeneous background, and the model trained using these images does not work well with images captured in a realistic scenario (such as in field conditions). This can be seen from the huge drop in model performance in <ref type="bibr" target="#b3">[4]</ref> when it was used to predict images captured in environment with cluttered backgrounds, reflecting a real-world scenario. Although the Digipathos dataset addresses the above problem, the number of images is too small (less than 5%) compared to the number of PV images, which is 2326 images. Therefore, in this work, we create a new dataset on diseases of multiple host species that contains not only images captured in a homogeneous background, but also images captured in agricultural fields, in order to fit to a real-life scenario.</p><p>To build a new dataset, we downloaded the plant disease images from IPM website (https://www.ipmimages.org/) where the images were verified and contributed by the expertise in plant disease management, and also using a combination of PV and Digipathos to enlarge the database. From IPM website, we were able to download a total of 5334 images with complete information on host species and diseases. Since the PV dataset contains only images captured under a constrained background and the total number of images is larger than the samples that were captured in a real scenario, to avoid biasing the dataset into PV images constrained by a homogeneous background, we took only a subset of images (∼20 number of images) for each PV class. Next, we acquired healthy images from the Pl@ntNet database (http://identify.plantnetproject.org/) through a visual verification step. Based on these processes, we obtained a total of 12,290 images with 1146 joint species-disease labels, 311 host species and 289 number of diseases (288 diseases + 1 healthy label). In addition, it covers a total of 7163 healthy images and 5122 unhealthy images. We then randomly separated the images into training and validation set with a number of 10324 (∼80%) and 1966 (∼20%) respectively. The distribution of the training and validation set for each dataset is shown in the Table <ref type="table">I</ref>. Note that these images composed of different plant organs such as the leaf, branch, stem and fruit. Although the new database contains fewer images than the PV database, it is more complex due to a larger number of classes and more diverse images, making the task more realistic and difficult.</p><p>As for the testing set, we received images collected by </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTS AND RESULTS</head><p>To test the concept of the CMTL mechanism, we built our network upon Inception-V3. The final activation layer of Inception-V3 were modified according to the different strategies proposed as explained in Sec. III. We used random cropping of images during pre-processing for training as well as mirroring and color data augmentation. During model evaluations, each test image was cropped in the center. All images were resized to 299 × 299. We trained our models using the Tensorflow library <ref type="bibr" target="#b28">[29]</ref>. The networks were trained with back-propagation, using stochastic gradient descent. For the training parameter setting, we employed the fixed learning policy. We set the learning rate to 0.01, and then decreased it by a factor of 10 until the validation set accuracy stops improving. The momentum was set to 0.9 and the weight decay to 0.0001. In all experiments, we used a mini-batch size of 45. We run the experiments using an NVIDIA GTX1080 graphics card.</p><p>Baseline models In this section, we analyzed the classification performance of the proposed models and compared them to three reference models: (1) Generic MTL (Fig. <ref type="figure" target="#fig_0">2a</ref>), (2) single nets (Fig. <ref type="figure" target="#fig_0">2b</ref>) and (3) joint net (Fig. <ref type="figure" target="#fig_0">2c</ref>). To model generic MTL, we replaced the final activation layer of Inception-V3 with two fully connected branched layers for the classification of diseases and host species. Specifically, having the same shared layers as our proposed models, each task-specific layer is composed of an individual task embedding layer and a logit layer. On the other hand, single nets are two distinct models formed with different tasks, the classification of host species and diseases. In this model, we replaced the final activation layer of the Inception-V3 with a new logit layer corresponding to the respective task. Next, joint net is a network formed using conventional modeling of joint species-diseases, which is widely used by <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b15">[16]</ref>. For this model, we replaced the final activation layer of the Inception-V3 with a new logit layer to classify the joint species-disease classes. Particularly, in order to obtain a fair comparison, all trained models were built on Inception-V3 to obtain the same model depth. Next, we also compare our proposed models to the classification model <ref type="bibr" target="#b11">[12]</ref> (Fig. <ref type="figure" target="#fig_0">2d</ref>) that was designed to solve two closely related tasks of visual fashion analysis. In spite of the tasks are not in the field of plant diseases but the characteristic of the targeted problem aligned with the problem we intended to solve. The details of this architecture will be explained later in the sub-section 'Compared to the state-of-the-art'. We called this architecture Fashion net.</p><p>Evaluation methods To measure the model classification performance on the validation set, we used the top-1 accuracy in our experiments and also the average accuracy per class (Ave) to assess the performance of every individual class. Besides evaluating the classification performance of each task (the identification of infectious diseases and hosts species) itself, we also measured the extent to which the models can correctly predict the conjoint species-disease classes. It should be noted that with the exception of the joint net with immediate probability output for each class of joint species-disease, other modeling techniques require post-calculation to obtain this conjoint prediction. To do this, we multiply the probability outputs of the host species and disease, and measure the ranking based on the 1146 joint species-disease labels. Table <ref type="table" target="#tab_2">III</ref> shows the comparison results.</p><p>As for the evaluation of the testing set, the prediction of models takes into account all possible combinations, which corresponds to the total number of diseases × the total number of host species. However, it should be noted that the joint net prediction outputs are limited to 1146 joint species-disease classes. Hence, to test the ability of the joint net to identify all possible combinations of host species and diseases, we first extract prediction for each host species and disease by calculating the average probability output of the conjoint classes associated with them, then multiply the probability outputs of the host species and disease.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Performance analysis on validation set</head><p>From Table <ref type="table" target="#tab_2">III</ref>, it can be seen that the conditional FFS-res achieved the highest accuracy for all predictions. In particular the conjoint prediction which reached 69.43%, surpassing the joint net <ref type="bibr" target="#b14">[15]</ref>, <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b27">[28]</ref> that was widely used before, which reached only 68.82%. In addition, compared to all the baseline approaches, the conditional FFS-res showed a highest accuracy for both diseases and host species. This indicates that characteristics learned using the conditional FFS-res are more robust, contributing to the highest optimal prediction for each individual classification task. Next, we find that identical mapping (-res) could help improve the performance of approaches based on conditional FFS and FFC. For example, in the case of conditional FFS-res and FFC-res, each has an increase of 2.09% and 0.87% in conjoint prediction when compared to the conditional FFS and conditional FFC respectively. However, this is not the case of conditional FiLM. This may be due to the fact that FiLM has introduced a certain amount of conditioning by means of affine transformation of features. The introduction of identity mapping after this transformation to deviate the features again may not produce a better response. More conditional hidden layers are probably needed as depicted in <ref type="bibr" target="#b29">[30]</ref> before introducing the identity mapping.</p><p>Compared to the state-of-the-art Many areas of research use MTL to improve the application concerned. Among these areas, the problem addressed in <ref type="bibr" target="#b11">[12]</ref> on the classification of clothing categories is more relevant to the problem we intend to solve. Specifically, they addressed two classification tasks that consist of classifying clothing categories and clothing attributes, and these two tasks are strongly related to each other. Unlike our proposed CMTL and the baseline generic MTL, the MTL proposed in <ref type="bibr" target="#b11">[12]</ref> does not have an individual task embedding layer before the logits layer. To study the impact of this architecture, we imply the same concept in modeling the identification of plant diseases, without involving the attention mechanism in order to have a fair comparison to our proposed model, we called it Fashion net. The Table <ref type="table" target="#tab_2">III</ref> shows that with the proposed CMTL methods and even with the generic MTL, the performances are better than the Fashion net. This therefore indicates the importance of task specific embedding layers for each task. introduce a difference in performance, we therefore tested the knowledge transfer of the other cycle, i.e. the injection of disease information into the host species. Table <ref type="table" target="#tab_3">IV</ref> presents the results of the comparison. It can be seen that that the performance of S→D modeling is still better compared to the D→S. This could be due to the fact that the number of classes for species is higher, resulting in a greater diversity of learned features in the species layer, which could provide more information to the disease concept. In addition, it is also possible that having an initial knowledge of the species may be easier to infer disease than the other way around.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Performance of individual dataset</head><p>We compare the performance of each dataset detailed in the Sec. IV and show in Table <ref type="table">V</ref>. We can see that, for the validation sets, in general, all models were able to obtain a better classification result (greater than 80%) in Digipathos and PV compared to IPM and Pl@ntNet. This is due to the fact that the images captured in Digipathos and PV come mainly from an easy and less noisy background than in IPM and Pl@ntNet where the images are mainly captured in fields cluttered by a complicated and noisy background.</p><p>As for the INRAEdi testing set, we can see that the overall performance of the models has decreased. We found that most of the wrongly classified samples have the prediction results for the disease classification biased in favour of the "healthy" class because the training images for the healthy class are comparatively larger compared to the other disease classes. This inevitably shows that the class imbalance in the training data had an impact on the generalization of the models. Besides that, the conjoint host species and disease classes that has not been seen by the model during training was found also another factor that affects the classification performance. However, we notice that the overall performance of the host species is generally much higher than that of the diseases. This is believed to be due to the fact that the host species classifier is more generalized and that the characteristics of the model to differentiate host species are more distinctive in relation to those of diseases, or conversely, that the visual appearance of diseases is more variable. Apart from that, it can be seen that the single net and the joint net are clearly lagging behind compared to those MTL based models, showing the importance of MTL in modelling plant disease identification to capture not only individual characteristics but also the mutual characteristics between each concept/task.</p><p>From Table <ref type="table">V</ref>, although we could not conclude which CMTL based approaches perform best because each approach achieved the highest accuracy in different datasets, we show that CMTL-based approaches generally outperform baselines, showing a significant improvement in the identification of plant diseases.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION</head><p>This paper has shown that a multi-task learning approach is more efficient than the usual CNN modeling method, the joint net, in plant disease identification. Furthermore, with the CMTL conditional learning mechanism, we could achieve better performance, which could serve as a reference for researchers working in the same field. The future direction of our research is to address the problem of class imbalance that resides in the current dataset and to explore possible alternatives to improve CMTL methods to deal with it. In addition, further research will be carried out to explore new alternatives to solve problems where knowledge of host species and diseases is limited during training and where unknown classes may appear during testing. Finally, our new dataset covering more host species and diseases than the PV <ref type="bibr" target="#b3">[4]</ref> and Digipathos <ref type="bibr" target="#b27">[28]</ref> is obviously more challenging, which encourages researchers in this field to continue to venture further.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Examples of CNN models used in the experiments. In order to obtain a fair comparison, all models were built on Inception-V3 with the same size of shared layers (depth). (a), (b) and (c) illustrate the baselines architectures of different configurations. (a) which is called the generic MTL is composed of shared layers and task-specific layers, (b) which is called the single nets is composed of individual networks for each concept and (c) which is called the Joint net illustrates the conventional classification of plant diseases with joint species-disease modelling. (d) is the classification model proposed by [12] which was designed to solve two closely related tasks of visual fashion analysis. We called it Fashion net. (e) is our proposed new terminology CMTL where predictive modeling of one concept depends on the other.</figDesc><graphic coords="4,72.27,50.54,359.85,153.94" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Examples of our CMTL proposals: Conditional feature fusion scheme -(a) Sum (FFS) and (b) Cascade (FFC) fusion, and (c) Conditional feature-wise linear modulation (FiLM). Note that the identical mapping which is introduced to enrich the features of the disease layer is illustrated with dotted line.</figDesc><graphic coords="5,40.60,50.54,514.07,220.76" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="2,303.62,229.87,251.07,274.45" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE II LISTS</head><label>II</label><figDesc>AND NUMBER OF IMAGES PROVIDED BY THE INRAE PHYTOPHATOLOGIST, WHICH IS USED AS A TESTING SET. NOTE THAT, THE NAMES ARE WRITTEN IN THE FORM 'species disease'. The collection consists of 4 well-known plant diseases which are listed in the Table II. By comparing INRAEdi with the aforementioned database listed in Table I, we note that the class Zucchini P odosphaera xanthii is new but its individual species and disease classes exist in the database listed in Table I. In fact, this condition is somewhat consistent with the problems encountered in the actual scenario where complete species and disease data would not always be available when training a model. Although the INRAEdi data is not large, it allows us to assess the effectiveness of a model in transferring knowledge from one disease context to another.</figDesc><table><row><cell>Name</cell><cell>Total images</cell></row><row><cell>Zucchini P odosphaera xanthii</cell><cell>90</cell></row><row><cell>T omato Cladosporiose</cell><cell>82</cell></row><row><cell>V ine P lasmopara viticola</cell><cell>150</cell></row><row><cell>T omato T oM V</cell><cell>66</cell></row><row><cell cols="2">INRAE plant pathologists in the field, and we named this</cell></row><row><cell>dataset INRAEdi.</cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>TABLE III CLASSIFICATION</head><label>III</label><figDesc>RESULTS OF DIFFERENT MODEL CONFIGURATIONS. WE DENOTE THE NEW METHODS OF CONDITIONAL FEATURE FUSION: SUM AND CASCADE FUSION BY CONDITIONAL FFS AND FFC RESPECTIVELY, AND IDENTITY MAPPING IN THE FORM OF 'RES'.</figDesc><table><row><cell>Model</cell><cell cols="4">Conjoint prediction Diseases Host species</cell></row><row><cell></cell><cell>Top-1</cell><cell>Ave</cell><cell>Top-1</cell><cell>Top-1</cell></row><row><cell>conditional FFS-res</cell><cell>69.43</cell><cell>64.79</cell><cell>82.96</cell><cell>78.64</cell></row><row><cell>conditional FFS</cell><cell>67.34</cell><cell>61.96</cell><cell>81.59</cell><cell>77.52</cell></row><row><cell>conditional FFC-res</cell><cell>68.06</cell><cell>62.58</cell><cell>81.84</cell><cell>77.67</cell></row><row><cell>conditional FFC</cell><cell>67.19</cell><cell>62.55</cell><cell>81.38</cell><cell>77.11</cell></row><row><cell>conditional FiLM-res</cell><cell>68.01</cell><cell>62.97</cell><cell>82.15</cell><cell>76.91</cell></row><row><cell>conditional FiLM</cell><cell>68.62</cell><cell>64.39</cell><cell>82.86</cell><cell>77.16</cell></row><row><cell>Generic MTL</cell><cell>68.16</cell><cell>62.91</cell><cell>82.76</cell><cell>76.96</cell></row><row><cell>Single nets</cell><cell>68.67</cell><cell>63.10</cell><cell>82.25</cell><cell>78.48</cell></row><row><cell>Joint net</cell><cell>68.82</cell><cell>64.27</cell><cell>82.15</cell><cell>76.70</cell></row><row><cell>Fashion net [12]</cell><cell>66.48</cell><cell>61.53</cell><cell>81.49</cell><cell>76.09</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>TABLE IV COMPARISON</head><label>IV</label><figDesc>RESULTS OF THE CONDITIONAL FFS-RES APPROACH FOR DIFFERENT KNOWLEDGE DISTRIBUTION MODELS. NOTE THAT S→D STANDS FOR DISEASE LAYER CONDITIONED ON SPECIES AND D→S FOR SPECIES LAYER CONDITIONED ON DISEASE.</figDesc><table><row><cell cols="7">Model Conjoint prediction Diseases Host species</cell></row><row><cell></cell><cell>Top-1</cell><cell cols="2">Ave</cell><cell cols="2">Top-1</cell><cell>Top-1</cell></row><row><cell>S→D</cell><cell>69.43</cell><cell cols="2">64.79</cell><cell cols="2">82.96</cell><cell>78.64</cell></row><row><cell>D→S</cell><cell>68.51</cell><cell cols="2">63.02</cell><cell cols="2">82.81</cell><cell>77.01</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">TABLE V</cell><cell></cell></row><row><cell cols="7">THE TOP-1 CONJOINT PREDICTION FROM DIFFERENT MODEL</cell></row><row><cell cols="7">CONFIGURATIONS ON EACH DATASET: (1) PV, (2) DIGIPATHOS, (3) IPM,</cell></row><row><cell></cell><cell cols="6">(4) PL@NTNET AND (5) INRAEDI</cell></row><row><cell>Model</cell><cell></cell><cell>PV</cell><cell cols="2">Digipathos</cell><cell>IPM</cell><cell>Pl@ntNet INRAEdi</cell></row><row><cell cols="2">conditional FFS-res</cell><cell>93.84</cell><cell>85.80</cell><cell></cell><cell>64.16</cell><cell>61.99</cell><cell>8.76</cell></row><row><cell cols="2">conditional FFS</cell><cell>91.10</cell><cell>86.09</cell><cell></cell><cell>61.70</cell><cell>59.28</cell><cell>16.49</cell></row><row><cell cols="2">conditional FFC-res</cell><cell>94.52</cell><cell>86.38</cell><cell></cell><cell>61.82</cell><cell>60.33</cell><cell>16.24</cell></row><row><cell cols="2">conditional FFC</cell><cell>94.52</cell><cell>84.64</cell><cell></cell><cell>60.47</cell><cell>60.33</cell><cell>13.40</cell></row><row><cell cols="2">conditional FiLM-res</cell><cell>91.78</cell><cell>85.22</cell><cell></cell><cell>63.67</cell><cell>59.13</cell><cell>7.99</cell></row><row><cell cols="2">conditional FiLM</cell><cell>93.15</cell><cell>83.77</cell><cell></cell><cell>65.27</cell><cell>59.43</cell><cell>9.28</cell></row><row><cell cols="2">Generic MTL</cell><cell>93.15</cell><cell>85.51</cell><cell></cell><cell>62.68</cell><cell>60.33</cell><cell>9.54</cell></row><row><cell cols="2">Single nets</cell><cell>93.84</cell><cell>84.35</cell><cell></cell><cell>63.18</cell><cell>61.69</cell><cell>2.06</cell></row><row><cell cols="2">Joint net</cell><cell>91.10</cell><cell>85.51</cell><cell></cell><cell>65.02</cell><cell>59.88</cell><cell>6.96</cell></row><row><cell cols="2">Fashion net [12]</cell><cell>90.41</cell><cell>84.64</cell><cell></cell><cell>61.70</cell><cell>57.62</cell><cell>13.40</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Prior knowledge assessment In the current CMTL approach, we assume a unidirectional distribution of prior knowledge, i.e. information about the species is injected into the disease layer or we can say that the disease characteristics are species-dependent. However, it is possible that from the disease information we can link to possible crops. In order to determine whether different ways of linking knowledge</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGMENT</head><p>This research project was supported by <rs type="funder">Agropolis Fondation, Numev, Cemeb</rs>, #<rs type="funder">DigitAG</rs>, under the reference <rs type="grantNumber">ID 1604-019</rs> through the <rs type="programName">"Investissements d'avenir" programme (</rs><rs type="projectName">Labex Agro</rs>:<rs type="grantNumber">ANR-10-LABX-0001-01</rs>). This work was also supported by the <rs type="funder">French National Research Agency</rs> under the <rs type="programName">Investments for the Future Program</rs>, referred as <rs type="grantNumber">ANR-16-CONV-0004</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_KdTJEbE">
+					<idno type="grant-number">ID 1604-019</idno>
+					<orgName type="project" subtype="full">Labex Agro</orgName>
+					<orgName type="program" subtype="full">&quot;Investissements d&apos;avenir&quot; programme (</orgName>
+				</org>
+				<org type="funding" xml:id="_UEwKxQk">
+					<idno type="grant-number">ANR-10-LABX-0001-01</idno>
+					<orgName type="program" subtype="full">Investments for the Future Program</orgName>
+				</org>
+				<org type="funding" xml:id="_ubg3ebw">
+					<idno type="grant-number">ANR-16-CONV-0004</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Plant disease diagnosis</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">B</forename><surname>Riley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">R</forename><surname>Williamson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Maloy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Plant Health Instructor</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Smart farming: Pomegranate disease detection using image processing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bhange</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hingoliwala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Procedia Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="page" from="280" to="288" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Current and prospective methods for plant disease detection</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">P</forename><surname>Ramasamy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">C</forename><surname>Rains</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biosensors</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="537" to="561" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Using deep learning for image-based plant disease detection</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Mohanty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Hughes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Salathé</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in plant science</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page">1419</biblScope>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">A comparative study of fine-tuning deep learning models for plant disease identification</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">C</forename><surname>Too</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yujian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Njuki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yingchun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computers and Electronics in Agriculture</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Deep learning models for plant disease detection and diagnosis</title>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">P</forename><surname>Ferentinos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computers and Electronics in Agriculture</title>
+		<imprint>
+			<biblScope unit="volume">145</biblScope>
+			<biblScope unit="page" from="311" to="318" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Effects of host variability on the spread of invasive forest diseases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Prospero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cleary</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Forests</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">80</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">The neuroscience of human intelligence differences</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">J</forename><surname>Deary</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Penke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Johnson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature reviews neuroscience</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page">201</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">The cityscapes dataset for semantic urban scene understanding</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Cordts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Omran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ramos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rehfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Enzweiler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Benenson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Franke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Schiele</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<meeting>of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Deepreid: Deep filter pairing neural network for person re-identification</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Geodesic flow kernel for unsupervised domain adaptation</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Sha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Grauman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2012 IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="2066" to="2073" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Attentive fashion grammar network for fashion landmark detection and clothing category classification</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S.-C</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4271" to="4280" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">New perspectives on plant disease characterization based on deep learning</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">H</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Goëau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bonnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Joly</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computers and Electronics in Agriculture</title>
+		<imprint>
+			<biblScope unit="volume">170</biblScope>
+			<biblScope unit="page">105220</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Convolutional neural networks for the automatic identification of plant diseases</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boulent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Foucher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Théau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-L</forename><surname>St-Charles</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Frontiers in plant science</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Solving current limitations of deep learning based approaches for plant disease detection</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arsenovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Karanovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sladojevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Anderla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Stefanovic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Symmetry</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page">939</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Plant disease and pest detection using deep learning-based features</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Ürko Glu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hanbay</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Turkish Journal of Electrical Engineering &amp; Computer Sciences</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="1636" to="1651" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">How convolutional neural networks diagnose plant disease</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Toda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Okura</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Plant Phenomics</title>
+		<imprint>
+			<biblScope unit="volume">2019</biblScope>
+			<biblScope unit="page">9237136</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">An overview of multi-task learning in deep neural networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruder</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.05098</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">An overview of multi-task learning</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">National Science Review</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="30" to="43" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<idno type="arXiv">arXiv:1707.08114</idno>
+		<title level="m">A survey on multi-task learning</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Multitask learning: A knowledge-based source of inductive</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Caruana</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Tenth International Conference on Machine Learning</title>
+		<meeting>the Tenth International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<biblScope unit="page" from="41" to="48" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Multitask learning</title>
+	</analytic>
+	<monogr>
+		<title level="j">Machine learning</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="41" to="75" />
+			<date type="published" when="1997">1997</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Multi-task learning using uncertainty to weigh losses for scene geometry and semantics</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cipolla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="7482" to="7491" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Film: Visual reasoning with a general conditioning layer</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Strub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">De</forename><surname>Vries</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dumoulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Courville</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-Second AAAI Conference on Artificial Intelligence</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Semantic image synthesis with spatially-adaptive normalization</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-Y</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T.-C</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-Y</forename><surname>Zhu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2337" to="2346" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">C2ae: Class conditioned auto-encoder for openset recognition</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Oza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">M</forename><surname>Patel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</title>
+		<meeting>the IEEE Conference on Computer Vision and Pattern Recognition</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="2307" to="2316" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE conference on computer vision and pattern recognition</title>
+		<meeting>the IEEE conference on computer vision and pattern recognition</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Annotated plant pathology databases for imagebased detection and recognition of diseases</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">G A</forename><surname>Barbedo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V</forename><surname>Koenigkan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Halfeld-Vieira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">V</forename><surname>Costa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">L</forename><surname>Nechet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">V</forename><surname>Godoy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Junior</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">R A</forename><surname>Patricio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Talamini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">G</forename><surname>Chitarra</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Latin America Transactions</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1749" to="1757" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Tensorflow: A system for largescale machine learning</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Abadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Dean</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Devin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ghemawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Irving</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Isard</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">12th {USENIX} Symposium on Operating Systems Design and Implementation ({OSDI} 16)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="265" to="283" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">Learning visual reasoning without strong priors</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Perez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">De</forename><surname>Vries</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Strub</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dumoulin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Courville</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1707.03017</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

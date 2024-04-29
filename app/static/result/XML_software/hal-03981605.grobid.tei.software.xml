@@ -1,0 +1,1497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">One-Shot Federated Conformal Prediction</title>
+				<funder ref="#_4DF7nMS">
+					<orgName type="full">Inria-EPFL</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">Institut Universitaire de France</orgName>
+					<orgName type="abbreviated">IUF</orgName>
+				</funder>
+				<funder ref="#_BfvDET3 #_8MDT2gm">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Pierre</forename><surname>Humbert</surname></persName>
+							<email>&lt;pierre.humbert@universite-paris-saclay.fr&gt;.</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Laboratoire de mathématiques d&apos;Orsay</orgName>
+								<orgName type="institution" key="instit1">Université Paris-Saclay</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<address>
+									<postCode>91405</postCode>
+									<settlement>Orsay</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Batiste</forename><surname>Le Bars</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Université Lille</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Centrale Lille</orgName>
+								<orgName type="institution" key="instit4">CRIStAL</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aurélien</forename><surname>Bellet</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Université Lille</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Centrale Lille</orgName>
+								<orgName type="institution" key="instit4">CRIStAL</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sylvain</forename><surname>Arlot</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Laboratoire de mathématiques d&apos;Orsay</orgName>
+								<orgName type="institution" key="instit1">Université Paris-Saclay</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<address>
+									<postCode>91405</postCode>
+									<settlement>Orsay</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">One-Shot Federated Conformal Prediction</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">52EC0E660DD3E9DF86F0D70139B26DF5</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper, we introduce a conformal prediction method to construct prediction sets in a oneshot federated learning setting. More specifically, we define a quantile-of-quantiles estimator and prove that for any distribution, it is possible to output prediction sets with desired coverage in only one round of communication. To mitigate privacy issues, we also describe a locally differentially private version of our estimator. Finally, over a wide range of experiments, we show that our method returns prediction sets with coverage and length very similar to those obtained in a centralized setting. Overall, these results demonstrate that our method is particularly well-suited to perform conformal predictions in a one-shot federated learning setting.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Federated Learning (FL) is a recent paradigm that allows to learn from decentralized data sets stored locally by multiple agents <ref type="bibr" target="#b23">(Kairouz et al., 2021)</ref>. FL is particularly appealing when data are highly sensitive and cannot be centralized for privacy or security reasons. So far, the design of FL algorithms has mainly focused on the training phase of machine learning: the goal is to fit models on decentralized data sets while minimizing the amount of communication or optimizing the privacy-utility trade-off (see e.g. <ref type="bibr" target="#b35">McMahan et al., 2017;</ref><ref type="bibr" target="#b20">Geyer et al., 2017;</ref><ref type="bibr" target="#b32">Li et al., 2020;</ref><ref type="bibr" target="#b24">Karimireddy et al., 2020;</ref><ref type="bibr" target="#b41">Noble et al., 2022)</ref>. However, FL poses further challenges regarding model evaluation, as this step must also be done without access to centralized data. In particular, with the increasing popularity of black-box methods, deploying machine learning models in real-world applications often requires to appropriately quantify the uncertainty of their predictions. Unfortunately, models trained with the above supervised FL algorithms only provide point predictions (e.g., class labels or regression targets). This is not sufficient in high-stakes applications like medicine <ref type="bibr" target="#b5">(Begoli et al., 2019)</ref>, where decisions may impact human lives.</p><p>In this work, we investigate the task of outputting a prediction set rather than a single point prediction in a FL setting. Formally, given some data stored by multiple agents and an additional test point (X, Y ), we want to construct a marginally valid set which is likely to contain the unknown response Y . In other words, we want a set ˆ︁ C(X) such that</p><formula xml:id="formula_0">P (︁ Y ∈ ˆ︁ C(X) )︁ ⩾ 1 -α ,<label>(1)</label></formula><p>where α ∈ (0, 1) is a desired miscoverage rate. Although there exist several methods to construct such a set <ref type="bibr" target="#b42">(Papadopoulos et al., 2002;</ref><ref type="bibr" target="#b51">Vovk et al., 2005;</ref><ref type="bibr" target="#b46">Romano et al., 2019)</ref>, they require access to a centralized data set. They are thus incompatible with the constraints of FL, in which agents process their data locally and only interact with a central server by sharing some aggregate statistics. Constructing a valid prediction set is even more challenging in the one-shot FL <ref type="bibr" target="#b54">(Zhang et al., 2012;</ref><ref type="bibr" target="#b21">Guha et al., 2019;</ref><ref type="bibr" target="#b53">Yurochkin et al., 2019;</ref><ref type="bibr" target="#b31">Li et al., 2021;</ref><ref type="bibr" target="#b11">Dennis et al., 2021;</ref><ref type="bibr" target="#b47">Salehkaleybar et al., 2021)</ref> that we consider in this work, where the communication between the agents and the server is further restricted to a single round. One-shot FL is motivated by the fact that the number of communication rounds is often the main bottleneck in FL <ref type="bibr" target="#b23">(Kairouz et al., 2021)</ref>.</p><p>Contributions. In this paper, we present an intuitive one-shot FL method based on Conformal Prediction (CP) <ref type="bibr" target="#b51">(Vovk et al., 2005;</ref><ref type="bibr" target="#b42">Papadopoulos et al., 2002)</ref> to construct distribution-free prediction sets satisfying (1). The key step of CP methods is the ordering of scores computed for each calibration data point. In the FL setting, this ordering step is not possible without exchanging the local data sets or performing many agent-server communication rounds. To circumvent this problem, we define a quantile-of-quantiles estimator: each agent sends to the server a local empirical quantile and the server aggregates them by computing a quantile of these quantiles. We describe how to choose the order of the quantiles (depending on the number of agents and the size of their local data sets) to obtain a prediction set that satisfies (1). We also prove that property (1) can be verified conditionally to the observed data with a modification of the selected quantiles. While the previous results rely on certain data homogeneity assumptions, we further quantify the impact of heterogeneous (non-identically distributed) data on the performance of our algorithm. To address use cases with strong privacy constraints, we derive a version of our approach that satisfies differential privacy <ref type="bibr" target="#b13">(Dwork et al., 2014)</ref>, in which agents run the exponential mechanism to privately select their local quantile. Finally, we empirically evaluate the performance of our method on standard CP benchmarks and show that it produces prediction sets that are very close to the ones obtained when data are centralized.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Background and Related Work</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Split Conformal Prediction</head><p>Conformal Prediction (CP) is a framework to construct distribution-free prediction sets satisfying (1) <ref type="bibr" target="#b51">(Vovk et al., 2005)</ref>. One of the most popular methods to perform CP in a centralized setting is the split conformal <ref type="bibr" target="#b42">(Papadopoulos et al., 2002)</ref> which is at the core of our main contribution described in Section 3.</p><p>To use the split conformal method (split CP), we first need to choose a score function s : X ×Y → R, which measures the magnitude of a predictor error for a given point. Whether we are in the regression or classification setting, many different score functions exist in the literature (see e.g. <ref type="bibr" target="#b2">Angelopoulos &amp; Bates, 2023)</ref>. In regression, for instance, a common choice is the fitted absolute residual S i ≜ s(X i , Y i ) = |Y i -ˆ︁ f (X i )| where ˆ︁ f is some predictor learned on a training data set. Note that our approach does not assume a particular choice of score function, so throughout the paper, we keep the function s abstract. Then, we split the data D n+ntr = {(X 1 , Y 1 ), . . . , (X n+ntr , Y n+ntr )} into a calibration set D cal n = {(X 1 , Y 1 ), . . . , (X n , Y n )} and a training set D tr ntr = {(X n+1 , Y n+1 ), . . . , (X n+ntr , Y n+ntr )} with n, n tr ⩾ 1. The predictor ˆ︁ f is fitted on D tr ntr and conformity scores S cal n ≜ {S 1 , . . . , S n } are calculated on D cal n via the previously chosen score function s. Finally, given a test point X and α ∈ (0, 1), we construct the conformal set</p><formula xml:id="formula_1">︁ C(X) = {︂ y ∈ R : s(X, y) ⩽ ˆ︁ Q (⌈(n+1)(1-α)⌉) (S cal n ) }︂ ,</formula><p>where ˆ︁</p><formula xml:id="formula_2">Q (•) (•) is defined by ︁ Q (k) (S ′ ) = ˆ︁ Q (k) ≜ {︄ S ′ (k) if k ⩽ |S ′ | ∞ otherwise ,<label>(2)</label></formula><p>with |S ′ | the size of the sample S ′ , and</p><formula xml:id="formula_3">S ′ (1) ⩽ . . . ⩽ S ′ (|S ′ |)</formula><p>the order statistics of the scores S ′ 1 , . . . , S ′ |S ′ | in S ′ . In other words, ˆ︁ Q (k) outputs the k-th smallest value in a given set of scores. The following theorem proves that the set returned by the split CP method satisfies (1) under mild assumptions.</p><p>Theorem 2.1 <ref type="bibr" target="#b51">(Vovk et al., 2005;</ref><ref type="bibr" target="#b30">Lei et al., 2018)</ref>. For any n, n tr ⩾ 1, let us consider n + n tr i.i.d. (or only exchangeable) random variables (X 1 , Y 1 ), . . . , (X n+ntr , Y n+ntr ) from X × Y and an additional test point (X, Y ). For any score function s and any α ∈ (0, 1), the set returned by the split CP method satisfies</p><formula xml:id="formula_4">P (︂ Y ∈ ˆ︁ C(X) )︂ ⩾ 1 -α .</formula><p>Furthermore, if S 1 , . . . S n are almost surely distinct, this probability is upper bounded by 1 -α + 1/(n + 1).</p><p>Although the first CP methods were the split and the related full methods <ref type="bibr" target="#b42">(Papadopoulos et al., 2002;</ref><ref type="bibr" target="#b51">Vovk et al., 2005)</ref>, many extensions based upon them have been proposed recently. In regression, <ref type="bibr" target="#b30">Lei et al. (2018)</ref> present a method called locally weighted CP and provide theoretical insights for conformal inference. More recently, <ref type="bibr" target="#b46">Romano et al. (2019)</ref> have developed a variant of the split CP called Conformal Quantile Regression (CQR). Other recent alternatives have been proposed <ref type="bibr" target="#b25">(Kivaranovic et al., 2020;</ref><ref type="bibr" target="#b48">Sesia &amp; Romano, 2021;</ref><ref type="bibr" target="#b22">Gupta et al., 2022;</ref><ref type="bibr" target="#b40">Ndiaye, 2022)</ref>. We refer to <ref type="bibr" target="#b51">Vovk et al. (2005)</ref>, <ref type="bibr" target="#b2">Angelopoulos &amp; Bates (2023)</ref> and <ref type="bibr" target="#b18">Fontana et al. (2023)</ref> for in-depth presentations of CP.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Related Work in Federated Learning</head><p>As already mentioned, FL methods are today mostly focused on the training part of the learning process (i.e., fitting ˆ︁ f to the data). Nevertheless, a few recent works have considered other types of FL problems that can be related to our work. The closest related work is the one of <ref type="bibr" target="#b33">Lu &amp; Kalpathy-Cramer (2021)</ref> which, to the best of our knowledge, is the only paper claiming to perform conformal prediction in the FL setting. Their idea is to locally calculate the quantiles ˆ︁ Q (⌈(n+1)(1-α)⌉) for all agents and to average them in the central server. Unfortunately, they do not prove that their prediction set has valid coverage. Furthermore, their method is non-robust, especially when the size of local data sets is small, and their experiments (and ours, in Section 5) suggest that this set is generally too large. We show in the next sections that by considering a quantile-of-quantiles instead of an average of quantiles, the method we propose addresses these limitations. <ref type="bibr" target="#b19">Gauraha &amp; Spjuth (2021)</ref> propose an ensemble-based CP approach that can be performed in a distributed setting. However, they assume that a shared calibration set is available on the central server, which is unrealistic in FL. Finally, we can also mention recent works on federated evaluation of classifiers <ref type="bibr" target="#b8">(Cormode &amp; Markov, 2022)</ref>, federated quantile computation <ref type="bibr" target="#b1">(Andrew et al., 2021;</ref><ref type="bibr" target="#b43">Pillutla et al., 2022)</ref>, and on uncertainty quantification with Bayesian FL <ref type="bibr" target="#b15">(El Mekkaoui et al., 2021;</ref><ref type="bibr" target="#b27">Kotelevskii et al., 2022)</ref> which, although related to our work, do not study CP and do not allow to obtain coverage guarantees.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Quantile-of-Quantiles for Federated CP</head><p>In this section, we present a method to perform conformal prediction in a one-shot FL setting <ref type="bibr" target="#b21">(Guha et al., 2019;</ref><ref type="bibr" target="#b54">Zhang et al., 2012)</ref>, where only one round of communication from the agents to the central server is allowed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1.">Setup and Objective</head><p>Consider a set of m ∈ N * agents, with their own local data, that seek to collaborate in order to compute a valid prediction set. For simplicity, we suppose that each agent has exactly n calibration data points, and refer to Appendix A.1 for the case where agents have calibration sets of different sizes. We also assume that the predictor ˆ︁ f is given in advance: for instance, it could be learned on a separate set of data points using standard FL algorithms such as FedAvg <ref type="bibr" target="#b35">(McMahan et al., 2017)</ref>. We therefore only focus on the calibration of the prediction set and not on the training step. As a consequence, in the following, all theoretical statements are made conditionally on ˆ︁ f (often implicitly).</p><p>Formally, each agent j ∈ {1, . . . , m} holds a local calibration data set S (j) ≜ (S</p><formula xml:id="formula_5">(j) 1 , . . . , S<label>(j)</label></formula><p>n ) composed of n scores, where S</p><formula xml:id="formula_6">(j) i = s(X (j) i , Y (j)</formula><p>i ) is the score associated to the i-th calibration data point of agent j and we want to find a particular value ˆ︁ q such that for a test point (X, Y ), the set ˆ︁ C(X) = {y ∈ R : s(X, y) ⩽ ˆ︁ q} contains the unknown response Y with probability at least 1-α. In the centralized case, the split CP method presented in Section 2.1 requires to order all the scores and to choose ˆ︁ q as the ⌈(mn+1)(1-α)⌉ smallest score. In one-shot FL, this global ordering step is only possible if the agents send their whole list of local scores to the server. This naive implementation of the split CP method is impractical, due to both privacy concerns and unacceptable communication costs, requiring us to design another strategy. As a single round of communication is allowed, the main difficulty is to choose what should be sent from the agents to the server, and what kind of aggregation should be done by the server to yield the desired coverage.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Main Contribution: FedCP-QQ</head><p>Our method is based on the idea that each agent j should return a quantile of its local scores S (j) , in the same way as for the split CP method described in Section 2.1. The main questions that then arise are (i) which quantile of the scores the agents should send, and (ii) how to aggregate them at the central server level. <ref type="bibr" target="#b33">Lu &amp; Kalpathy-Cramer (2021)</ref> propose to use an empirical average, but this aggregation strategy is not satisfactory. This is obvious in the extreme case where n = 1 (a single data point per agent): it amounts to calculating the average of the local scores, which typically fails to provide the desired coverage (1). Instead, we propose to select a quantile of the locally computed quantiles. This quantile-of-quantiles estimator is defined below. Definition 3.1 (Quantile-of-quantiles). For any (ℓ, k) in 1, n × 1, m , the Quantile-of-Quantiles (QQ) estimator is defined by</p><formula xml:id="formula_7">︁ Q (ℓ,k) ≜ ˆ︁ Q (k) (︂ ˆ︁ Q (ℓ) (S (1) ), . . . , ˆ︁ Q (ℓ) (S (m) ) )︂ ,<label>(3)</label></formula><p>where ˆ︁</p><formula xml:id="formula_8">Q (•) (•) is defined by Equation (2).</formula><p>In words, QQ takes for each agent the ℓ-th smallest local score and then takes the k-th smallest value of these scores. This requires a single round of communication and thus fits the constraints of one-shot FL. The associated plug-in prediction set is</p><formula xml:id="formula_9">︁ C ℓ,k (X) = {︂ y ∈ R : s(X, y) ⩽ ˆ︁ Q (ℓ,k) }︂ . (<label>4</label></formula><formula xml:id="formula_10">)</formula><p>Our objective is now to find (ℓ, k) such that P(Y ∈ ˆ︁ C ℓ,k (X)) is closest possible to 1 -α while being guaranteed to be above. To this aim, we derive the following result.</p><formula xml:id="formula_11">Theorem 3.2. Let {(X (j) i , Y (j) i )} m,n i,j=1</formula><p>and (X, Y ) be i.i.d. random variables (given ˆ︁ f ). For any (ℓ, k) ∈ 1, n × 1, m we have:</p><formula xml:id="formula_12">P (︂ Y ∈ ˆ︁ C ℓ,k (X) )︂ ⩾ M ℓ,k ≜ 1 - 1 mn + 1 m ∑︂ j=k (︃ m j )︃ n ∑︂ I1,j =ℓ ℓ-1 ∑︂ I c 1,j =0 (︁ n i1 )︁ • • • (︁ n im )︁ (︁ mn i1+•••+im )︁ ,<label>(5)</label></formula><p>where I 1,j = {i 1 , . . . , i j } and I c 1,j = {i j+1 , . . . , i m }. Moreover, when the associated scores {S (j) i } n,m i,j=1 and S ≜ s(X, Y ) have continuous c.d.f, (5) is an equality.</p><p>The proof is given in Appendix C.1. This theorem shows that we can lower bound the probability of coverage of our quantile-of-quantiles prediction set by a quantity M ℓ,k that does not depend on the data distribution but only on m, n, ℓ and k. Furthermore, the lower bound becomes an equality when scores have a continuous c.d.f. This is the case, for instance, with the fitted absolute residual when the conditional distribution of Y given X has a continuous c.d.f., i.e., when the noise distribution is atomless. Note that although the theorem requires the data points to be i.i.d., in fact only the scores need to satisfy this hypothesis (conditionally to ︁ f ). This is interesting since there are situations where the scores are i.i.d. even though data distributions are different across agents. In Section 3.5, we further discuss the impact of data heterogeneity across agents, an important aspect of many FL applications.</p><p>Algorithm 1 FedCP-QQ j) ) to the central server end for Central server returns ˆ︁</p><formula xml:id="formula_13">Input: Local scores {S (j) } m j=1 , α, M (see Equation (5)) (ℓ * , k * ) ←-arg min ℓ,k {M ℓ,k : M ℓ,k ⩾ 1 -α} for j = 1, . . . , m do Agent j sends ˆ︁ Q (ℓ * ) (S (</formula><formula xml:id="formula_14">Q (k * ) (︂ ˆ︁ Q (ℓ * ) (S (1) ), . . . , ˆ︁ Q (ℓ * ) (S (m) ) )︂</formula><p>Based on Theorem 3.2, our algorithm returns ˆ︁</p><formula xml:id="formula_15">Q (ℓ * ,k * ) with (ℓ * , k * ) = arg min ℓ,k {M ℓ,k : M ℓ,k ⩾ 1 -α} . (<label>6</label></formula><formula xml:id="formula_16">)</formula><p>By construction, the associated set ( <ref type="formula" target="#formula_9">4</ref>) is marginally valid, in the sense that it satisfies the desired coverage (1). The full procedure, called Federated Conformal Prediction with Quantile-of-Quantiles (FedCP-QQ), is summarized in Algorithm 1.</p><p>Particular cases. To gain more intuition on our FedCP-QQ procedure, let us consider the two extreme cases n = 1 and n → ∞. When n = 1, each agent sends its unique score to the server. Thus, by Theorem 2.1, it suffices for the server to compute the k-th smallest score with k = ⌈(m + 1)(1 -α)⌉ to obtain a valid set. In the other extreme case where n → ∞, if the agents send their ℓ-th smallest score with ℓ = ⌈(n + 1)(1 -α)⌉, each agent has in fact sent the true quantile of order (1 -α) of the distribution of S. The server can therefore choose any of these values and obtains a valid set. We see that in both cases, if both the agents and the server compute appropriate quantiles, we can obtain a valid set. Our method extends this idea to any values of m and n using Theorem 3.2 and Equation (6). In Appendix A.3, we study another interesting specific case where each machine sends its maximum value, i.e., ℓ = n.</p><p>Computational optimizations. The brute-force computation of M ℓ,k in Equation ( <ref type="formula" target="#formula_12">5</ref>) for all (ℓ, k) can be quite costly in practice. To accelerate this step, we describe in Appendix A.2 an efficient way to compute M ℓ,k , based on the calculation of rectangular probabilities of a multivariate hypergeometric distribution.</p><p>We also note that M = (M ℓ,k ) (ℓ,k)∈ 1,n × 1,m or (ℓ * , k * ) can be precomputed and reused across multiple executions of FedCP-QQ. Indeed, as M and (ℓ * , k * ) are independent from the distribution of the data (Theorem 3.2), they do not change as long as m (the number of agents) and n (the size of local data sets) remain fixed. This is the case for instance when computing prediction sets for multiple score functions s, predictors ˆ︁ f , and miscoverage rates α on the same data. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3.">Upper Bound on the Probability of Coverage</head><p>While by construction our probability of coverage is necessarily lower bounded by 1 -α, it is also interesting to have an upper bound, guaranteeing that the coverage of our prediction set is not too large. In the centralized case, if the scores have a continuous c.d.f., the split CP method with a calibration set of size mn gives P(Y ∈ ˆ︁ C(X)) ⩽ 1 -α + 1/(mn + 1) (Theorem 2.1). This means that when there is only one agent (or when agents do not collaborate), this probability is upper bounded by 1 -α + 1/(n + 1).</p><p>Assuming that the scores have a continuous c.d.f., in Figure <ref type="figure" target="#fig_0">1</ref> we compare the two upper bounds with the value of</p><formula xml:id="formula_17">M ℓ * ,k * = P(Y ∈ ˆ︁ C ℓ * ,k * (X)) returned by FedCP-QQ. Recall that, by Theorem 3.2, M ℓ * ,k * is equal to the exact coverage of ˆ︁ C ℓ * ,k * (X).</formula><p>Figure <ref type="figure" target="#fig_0">1</ref> shows that FedCP-QQ returns prediction sets with coverage (in blue) comparable to the (tight) upper bound of the centralized case with mn calibration points (in orange). We also see that the coverage is much larger if we consider the data of a single agent (in red), which illustrates the advantage of our method and the need for collaboration between the agents.</p><p>The form of our quantile-of-quantiles estimator does not allow us to extend the proof techniques of the centralized framework and obtain a theoretical upper bound similar to the one of Theorem 2.1. Nevertheless, the results obtained in Figure <ref type="figure" target="#fig_0">1</ref> make us conjecture that an upper bound could be of the same order as in the centralized framework, i.e., in 1 -α + O(1/(mn + 1)).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4.">Conditional Coverage Guarantee</head><p>In practice, we are interested in the coverage rate for test points when the data set is fixed. However, the guarantee in (1) does not address this as the probability is also taken over the (calibration) data. In other words, it bounds the miscoverage rate on average over all possible calibration data points (and over a training set if ˆ︁ f is learned). Instead, we can define the conditional miscoverage rate as a function of the calibration data:</p><formula xml:id="formula_18">α P (D mn ) = P (︂ Y / ∈ ˆ︁ C ℓ,k (X) | ˆ︁ f , D mn )︂ ,<label>(7)</label></formula><p>with D mn the full calibration set without the test point (Y, X). While, by construction of ˆ︁ C ℓ,k (X), the expectation of α P (D mn ) is smaller than α, the random variable α P (D mn ) may have a high variance. In particular, it is possible to construct a scenario where P (α P (D mn ) = 1) = α and P (α P (D mn ) = 0) = 1 -α <ref type="bibr" target="#b6">(Bian &amp; Barber, 2022)</ref>.</p><p>Here, we have E[α P (D mn )] = α but a non-negligible proportion of calibration data sets might result in a poor conditional coverage even though the average coverage is still 1 -α. In practice, we want to have α P (D mn ) ≈ α with a probability close to 1 to avoid this unfavorable scenario.</p><p>In the following theorem, we show that it is possible to control the conditional miscoverage of FedCP-QQ.</p><p>Theorem 3.3. In the framework of Theorem 3.2, if δ ∈ (0, 0.5] and ℓ • k ⩾ (1 -α) • mn, then the conditional miscoverage rate-defined by Eq. (7)-is controlled as follows:</p><formula xml:id="formula_19">P (︄ α P (D mn ) ⩽ α + √︃ log(1/δ) 2mn )︄ ⩾ 1 -δ . (8) Theorem 3.3 is proved in Appendix C.2.</formula><p>It states that the probability that a particular data set results in a conditional miscoverage rate much higher than α vanishes with the number of data points used for calibration. A similar bound is obtained in the centralized setting <ref type="bibr" target="#b50">(Vovk, 2012;</ref><ref type="bibr" target="#b6">Bian &amp; Barber, 2022)</ref> for the split method. However, note that Theorem 3.3 holds only for couples (ℓ, k) verifying a condition not necessarily verified by the couple (ℓ * , k * ) used by FedCP-QQ. Nevertheless, our experiments suggest that this could still be true for (ℓ * , k * ), up to a slight modification of the bound. However, similarly to the upper bound on the probability of coverage (see Section 3.3), the proof of this statement is difficult because it requires to study the rank of ︁ Q (ℓ,k) in the full data set which, contrary to the centralized case, is a random variable. In the proof of Theorem 3.3, we rely on an almost sure lower bound for this rank, which is conservative and negatively impacts the final result. In the centralized case, the rank is almost surely fixed and this greatly simplifies the theoretical analysis.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.5.">Impact of Heterogeneous Data</head><p>An important challenge in FL is to deal with data heterogeneity across agents <ref type="bibr" target="#b32">(Li et al., 2020;</ref><ref type="bibr" target="#b23">Kairouz et al., 2021;</ref><ref type="bibr" target="#b28">Le Bars et al., 2023)</ref>. This heterogeneity can yield different distributions of scores across agents and thus affects the coverage of the set returned by CP methods. To better understand these effects, we no longer assume that all the variables are drawn from the same distribution. Instead, we only suppose that the local data points of agent j are drawn i.i.d. from an agent-specific distribution with a test point also drawn from a potentially different distribution.</p><p>As we do not have any information on the underlying distributions of the scores, we study how data heterogeneity affects the coverage of the set returned by FedCP-QQ, i.e., we quantify how much we lose in coverage if we apply the same strategy as in the i.i.d. case. Intuitively, the more the distributions of the scores {S (j) } j are similar and close to the one of S, the less we lose in coverage. This is made precise in the following result.</p><p>Proposition 3.4. Assume that the calibration data {(X</p><formula xml:id="formula_20">(j) i , Y<label>(j)</label></formula><p>i )} m,n i,j=1 and the test point (X, Y ) are such that, given ˆ︁ f , the corresponding scores {S</p><formula xml:id="formula_21">(j) i } n,m i,j=1</formula><p>, S are independent, and that for every j ∈ 1, m , {S</p><formula xml:id="formula_22">(j) i } n i=1 are i.i.d. Let { ˜︁ S (j) i } n,m i,j=1 , ˜︁ S be i.i.d. random variables (given ˆ︁ f ). De- fine, for every j ∈ 1, m , p * j (S) = P(S (j) (ℓ ⋆ ) ⩽ S|S) and p ˜ * ( ˜︁ S) = P( ˜︁ S (1) (ℓ ⋆ ) ⩽ ˜︁ S| ˜︁ S)</formula><p>. Then, we have</p><formula xml:id="formula_23">P (︁ Y ∈ ˆ︁ C ℓ ⋆ ,k ⋆ (X) )︁ ⩾ 1 -α -E [︃ d TV (︂ PoisBin (︁ p * (S) )︁ , Bin (︁ m, p ˜ * ( ˜︁ S) )︁ )︂ ]︃ ,</formula><p>where d TV (•, •) is the total-variation (TV) distance, PoisBin the Poisson-Binomial distribution and Bin the binomial distribution.</p><p>Proposition 3.4 is proved in Appendix C.3. The general idea of this result is that when variables are i.i.d., probabilities on order statistics only depend on the c.d.f. of a certain binomial distribution, whereas when the variables are independent but with different distributions, the binomial needs to be replaced by a Poisson-Binomial distribution.</p><p>The inequality indicates that, in the heterogeneous case, the coverage is reduced by the TV distance between the two distributions. We note that this distance can be upper bounded in specific cases (see Appendix C.3) and that it is equal to 0 when all the data are i.i.d and S = ˜︁ S. We leave to future work the precise characterization of cases where the TV distance is negligible in front of 1 -α.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Differentially Private FedCP-QQ</head><p>While FL methods are often informally claimed to mitigate privacy issues, they still leak information about the local data sets during the execution of the algorithm. In the case of FedCP-QQ, it is easy to see how revealing a particular quantile of the local score distribution may leak sensitive information. In this section, we propose a privacy-preserving version of FedCP-QQ based on Differential Privacy (DP) <ref type="bibr" target="#b13">(Dwork et al., 2014)</ref>, a mathematical notion of privacy that essentially requires that the output distribution of a random-Input: Scores (S1, . . . , Sn) ∈ R n , quantile q ∈ (0, 1), privacy level ε &gt; 0, bins {I1, . . . , IB} for i = 1, . . . </p><formula xml:id="formula_24">, |{i:S ¯i&gt;e b }| 1-q }︂ end for ∆q ←-max{ 1 q , 1 1-q } Output: Bin e b with probability e - εw b 2∆q / ∑︁ B b ′ =1 e - εw b ′ 2∆q Algorithm 3 FedCP 2 -QQ Input: Local scores {S (j) } m</formula><p>j=1 , miscoverage level α, M (see Equation ( <ref type="formula" target="#formula_12">5</ref>)), privacy level ε &gt; 0, bins {I1, . . . , IB}, γ ∈ (0, 1)</p><p>The server finds (ℓγ, kγ) as in FedCP-QQ (Algorithm 1) with coverage level 1-α 1-γα q ←-max {︂ ℓγ +ℓcor n</p><p>, 1 2 }︂ with ℓcor from Eq. ( <ref type="formula" target="#formula_28">10</ref>) for j = 1, . . . , m do Agent j sends ˆ︁ Q ε j , the output of Alg. 2 with S (j) , to the server. end for Output: The server orders ˆ︁</p><formula xml:id="formula_25">Q ε 1 , . . . , ˆ︁ Q ε m and outputs the kγ-th value denoted ˆ︁ Q ε (kγ ) .</formula><p>ized algorithm is not too sensitive to a small modification of the input data set. In particular, we consider the strong Local DP (LDP) model where agents do not trust the central server and must locally privatize the messages they send.</p><p>Formally, for any ε &gt; 0, a randomized algorithm A is said to be ε-LDP if for any two local data sets S and S ′ that differ in a single data point (we call them neighboring), and any set of possible outputs O, we have:</p><formula xml:id="formula_26">P (︁ A(S) ∈ O )︁ ⩽ exp (ε)P (︁ A(S ′ ) ∈ O )︁ .<label>(9)</label></formula><p>A smaller ε therefore yields a better privacy. In our specific framework, S and S ′ correspond to two neighboring calibration data sets of an agent j and A(S) to the information sent by j to the central server.</p><p>Our approach builds upon the (centralized) differentially private quantile mechanism recently introduced by Angelopoulos et al. FedCP 2 -QQ method. Our private algorithm, called Federated Conformal Private Prediction (FedCP 2 )-QQ, is an extension of FedCP-QQ (Algorithm 1) with two key modifications: (i) exact local quantile computations are replaced by calls to DP Quantile (Algorithm 2), and (ii) the orders of client and server-level quantiles are adjusted to guarantee the desired coverage. More precisely, if the central server asks for the ℓ-th smallest score of each agent, then the agents use Algorithm 2 to return a randomized bin around the true quantile ˆ︁ Q (ℓ) (S (j) ). To achieve the desired coverage 1 -α despite the randomness due to privacy, the server computes</p><formula xml:id="formula_27">(ℓ γ , k γ ) such that P(S ⩽ ˆ︁ Q (ℓγ ,kγ ) ) is above but close to 1-α 1-γα</formula><p>, where γ ∈ (0, 1) is a free parameter. Because the agents might return bins smaller than the one of the requested ℓ γ -th score, the central server further compensates by asking agents for their (ℓ γ + ℓ cor )-th smallest score with</p><formula xml:id="formula_28">ℓ cor = ⌈︃ 2 ε log (︃ B 1 -(1 -γα) 1 m )︃⌉︃ . (<label>10</label></formula><formula xml:id="formula_29">)</formula><p>Note that the smaller the privacy parameter ε (more privacy), the bigger the correction ℓ cor . At first sight, one could think that B should be taken small to reduce the correction. In practice, it should also be taken sufficiently large to avoid aggressive rounding that could lead to a large final prediction set. We refer to <ref type="bibr">Angelopoulos et al. (2022, Section 4.</ref>2) for an in-depth discussion on the selection of the number of bins B. The following theorem ensures that Algorithm 3 preserves privacy and allows to construct prediction sets that satisfy the desired coverage. The proof is given in Appendix C.4.</p><p>Theorem 4.1. For any ε &gt; 0, Algorithm 3 satisfies ε-LDP.</p><formula xml:id="formula_30">Moreover, denoting ˆ︁ C ε (X) = {y ∈ R : s(X, y) ⩽ ˆ︁ Q ε } with ˆ︁</formula><p>Q ε the output of the algorithm, we have</p><formula xml:id="formula_31">P (︁ Y ∈ ˆ︁ C ε (X) )︁ ⩾ 1 -α .</formula><p>Choosing γ. Intuitively, in order to be equivalent to the non-private FedCP-QQ, γ should tend to 0 and the privacy parameter ε should tend to infinity. To select γ automatically for any given ε &gt; 0, we propose a grid-search strategy. We look for the γ that brings the smallest amount of correction, which we evaluate using the pre-computed table M . More precisely, for a given γ, we evaluate M ℓγ +ℓcor,kγ which is the coverage obtained by the non-private FedCP-QQ estimator ˆ︁ Q (ℓγ +ℓcor,kγ ) . Note that this coverage is not the one of our private estimator since each agent might return a score smaller than the (ℓ γ +ℓ cor )-th smallest. To find the best γ, we look at the one that brings the smaller coverage M ℓγ +ℓcor,kγ over the grid. To gain more intuition on the degree of correction brought by the additional randomness of the private setting, we represent in Figure <ref type="figure" target="#fig_3">2</ref> the quantity M ℓγ +ℓcor,kγ found for the best γ and for different values of n and ε. This plot shows how fast the correction decreases as n and ε increase. Privacy amplification by shuffling or aggregation. To achieve better privacy-utility trade-offs, it is common in FL to relax the LDP model and instead assume that the agents' messages are sent to a secure computation function whose output is received by the central server. This is sometimes referred to as Distributed DP <ref type="bibr" target="#b23">(Kairouz et al., 2021)</ref>. Two standard secure computation primitives are compatible with FedCP 2 -QQ: secure shuffling <ref type="bibr" target="#b17">(Feldman et al., 2021)</ref> and secure aggregation <ref type="bibr" target="#b7">(Bonawitz et al., 2017)</ref>. Secure shuffling outputs a random permutation of the messages, which still allows the server to compute the desired quantile. For secure aggregation (which outputs the sum of the messages), each agent can encode its private quantile as a one-hot vector of size B indicating the corresponding bin. The sum of these vectors is then sufficient for the server to find the bin corresponding to the k γ -th smallest score. In both cases, ε is reduced by a factor of O(1/ √ m). In other words, if one of the previous privacy amplification schemes is used, we can replace ε by ε √ m (up to a constant) and therefore reduce the correction ℓ cor by a factor O( √ m), while still satisfying the same privacy guarantees. Detailed privacy amplification formulas are provided by <ref type="bibr" target="#b17">Feldman et al. (2021)</ref> and <ref type="bibr" target="#b37">McMillan et al. (2022)</ref>.</p><p>Remark 4.2. FedCP 2 -QQ provides privacy guarantees with respect to the calibration data. To provide privacy guarantees with respect to the data used to train the model, one should train the model using locally differentially private algorithms (see e.g. <ref type="bibr" target="#b20">Geyer et al., 2017;</ref><ref type="bibr" target="#b36">McMahan et al., 2018;</ref><ref type="bibr" target="#b41">Noble et al., 2022)</ref>. Note that the training and calibration data sets are disjoint, and that FedCP 2 -QQ only post-processes the private model to compute the calibration scores. Therefore, if model training satisfies ε 1 -LDP and FedCP 2 -QQ satisfies ε 2 -LDP, the full pipeline satisfies max(ε 1 , ε 2 )-LDP thanks to parallel composition.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Experiments</head><p>In this section, we evaluate FedCP-QQ on synthetic and real regression data sets. Additional experiments on unbalanced data sets and on FedCP 2 -QQ are presented in Appendices A.1 and B.2. The code of our two methods is available at https://github.com/pierreHmbt/FedCP-QQ. Depending on the experiments, we use the split CP method presented in Section 2 or its popular variant Conformalized Quantile Regression (CQR) <ref type="bibr" target="#b46">(Romano et al., 2019)</ref>, which is directly compatible with our approach. For split CP, ˆ︁ f is a standard regressor, the score function s is s(X, Y ) = |Y -ˆ︁ f (X)|, and the resulting prediction set is an interval</p><formula xml:id="formula_32">of constant length [ ˆ︁ f (X) ± q ˆ]. In CQR, ˆ︁ f is replaced by a couple ( ˆ︁ f α/2 , ˆ︁ f 1-α/2 )</formula><p>where ˆ︁ f β is a quantile regressor of order β <ref type="bibr" target="#b26">(Koenker &amp; Bassett Jr, 1978)</ref>  <ref type="table"></ref>and<ref type="table">s</ref></p><formula xml:id="formula_33">(X, Y ) = max( ˆ︁ f α/2 (X)-Y, Y -ˆ︁ f 1-α/2 (X)). In contrast to split CP, CQR returns sets of the form [ ˆ︁ f α/2 (X) -q ˆ, ˆ︁ f 1-α/2 (X) + q ˆ]</formula><p>which have a size adaptive to heteroscedasticity.</p><p>For both split CP and CQR, we use FedCP-QQ to find the value of ˆ︁ q (calibration step). We compare it with the centralized baseline (Equation <ref type="formula" target="#formula_2">2</ref>) and FedCP-Avg, the federated approach proposed by <ref type="bibr" target="#b33">Lu &amp; Kalpathy-Cramer (2021)</ref>. Recall that the latter simply averages the m quantiles of order ⌈(n + 1)(1 -α)⌉/n sent by the agents (see Section 2.2).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Synthetic Data</head><p>Data set. We draw 2000 independent, univariate random variables X i from a uniform distribution on <ref type="bibr">[1,</ref><ref type="bibr">5]</ref>. Following <ref type="bibr" target="#b46">Romano et al. (2019)</ref>, the response variable is sampled as</p><formula xml:id="formula_34">Y i | X i ∼ Pois(sin 2 (X i ) + 0.1) + 0.03 • X i ε 1,i + 25 • 1 {U i &lt; 0.01} ε 2,i ,</formula><p>where Pois(λ) is the Poisson distribution with mean λ, ε 1,i and ε 2,i are i.i.d. standard Gaussian variables, and U i is uniform on the interval [0, 1]. Note that the last term of the equation can generate outliers. Then, we split the data set into two disjoint subsets: one for training and one for calibration. To simulate a FL scenario, the calibration set is divided into m = 50 disjoint subsets of size n = 20. Finally, we generate a test set of size 5000 with the same properties.</p><p>We construct the prediction sets using the CQR approach where the estimation of the (quantile) regression function  is made with quantile regression forests <ref type="bibr" target="#b39">(Meinshausen &amp; Ridgeway, 2006)</ref>. The number of trees in the forest is set to 1000, the two parameters controlling the coverage rate on the training data are tuned using cross-validation and the remaining hyperparameters are set as done by <ref type="bibr" target="#b46">Romano et al. (2019)</ref>.</p><p>Results. Figure <ref type="figure" target="#fig_4">3</ref> illustrates the performance of the different methods when α = 0.1. We see that the set returned by FedCP-QQ when the data are decentralized is almost identical to the one obtained when the data are centralized. This is not the case for FedCP-Avg which outputs a larger set. This may be due to the presence of outliers in the data and because the mean (the server aggregation strategy for FedCP-Avg) is not robust. On the contrary, by using a quantile function to aggregate the agents' quantiles, FedCP-QQ is robust to outliers and produces smaller yet valid sets. In the next subsection, we show that the same behavior is observed on real data sets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Real Data</head><p>Data sets. We evaluate our method on five public-domain regression data sets also considered by <ref type="bibr" target="#b46">Romano et al. (2019)</ref> and <ref type="bibr" target="#b48">Sesia &amp; Romano (2021)</ref>: physicochemical properties of protein tertiary structure (bio) <ref type="bibr" target="#b44">(Rana, 2013)</ref>; bike sharing (bike) (Fanaee-T &amp; Gama, 2013); communities and crimes (community) <ref type="bibr" target="#b45">(Redmond, 2011</ref>); Tennessee's student teacher achievement ratio (star) <ref type="bibr" target="#b0">(Achilles et al., 2008)</ref>; and concrete compressive strength (concrete) <ref type="bibr" target="#b52">(Yeh, 1998)</ref>.</p><p>In this section, we use (i) split-CP with ridge regressionthe regularization parameter is tuned by cross-validation; (ii) CQR with quantile Regression Forests (RF)-the hyperparameters are the ones used in Section 5.1; and (iii) CQR with Neural Networks (NN) for quantile regression <ref type="bibr" target="#b49">(Taylor, 2000)</ref>-the architecture and the parameters are those used by <ref type="bibr" target="#b46">Romano et al. (2019)</ref>.</p><p>The prediction sets, with a miscoverage rate fixed to α = 0.1, are either calibrated with CP in the centralized setting or in a FL setting using FedCP-QQ and FedCP-Avg. For each experiment, we split the full data set into three parts: a training set (40%), a calibration set (40%), and a test set (20%). To simulate a FL scenario, we also split the calibration set in m disjoint subsets of equal size n. We consider scenarios where m ≫ n, and m ≪ n. Their exact values for each data set are given in Appendix B.1. All features are then standardized to have zero mean and unit variance. For each method, we compute the empirical coverage obtained on the test set and the average length of the conformal set. These two metrics are collected over 20 different training-calibration-test random splits.</p><p>Results. Figure <ref type="figure" target="#fig_5">4</ref> displays the boxplots of the empirical coverages obtained by each method over all the data sets and all the 20 different random splits (one point represents the empirical coverage obtained on one random split of one data set). Results on individual data sets are presented in Appendix B.1, as well as boxplots of the lengths of the intervals obtained. The first observation we can make is that, on average (white circle), FedCP-QQ does return intervals whose coverage is greater than 0.90 (the desired coverage), without being too far from it. More importantly, our method returns prediction sets with coverage and length very similar to those returned by centralized calibration. In Figure <ref type="figure" target="#fig_5">4</ref> for instance, we see that the mean (white circle) and standard-deviation (size of the box) of the coverages obtained with FedCP-QQ and the centralized baseline have comparable values, with a slightly larger standard-deviation for FedCP-QQ. The same kind of observation can be made concerning the length of the prediction sets (see figures in Appendix B.1). Finally, it is interesting to note that, with FedCP-QQ, we obtain similar results for m ≫ n and m ≪ n. This is in contrast to FedCP-Avg, which yields sets with higher coverages and lengths on all data sets and is therefore strictly inferior to our method. Note that Appendix B.2 provides additional results about our DP algorithm FedCP 2 -QQ, showing how the coverage varies with the privacy parameter ε. Overall, these experiments support the fact that FedCP-QQ is a well-suited method to perform the calibration step of CP in a decentralized setting, placing it as the only one adapted to the context of (one-shot) FL.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Discussion</head><p>This paper introduces the method Federated Conformal Prediction with Quantile-of-Quantiles (FedCP-QQ) to output valid distribution-free prediction sets in a one-shot Federated Learning context. In addition to the analysis and discussion about the different properties of our method, we also introduce FedCP 2 -QQ, a private version of FedCP-QQ based on Local Differential Privacy. Multiple experiments highlight that our method returns prediction sets with coverage and length close to those returned in a centralized setting, supporting the fact that FedCP-QQ is a well-suited method for (one-shot) FL scenarios.</p><p>This work brings many important future research directions. Among them, we expect that new proof techniques could lead to better theoretical guarantees, notably regarding conditional coverage and the private estimator. Our paper focuses on the calibration step, making it particularly suited for split-based conformal methods. However, it would be interesting to study how our FL approach could be extended to the full conformal or the nested conformal methods <ref type="bibr" target="#b22">(Gupta et al., 2022)</ref>. Finally, an interesting line of research is the derivation of specific estimators for cases where local data sets are not identically distributed.</p><p>In the main article, we assumed for simplicity that all agents had the same amount of data n. Our method is in fact generalizable to the case where the agents have data sets of different sizes n 1 , . . . , n m . In this case, the random variables m) )) are no longer identically distributed as they are computed on data sets of different sizes. Hence, we need to use the cdf of INID data-see <ref type="bibr">(Balakrishnan, 2007, Equation (16)</ref>). The right-hand side of Equation ( <ref type="formula" target="#formula_12">5</ref>) becomes</p><formula xml:id="formula_35">( ˆ︁ Q (ℓ) (S (1) ), . . . , ˆ︁ Q (ℓ) (S (</formula><formula xml:id="formula_36">M ℓ1,...,ℓm,k = 1 - 1 n 1 + • • • + n m + 1 m ∑︂ j=k ∑︂ A∈Pj na 1 ∑︂ i1=ℓa 1 • • • na j ∑︂ ij =ℓa j ℓa j+1 -1 ∑︂ ij+1=0 • • • ℓa m -1 ∑︂ im=0 (︁ na 1 i1 )︁ • • • (︁ na m im )︁ (︁ n1+•••+nm i1+•••+im )︁ ,</formula><p>where P j is the set of subsets of {1, . . . , m} of size j, A = {a 1 , . . . , a j } ∈ P j , and A c = {a j+1 , . . . , a m } such that a 1 &lt; a 2 &lt; . . . &lt; a j and a j+1 &lt; a j+2 &lt; . . . &lt; a m . It can be computed in the same way as for the case where</p><formula xml:id="formula_37">n 1 = • • • = n m = n (see Appendix A.2</formula><p>). An important difference that appears if we want to apply the methodology of FedCP-QQ presented in the paper is that we now have to find different values for ℓ 1 , . . . , ℓ m since the local sample sizes are different. Although possible, computing M ℓ1,...,ℓm,k for all possible values of (ℓ 1 , . . . , ℓ m , k) to find the smallest one above 1 -α can be very time-consuming.</p><p>In practice, we propose to directly fix ℓ j = ⌈(1 -α)(n j + 1)⌉ as it would be similarly done in the classical (centralized) split methodology. Hence, the previous probability function only needs to be computed for the different values of k = 1, . . . , m, thereby reducing significantly the computation at the cost of being slightly less close to 1 -α. Note that this strategy can also be used in the context of the main paper, i.e., when n j = n and ℓ j = ℓ.</p><p>We made an additional experiment with such unbalanced data sets using the setting of the synthetic experiments but with different sizes for each local data set. We set ℓ j = ⌈(1 -α)(n j + 1)⌉ and find the value of k such that the coverage is greater than 0.9. Results are displayed in Figure <ref type="figure" target="#fig_6">5</ref> and, as expected, the coverage is respected. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2. Computation of Equation (5)</head><p>Let us recall that the right-hand side of Equation ( <ref type="formula" target="#formula_12">5</ref>) is</p><formula xml:id="formula_38">M ℓ,k = 1 - 1 mn + 1 m ∑︂ j=k (︃ m j )︃ n ∑︂ i1=ℓ • • • n ∑︂ ij =ℓ ℓ-1 ∑︂ ij+1=0 • • • ℓ-1 ∑︂ im=0 (︁ n i1 )︁ • • • (︁ n im )︁ (︁ mn i1+•••+im )︁ = 1 - 1 mn + 1 m ∑︂ j=k (︃ m j )︃ n ∑︂ I1,j =ℓ ℓ-1 ∑︂ I c 1,j =0 (︁ n i1 )︁ • • • (︁ n im )︁ (︁ mn i1+•••+im )︁ ,</formula><p>where I 1,j = {i 1 , . . . , i j } and I c 1,j = {i j+1 , . . . , i m }. The time complexity of its brute-force computation is too high. In this section, we therefore provide an efficient algorithm to compute it. In the first step, we rewrite the summations to bring out the mass function of a multivariate hypergeometric distribution:</p><formula xml:id="formula_39">n ∑︂ I1,j =ℓ ℓ-1 ∑︂ I c 1,j =0 (︁ n i1 )︁ • • • (︁ n im )︁ (︁ mn i1+•••+im )︁ = ∑︂ r∈R ˜j n ∑︂ I1,j =ℓ ℓ-1 ∑︂ I c 1,j =0 (︁ n i1 )︁ • • • (︁ n im )︁ (︁ mn i1+•••+im )︁ 1{i 1 + • • • + i m = r} ⏞ ⏟⏟ ⏞ mass of a multivariate hypergeometric distribution , (<label>11</label></formula><formula xml:id="formula_40">)</formula><p>with R ˜j = {jℓ, . . . , jn + (m -j)(ℓ -1)}. The summation in I 1,j , and I c 1,j therefore computes rectangular probabilities and can be rewritten as follows</p><formula xml:id="formula_41">p r (a, b) ≜ P(a 1 ⩽ H 1 ⩽ b 1 , • • • , a m ⩽ H m ⩽ b m ) , where (a i , b i ) = {︄ (ℓ, n) if i ∈ {1, . . . , j} (0, ℓ -1) if i ∈ {j + 1, . . . , m} ,</formula><p>and (H 1 , . . . , H m ) follows a multivariate hypergeometric distribution with parameters ({n, . . . , n}, r). By a direct application of Bayes' theorem we obtain <ref type="bibr">(Lebrun, 2013, Equations (2)</ref> and ( <ref type="formula" target="#formula_12">5</ref>)):</p><formula xml:id="formula_42">p r (a, b) = P (︄ m ∑︂ i=1 T i = r )︄ ∏︁ m i=1 P(a i ⩽ W i ⩽ b i ) P( ∑︁ m i=1 W i = r)</formula><p>,</p><p>where for any t ∈ (0, 1) and for all 1 ⩽ i ⩽ m, the random variables W i follow a binomial distribution B(n, t) and</p><formula xml:id="formula_43">T i = (W i | a i ⩽ W i ⩽ b i ) follows a truncated binomial distribution.</formula><p>As there exists efficient algorithms to compute both P(a i ⩽ W i ⩽ b i ) and P( ∑︁ m i=1 W i = r), the only difficulty remains the evaluation of P( ∑︁ m i=1 T i = r). One approach is to multiply the generating probability functions of the T i and then extract the coefficient of degree r. This algorithm has a time complexity of O(mr log(r)) if the multiplications are done using an FFT based algorithm. This strategy still remains costly for large values of m or r, and more advanced algorithms have been proposed by <ref type="bibr" target="#b29">Lebrun (2013)</ref>.</p><p>Note finally that since M ℓ,k is a non-decreasing function of both ℓ and k, one can find (ℓ * , k * ) without computing M ℓ,k for all values of (ℓ, k). Figures <ref type="figure" target="#fig_7">6</ref> and<ref type="figure" target="#fig_8">7</ref> illustrate that M ℓ,k actually needs to be computed for only a few values of (ℓ, k).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3. Reporting the Maximum of Each Agent</head><p>Another particular case of interest is when ℓ = n, i.e., agents send their maximum value. Using the fact that the c.d.f. of the maximal value of n i.i.d random variables with common c.d.f. F is F n , it is possible to give a simpler formula for M n,k . Proposition A.1. For every m, n ⩾ 1 and k ∈ 1, m , we have</p><formula xml:id="formula_44">M n,k = Γ(k + 1/n) Γ(k) • Γ(m + 1) Γ(m + 1/n + 1)</formula><p>,</p><p>where M n,k is defined by Eq. (5) and Γ is the Gamma function: for any complex number z such that ℜ(z) &gt; 0, Γ(z) = ∫︁ +∞ 0 t z-1 e -t dt.</p><p>One-Shot Federated Conformal Prediction Furthermore, when k = k m ≜ ⌈m(1 -α) n ⌉, we have</p><formula xml:id="formula_45">lim m→∞ P (︂ Y ∈ ˆ︁ C n,km (X) )︂ ⩾ 1 -α .</formula><p>Proposition A.1 is proved in Appendix C.5. It shows that when each agent sends the maximum to the central server, by taking the k m -th smallest value of these maximums with k m ⩾ m(1 -α) n , the server obtains a valid coverage of (1 -α).</p><p>Note that for a fixed m, k m decreases to 0 when n grows to infinity. This is expected since, intuitively, if the number of points per agent increases, the maximums also increase, and the server must compensate by taking a very small quantile of these values to obtain a coverage close to (1 -α).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Additional Experimental Results</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.1. Results on Individual Data Sets</head><p>We present in Figures 8 to 17 the results of the experiments of Section 5.2 on individual data sets. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2. Experiments with Differential Privacy</head><p>For the sake of completeness, we also evaluate the quality of our private algorithm FedCP 2 -QQ described in Section 4 on the bio and bike data sets with m = 5 and n = 200. The predictor is a quantile RF, the number of bins is set to B = 100, S max is fixed to the largest score (no clipping), and ε = 10, 5, 1.</p><p>Figure <ref type="figure" target="#fig_10">18</ref> displays the empirical coverages obtained over 20 different random splits. As expected from Theorem 4.1, we observe that on average the desired coverage at 0.90 is well satisfied. However, we also see that the coverages become quickly conservative as the privacy parameter ε decreases. This suggests that the different corrections introduced to compensate for the extra randomness due to privacy may be overly strong. Finally, we note that these results would be significantly improved with the privacy amplification strategies discussed in Section 4. The proof of our results heavily relies on order statistics. We refer to <ref type="bibr" target="#b9">David &amp; Nagaraja (2004)</ref> for an in-depth presentation. We begin by recalling the following important result. Lemma C.1. Let X 1 , . . . , X n be some i.i.d. sample drawn from a continuous distribution with c.d.f. F X and density f X . If we denote by X (1) ⩽ • • • ⩽ X (n) the corresponding ordered sample, for every ℓ ∈ 1, n , the c.d.f. and density of X (ℓ) are respectively given by</p><formula xml:id="formula_46">F X (ℓ) (x) = n ∑︂ i=ℓ (︃ n i )︃ F X (x) i [︁ 1 -F X (x) ]︁ n-i , f X (ℓ) (x) = n! (ℓ -1)!(n -ℓ)! f X (x)F X (x) ℓ-1 [︁ 1 -F X (x) ]︁ n-ℓ .</formula><p>We can now prove Theorem 3.2.</p><p>First, remark that if, conditionally to ˆ︁ f , (X</p><p>1 , Y</p><p>(1) 1 ), . . . , (X</p><formula xml:id="formula_48">(m) n , Y<label>(m) n</label></formula><p>), (X, Y ) are i.i.d., then, conditionally to ˆ︁ f , the associated scores S We know that F -1 S is non-decreasing and that if U ∼ U [0,1] , F -1 S (U ) has the same distribution as S (given ˆ︁ f ). Therefore, if</p><formula xml:id="formula_49">U (1) 1 , . . . , U<label>(m)</label></formula><p>n , U are independent with a uniform distribution over [0, 1], and independent from the data, and if</p><formula xml:id="formula_50">U (ℓ,k) ≜ ˆ︁ Q (k) (︂ ˆ︁ Q (ℓ) (︂ {U (1) i , i = 1, . . . , n} )︂ , . . . , ˆ︁ Q (ℓ) (︂ {U (m) i , i = 1, . . . , n} )︂)︂</formula><p>denotes the corresponding QQ estimator, then F -1 S (U (ℓ,k) ) has the same distribution as ˆ︁ Q (ℓ,k) (given ˆ︁ f ). We obtain that</p><formula xml:id="formula_51">P (︂ Y ∈ ˆ︁ C(X) | ˆ︁ f )︂ = P (︂ S ⩽ ˆ︁ Q (ℓ,k) | ˆ︁ f )︂ = P (︂ F -1 S (U ) ⩽ F -1 S (U (ℓ,k) ) | ˆ︁ f )︂ ⩾ P (︂ U ⩽ U (ℓ,k) | ˆ︁ f )︂ . (<label>12</label></formula><formula xml:id="formula_52">)</formula><p>Furthermore, if F S is continuous, F -1 S is increasing, and</p><formula xml:id="formula_53">P (︂ F -1 S (U ) ⩽ F -1 S (U (ℓ,k) ) | ˆ︁ f )︂ = P (︂ U ⩽ U (ℓ,k) | ˆ︁ f )︂ . (<label>13</label></formula><formula xml:id="formula_54">)</formula><p>Therefore, it remains to treat the uniform case. By Lemma C.1, we have</p><formula xml:id="formula_55">F U (ℓ,k) (t) = m ∑︂ j=k (︃ m j )︃ F U (ℓ) (t) j [︁ 1 -F U (ℓ) (t) ]︁ m-j = m ∑︂ j=k (︃ m j )︃ [︄ n ∑︂ i=ℓ (︃ n i )︃ t i (1 -t) n-i ]︄ j [︄ 1 - n ∑︂ i=ℓ (︃ n i )︃ t i (1 -t) n-i ]︄ m-j = m ∑︂ j=k (︃ m j )︃ [︄ n ∑︂ i=ℓ (︃ n i )︃ t i (1 -t) n-i ]︄ j [︄ ℓ-1 ∑︂ i=0 (︃ n i )︃ t i (1 -t) n-i ]︄ m-j since 1 = n ∑︂ i=0 (︃ n i )︃ t i (1 -t) n-i = ℓ-1 ∑︂ i=0 (︃ n i )︃ t i (1 -t) n-i + n ∑︂ i=ℓ (︃ n i )︃ t i (1 -t) n-i ,</formula><p>hence we get that</p><formula xml:id="formula_56">F U (ℓ,k) (t) = m ∑︂ j=k (︃ m j )︃ n ∑︂ i1=ℓ • • • n ∑︂ ij =ℓ ℓ-1 ∑︂ ij+1=0 • • • ℓ-1 ∑︂ im=0 (︃ n i 1 )︃ • • • (︃ n i m )︃ t i1+•••+im (1 -t) mn-(i1+•••+im) .</formula><p>As a consequence, we obtain</p><formula xml:id="formula_57">P (︁ U (ℓ,k) ⩽ U )︁ = E [︁ F U (ℓ,k) (U ) ]︁ = ∫︂ 1 0 F U (ℓ,k) (t)dt = ∫︂ 1 0 m ∑︂ j=k (︃ m j )︃ n ∑︂ i1=ℓ • • • n ∑︂ ij =ℓ ℓ-1 ∑︂ ij+1=0 • • • ℓ-1 ∑︂ im=0 (︃ n i 1 )︃ • • • (︃ n i m )︃ t i1+•••+im (1 -t) mn-(i1+•••+im) dt = m ∑︂ j=k (︃ m j )︃ n ∑︂ i1=ℓ • • • n ∑︂ ij =ℓ ℓ-1 ∑︂ ij+1=0 • • • ℓ-1 ∑︂ im=0 (︃ n i 1 )︃ • • • (︃ n i m )︃ B (i 1 + • • • + i m + 1, mn -(i 1 + • • • + i m ) + 1) , where B : (a, b) ∈ (0, +∞) 2 ↦ → ∫︂ 1 0 t a-1 (1 -t) b-1 dt denotes the Beta function. The identity (︃ a b )︃ = 1 (a + 1)B(b + 1, a -b + 1)</formula><p>, with a = mn and b</p><formula xml:id="formula_58">= (i 1 + • • • + i m ), implies that P (︁ U (ℓ,k) ⩽ U )︁ = 1 -M n,k , hence P (︁ U ⩽ U (ℓ,k) )︁ = M n,k .<label>(14)</label></formula><p>By Eq. ( <ref type="formula" target="#formula_51">12</ref>), we obtain that</p><formula xml:id="formula_59">P (︂ Y ∈ ˆ︁ C ℓ,k (X) | ˆ︁ f )︂ ⩾ M n,k</formula><p>almost surely, hence Eq. ( <ref type="formula" target="#formula_12">5</ref>) by integrating this inequality. When F S is continuous, Eq. ( <ref type="formula" target="#formula_53">13</ref>) and ( <ref type="formula" target="#formula_58">14</ref>) show that</p><formula xml:id="formula_60">P (︂ Y ∈ ˆ︁ C ℓ,k (X) | ˆ︁ f )︂ = M n,k , hence the result. C.2. Proof of Theorem 3.3 First, let us remark that ∑︁ m j=1 ∑︁ n i=1 1 {︂ S (j) i ⩽ ˆ︁ Q (ℓ,k)</formula><p>}︂ is almost surely greater or equal to ℓ • k by definition of ˆ︁ Q (ℓ,k) . Now, following the proof of <ref type="bibr">Bian &amp; Barber (2022, Theorem 1)</ref>, by definition of the FedCP-QQ method, we have</p><formula xml:id="formula_61">{︁ Y ∈ ˆ︁ C k,ℓ (X) }︁ = {︂ S ⩽ ˆ︁ Q (ℓ,k) }︂ ⊇ ⎧ ⎨ ⎩ m ∑︂ j=1 n ∑︂ i=1 1 {︂ S (j) i &lt; S }︂ &lt; m ∑︂ j=1 n ∑︂ i=1 1 {︂ S (j) i ⩽ ˆ︁ Q (ℓ,k) }︂ ⎫ ⎬ ⎭ ⊇ ⎧ ⎨ ⎩ m ∑︂ j=1 n ∑︂ i=1 1 {︂ S (j) i &lt; S }︂ &lt; ℓ • k ⎫ ⎬ ⎭ = ⎧ ⎨ ⎩ m ∑︂ j=1 n ∑︂ i=1 1 {︂ S (j) i ⩾ S }︂ ⩾ mn -ℓ • k ⎫ ⎬ ⎭ = {︃ F ¯mn (S) ⩾ mn -ℓ • k mn }︃ ,</formula><p>where F ¯mn (S) is the right-tail empirical c.d.f of the {S (j) i } n,m i,j=1 at S. Note that this is a random variable in both the data set and S. We now have</p><formula xml:id="formula_62">α P (D mn ) = P (︂ Y / ∈ ˆ︁ C ℓ,k (X) ⃓ ⃓ ˆ︁ f , D mn )︂ ⩽ P (︃ F ¯mn (S) &lt; 1 - ℓ • k mn ⃓ ⃓ ⃓ ⃓ ˆ︁ f , D mn )︃ = P (︃ F ¯mn (S) + F ¯S(S) -F ¯S(S) &lt; 1 - ℓ • k mn ⃓ ⃓ ⃓ ⃓ ˆ︁ f , D mn )︃ ⩽ P (︃ F ¯S(S) ⩽ 1 - ℓ • k mn + sup s∈R {︁ F ¯S(s) -F ¯mn (s) }︁ ⃓ ⃓ ⃓ ⃓ ˆ︁ f , D mn )︃ .</formula><p>Fixing any ∆ &gt; 0, let us consider the event</p><formula xml:id="formula_63">{︃ sup s∈R {︁ F ¯S(s) -F ¯mn (s) }︁ ⩽ ∆ }︃ .</formula><p>Note that it depends of the data D mn . On this event, we have</p><formula xml:id="formula_64">α P (D mn ) ⩽ P (︃ F ¯S(S) ⩽ 1 - ℓ • k mn + ∆ ⃓ ⃓ ⃓ ⃓ ˆ︁ f , D mn )︃ ⩽ 1 - ℓ • k mn + ∆</formula><p>since F ¯S(S) is a valid p-value <ref type="bibr" target="#b6">(Bian &amp; Barber, 2022</ref>, Lemma 1). As a consequence,</p><formula xml:id="formula_65">P (︃ α P (D mn ) &gt; 1 - ℓ • k mn + ∆ )︃ ⩽ P (︃ sup s∈R {︁ F ¯S(s) -F ¯mn (s) }︁ &gt; ∆ )︃ .</formula><p>Applying the Dworetzky-Kiefer-Wolfowitz inequality <ref type="bibr" target="#b12">(Dvoretzky et al., 1956;</ref><ref type="bibr" target="#b34">Massart, 1990)</ref>, the last term is upper-bounded by δ ∈ (0, 0.5] when we choose ∆ = √︂</p><formula xml:id="formula_66">log(1/δ) 2mn . Finally, for ℓ • k ⩾ (1 -α) • mn, we have P (︄ α P (D mn ) ⩽ α + √︃ log(1/δ) 2mn )︄ ⩾ P (︄ α P (D mn ) ⩽ 1 - ℓ • k mn + √︃ log(1/δ) 2mn )︄ ⩾ 1 -δ . C.3. Proof of Proposition 3.4</formula><p>All the proof is made conditionally to the predictor ˆ︁ f , which means that we prove below that</p><formula xml:id="formula_67">P (︁ Y ∈ ˆ︁ C ℓ ⋆ ,k ⋆ (X) | ˆ︁ f )︁ ⩾ 1 -α -E [︃ d TV (︂ PoisBin (︁ p * (S) )︁ , Bin (︁ m, p ˜ * ( ˜︁ S) )︁ )︂ ⃓ ⃓ ⃓ ˆ︁ f ]︃ . (<label>15</label></formula><formula xml:id="formula_68">)</formula><p>The result follows by taking an expectation. In the remainder of the proof, for simplicity, we write P(•) and E[•] instead of</p><formula xml:id="formula_69">P(• | ˆ︁ f ) and E[• | ˆ︁ f ], respectively.</formula><p>First, for every k ∈ 1, m and ℓ ∈ 1, n , by definition of ˆ︁ C ℓ,k , we have</p><formula xml:id="formula_70">P (︁ Y / ∈ ˆ︁ C ℓ,k (X) )︁ = P (︂ ˆ︁ Q (ℓ,k) &lt; S )︂ = P (︃ m ∑︂ j=1 1 {︂ ˆ︁ Q (ℓ) (S (j) ) &lt; S }︂ ⏞ ⏟⏟ ⏞ ≜W ⩾ k )︃ .<label>(16)</label></formula><p>Similarly,</p><formula xml:id="formula_71">P (︂ ˆ︁ Q (ℓ,k) (︂ ˜︁ S (1) , . . . , ˜︁ S (m) )︂ &lt; ˜︁ S )︂ = P (︃ m ∑︂ j=1 1 {︂ ˆ︁ Q (ℓ) ( ˜︁ S (j) ) &lt; ˜︁ S }︂ ⏞ ⏟⏟ ⏞ ≜ ˜︂ W ⩾ k )︃ . (<label>17</label></formula><formula xml:id="formula_72">)</formula><p>Given S (and ˆ︁ f ), the random variables 1{ ˆ︁ Q (ℓ) (S (j) ) &lt; S}, j = 1, . . . , m, are independent Bernoulli random variables with respective parameters p j (S, ℓ) ≜ P(S</p><p>(ℓ) ⩽ S|S), so their sum W follows the PoisBin(p(S, ℓ)) distribution, where p(S, ℓ) ≜ (p 1 (S, ℓ), . . . , p m (S, ℓ)). Given S ˜(and ˆ︁ f ), the random variables 1{ ˆ︁ Q (ℓ) ( ˜︁ S (j) ) &lt; ˜︁ S}, j = 1, . . . , m, are i.i.d.</p><p>Bernoulli random variables with common parameter p ˜( ˜︁ S, ℓ) ≜ P( ˜︁ S</p><p>(1) (ℓ) ⩽ ˜︁ S| ˜︁ S), so their sum ˜︂ W follows the Bin(m, ˜︁ p(S, ℓ)) distribution. As a consequence, we have</p><formula xml:id="formula_74">P(W ⩾ k | S) -P( ˜︂ W ⩾ k | ˜︁ S) = PoisBin (︁ p(S, ℓ) )︁(︁ [k, +∞) )︁ -Bin (︁ m, p ˜( ˜︁ S, ℓ) )︁(︁ [k, +∞) )︁ ⩽ d TV (︂ PoisBin (︁ p(S, ℓ) )︁ , Bin (︁ m, p ˜( ˜︁ S, ℓ) )︁ )︂ ,</formula><p>by definition of the total-variation (TV) distance d TV (µ, ν) = sup A measurable {︁ µ(A)-ν(A) }︁ for any probability distributions µ and ν. Taking an expectation and using Eq. ( <ref type="formula" target="#formula_70">16</ref>) and ( <ref type="formula" target="#formula_71">17</ref>), we get that One also can choose the common distribution of the { ˜︁ S (j) i } n,m i,j=1 , ˜︁ S. Here, the best choice is the one that maximizes the right-hand side of Eq. (15). We conjecture that a good choice is to take ˜︁ S = S, and to define the ˜︁ S (j) i as independent copies of S (given ˆ︁ f ).</p><formula xml:id="formula_75">P (︁ Y / ∈ ˆ︁ C ℓ,k (X) )︁ = P( ˜︂ W ⩾ k) + P(W ⩾ k) -P( ˜︂ W ⩾ k) ⩽ P (︂ ˆ︁ Q (ℓ,k) (︂ ˜︁ S (1) , . . . , ˜︁ S (m) )︂ &lt; ˜︁ S )︂ + E [︃ d TV (︂ PoisBin (︁ p(S, ℓ) )︁ , Bin (︁ m, p ˜( ˜︁ S, ℓ) )︁ )︂ ]︃ ⩽ 1 -M ℓ,</formula><p>Finally, let us recall a result from Ehm (1991, Theorem 1) which can be useful to control the right-hand side of Eq. ( <ref type="formula" target="#formula_67">15</ref>). </p><formula xml:id="formula_76">C [︁ 1 -p ˜m+1 -(1 -p ˜)m+1 ]︁ • [︃ 1 - ∑︁ m i=1 p i (1 -p i ) mp ˜(1 -p ˜) ]︃ ⩽ d TV (︂ PoisBin(p 1 , • • • , p m ) , Bin(m, p ˜))︂ ⩽ m m + 1 [︁ 1 -p ˜m+1 -(1 -p ˜)m+1 ]︁ • [︃ 1 - ∑︁ m i=1 p i (1 -p i ) mp ˜(1 -p ˜) ]︃ ,</formula><p>where d TV (•, •) is the total-variation distance, and C is a universal constant.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.4. Proof of Theorem 4.1</head><p>The privacy guarantee is a direct consequence of the fact that Algorithm 2 is ε-DP (exponential mechanism). Indeed, each agent calls this algorithm only one time during FedCP 2 -QQ, making it ε-DP with respect to its local data set (ε-LDP).</p><p>It remains to prove that the desired coverage is achieved. To do so, recall the following utility lemma related to the output of Algorithm 2 <ref type="bibr" target="#b3">(Angelopoulos et al., 2022)</ref>. Lemma C.4. (Utility of Algorithm 2). For any δ ∈ (0, 1), scores S 1 , . . . , S n and q ∈ [0.5, 1), the output of Algorithm 2, denoted ˆ︁ Q ε 1 , satisfies:</p><formula xml:id="formula_77">P (︄ |{i : S ¯i ⩽ ˆ︁ Q ε 1 }| n ⩾ q - 2 log (B/δ) nε ⃓ ⃓ ⃓ ⃓ ⃓ S 1 , . . . , S n )︄ ⩾ 1 -δ . (<label>19</label></formula><formula xml:id="formula_78">)</formula><p>Proof. The proof, provided by <ref type="bibr">Angelopoulos et al. (2022, Lemma 1)</ref>, is a direct application of the utility guarantee of the general exponential mechanism (see <ref type="bibr">Dwork et al., 2014, Corollary 3.12)</ref>. Note that Angelopoulos et al. (2022, Lemma 1) state the above result on average over S 1 , . . . , S n , but their proof is actually valid conditionally to S 1 , . . . , S n since the original result by <ref type="bibr">Dwork et al. (2014, Corollary 3.12</ref>) is valid conditionally to S 1 , . . . , S n .</p><p>We can now prove our main result. Let us first define the event E = { ˆ︁ Q ε ⩾ ˆ︁ Q (ℓγ ,kγ ) }, i.e., when the private estimator ˆ︁ Q ε = ˆ︁ Q ε (kγ ) returned by FedCP 2 -QQ is greater than the non-private estimator ˆ︁ Q (ℓγ ,kγ ) that would be returned by FedCP-QQ (Algorithm 1) with coverage 1-α 1-γα . Denoting by S (1...m) the full data set containing all local data sets of scores S (1) , . . . , S (m) , we have:</p><formula xml:id="formula_79">P (︁ Y ∈ ˆ︁ C ε (X) )︁ = P (︁ S ⩽ ˆ︁ Q ε )︁ = E [︂ P (︁ S ⩽ ˆ︁ Q ε ⃓ ⃓ S (1...m) )︁ ]︂ ⩾ E [︂ P (︁ S ⩽ ˆ︁ Q ε and E ⃓ ⃓ S (1...m) )︁ ]︂ ⩾ E [︂ P (︁ S ⩽ ˆ︁ Q (ℓγ ,kγ ) and E ⃓ ⃓ S (1...m) )︁ ]︂ = E [︂ P (︁ S ⩽ ˆ︁ Q (ℓγ ,kγ ) ⃓ ⃓ S (1...m) )︁ • P (︁ E | S (1...m) )︁ ]︂ ,<label>(20)</label></formula><p>where the last equality is obtained by the fact that knowing S (1...m) , the random variable ˆ︁ Q (ℓγ ,kγ ) is deterministic, hence the events E = { ˆ︁ Q ε ⩾ ˆ︁ Q (ℓγ ,kγ ) } and {S ⩽ ˆ︁ Q (ℓγ ,kγ ) } are independent.</p><p>We first show that P(E | S (1...m) ) ⩾ 1 -γα. Notice that a sufficient condition for the event E to be satisfied is that each agent j outputs a value ˆ︁ Q ε j greater that the ℓ γ -th ordered score S (j) (ℓγ ) of the local data set S (j) . Indeed, in that case the k γ -th ordered value of ˆ︁ Q ε 1 , . . . , ˆ︁ Q ε m , i.e., ˆ︁ Q ε , is necessarily bigger than the k γ -th ordered value of S</p><p>(1) (ℓγ ) , . . . , S</p><p>(ℓγ ) , i.e., ˆ︁ Q (ℓγ ,kγ ) .</p><p>In the end, we have E ⊃ )︂</p><formula xml:id="formula_81">= m ∏︂ j=1 P (︁ ˆ︁ Q ε j ⩾ S (j) (ℓγ ) ⃓ ⃓ S (1...m) )︁ = m ∏︂ j=1 P (︁ ˆ︁ Q ε j ⩾ S (j) (ℓγ ) ⃓ ⃓ S (j) )︁ ⩾ m ∏︂ j=1 P (︁ ˆ︁ Q ε j ⩾ S ¯(j) (ℓγ ) ⃓ ⃓ S (j) )︁ ,<label>(21)</label></formula><p>where the first equality comes from the fact that the events { ˆ︁ Q ε j ⩾ S (j) (ℓγ ) } are independent given S (1...m) . The last inequality comes from the fact that, for all j = 1, . . . , m, the discretized score S ¯(j) (ℓγ ) is larger than (or equal to) the non-discretized score S (j) (ℓγ ) . Moreover, for every j ∈ {1, . . . , m}, we have:</p><formula xml:id="formula_82">P (︂ ˆ︁ Q ε j ⩾ S ¯(j) (ℓγ ) ⃓ ⃓ S (j) )︂ = P (︂ ⃓ ⃓ {i : S ¯(j) i ⩽ ˆ︁ Q ε j } ⃓ ⃓ ⩾ ℓ γ ⃓ ⃓ S (j) )︂ = P (︂ ⃓ ⃓ {i : S ¯(j) i ⩽ ˆ︁ Q ε j } ⃓ ⃓ ⩾ ℓ γ + ℓ cor -ℓ cor ⃓ ⃓ S (j) )︂ ⩾ P (︄ ⃓ ⃓ {i : S ¯(j) i ⩽ ˆ︁ Q ε j } ⃓ ⃓ n ⩾ ℓ γ + ℓ cor n - 2 nε log (︃ B 1 -(1 -γα) 1 m )︃ ⃓ ⃓ ⃓ ⃓ S (j)</formula><p>)︄</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. Comparison of the exact value of P(Y ∈ ˆ︁ C ℓ * ,k * (X)) = M ℓ * ,k * (blue) with the upper bound either when data are centralized (orange) or when there is only one agent (red). Parameters are α = 0.1, m = {5, 20}, and n = {10, . . . , 100}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>, n do Compute the discretized score S ¯i = e b such that Si ∈ I b end for for b = 1, . . . , B do Compute the weight w b = max {︂ |{i:S ¯i&lt;e b }| q</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>(2022)  and summarized in Algorithm 2. The main idea is to apply the exponential mechanism<ref type="bibr" target="#b38">(McSherry &amp; Talwar, 2007)</ref> to a discretization of the scores into bins and with an appropriate choice of utility function. It requires to fix a number of bins B ∈ N, an upper bound on the scores S max and a set of points 0 = e 0 &lt; e 1 &lt; • • • &lt; e B-1 &lt; e B = S max defining the bins I b = (e b-1 , e b ]. Algorithm 2 is ε-DP by a direct application of the exponential mechanism with utility function w b and sensitivity ∆ q .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 2 .</head><label>2</label><figDesc>Figure2. Degree of compensation M ℓγ +ℓcor,kγ for different values of α, n and ε when m = 10. We clearly observe that M ℓγ +ℓcor,kγ tends to the desired coverage 1 -α (dashed lines) as n and ε tends to +∞, which means that the compensation vanishes.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Prediction intervals on simulated data with FedCP-QQ (ours), centralized, and FedCP-Avg calibrations. The lower bound of the set returned by FedCP-Avg is beyond the figure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Empirical coverages of prediction intervals (α = 0.1) constructed by various methods. On the left, when m ≫ n. On the right, when m ≪ n. Our method FedCP-QQ is shown in bold font. The white circle represents the mean.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Prediction intervals on simulated data (unbalanced case) with FedCP-QQ (ours), centralized, and FedCP-Avg calibrations. The lower bound of the set returned by FedCP-Avg is beyond the figure.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Heat-map representation of (M ℓ,k ) 1⩽ℓ⩽n,1⩽k⩽m for m = 10 and n = 20.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Values of (M ℓ,k ) 1⩽ℓ⩽n,1⩽k⩽m when (m, n) = (5, 10) (Left panel) and (10, 20) (Right panel). One color per value of k.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_9"><head>Figure 8 .Figure 9 .Figure 10 .Figure 11 .Figure 12 .Figure 13 .Figure 14 .Figure 15 .Figure 16 .Figure 17 .</head><label>891011121314151617</label><figDesc>Figure 8. Coverage (left) and average length (right) of prediction intervals for 20 random training-calibration-test splits. The miscoverage is α = 0.1, and the calibration set is split into m = 100 disjoint subsets of equal size n = 10. The white circle represents the mean and the name of the data set is located at the top of each plot.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Figure 18 .</head><label>18</label><figDesc>Figure18. Empirical coverages of prediction intervals (α = 0.1) constructed by FedCP-QQ and its private version FedCP 2 -QQ for ε = 10, 5, 1. On top, coverages for the bio data set, and, on the bottom for the bike data sets. The white circle represents the mean.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head></head><label></label><figDesc>are i.i.d. We denote by F S their c.d.f. (given ˆ︁ f ), and make the proof conditionally to ˆ︁ f .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head></head><label></label><figDesc>Theorem C.3. Let m ⩾ 1 be an integer, p 1 , . . . , p m ∈ [0, 1] and p ˜= 1 m ∑︁ m j=1 p j . Let Bin(m, p ˜) denote the binomial distribution and PoisBin(m, (p 1 , • • • , p m )) denote the Poisson-binomial distribution. The following inequalities hold true:</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_13"><head></head><label></label><figDesc>}, which allows us to obtain a lower bound for P(E | S (1...m) ):P(E | S (1...m) ) ⩾ P</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>Remark C.2. In Proposition 3.4, let us emphasize that the auxiliary random variables { ˜︁ S } n,m i,j=1 , S, as long as they satisfy the only assumption required: { ˜︁ S</figDesc><table><row><cell></cell><cell></cell><cell cols="2">k + E [︃ d TV</cell><cell>(︂</cell><cell>PoisBin</cell><cell>(︁</cell><cell cols="2">p(S, ℓ)</cell><cell>)︁</cell><cell cols="2">, Bin</cell><cell>(︁</cell><cell>m, p ˜( ˜︁ S, ℓ) )︁ )︂ ]︃</cell><cell>,</cell></row><row><cell cols="12">by Theorem 3.2, which applies here since ˜︁ S (1) 1 , . . . , ˜︁ S (m) n , ˜︁ S are i.i.d., conditionally to ˆ︁ f . Therefore,</cell></row><row><cell></cell><cell>P (︁</cell><cell>Y ∈ ˆ︁ C ℓ,k (X) )︁</cell><cell cols="3">⩾ M ℓ,k -E [︃ d TV</cell><cell cols="2">(︂</cell><cell cols="3">PoisBin</cell><cell>(︁</cell><cell>p(S, ℓ) )︁</cell><cell>, Bin (︁</cell><cell>m, p ˜( ˜︁ S, ℓ) )︁ )︂ ]︃</cell><cell>,</cell><cell>(18)</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>(j) i } n,m i,j=1 , ˜︁ S can be dependent</cell></row><row><cell>on the scores {S</cell><cell>(j)</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>(j) i } n,m i,j=1 , ˜︁ S must be i.i.d. given ˆ︁ f .</cell></row></table><note><p><p>which implies the result by taking</p>(ℓ, k) = (ℓ * , k * ) since M ℓ * ,k * ⩾ 1 -α. i</p></note></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported in part by the <rs type="funder">French Agence Nationale de la Recherche</rs> under grants <rs type="grantNumber">ANR-20-CE23-0015</rs> (Project <rs type="projectName">PRIDE</rs>) and <rs type="grantNumber">ANR-17-CE23-0011</rs> (<rs type="projectName">FAST</rs><rs type="grantNumber">-BIG</rs>). <rs type="person">Batiste Le Bars</rs> is supported by an <rs type="funder">Inria-EPFL</rs> fellowship. <rs type="person">Sylvain Arlot</rs> is also supported by <rs type="funder">Institut Universitaire de France (IUF)</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_BfvDET3">
+					<idno type="grant-number">ANR-20-CE23-0015</idno>
+					<orgName type="project" subtype="full">PRIDE</orgName>
+				</org>
+				<org type="funded-project" xml:id="_8MDT2gm">
+					<idno type="grant-number">ANR-17-CE23-0011</idno>
+					<orgName type="project" subtype="full">FAST</orgName>
+				</org>
+				<org type="funding" xml:id="_4DF7nMS">
+					<idno type="grant-number">-BIG</idno>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Appendix A. Supplementary Discussions</head><p>A.1. FedCP-QQ with Different n i ⩾ P</p><p>where the last inequality is obtained by applying Lemma C.4 with {S 1 , . . . , S n } = S (j) , q = max{</p><p>Plugging this result into Eq. ( <ref type="formula">21</ref>), we get P(E | S (1...m) ) ⩾ 1 -γα, which can then be plugged into Eq. ( <ref type="formula">20</ref>) and leads to</p><p>where the last inequality comes from the fact that ˆ︁ Q (ℓγ ,kγ ) is the output of FedCP-QQ (Algorithm 1) with coverage</p><p>We start by proving the following lemma.</p><p>Lemma C.5. The following equality holds true for every integer k ⩾ 1:</p><p>Proof. Throughout the proof, we use that for any x &gt; 0, Γ(x) = Γ(x + 1) x , according to <ref type="bibr" target="#b10">Davis (1959)</ref>.</p><p>We proceed by induction on k. First, for k = 1,</p><p>Then, assume that the result holds true for some k ⩾ 1, that is,</p><p>and let us prove that it holds true for k + 1:</p><p>We can now prove Proposition A.1. Let us assume that {U (j) i } m,n i,j=1 , U are i.i.d. uniform on [0, 1] and use the notation of the proof of Theorem 3.2. We have M n,k = P(U ⩽ U (n,k) ) by Theorem 3.2 and by Lemma C.1, for every t ∈ [0, 1]:</p><p>Therefore,</p><p>where</p><p>denotes the Beta function. We obtain that</p><p>Using Lemma C.5, we get that</p><p>, which proves the first formula. Now, using Stirling's formula, when k, m → +∞, we have</p><p>By setting k = k m ⩾ m(1 -α) n , we obtain the second result.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Tennessee&apos;s student teacher achievement ratio (star) project</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Achilles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">P</forename><surname>Bain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bellott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Boyd-Zaharias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Folger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Johnston</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Word</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Harvard Dataverse</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page">2008</biblScope>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Differentially private learning with adaptive clipping</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Andrew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Thakkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ramaswamy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="17455" to="17466" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Conformal prediction: A gentle introduction</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Angelopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bates</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="494" to="591" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Private prediction sets</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Angelopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Zrnic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Harvard Data Science Review</title>
+		<imprint>
+			<date type="published" when="2022-04">apr 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Permanents, order statistics, outliers, and robustness</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Balakrishnan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Revista matemática complutense</title>
+		<imprint>
+			<biblScope unit="volume">20</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="7" to="107" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The need for uncertainty quantification in machine-assisted medical decision making</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Begoli</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bhattacharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kusnezov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="20" to="23" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Training-conditional coverage for distribution-free predictive inference</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">F</forename><surname>Barber</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2205.03647</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Practical secure aggregation for privacypreserving machine learning</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Ivanov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kreuter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Marcedone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Patel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Segal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Seth</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">proceedings of the 2017 ACM SIGSAC Conference on Computer and Communications Security</title>
+		<meeting>the 2017 ACM SIGSAC Conference on Computer and Communications Security</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1175" to="1191" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Federated calibration and evaluation of binary classifiers</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cormode</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Markov</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2210.12526</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Order statistics</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A</forename><surname>David</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">N</forename><surname>Nagaraja</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<publisher>John Wiley &amp; Sons</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Leonhard euler&apos;s integral: A historical profile of the gamma function: In memoriam: Milton abramowitz</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">J</forename><surname>Davis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The American Mathematical Monthly</title>
+		<imprint>
+			<biblScope unit="volume">66</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="849" to="869" />
+			<date type="published" when="1959">1959</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Heterogeneity for the win: One-shot federated clustering</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">K</forename><surname>Dennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Asymptotic minimax character of the sample distribution function and of the classical multinomial estimator</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dvoretzky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kiefer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wolfowitz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Mathematical Statistics</title>
+		<imprint>
+			<biblScope unit="page" from="642" to="669" />
+			<date type="published" when="1956">1956</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">The algorithmic foundations of differential privacy</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dwork</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Roth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="issue">3-4</biblScope>
+			<biblScope unit="page" from="211" to="407" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Binomial approximation to the poisson binomial distribution</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Ehm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Statistics &amp; Probability Letters</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="7" to="16" />
+			<date type="published" when="1991">1991</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Federated stochastic gradient langevin dynamics</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>El Mekkaoui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Mesquita</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Blomstedt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kaski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Uncertainty in Artificial Intelligence</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1703" to="1712" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Event labeling combining ensemble detectors and background knowledge</title>
+		<author>
+			<persName><forename type="first">Fanaee-T</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Progress in Artificial Intelligence</title>
+		<idno type="ISSN">2192-6352</idno>
+		<imprint>
+			<biblScope unit="page" from="1" to="15" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Hiding among the clones: A simple and nearly optimal analysis of privacy amplification by shuffling</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mcmillan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">FOCS</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Conformal prediction: a unified review of theory and new challenges</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Fontana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zeni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vantini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bernoulli</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Synergy conformal prediction</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Gauraha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Spjuth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Symposium on Conformal and Probabilistic Prediction and Applications</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="91" to="110" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">C</forename><surname>Geyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Klein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Nabi</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1712.07557</idno>
+		<title level="m">Differentially private federated learning: A client level perspective</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Guha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Talwalkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Smith</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1902.11175</idno>
+		<title level="m">One-shot federated learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Nested conformal prediction and quantile out-of-bag ensemble methods</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Kuchibhotla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ramdas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Pattern Recognition</title>
+		<imprint>
+			<biblScope unit="volume">127</biblScope>
+			<biblScope unit="page">108496</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Advances and open problems in federated learning</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kairouz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Avent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bennis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">N</forename><surname>Bhagoji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Bonawitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Charles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cormode</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cummings</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends® in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1-2</biblScope>
+			<biblScope unit="page" from="1" to="210" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Stochastic Controlled Averaging for On-Device Federated Learning</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Karimireddy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mohri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Reddi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">U</forename><surname>Stich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Suresh</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Scaffold</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Adaptive, distribution-free prediction intervals for deep networks</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kivaranovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">D</forename><surname>Johnson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Leeb</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Artificial Intelligence and Statistics</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="4346" to="4356" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Regression quantiles. Econometrica</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Koenker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bassett</surname><genName>Jr</genName></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">journal of the Econometric Society</title>
+		<imprint>
+			<biblScope unit="page" from="33" to="50" />
+			<date type="published" when="1978">1978</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<monogr>
+		<title level="m" type="main">Fedpop: A bayesian approach for personalised federated learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kotelevskii</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Vono</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Moulines</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Durmus</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2206.03611</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Refined convergence and topology learning for decentralized SGD with heterogeneous data</title>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Bars</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tommasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lavoie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kermarrec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A.-M</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Efficient time/space algorithm to compute rectangular probabilities of multinomial, multivariate hypergeometric and multivariate Pólya distributions</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lebrun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Statistics and Computing</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="615" to="623" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Distribution-free predictive inference for regression</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>G'sell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rinaldo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Tibshirani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wasserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">113</biblScope>
+			<biblScope unit="issue">523</biblScope>
+			<biblScope unit="page" from="1094" to="1111" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Practical one-shot federated learning for cross-silo setting</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Federated optimization in heterogeneous networks</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Sahu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zaheer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sanjabi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Talwalkar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Smith</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Machine Learning and Systems</title>
+		<meeting>Machine Learning and Systems</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="429" to="450" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Distribution-free federated learning with conformal predictions</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kalpathy-Cramer</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2110.07661</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">The tight constant in the Dvoretzky-Kiefer-Wolfowitz inequality</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Massart</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Annals of Probability</title>
+		<imprint>
+			<biblScope unit="page" from="1269" to="1283" />
+			<date type="published" when="1990">1990</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Communication-efficient learning of deep networks from decentralized data</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hampson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">A</forename><surname>Arcas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Artificial intelligence and statistics</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1273" to="1282" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Learning differentially private recurrent language models</title>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">B</forename><surname>Mcmahan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ramage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Learning Representations</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mcmillan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Javidbakht</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Briggs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Chatzidakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Duchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Goren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hesse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Jina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Katti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lyford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Meyer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Palmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Park</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Parsa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Pelzl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2211.10082</idno>
+		<title level="m">Private federated statistics in an interactive setting</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Mechanism design via differential privacy</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mcsherry</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">48th Annual IEEE Symposium on Foundations of Computer Science (FOCS&apos;07)</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="94" to="103" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Quantile regression forests</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Meinshausen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ridgeway</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of machine learning research</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Stable conformal prediction sets</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ndiaye</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Conference on Machine Learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="16462" to="16479" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Differentially Private Federated Learning on Heterogeneous Data</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Noble</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dieuleveut</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AISTATS</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Inductive confidence machines for regression</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Papadopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Proedrou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vovk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gammerman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Machine Learning</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+			<biblScope unit="page" from="345" to="356" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Differentially private federated quantiles with the distributed discrete Gaussian mechanism</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pillutla</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Laguel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Malick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Harchaoui</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">International Workshop on Federated Learning: Recent Advances and New Challenges</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<monogr>
+		<title level="m" type="main">Physicochemical properties of protein tertiary structure data set</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Rana</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+		<respStmt>
+			<orgName>UCI Machine Learning Repository</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<monogr>
+		<title level="m" type="main">Communities and crime unnormalized data set</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Redmond</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+		<respStmt>
+			<orgName>UCI Machine Learning Repository</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Conformalized quantile regression</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Romano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Patterson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Candes</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">One-shot federated learning: Theoretical limits and algorithms to achieve them</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Salehkaleybar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Sharif-Nassab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Golestani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">189</biblScope>
+			<biblScope unit="page" from="1" to="47" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Conformal prediction using conditional histograms</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sesia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Romano</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="page" from="6304" to="6315" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">A quantile regression neural network approach to estimating the conditional density of multiperiod returns</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">W</forename><surname>Taylor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Forecasting</title>
+		<imprint>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="299" to="311" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Conditional validity of inductive conformal predictors</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vovk</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Asian conference on machine learning</title>
+		<imprint>
+			<publisher>PMLR</publisher>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="475" to="490" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Algorithmic learning in a random world</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vovk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gammerman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Shafer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Modeling of strength of high-performance concrete using artificial neural networks</title>
+		<author>
+			<persName><forename type="first">I.-C</forename><surname>Yeh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Cement and Concrete research</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1797" to="1808" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Bayesian nonparametric federated learning of neural networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yurochkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Agarwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Greenewald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">N</forename><surname>Hoang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Khazaeni</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Communication-efficient algorithms for statistical optimization</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Wainwright</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Duchi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in neural information processing systems</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

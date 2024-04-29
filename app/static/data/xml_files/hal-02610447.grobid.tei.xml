@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Design Choices for X-vector Based Speaker Anonymization</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Brij</forename><surname>Mohan</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Lal</forename><surname>Srivastava</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Natalia</forename><surname>Tomashenko</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">Laboratoire Informatique d&apos;Avignon (LIA)</orgName>
+								<orgName type="institution">Avignon Université</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xin</forename><surname>Wang</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">National Institute of Informatics</orgName>
+								<address>
+									<settlement>Tokyo</settlement>
+									<country key="JP">Japan</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Emmanuel</forename><surname>Vincent</surname></persName>
+							<affiliation key="aff4">
+								<orgName type="institution" key="instit1">Université de Lorraine</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<orgName type="institution" key="instit4">LORIA</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Junichi</forename><surname>Yamagishi</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="institution">National Institute of Informatics</orgName>
+								<address>
+									<settlement>Tokyo</settlement>
+									<country key="JP">Japan</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mohamed</forename><surname>Maouche</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Aurélien</forename><surname>Bellet</surname></persName>
+							<affiliation key="aff1">
+								<address>
+									<settlement>Inria</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Marc</forename><surname>Tommasi</surname></persName>
+							<affiliation key="aff5">
+								<orgName type="institution">Université de Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><surname>Design</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="laboratory">Choices for X-vector Based Speaker Anonymization</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Design Choices for X-vector Based Speaker Anonymization</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">AA0C1A59B92BAC48E62C8E2F2B4D63A9</idno>
+					<note type="submission">Submitted on 25 Jul 2020</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:47+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>speaker anonymization</term>
+					<term>VoicePrivacy challenge</term>
+					<term>voice conversion</term>
+					<term>PLDA</term>
+					<term>x-vectors</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>à la diffusion de documents scientifiques de niveau recherche, publiés ou non, émanant des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>Privacy protection methods for speech fall into four broad categories <ref type="bibr" target="#b0">[1]</ref>: deletion, encryption, distributed learning, and anonymization. The VoicePrivacy initiative <ref type="bibr" target="#b0">[1]</ref> specifically promotes the development of anonymization methods which aim to suppress personally identifiable information in speech while leaving other attributes such as linguistic content intact. <ref type="foot" target="#foot_0">1</ref> Recent studies have proposed anonymization methods based on noise addition <ref type="bibr" target="#b1">[2]</ref>, speech transformation <ref type="bibr" target="#b2">[3]</ref>, voice conversion <ref type="bibr" target="#b3">[4]</ref><ref type="bibr" target="#b4">[5]</ref><ref type="bibr" target="#b5">[6]</ref>, speech synthesis <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8]</ref>, and adversarial learning <ref type="bibr" target="#b8">[9]</ref>. We focus on voice conversion / speech synthesis based methods due to the naturalness of their output and their promising results so far.</p><p>In order to implement a speaker anonymization scheme based on voice conversion or speech synthesis, we must address the following questions: 1. What is the best representation to characterize speaker information in a speech signal? 2. Which distance metric is most appropriate to explore various regions of the speaker space? 3. How to optimally select target speakers from a small pool of speakers? 4. How to combine the distance metric and target selection in order to strike balance between privacy protection and loss of utility?</p><p>Classically, speaker anonymization methods that rely on a voice conversion or speech synthesis system select a random target speaker from a pool of speakers which must be included in the training set for that system. This constraint severely restricts the user's freedom to choose an arbitrary unseen speaker as the target for anonymization. Moreover, several targets cannot be mixed together to create an imaginary sample in speaker space, i.e., a pseudo-speaker. In a previous experimental study <ref type="bibr" target="#b9">[10]</ref>, we specified three criteria to be satisfied by voice conversion algorithms for speaker anonymization: 1) non-parallel, 2) many-to-many, and 3) source-and language-independent. Although the algorithms compared in <ref type="bibr" target="#b9">[10]</ref> satisfied these criteria, they did not allow conversion conditioned over a continuous speaker representation, such as x-vectors <ref type="bibr" target="#b10">[11]</ref>.</p><p>Recently, Fang et al. <ref type="bibr" target="#b7">[8]</ref> proposed to identify x-vectors at a fixed distance from the "user" x-vector and to combine them to produce a pseudo-speaker representation. This representation, along with the "user" linguistic representation, is provided as input to a Neural Source-Filter (NSF) <ref type="bibr" target="#b11">[12]</ref> based speech synthesizer to produce anonymized speech. Han et al. <ref type="bibr" target="#b12">[13]</ref> extended <ref type="bibr" target="#b7">[8]</ref> by proposing a metric privacy framework where an xvector based pseudo-speaker is selected so as to satisfy a given privacy budget. Based on these studies, we answer Question 1 by choosing x-vectors as the appropriate speaker representation. In addition, the freedom to generate previously unseen pseudospeakers by combining existing speakers from a small dataset exponentially increases the choices for the user.</p><p>The user may select pseudo-speakers at random in the entire x-vector space or based on specific properties, such as density of speakers, gender majority, etc. They must also choose a similarity metric between x-vectors since this dictates the properties of the vector space. Previous studies <ref type="bibr" target="#b13">[14]</ref> have shown that Probabilistic Linear Discriminant Analysis (PLDA) yields state-ofthe-art speaker verification performance, superior to the cosine distance. This is attributed to the formulation of PLDA which estimates the factorized within-speaker and between-speaker variability in speaker space. Hence, the PLDA score provides a good estimate of the log-likelihood ratio between same-speaker and different-speaker hypotheses, making it a superior measure of speaker affinity even for short speech segments <ref type="bibr" target="#b14">[15]</ref>.</p><p>In this paper, we establish that a greater level of anonymization is achieved when the distance between x-vectors is measured by PLDA instead of the cosine distance as used by Fang et al. <ref type="bibr" target="#b7">[8]</ref> (answering Question 2). Then, we introduce a design choice called proximity which allows us to pick the pseudospeaker in dense, sparse, far, or near regions of speaker space. We further explore the flexibility of this anonymization scheme by exploring the influence of gender selection. These design choices are evaluated using attackers which may or may not know the anonymization scheme applied (answering Question 3). Finally we suggest the optimal combination of distance metric and design choices based on qualitative and quantitative measures to balance privacy and utility (answering Question 4).</p><p>We describe the general anonymization framework and the proposed design choices in Section 2. The datasets and evaluations metrics are briefly explained in Section 3. We present the experiments and discuss their results in Section 4. Section 5 concludes the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Anonymization design choices</head><p>The general anonymization scheme follows the method proposed in <ref type="bibr" target="#b15">[16]</ref> and shown in Fig. <ref type="figure" target="#fig_0">1</ref>. It comprises three steps: Step 1 (Feature extraction) extracts fundamental frequency (F0) and bottleneck (BN) features and the source speaker's x-vector from the input signal.</p><p>Step 2 (X-vector anonymization) anonymizes this x-vector using an external pool of speakers. Step 3 (Speech synthesis) synthesizes a speech waveform from the anonymized x-vector and the original BN and F0 features using an acoustic model (AM) and the NSF model. Step 2 (yellow box in Fig. <ref type="figure" target="#fig_0">1</ref>) is the focus of this paper. It aims to generate a pseudo-speaker and comprises two sub-steps: 1) select N * candidate target x-vectors from the anonymization pool; 2) average them to obtain the pseudo-speaker x-vector. In the following, we introduce various design choices for pseudospeaker selection. In all cases, a single target pseudo-speaker x-vector is selected for a given source speaker S, and all the utterances of S are mapped to it, following the perm strategy described in <ref type="bibr" target="#b9">[10]</ref>. This strategy has been shown to perform robust anonymization compared to other strategies described in <ref type="bibr" target="#b9">[10]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.1.">Distance Metric: Cosine vs. PLDA</head><p>We compare two metrics to identify candidates for target xvectors. The first one is the cosine distance, which was used by <ref type="bibr" target="#b7">[8]</ref>. It is defined as</p><formula xml:id="formula_0">1 - u • v ||u||2||v||2<label>(1)</label></formula><p>for a pair of x-vectors u and v. The second one is PLDA <ref type="bibr" target="#b16">[17]</ref>, which represents the log-likelihood ratio of same-speaker (Hs) and different-speaker (H d ) hypotheses. PLDA models xvectors ω as ω = m + V y + Dz, where m is the center of the acoustic space, the columns of V represent speaker variability (eigenvoices) with y depending only on the speaker, and the columns of D capture channel variability (eigenchannels) with z varying from one recording to another. The parameters m, V and D are trained using x-vectors from the training set for the x-vector model, which is used to generate the anonymization pool. The log-likelihood ratio score</p><formula xml:id="formula_1">PLDA = log p(ωi, ωj|Hs) p(ωi, ωj|H d )<label>(2)</label></formula><p>can be computed in closed form <ref type="bibr" target="#b17">[18]</ref>. We propose to use minus-PLDA as the "distance" between a pair of x-vectors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.2.">Proximity: Random</head><p>The simplest candidate x-vector selection strategy called random consists of simply selecting N * (set to 100) x-vectors uniformly at random from the same gender as the source in the anonymization pool. Note that this strategy does not allow us to choose particular regions of interest in x-vector space.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.3.">Proximity: Near vs. Far</head><p>The notion of distance can be used to define regions in x-vector space which closely resemble (near) or least resemble (far) the source speaker S. In essence, we rank all the x-vectors in the anonymization pool in increasing order of their distance from S and select either the top N (near) or the bottom N (far). To introduce some randomness, N * &lt; N x-vectors are selected out of these N uniformly at random. The variability of results is controlled by a fixed random seed. The values of N and N * are fixed to 200 and 100 respectively in our experiments. We noticed a sharp decline in utility for a smaller value of N * .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.4.">Proximity: Sparse vs. Dense</head><p>A simple mapping to far or near regions might produce biased pseudo-speaker estimates and the actual region where the output x-vector lies may not be optimal with respect to the distance from the source speaker. In order to pick the target pseudospeaker in a specific region, we identify clusters of x-vectors in the anonymization pool which are then ranked based on their density. The density of each cluster is determined by the number of members belonging to that cluster. We use Affinity Propagation <ref type="bibr" target="#b18">[19]</ref> to determine the number of clusters and their members in the anonymization pool. Affinity Propagation is a non-parametric clustering method where the number of clusters is determined automatically through a message passing protocol. Two parameters determine the final number of clusters: preference assigns prior weights to samples which may be likely candidates for centroids, and damping factor is a floating-point multiplier to responsibility and availability messages. In our experiments, equal preference is assigned to each sample and the damping factor is set to 0.5. Out of 1160 speakers in the anonymization pool, 80 clusters were found, including 46 male and 34 female. The number of speakers per cluster ranges from 6 (sparse) to 36 (dense).</p><p>Candidate x-vector selection is achieved by picking either the 10 clusters with least members (sparse) or the 10 clusters with most members (dense). The remaining clusters are ignored. During anonymization, one of the 10 clusters is selected at random and 50% of its members (N * ) are averaged to produce the pseudo-speaker. The 50% candidate x-vectors for a given cluster remain fixed for a given random seed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.5.">Gender-selection: Same, Opposite, or Random</head><p>We observe clear clustering of the two genders in x-vector space using both cosine and PLDA distances. Hence, we propose gender selection as a design choice to study its impact on anonymization and intelligibility. We have the gender information for the source speaker as well as the speakers in the anonymization pool. Hence this design choice can be combined with all proximity choices. We study three different types of gender selection: same where the candidate target x-vectors are constrained to be of the same gender as the source; opposite where they are constrained to be of the opposite gender; and random where the target gender is selected at random before picking candidate x-vectors of that gender.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">Experimental setup 3.1. Data</head><p>Following the rules of the VoicePrivacy Challenge, we use three publicly available datasets for our experiments. 2 VoxCeleb-1,2 <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b20">21]</ref> and the train-clean-100 and train-other-500 subsets of LibriSpeech <ref type="bibr" target="#b21">[22]</ref> and LibriTTS <ref type="bibr" target="#b22">[23]</ref> are used to train the models described in Section 2. The development and test sets are built from LibriSpeech dev-clean and test-clean, respectively. Details about the number of speakers, utterances, and trials in the enrollment and trial sets can be found in <ref type="bibr" target="#b0">[1]</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.">Evaluation methodology</head><p>We evaluate the above design choices in terms of privacy and utility. We define utility as the objective intelligibility of anonymized speech measured by the Word Error Rate (WER). The primary metric for privacy is the Equal Error Rate (EER).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.1.">Attack model</head><p>Privacy protection can be seen as a game between two entities: a "user" who publishes anonymized speech to hide his/ her identity, and an "attacker" who attempts to uncover the user's identity by conducting speaker verification trials over enrolled speakers. The attacker may possibly use some knowledge about the anonymization scheme to transform the enrollment data.</p><p>To assess the strength of anonymization against attackers with increasing amounts of knowledge, we perform the evaluation in three stages. The first scenario (Baseline) refers to the case when the user does not perform any anonymization before publication and the attacker also uses non-anonymized speech for enrollment. This attacker typically achieves low error rate (i.e., the user identity is accurately predicted) since there is no anonymization. In the second scenario (Ignorant), the user publishes anonymized speech, unbeknownst to the attacker who still uses non-anonymized speech for enrollment. Finally, in the Semi-Ignorant scenario, both the user and the attacker use anonymized speech for publication and enrollment respectively. However the parameters of anonymization used by the attacker might differ from the user's parameters.</p><p>The final scenario is the one in which the user is most vul- 2 The VoicePrivacy Challenge involves development and evaluation sets built from both LibriSpeech and VCTK. Due to space limitations, we focus on LibriSpeech here. nerable, hence it is considered as the lower bound for privacy in the context of this study. Note that there can be even stronger attacks <ref type="bibr" target="#b9">[10]</ref> when the attacker has the exact knowledge of the anonymization parameters and uses it to generate large amounts of training data. This scenario is referred to in <ref type="bibr" target="#b9">[10]</ref> as the Informed scenario. However it is not very realistic, so we do not consider it here.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2.2.">Metrics</head><p>In all scenarios, the attacker implements the attack using a pretrained x-vector-PLDA based Automatic Speaker Verification (ASVeval) system. Privacy protection is assessed in terms of the rate of failure of the attacker, as measured by the EER. The EER is computed from the distribution of PLDA scores generated by ASVeval. In addition, a pretrained Automatic Speech Recognition (ASReval) system is used to decode anonymized speech and compute the WER for utility evaluation. Both evaluation systems are trained on disjoint data from that used to train the anonymization system. For more details, see <ref type="bibr" target="#b0">[1]</ref>.</p><p>Although we use Kaldi <ref type="bibr" target="#b23">[24]</ref> to implement ASVeval, we do not use it to compute the EER. Instead we use the PLDA scores output by ASVeval as inputs to the cllr toolkit<ref type="foot" target="#foot_1">3</ref> to compute the ROCCH-EER <ref type="bibr" target="#b24">[25]</ref>. The ROCCH-EER has interesting properties from the privacy perspective <ref type="bibr" target="#b25">[26]</ref>. Its value does not exceed 50% which is considered as the upper-bound for anonymization since it implies complete overlap between genuine and impostor PLDA score distributions <ref type="bibr" target="#b26">[27]</ref>. The higher the ROCCH-EER and the lower the WER, the better.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Experimental results</head><p>All the experiments are performed using the publicly available recipe of the VoicePrivacy Challenge. <ref type="foot" target="#foot_2">4</ref> Figure <ref type="figure" target="#fig_1">2</ref> shows the EER values achieved by the considered anonymization scheme for different design choices. The corresponding WERs are reported in Table <ref type="table" target="#tab_0">1</ref>. To qualitatively analyze the effect of anonymization over the source speakers' x-vectors, we also compute the average PLDA distance between original and anonymized x-vectors over all trial utterances in the test set. Figure <ref type="figure" target="#fig_2">3</ref> shows the average PLDA distance obtained for different design choices.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1.">Distance</head><p>Our first experiment aims to identify the distance metric which is most suitable for the selection of candidate target x-vectors.</p><p>To do so, we fix the proximity as far and the gender selection strategy as same, and we consider cosine distance vs. PLDA. We observe in Fig. <ref type="figure" target="#fig_1">2</ref>(a) that cosine distance and PLDA result in a comparabley high ROCCH-EER in the Ignorant case but PLDA consistently outperforms cosine distance (i.e., it results in a higher ROCCH-EER) in the Semi-Ignorant case. We also notice in Fig. <ref type="figure" target="#fig_2">3</ref> that the average PLDA distance between original and anonymized x-vectors is lower with cosine distance as compared to PLDA. For these reasons, we use PLDA to measure distances in x-vector space in the following experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2.">Proximity</head><p>Our second experiment assesses the five choices of target proximity described in Sections 2.2, 2.3 and 2.4. The distance metric is fixed to PLDA and the gender selection strategy to same. We observe in Fig. <ref type="figure" target="#fig_1">2</ref>(b) that although x-vector selection from a far region achieves the greatest level of anonymization in the Ignorant case, it is outperformed by selection from sparse or dense regions in the Semi-Ignorant case. We notice in Fig. <ref type="figure" target="#fig_2">3</ref> that the target x-vectors are not too far from the source in the case of sparse or dense when compared to far. This may be due to the fact that same gender selection allows only same-gender clusters which lie nearby the source x-vectors. Random target selection provides similar privacy protection and average PLDA distance as sparse or dense.</p><p>Although random target selection produces comparable privacy protection and utility to dense, it limits the flexibility to select different regions in x-vector space. Compared to the sparse selection strategy, the dense strategy provides slightly better privacy protection in the Semi-Ignorant case, as well as higher utility (see Table <ref type="table" target="#tab_0">1</ref>). This might be due to fewer members in sparse clusters, hence a smaller value of N * as pointed out in Section 2.3. Consequently we select the dense strategy in our third experiment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3.">Gender selection</head><p>Our third experiment concerns the gender selection strategy in Section 2.5. The distance is fixed to PLDA and proximity to dense. When we look at male trials in Fig. <ref type="figure" target="#fig_1">2</ref>(c), it is not clear which gender selection strategy is the best among same and opposite, but female trials show that random strategy outperforms the rest. We also observe in Fig. <ref type="figure" target="#fig_2">3</ref> that the mean distance is much higher in the case of random and opposite gender selection, which is intuitive since it allows selection of dense clusters from other genders as well. However, we notice that utility suffers in the case of opposite gender selection (see Table <ref type="table" target="#tab_0">1</ref>) due to limitations of cross-gender voice conversion. Hence we can conclude that random gender selection is the best choice.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">Conclusions</head><p>We presented a flexible speaker anonymization scheme as the primary baseline for the first VoicePrivacy Challenge. In particular we proposed three design choices for target selection in x-vector space, namely distance metric, proximity, and gender selection which can be combined to obtain various anonymization systems. We objectively evaluated these choices in terms of ROCCH-EER to measure privacy protection and decoding WER to measure utility. We also reported the average PLDA distance between the source and the target. We showed that the previously used cosine distance is not the best choice of distance in x-vector space and it should be replaced by PLDA. Then we explored interesting regions in the x-vector space for picking the target pseudo-speaker during anonymization. We observed that when the target is picked in a dense region and the target gender is selected at random, robust privacy protection can be achieved against both Ignorant and Semi-Ignorant attackers with a reasonable loss of utility. In the future, we will evaluate the best design choices with additional utility metrics, e.g., the WER obtained after retraining ASReval on anonymized data.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">Acknowledgments</head><p>This work was supported in part by ANR and JST under projects DEEP-PRIVACY, HARPOCRATES, and VoicePersonae, and by the European Union's Horizon 2020 Research and Innovation Program under Grant Agreement No. 825081 COM-PRISE (https://www.compriseh2020.eu/). Experiments presented in this paper were partially carried out using the Grid'5000 testbed, supported by a scientific interest group hosted by Inria and including CNRS, RENATER and several Universities as well as other organizations (see https: //www.grid5000.fr).</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: General anonymization scheme.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: ROCCH-EER (%) obtained by ASVeval on the test set by an Ignorant or a Semi-Ignorant attacker for different design choices. a) Distance: cosine vs. PLDA. Proximity is fixed to far and gender to same. b) Proximity: random, near, far, sparse, or dense. Distance is fixed to PLDA and gender to same. c) Gender: same, opposite, or random. Distance is fixed to PLDA and proximity to dense.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Average PLDA distance between original and anonymized x-vectors for different design choices. Comparison of: a) Distance with proximity as far and gender as same; b) Proximity with distance as PLDA and gender as same; c) Gender with distance as PLDA and proximity as dense. (Darker left bars: male speakers, Lighter right bars: female speakers)</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>WER (%) obtained by ASReval on the dev and test sets.</figDesc><table><row><cell>Distance</cell><cell>Proximity</cell><cell>Gender-selection</cell><cell>Dev WER (%)</cell><cell>Test WER (%)</cell></row><row><cell cols="3">Baseline (no anonymization)</cell><cell>3.83</cell><cell>4.15</cell></row><row><cell cols="2">Random</cell><cell></cell><cell>6.28</cell><cell>6.58</cell></row><row><cell>Cosine</cell><cell>Far</cell><cell></cell><cell>6.50 6.38</cell><cell>6.81 6.71</cell></row><row><cell></cell><cell>Near</cell><cell>Same</cell><cell>6.42</cell><cell>6.79</cell></row><row><cell>PLDA</cell><cell>Sparse</cell><cell></cell><cell>10.04 6.45</cell><cell>10.94 6.83</cell></row><row><cell></cell><cell>Dense</cell><cell>Random</cell><cell>6.86</cell><cell>6.88</cell></row><row><cell></cell><cell></cell><cell>Opposite</cell><cell>7.22</cell><cell>7.19</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>In the legal community, the term "anonymization" means that this goal has been achieved. Following the VoicePrivacy Challenge, we use it to refer to the task to be addressed, even when the method has failed.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://gitlab.eurecom.fr/nautsch/cllr</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>https://github.com/Voice-Privacy-Challenge/ Voice-Privacy-Challenge-2020</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Introducing the VoicePrivacy initiative</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tomashenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M L</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nautsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yamagishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Patino</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Bonastre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P.-G</forename><surname>Noé</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Todisco</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Interspeech</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Privacy-preserving sound to degrade automatic speaker verification performance</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hashimoto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yamagishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Echizen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2016 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="5500" to="5504" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Voicemask: Anonymize and sanitize voice input on mobile devices</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Du</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Jung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X.-Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Deng</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1711.11460</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Speaker deidentification via voice transformation</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Toth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schultz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Black</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2009 IEEE Workshop on Automatic Speech Recognition and Understanding (ASRU)</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="529" to="533" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Online speaker de-identification using voice transformation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Pobar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ipšić</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">37th International Convention on Information and Communication Technology, Electronics and Microelectronics</title>
+		<meeting><address><addrLine>MIPRO</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1264" to="1267" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Convolutional neural network based speaker de-identification</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bahmaninezhad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">H</forename><surname>Hansen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Odyssey</title>
+		<imprint>
+			<biblScope unit="page" from="255" to="260" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Speaker de-identification using diphone recognition and speech synthesis</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Justin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Štruc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dobrišek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Vesnicer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ipšić</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Mihelič</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 IEEE International Conference and Workshops on Automatic Face and Gesture Recognition (FG)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="1" to="7" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Speaker anonymization using X-vector and neural waveform models</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Fang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yamagishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Echizen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Todisco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Evans</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Bonastre</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Speech Synthesis Workshop</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="155" to="160" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Privacy-preserving adversarial representation learning in ASR: Reality or illusion?</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M L</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Interspeech</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="3700" to="3704" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Evaluating voice conversion-based privacy protection against informed attackers</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M L</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Vauquier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sahidullah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bellet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tommasi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2020 IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">X-vectors: Robust DNN embeddings for speaker recognition</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Snyder</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Garcia-Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Sell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Povey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khudanpur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5329" to="5333" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Neural source-filter-based waveform model for statistical parametric speech synthesis</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Takaki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yamagishi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">I2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="5916" to="5920" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Voiceindistinguishability: Protecting voiceprint in privacy-preserving speech data release</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Yoshikawa</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2004.07442</idno>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Bayesian speaker verification with heavy-tailed priors</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kenny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Odyssey</title>
+		<imprint>
+			<biblScope unit="page">14</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">On the use of PLDA i-vector scoring for clustering short segments</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Salmun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Opher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Lapidot</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Odyssey</title>
+		<imprint>
+			<biblScope unit="page" from="407" to="414" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tomashenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">M L</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Vincent</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nautsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yamagishi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Evans</surname></persName>
+		</author>
+		<ptr target="https://www.voiceprivacychallenge.org/docs/VoicePrivacy_2020_Eval_Plan_v1_3.pdf" />
+		<title level="m">The VoicePrivacy 2020 Challenge evaluation plan</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Probabilistic linear discriminant analysis</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ioffe</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European Conference on Computer Vision (ECCV)</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="531" to="542" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Constrained discriminative PLDA training for speaker verification</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rohdin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Biswas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Shinoda</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2014 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="1670" to="1674" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Affinity propagation: clustering data by passing messages</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dueck</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Toronto</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. dissertation</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">VoxCeleb: a largescale speaker identification dataset</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nagrani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Interspeech</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2616" to="2620" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">VoxCeleb2: Deep speaker recognition</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nagrani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Interspeech</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1086" to="1090" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Librispeech: an ASR corpus based on public domain audio books</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Panayotov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Povey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khudanpur</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2015 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="5206" to="5210" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">LibriTTS: A corpus derived from LibriSpeech for text-to-speech</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Dang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Weiss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Interspeech</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1526" to="1530" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The Kaldi speech recognition toolkit</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Povey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ghoshal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Boulianne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Burget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Glembek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Goel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Hannemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Motlicek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Qian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Schwarz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Tech. Rep</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<monogr>
+		<title level="m" type="main">Speaker recognition in unconstrained environments</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nautsch</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+		<respStmt>
+			<orgName>Technische Universität Darmstadt</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. dissertation</note>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<monogr>
+		<title level="m" type="main">Measuring, refining and calibrating speaker and language information extracted from speech</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Brummer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Stellenbosch</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. dissertation</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">General framework to evaluate unlinkability in biometric template protection systems</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gomez-Barrero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Galbally</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Rathgeb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Busch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Forensics and Security</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1406" to="1420" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,916 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Evaluating Top-k Queries with Inconsistency Degrees</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Ousmane</forename><surname>Issa</surname></persName>
+							<email>ousmane.issa@uca.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University Clermont Auvergne</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Angela</forename><forename type="middle">Bonifati</forename><surname>Lyon</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">University</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Farouk</forename><surname>Toumani</surname></persName>
+							<email>farouk.toumani@uca.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution">University Clermont Auvergne</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Evaluating Top-k Queries with Inconsistency Degrees</title>
+					</analytic>
+					<monogr>
+						<idno type="ISSN">2150-8097</idno>
+					</monogr>
+					<idno type="MD5">3087CCA75953A65DB8CE1B2A17CE8009</idno>
+					<idno type="DOI">10.14778/3407790.3407815</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:46+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We study the problem of augmenting relational tuples with inconsistency awareness and tackling top-k queries under a set of denial constraints (DCs). We define a notion of inconsistent tuples with respect to a set of DCs and define two measures of inconsistency degrees, which consider single and multiple violations of constraints. In order to compute these measures, we leverage two models of provenance, namely why-provenance and provenance polynomials. We investigate top-k queries that allow to rank the answer tuples by their inconsistency degrees. Since one of our measure is monotonic and the other non-monotonic, we design an integrated top-k algorithm to compute the top-k results of a query w.r.t. both inconsistency measures. By means of an extensive experimental study, we gauge the effectiveness of inconsistency-aware query answering and the efficiency of our algorithm with respect to a baseline, where query results are fully computed and ranked afterwards.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">INTRODUCTION</head><p>Assessing the quality of raw data is crucial in numerous data management tasks, spanning from traditional querying and data integration to cutting-edge in-database analytical and inference/ML processes. Throughout these processes, the quality of the output as well as the trustworthiness of the results might be tremendously affected by the quality of the input tuples <ref type="bibr" target="#b28">[29]</ref>.</p><p>Past work on data curation for relational tuples has mainly addressed the problem of detecting and repairing the violations with respect to a set of constraints <ref type="bibr" target="#b38">[39]</ref>. Consistent query answering has also been considered as a mean to reconcile several possible repairs of the original data <ref type="bibr" target="#b10">[11]</ref>. However, little or no attention has been paid to leave the database instances intact and quantifying their degrees of inconsistency at different levels of granularity (tuple, sets of tuples, entire relations) as we do in this paper for the first time. Such a characterization enables the users of a DBMS to quantify the level of trust that they shall expect from the data that they query and manipulate.</p><p>In our work, we are interested in augmenting relational instances with novel inconsistency measures that can also be propagated to query results. To this end, we focus on top-k rank join queries over an inconsistent relational database in the presence of a set of Denial Constraints (DCs) <ref type="bibr" target="#b16">[17]</ref>. The inconsistency degree of an answer tuple of a given query is determined by relying on provenance-based information of the input tuples. We first leverage why-provenance in order to identify the inconsistent base tuples of a relational instance with respect to a set of DCs. Then, we rely on provenance polynomials <ref type="bibr" target="#b25">[26]</ref> in order to propagate the annotations of inconsistencies from the base tuples to the answer tuples of Conjunctive Queries (CQs). Building upon the computed annotations, we define two measures of inconsistency degrees, which consider single and multiple violations of constraints. Since one of our measures is a monotone function and the other a non-monotone function, we design an integrated top-k algorithm to rank the top-k results of a query w.r.t. the above inconsistency measures.</p><p>We envision several applications of our framework: Inconsistency-conscious queries for analytical tasks, as we expect that our framework enables inconsistency quantification in querying and analytical tasks within data science pipelines. Our annotations are not merely numbers as they also convey provenance-based information about the violated constraints, the latter being ready for user consumption in data science tasks.</p><p>External annotations for data cleaning pipelines, as our approach can also ease the tasks of data cleaning tools such as OpenRefine, Wrangler and Tableau by injecting into them the external information of inconsistency indicators and putting upfront the resulting ranking prior to cleaning and curation.</p><p>Approximation schemes for integrity constraints that have been employed recently in order to guarantee a polynomial number of samples required by recent probabilistic inference approaches for data cleaning <ref type="bibr" target="#b37">[38]</ref>. We believe that an alternative to constraint approximation would be to build samples based on the top-k number of constraints leading to the most consistent (the least consistent, respectively) tuples.</p><p>Combined ranking since our quality-informed ranking and query evaluation can be combined with other ranking criteria, such as for instance user preferences in recommender systems and novel unfairness and discrimination detection in marketplaces and search sites <ref type="bibr" target="#b2">[3]</ref>.</p><p>In this paper, we make the following main contributions: (1) We design novel measures of inconsistency degrees of answer tuples for CQs over an inconsistent database in the presence of a set of DCs.</p><p>(2) We leverage why-provenance in order to identify the inconsistent tuples of a given database w.r.t. a set of DCs. Then, we exploit provenance polynomials to propagate the inconsistency degree of base tuples to the answer tuples of CQs, which is to the best of our knowledge a novel and quite promising usage of provenance. Both provenance techniques considered here are PTIME-computable in data complexity thus guaranteeing that our augmentation of relational instances with inconsistency measures remains tractable.</p><p>(3) We study the problem of top-k rank queries with respect to a given measure of inconsistency degree. We consider monotonic and non-monotonic measures and we design an integrated top-k ranking algorithm that is applicable to both. We show that the algorithm is space efficient (i.e., in O(|I| + k) instead of O(Q(I)), where I is a database instance). As a side contribution, we prove that our algorithm is optimal w.r.t. a new notion of optimality tailored to generic scoring functions (monotonic and non-monotonic). (4) We deploy our framework with real-world and synthetic datasets equipped with DCs. We gauge the low overhead due to the generation of inconsistency degrees as well as the bearable runtimes of our top-k ranking algorithm with various query sets. Our experimental study shows the feasibility of inconsistency-aware query answering with top-k ranking, with the latter outperforming by up to 2 8 times the baseline solution.</p><p>The paper is organized as follows: Section 2 introduces a motivating example; Section 3 and Section 4 present the state of the art and the background notions, respectively; Section 5 introduces the inconsistency measures; Section 6 describes our novel top-k algorithm along with its properties. Section 7 illustrates our experimental study while Section 8 concludes the paper and pinpoints future directions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">MOTIVATING EXAMPLE</head><p>Consider a relational instance I as depicted in Figure <ref type="figure">1</ref> consisting of three relations D, V and S contaning information about the diagnoses, vaccinations and surgical interventions of patients. Hence, in each of the relations D, V and S, the first column represents the patient identifier PID, the second column is the disease identifier RefID and the third column is the Date of a given event <ref type="foot" target="#foot_0">1</ref> .</p><p>The denial constraint C1 imposes to have any diagnosis for a patient's disease before surgery for the same disease concerning that patient. The constraint C2 establishes that a patient cannot be diagnosed a given disease for which he/she has been administered a vaccine on a previous date. The constraint C3 requires that a patient cannot undergo surgery and vaccination on the same date. Figure <ref type="figure">1</ref> also shows a conjunctive query Qex extracting pairs of diseases for which the same patient underwent surgery and was administered a vaccine.</p><p>Observe that the instance I does not satisfy the set of denial constraint {C1, C2, C3}. Indeed, the constraint C1 is violated both by the pairs of tuples (t2, t3) and (t2, t4) while the constraint C2 is violated by the tuples (t2, t7) and the constraint C3 is violated by the tuples (t4, t7). Hence, the inconsistent base tuples of I w.r.t. the set of denial constraint {C1, C2, C3} are: t2, t3, t4, t7. Quantifying the inconsistency degrees of query answers. Evaluating the query Qex over the inconsistent database I, under the bag answer semantics, returns the answers reported in the first column of Table <ref type="table">1</ref>. The second column of Table <ref type="table">1</ref> shows the base tuples of I that contribute to each answer. One can observe that the tuple d4, d4 is a consistent answer since it is computed using consistent base tuples. This is, however, not the case for d2, d2 , which can be derived in three possible ways, either using the base tuples {t2, t3, t7} or {t2, t4, t7} or {t2, t6, t7}. Notice that all the above derivations use inconsistent base tuples.</p><p>In this paper, we consider two alternatives for quantifying the inconsistency degree of query answers. The first approach quantifies the inconsistency degree of an answer t by counting the number of constraints violated by the base tuples that contribute to t. The third column of Table <ref type="table">1</ref> shows the constraints violated by the base tuples that contribute to each answer. For example, in line 1 of Table <ref type="table">1</ref>, the computation of the answer d2, d2 from the base tuples {t2, t3, t7} leads to the violation of the constraints C1 (violated by t2 and t3), C2 (violated by t2 and t7) and C3 (violated by t7). As a consequence, the inconsistency degree of the answer d2, d2 when it is computed from the base tuples {t2, t3, t7} is equal to 3 (i.e., 3 constraints are violated by the base tuples that contribute to this answer).</p><p>A second approach to quantify the inconsistency degree of an answer amounts to counting the number of violations of the constraints per each base tuple. The fourth column of Table <ref type="table">1</ref> shows the constraints violated by the base tuples while reporting how many times the same violation occurred (indicated by the exponent of the constraints). For instance, in the first row of Table <ref type="table">1</ref>, the computation of the answer d2, d2 from the base tuples {t2, t3, t7} leads to the violation of the constraint C1 twice (violated by t2 and by t3), the violation of C2 two times (violated by t2 and t7) and the violation of C3 one time (violated by t7). Hence, the corresponding inconsistency degree of d2, d2 is equal to 5 (i.e., 5 violations of the constraints by base tuples).</p><p>In this paper, we focus on a constraint-based approach to quantify inconsistency degrees of query answers under bag semantics. As Table <ref type="table">1</ref> (fourth column) shows, the annotations of the base tuples are the richest and the most informative ones since they consider the violations in terms of the constraints and their occurrences. In particular, we consider two alternative measures: (i) counting the number of constraints violated by the base tuples contributing to a given answer (called in the sequel, single occurrence quantification), and (ii) summing up the exponents of the constraints violated by base tuples contributing to a an answer (called in the sequel, multiple occurrence quantification). Inconsistency-aware query processing. With the inconsistency measures at hand, we are interested in top-k query processing while taking into account the inconsistency degrees of query answers. This problem can be framed in the general context of top-k rank queries where the inconsistency measures are used as scoring functions that can be exploited to rank the answers of queries. In particular, given a query Q, top-k ranking aims at computing the subset of Q's </p><formula xml:id="formula_0">← D(x, y, z) ∧ S(x, y, u) ∧ z &gt; u C2 ← D(x, y, z) ∧ V (x, y, u) ∧ z &gt; u C3 ← S(x, y, z) ∧ V (x, v, z) Query(Qex) Qex(y, u) ← D(x, y, z) ∧ S(x, y, z1) ∧ V (x, u, v)</formula><p>Figure <ref type="figure">1</ref>: A hospital database hdb with a set of denial constraints (DCs) and a query Qex.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Answers</head><p>Contrib. tuples Violated Constr.</p><formula xml:id="formula_1"># Constr. Violations d2, d2 {t2, t3, t7} C1 × C2 × C3 C 2 1 × C 2 2 × C3 d2, d2 {t2, t4, t7} C1 × C2 × C3 C 2 1 × C 2 2 × C 2 3 d2, d2 {t2, t6, t7} C1 × C2 × C3 C 2 1 × C 2 2 × C3 d4, d4 {t1, t5, t8}<label>1 1</label></formula><p>Table <ref type="table">1</ref>: Annotated answers of query Qex answers with the top k scores, where the scores correspond to the inconsistency degrees of the tuples. Continuing with our example, the top-2 answers of the query Qex over the database I are: d4, d4 , d2, d2 , with respective inconsistency degrees 0 and 3 with single occurrence quantification), or, respectively, inconsistency degrees 0 and 5 with multi occurrence quantification, respectively. In the remainder, we will see that both augmenting the instances with inconsistency measures and enabling top-k queries on them are far from being trivial and need special treatment.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">RELATED WORK</head><p>Consistent Query Answering and Repairs. Central to data quality is data consistency that has been extensively investigated in the past. Starting from the pioneering work of <ref type="bibr" target="#b4">[5]</ref>, there has been a wealth of research on the problem of consistent query answering in inconsistent databases <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b22">23,</ref><ref type="bibr" target="#b7">8]</ref>. Most of the existing works make a distinction between consistent and inconsistent answers based on the notion of a database repair (see <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b9">10]</ref> for a survey). A repair is a database instance obtained by applying some minimal changes on the initial database instance in order to make it compliant with a given set of integrity constraints. Usually, there exist several possible repairs of a given database and for such a reason, following the certain answers semantics, consistent answers to a given query are defined as being the intersection of the query answers on all possible repairs of the initial database instance. The problem of consistent query answering has been investigated in several settings depending on: (i) the definition of repairs, where a repair is defined in terms of the sets of inserted and/or deleted tuples <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b9">10,</ref><ref type="bibr" target="#b33">34,</ref><ref type="bibr" target="#b12">13]</ref>, or updates <ref type="bibr" target="#b38">[39,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b5">6]</ref> and (ii) the considered integrity constraints and the query language. The latter has been studied for a variety of queries and constraints such as first-order queries and binary universal constraints or single functional dependencies <ref type="bibr" target="#b4">[5]</ref>, union of conjunctive queries and key and inclusion dependencies <ref type="bibr" target="#b13">[14]</ref>, first-order queries and denial constraints <ref type="bibr" target="#b15">[16]</ref>, to mention a few. Recent approaches study a counting variant of consistent query answering <ref type="bibr" target="#b35">[36]</ref>, i.e., counting how many repairs satisfy a given query q. The work in <ref type="bibr" target="#b35">[36]</ref> establishes a dichotomy for the #-CERTAINTY(q) problem, where q is a boolean conjunctive query possibly with self-joins and with singleattribute primary-key (PK) constraints. Our work is agnostic to the repairing semantics and computation of repairs and only leverages constraint violations.</p><p>Quantifying Inconsistency in KBs.</p><p>Reasoning in Knowledge Bases (KBs) in the presence of inconsistency is also widely studied in the AI community, where it has been shown that an arbitrary consequent can be entailed from an inconsistent set of premises (see the survey by Lang et al. <ref type="bibr" target="#b32">[33]</ref>). Similarly, the role of inconsistency tolerance in KBs has been introduced in <ref type="bibr" target="#b8">[9]</ref>. They are more concerned about the co-existence of consistency and inconsistency as separate axioms when doing reasoning in KBs rather than using inconsistency measures to yield inconsistency-aware query answering, as we do in our work.</p><p>Another line of research deals with the definition of inconsistency measures in Knowledge Bases (KBs) <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b23">24]</ref>. Numerous measures of inconsistency in KBs have been proposed based on various paradigms such as information theory <ref type="bibr" target="#b34">[35]</ref>, possibility theory <ref type="bibr" target="#b18">[19]</ref> or quasi-classical logic <ref type="bibr" target="#b23">[24]</ref>, to mention a few. The ultimate goal is, however, to provide measures to quantify the inconsistency of a KBs in order, for example, to allow comparison of full KBs based on their inconsistency degrees. Extensions of such an approach to the database field has been recently investigated in <ref type="bibr" target="#b9">[10]</ref> where inconsistency measures based on various classes of repair semantics are studied. However, their notion of inconsistency measures (despite the name) relies on restoring the consistency of a database, thus on the class of repairs admitted by the database. As such, it is quite different from our notion of inconsistency. Top-k Query Processing. Top-k query processing algorithms address the efficient computation of the first top-k answers of selection <ref type="bibr" target="#b21">[22]</ref>, join <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b30">31]</ref> and aggregate queries <ref type="bibr" target="#b14">[15]</ref>. There exists a vast literature on top-k join query processing, see <ref type="bibr" target="#b27">[28]</ref> for a survey. However, a basic assumption of several previous papers on this topic is that the scoring function f used to aggregate the scores of the underlying tuples is a monotonic function <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b29">30,</ref><ref type="bibr" target="#b30">31]</ref>. Nonmonotonic scoring functions have been considered in <ref type="bibr" target="#b39">[40]</ref> for top-k query processing, while assuming that attribute values are indexed by tree-structured indexes (e.g., B-tree, R-tree). However, none of the existing top-k ranking algorithms would be optimal to handle both monotonic and non-monotonic functions. Additionally, our novel top-k algorithm is tailored for inconsistency measures and leverages a suitable cost model for them. Our algorithm is thus generic and designed in a way that it incorporates both monotonic and non-monotonic inconsistency measures.</p><p>Analytical studies of the performance of existing top-k join algorithms have been conducted mostly for the class of algorithms, introduced initially in <ref type="bibr" target="#b21">[22]</ref>, that use a sorted data access strategy, i.e., the input relations are scanned sequentially in base score order <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31]</ref>. Such a framework, which imposes a sequential data access strategy, is not suitable for non-monotonic functions. This motivated our work on a new notion of optimality based on: (i) a more general class of algorithms, called Semi-Blind Algorithms (SBA),  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">PRELIMINARIES</head><p>We introduce some basic notions used throughout the paper. Table <ref type="table" target="#tab_2">2</ref> summarizes the notation.</p><p>We consider S = {R1, . . . , Rn} as a database schema with Ri(i ∈ [1, n]) a predicate and with arity(Ri) denoting the arity of Ri. We consider D, I as the domain and a database instance over S and D, respectively. Let Γ be an infinite set of identifiers distinct from the domain D. We denote by id a function that associates to each tuple t ∈ I(Ri) an unique idenfier id(t) from the set Γ. Conjunctive Queries (CQ). A CQ is in form Q(u) ← R1(u1), ..., Rn(un),where each Ri is a relation symbol in S and Q is a relation symbol in the output schema, u is a tuple of either distinguished variables or constants and each ui is a tuple of either variables or constants having the same arity as Ri. The set of variable in a query Q is denoted V ars(Q). Denial Constraints. A denial constraint is of the form: ← R1(u1) ∧ ... ∧ Rn(un) ∧ φ where the Ri(ui) are defined as previously and φ is a conjunction of comparison atoms of the form x op y, where x, y are either constants or variables and op ∈ {=, =, ≤, &lt;, &gt;, ≥} is a built-in operator. Let C be a denial constraint, C id is an unique identifier of C. We denote Υ the set of the identifiers of the denial constraints. Monomials and Polynomials. A (non null) monomial M over N and a finite set of variables X is defined by M = a × x m 1 1 ×...×x mn n with a, m1, ..., mn ∈ N * (i.e., non zero positive integers) and x1, ..., xn ∈ X . Let M = a × x m 1 1 × ... × x mn n be a monomial. We denote by V ar(M ) = {x1, . . . , xn} the set of variables that appear in the monomial M . The weight of a variable xi ∈ V ar(M ) w.r.t a monomial M , denoted by W (M, xi), is equal to mi, the exponent of the variable xi in M . The weight of a non null monomial M , denoted by W (M ), is defined as the sum of the weights of its variables, i.e.: W (M ) =</p><p>x∈V ar(M ) W (M, x). A polynomial P over N and a finite set of variables X is a finite sum of monomials over X . We denote M (P ) the set of monomials of P . Provenance Semirings. We recall the provenance semirings framework, introduced in <ref type="bibr" target="#b25">[26]</ref> as a unifying framework able to capture a wide range of provenance models at different levels of granularity <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b24">25,</ref><ref type="bibr" target="#b20">21]</ref>. K-relations. A commutative semiring is an algebraic structure (K, ⊕, ⊗, 0, 1), where 0 and 1 are two constants in K and K is a set equipped with two binary operations ⊕ (sum) and ⊗ (product) such that (K, ⊕, 0) and (K, ⊗, 1) are commutative monoids<ref type="foot" target="#foot_1">2</ref> with identities 0 and 1 respectively, ⊗ is distributive over ⊕ and 0 ⊗ a = a ⊗ 0 = 0 holds ∀a ∈ K. An n-ary K-relation is a function R : D n → K such that its support, defined by supp(R) def = {t : t ∈ D n , R(t) = 0}, is finite. Let R be an n-ary K-relation and let t ∈ D n , the value R(t) ∈ K assigned to the tuple t by the K-relation R is called the annotation of t in R. Note that R(t) = 0 means that t is "out of" R <ref type="bibr" target="#b25">[26]</ref>. A K-instance is a mapping from relations symbols in a database schema S to K-relations (i.e, a finite set of K-relations over S). If J is a K-instance over a database schema S and Ri ∈ S is a relation symbol in S, we denote by J (Ri) the K-relation corresponding to the value of Ri in J . Conjunctive queries on K-instances. Let Q(u) ← R1(u1), ..., Rn(un), be a conjunctive query and let J be a Kinstance over the same schema than Q, with (K, ⊕, ⊗, 0, 1) a semiring. A valuation of Q over a domain D is a function v : V ars(Q) → D, extended to be the identity on constants. The result of executing a query Q over a K-instance J , using the semiring (K, ⊕, ⊗, 0, 1),</p><formula xml:id="formula_2">is the K-relation Q(J ) defined as follows: Q(J ) def = { (v(u), Π n i=1 Ri(v(ui))) | v is a valuation over V ars(Q)}. The K-relation Q(J ) associates to each tuple t = v(u),</formula><p>which is in the answer of the query Q over the K-instance J , an annotation Π n i=1 Ri(v(ui))) obtained from the product, using the ⊗ operator, of the annotations Ri(v(ui)) of the base tuples contributing to t. Since there could exist different ways to compute the same answer t, the complete annotation of t is obtained by summing the alternative ways (i.e., the various valuations) to derive a tuple t using the ⊕ operator. Consequently, the provenance of an answer t of Q over a K-instance J is given by: Q</p><formula xml:id="formula_3">(J )(t) = v s.t v(u)=t Π n i=1 Ri(v(ui))).</formula><p>Example 1. Consider the K-instance hdb Υ in Figure <ref type="figure" target="#fig_0">2</ref> with K = N[Υ], the set of polynomials with variables from Υ and coefficients in N. The annotation of the tuple 01, d2, 1 of relation S is given by: hdb Υ (S)( 01, d2, 1 ) = C1. Evaluation of Qex over hdb Υ uses (N[Υ], +, ×, 0, 1) semiring and, for example, leads to an answer d2, d2 annotated as follows:</p><formula xml:id="formula_4">Qex(hdb Υ )( d2, d2 ) = C 2 1 C 2 2 C3 + C 2 1 C 2 2 C 2 3 + C 2 1 C 2 2 C3.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">QUANTIFYING INCONSISTENCY DEGREES OF QUERY ANSWERS</head><p>In this section, we focus on the problem of quantifying the inconsistency degree of query answers. Let I be an instance over a database schema S, let DC be a set of denial constraints over S and let Υ be the set of identifiers of the constraints in DC. We proceed in three steps: (i) Identifying inconsistent base tuples. We first start by identifying the inconsistent tuples of an instance I over S w.r.t a set of denials constraints DC. To achieve this task, we turn each constraint C ∈ DC into a conjunctive query Q C id and, by exploiting why-provenance, we consider the lineage of Q C id as the set of tuples of I that violates the constraint C. As a consequence, we are able to define a function V C(I, DC, t) that associates to each tuple t ∈ I, the set of constraints violated by t;</p><p>(ii) Annotating the initial database instance. Using the set V C(I, DC, t), we convert the instance I into a Υ-instance, denoted I Υ , obtained by annotating each tuple in I by a monomial with variables from Υ. The variables record the constraints violated by the annotated tuple. (iii) Defining inconsistency degrees of query answers. Given a query Q over the instance I, we use the provenance semirings to annotate the query answers. The latter provenance is the most informative form of provenance annotation <ref type="bibr" target="#b24">[25]</ref> and hence is exploited in our setting in order to define two inconsistency degrees for query answers.</p><p>We shall detail in the sequel the proposed approach.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Identifying inconsistency degrees of base tuples</head><p>Let I and DC be respectively an instance and a set of DCs over S. We first convert each constraint C of DC of the form: ← R1(u1)∧...∧Rn(un)∧φ into a boolean conjunctive query with arithmetic comparisons Q C id defined as follows:</p><formula xml:id="formula_5">Q C id () ← R1(u1) ∧ ... ∧ Rn(un) ∧ φ Example 2.</formula><p>The set DC of denial constraints depicted in Figure <ref type="figure">1</ref> are converted into the following boolean queries:</p><formula xml:id="formula_6">Q C 1 () ← D(x, y, z) ∧ S(x, y, u) ∧ z &gt; u Q C 2 () ← D(x, y, z) ∧ V (x, y, u) ∧ z &gt; u Q C 3 () ← S(x, y, z) ∧ V (x, v, z)</formula><p>It is easy to verify that an instance I violates the set of denial constraints DC iff the boolean UCQ query Q DC ≡ C∈DC Q C id evaluates to true over I (i.e., at least one of the conjunctive queries Q C id , for C ∈ DC, returns true when evaluated over I). The base tuples of I which are inconsistent w.r.t. DC are exactly those tuples of I that contribute to the computation of the empty answer &lt;&gt; (i.e., true) for query Q DC when evaluated over I. In particular, a base tuple t of I violates a constraint C ∈ DC iff t contributes to the derivation of the answer true when the query Q C id is evaluated over I.</p><p>We shall use below the why-provenance <ref type="bibr" target="#b11">[12]</ref> to compute the inconsistent base tuples while keeping track of the constraints violated by each inconsistent tuple. Indeed, the why-provenance of an answer t in a query output is made of the set of all contributing input tuples <ref type="bibr" target="#b11">[12]</ref>.</p><p>We first formulate the why-provenance in the provenance semirings framework as proposed in <ref type="bibr" target="#b25">[26]</ref>. Let P(Γ) be the powerset of the set of tuple identifiers Γ. Consider the following provenance semiring: (P(Γ) ∪ {⊥}, +, ., ⊥, ∅), where: ∀S, T ∈ P(Γ) ∪ {⊥}, we have ⊥ + S = S + ⊥ = S, ⊥.S = S.⊥ = ⊥ and S +T = S.T = S ∪T if S =⊥ and T = ⊥. This semiring consists of the powerset of Γ augmented with the distinguished element ⊥ and equipped with the set union (∪) operation which is used both as addition and multiplication. The distinguished element ⊥ is the neutral element of the addition and the annihilating element of the multiplication.</p><p>In order to compute the why-provenance, we convert the instance I over the schema S into a K-instance, denoted by I LP , with K = P(Γ) ∪ {⊥}. The K-instance I LP is defined below.</p><p>Definition 1 (K-instances). Let I be an instance over a database schema S and let DC be a set of denial constraints over S. Let K = P(Γ) ∪ {⊥}. The K-instance</p><formula xml:id="formula_7">I LP is constructed as follows: ∀Ri ∈ S a corresponding K- relation is created in I LP . A K-relation I LP (Ri) ∈ I LP is populated as follows: I LP (Ri)(t) = {id(t)} if t ∈ I(Ri) I LP (Ri)(t) = ⊥ otherwise Example 3.</formula><p>Figure <ref type="figure" target="#fig_0">2</ref> shows the provenance database hdb LP obtained from the hospital database hdb of our motivating example by annotating each tuple t ∈ hdb with a singleton set {id(t)} (column lprov) containing the tuple identifier of t.</p><p>Using the provenance semirings (P(Γ) ∪ {⊥}, +, ., ⊥, ∅), we define below the function V C that associates with each base tuple t of I the set of constraints violated by t.</p><p>Definition 2 (Violated constraints). Given an instance I and a set of denial constraints DC, the set V C(I, DC, t) of constraints of DC violated by a tuple t ∈ I is defined as follows:</p><formula xml:id="formula_8">V C(I, DC, t) = {C id ∈ Υ | t ∈ Q C id (I LP )(&lt;&gt;)} Example 4. Consider the boolean conjunctive queries Q C 1 , Q C 2 and Q C 3 of Example 2.</formula><p>Hence, the lineage of the output true of each query gives the set of tuples that violate the corresponding constraint:</p><formula xml:id="formula_9">Q C 1 (I LP )( ) = {t2, t3, t4}, Q C 2 (I LP )( ) = {t2, t7} Q C 3 (I LP )( ) = {t4, t7}</formula><p>These lineages enable us to compute the set of constraints violated by each tuple t, given by the function V C(I, DC, t1). For example, we have V C(I, DC, t1) = ∅, (i.e., t1 is a consistent tuple) while V C(I, DC, t2) = {C1, C2} and V C(I, DC, t3) = {C1}.</p><p>Note that, even if why-provenance computes richer annotations <ref type="bibr" target="#b11">[12]</ref>, we choose to not keep the information about combinations of tuples that cause a violation. Hence, our approach is currently agnostic to the inconsistency reasons.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Annotating the database instance</head><p>In the next section, we will show how to use the provenance polynomials to define the inconsistency degrees of query answers. In order to obtain that, we first need to convert the instance I into a N[Υ]-instance, denoted I Υ . As shown in the following definition, an instance I Υ is derived from I by tagging each tuple t ∈ I with a monomial with variables in Υ.</p><p>Definition 3 (I Υ instance). Let I be an instance over a database schema S and let DC be a set of denial constraints over S.</p><formula xml:id="formula_10">Let K = N[Υ]. The K-instance I Υ is constructed as follows: ∀Ri ∈ S a corresponding K-relation is created in I Υ . A K-relation I Υ (Ri) ∈ I Υ is populated as follows: I Υ (Ri)(t) = 0 if t / ∈ I Υ (Ri) C id ∈Υ C l id otherwise with l = 1 if C id ∈ V C(I, DC, t) or l = 0 otherwise.</formula><p>Hence, an annotation I Υ (Ri)(t) of a tuple t is equal to 1 if the base tuple t is consistent (i.e., V C(I, DC, t) = ∅), otherwise it is equal to a monomial expression that uses as variables the identifiers of the constraints violated by t (i.e., the elements of V C(I, DC, t)).  Example 5. Continuing with our example, the hdb Υ instance obtained from the hospital database hdb is depicted in Figure <ref type="figure" target="#fig_0">2</ref>. We illustrate below the computation of the annotations of the tuples t1 (a consistent tuple) and t2 (an inconsistent tuple). From the previous example, we have V C(I, DC, t1) = ∅ and hence the annotation of t1 is computed as follows:</p><formula xml:id="formula_11">hdb Υ (Ri)(t1) = C id ∈Υ C 0 id = 1.</formula><p>For the tuple t2, we have V C(I, DC, t2) = {C1, C2} and hence:</p><formula xml:id="formula_12">hdb Υ (Ri)(t1) = C 1 1 × C 1 2 × C 0 3 = C1C2.</formula><p>In the sequel, we assume that the relations of an annotated instance I Υ are augmented with an attribute prov that stores the annotations of the base tuples. As an example, Figure <ref type="figure" target="#fig_0">2</ref> shows the annotated relations of the instance hdb Υ together with their respective prov columns.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Computing inconsistency degrees of query answers</head><p>Given a query Q, we evaluate Q over the N[Υ]-instance I Υ and use the provenance polynomials semiring in order to annotate each answer t of Q. The computed annotations, expressed as polynomials with variables from the set Υ of constraint, are fairly informative as they allow to fully record how the constraints are violated by base tuples that contribute to each answer. Such annotations are hence exploited to compute the various inconsistency measures needed for query answers.</p><p>Example 6. Continuing with the example, evaluating the query Qex over hdb Υ and computing its polynomial provenance leads to the following annotated answers:</p><formula xml:id="formula_13">Qex(hdb Υ )( d2, d2 ) = C 2 1 C 2 2 C3 + C 2 1 C 2 2 C 2 3 + C 2 1 C 2 2 C3 Qex(hdb Υ )( d4, d4 ) = 1.</formula><p>The monomial C 2 1 C 2 2 C3 that appears in the annotation of the answer d2, d2 of Qex encodes the fact that this answer can be computed from inconsistent base tuples that lead to the violation of the constraints C1 and C2 twice and to the violation of the constraint C3 once.</p><p>Hence, the polynomial expression Q(I Υ )(t) fully records the inconsistency of an output t in terms of violations of constraints and therefore can be used to quantify the inconsistency degrees of a query outputs. Consider a polynomial P = Q(I Υ )(t) of an output t of a given query Q. Each monomial M from P gives an alternative way to derive the output t. In the sequel, we consider bag semantics of query answers. Although our approach is extensible to set semantics of query answers, we do not discuss this further in the paper.</p><p>Under bag semantics, each query answer will be annotated with a monomial corresponding to the unique derivation of the considered answer.</p><p>Two different measures can be defined in order to quantify the inconsistency degree of an answer t depending on how one deals with multiple occurrences of the same variable in monomials. This situation occurs when a constraint is violated by more than one base tuple that contribute to an answer t. We define two possible quantifications to deal with this issue: single occurrence quantification, in which a variable that appears in a monomial is counted exactly once, and multi-occurrence quantification, where the exact number of occurrences of a variable in a monomial is taken into account when quantifying the inconsistency degree of a given answer. As a consequence, we obtain two different inconsistency measures: the CBM (Constraint-based, Bag semantics, Multiple occurrence) measure and the CBS (Constraint-based, Bag semantics, Single occurrence) measure.</p><p>Definition 4 (Inconsistency measures). Let I, Q and DC be defined as previously. Let M = Q(I Υ )(t) be the monomial annotating an output t of Q. We define inconsistency measures of t as:</p><formula xml:id="formula_14">CBM (t, Q, I, DC) def = W (M ) and CBS(t, Q, I, DC) def = |V ar(M )|</formula><p>It follows that a single occurrence quantification of a monomial M amounts to counting the number of distinct variables that occur in M while a multi occurrence semantics sums the total number of occurrence of each variable in M (given by the weight W (M ) of M ).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Example 7. Consider the annotation</head><formula xml:id="formula_15">Qex(hdb Υ )( d2, d2 ) = C 2 1 C 2 2 C3 M 1 + C 2 1 C 2 2 C 2 3 M 2 + C 2 1 C 2 2 C3 M 3</formula><p>.</p><p>This annotation conveys the information about the violated constraints by each of the three possible ways to derive the output d2, d2 as an answer to the query Qex. Under bag semantics, each derivation corresponds to a distinct answer annotated by a single monomial. This means that the answer d2, d2 is output three times leading to three answers, a1 = a2 = a3 = d2, d2 , each of which annotated, respectively, whith one of the monomials M1, M2 and M3. The inconsistency degrees of these three answers can then be computed as follows: CBS(ai, Q, I, DC) = 3, for i ∈ <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b2">3]</ref>, and CBM (a1, Q, I, DC) = CBM (a3, Q, I, DC) = 5 and CBM (a2, Q, I, DC) = 6.</p><p>While our approach is orthogonal to that of CQA in general (as explained in Section 3), our notion of consistency is much stronger than the notion of consistent answers in CQA as stated by the following lemma.</p><p>Lemma 1. Let I, Q, DC be defined as previously. ∀t ∈ Q(I) we have:</p><formula xml:id="formula_16">CBM (t, Q, I, DC) = CBS(t, Q, I, DC) = 0 ⇒ t is a CQA.</formula><p>Lemma 6 is trivial to prove as any answer that has inconsistency degree equal to 0 is computed from tuples that do not violate any constraint. As these tuples do not involve any violation, they belong to all the repairs of database regardless of the repair semantics. Clearly, the set of CQA can be larger by including the tuples that involve violations and leveraging a given repair semantics. More differences between CQA and our method are addressed in Section 7.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">INCONSISTENCY-AWARE RANKING</head><p>In this section, we study top-k ranking of inconsistencyawre tuples as defined above. To this end, we leverage the introduced inconsistency measures. We consider as input an annotated instance I Υ , where each base tuple t of a relation R is annotated with the monomial I Υ (R)(t) (c.f. Definition 3). Let α be either CBM or CBS, the main idea is to use α as a scoring function over the results of a query Q where the score of an output t of Q is given by CBM (t, Q, I, DC) = W (M ) (respectively, CBS(t, Q, I, DC) = |V ar(M )|), with M = Q(I Υ )(t). The goal is then to rank the answer tuples while taking into account the inconsistency degrees of the base tuples contributing to the answers. The fundamental computation problem is then to be able to efficiently enumerate (part of) query answers in a specific order w.r.t. their inconsistency degrees. We focus on one particular instance of this problem where the goal is to return the query results with the top k scores, hereafter called inconsistency-aware top-k ranking.</p><p>Definition 5 (Top-k queries). Let I, Q and DC be respectively a database instance, a conjunctive query and a set of denial constraints over the same instance. Let k be an integer, let α ∈ {CBM, CBS}. The top-k query answers of a query Q using the inconsistency measure α, denoted by Q k,α (I), is defined as follows:</p><formula xml:id="formula_17">(i) Q k,α (I) ⊆ Q(I), (ii) |Q k,α (I)| = M in(k, |Q(I)|), and (iii) ∀(t1, t2) ∈ Q k,α (I) × (Q(I) \ Q k,,α (I)), we have: α(t1, Q, I, DC) ≤ α(t2, Q, I, DC)</formula><p>Condition (i) and (ii) ensure that a top-k query Q k,α (I) computes at most k answers of Q(I) while condition (iii) ensures that the computed answers are the best answers in Q(I) w.r.t. the inconsistency measure α. The following example illustrates a top-k query over our running example.</p><p>Example 8. Assume k = 1 and α = CBM . Continuing with the database hdb and the query Qex as in Figure <ref type="figure">1</ref>, we have:</p><formula xml:id="formula_18">Q k,α ex (hdb) = { d4, d4 }.</formula><p>A naive approach to solve a top-k query Q k,α (I), with α being one of our inconsistency measures, would be to entirely compute and sort, w.r.t. α, the set Q(I) and then filter out the k best answers. Such a naive approach is clearly suboptimal in particular when k |Q(I)|. The problem of computing Q k,α (I) answers falls in the general setting of rank join problems <ref type="bibr" target="#b27">[28]</ref>. Performance of rank join algorithms have been deeply studied in the case of monotonic scoring functions <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b30">31]</ref> while very few works deal with nonmonotoninc functions.</p><p>Let us first recall the monotonicity property. Let f be a scoring function. The function f is monotonic w.r.t. an operator</p><formula xml:id="formula_19">• iff: f(x) ≤ f(y) ∧ f(z) ≤ f(v) ⇒ f(x • z) ≤ f(y • v), ∀x, y, z, v.</formula><p>Otherwise, f is said to be non-monotonic w.r.t.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>•.</head><p>The following lemma says that inconsistency degrees based on multi occurrence quantification are monotonic w.r.t. the join operator ( ) while the inconsistency measures based on the single occurrence quantification are nonmonotonic w.r.t. . Lemma 2. A scoring function that associates to each tuple t a score computed using CBM (respectively, using CBS) is monotonic (respectively, non-monotonic) w.r.t. . We present in the next section an integrated algorithm to handle both monotonic and non-monotonic inconsistency measures in the case of bag semantics and we prove the optimality of the algorithm.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.1">The TopINC algorithm</head><p>In this section, we present our top-k ranking algorithm, called TopINC, for top-k queries under both inconsistency measures CBM and CBS. A general idea behind existing rank jon algorithms <ref type="bibr" target="#b27">[28]</ref> is to process the tuples of the relations involved in a given query in a specific order by considering at each step the most promising tuples at first. However, when the scoring function is not monotonic with respect to the join operator, which is the case for CBS due to single-occurrences, it is not straightforward to identify the order in which tuples should be processed.</p><p>The core intuition of our top-k ranking algorithm consists of using an index based on the inconsistency measures to access the most promising tuples at each step of query processing. More precisely, we build for each relation R, an associated index, denoted ind(R), whose nodes are labeled by a subset of the constraints. More precisely, each node B of Ind(R) is labeled with label(B) ⊆ DC. A node B stores the set of tuples's ids of R, denoted B(R), that violate exactly the set of constraints label(B), i.e., the set B(R) = {t ∈ R | V C(I, DC, t) = B}. We call B a bucket of the index Ind(R) and the set B(R) the bucket content.</p><p>Example 9. In our example, the buckets of the index are labeled with subsets of the constraints DC = {C1, C2, C3}. For instance, a bucket B0, with label(B0) = ∅, will store the consistent tuples B0(D) = {t1}, B0(S) = {t5, t6} and B0(V ) = {t8} of the relations D, S and V . The labels of the buckets and the content of the buckets are given below.</p><formula xml:id="formula_20">B B0 B1 B2 B3 B4 B5 B6 B7 label(B) ∅ {C1} {C2} {C3} {C1, C2} {C1, C3} {C2, C3} {C1, C2 , C3} B(D) {t1} ∅ ∅ ∅ {t2} ∅ ∅ ∅ B(S) {t5, t6} {t3} ∅ ∅ ∅ {t4} ∅ ∅ B(V ) {t8} ∅ ∅ ∅ ∅ ∅ {t7} ∅</formula><p>Each index ind(R) is defined as an ordered list of the nodes containing fragments of R, where nodes are ordered with respect to the cardinality set of their labels, i. We now describe the pseudocode of the Algorithm in detail. Let Q be a query Q(u) ← R1(u1), . . . , Rm(um). In order process the query Q k,α , with α ∈ {CBS, CBM }, the algoritm TopINC (c.f., Algorithm 1) takes as input: the query Q k,α , the indexes ind(Ri), with i ∈ [1, m], one for each input relation and the set V iolC of the violated constraints obtained by unioning the labels of all the buckets in the indexes. The algoritm uses as many temporary buffers HRi, i ∈ [1, m] as the number of indexes. Each temporary buffer contains the bucket contents. In addition, the algorithm uses a vector jB of size m storing the ids of the buckets that need to be joined during the course of the algorithm. The algorithm TopINC follows a level-wise sequencing of the iterations, where each level denotes the inconsistency degree of the answers computed at this level (c.f., lines 3-7 of algorithm 1). Level 0 means that consistent tuples are processed while the subsequent level l indicates the number of constrainst that are considered for the violated tuples. When processing a given level l, the algorithm resets the variable curV Set, used to keep track of the violated constraints while exploring the input relations at level l, and makes a recursive call to the IterateJoin procedure (line 6). For each level l, the IterateJoin procedure (Algorithm 2) explores the input relations sequentially from R1 to Rn (lines 11 to 14). For each input relation Rp, IterateJoin uses the index ind(Rp) to identify the buckets of Rp that are worthwhile to consider for the join (i.e., the buckets to be loaded in jB[p]), i.e., those buckets whose label size's is less than l (line 5). The relevant bucket ids of input relations are loaded in the jB buffer (line 13 of algorithm 2) and when Rp is the last input relation (i.e., p = m) (line 15) a join is performed between the buffers of jB (lines 17-20 of the algorithm 2) in order to compute the answers with inconsistency degree equal to the current level l. Note that the variable curV Set will contain duplicate occurrences if α = CBM (line 10) and single occurrences if α = CBS (line 7). It enables us to keep track of the current level of inconsistency while exploring the inputs. When intermediate inputs are explored, the IterateJoin algorithm ensures that |curV Set| does not exceed the current inconsistency level l (line 5 and line 11). When the last input is processed, a join is performed between the buckets in jB only if |curV Set| = l (line 15) which ensures that the computed answers have l as inconsistency degree. Example 11. We assume that the input relations are processed in this order: D, S and V . We illustrate the processing of query Q 2,CBS ex (I) by TopINC. Figure <ref type="figure" target="#fig_3">3</ref> exemplifies the iterations of the algorithm. The gray cells, in each step, denote the newly read tuples in that step. The final result (Level 3) is reported at the bottom of the Figure <ref type="figure" target="#fig_3">3</ref>. Starting from level 0, the selected buckets are jB = [B0, B0, B0], thus leading to join the contents of these buckets only at the very beginning. The contents of HV (B0), HS(B0) and HD(B0) are shown in Figure <ref type="figure" target="#fig_3">3</ref>. The first answer corresponding to the join of the above buffers is found (i.e, res = [ d4, d4 ]). The TopINC continues to read in selected buckets in jB. It then tries to read in B0 of V but no additional tuples, then it moves to read in B0 of V . Next, the tuple 02, d2, 5 is loaded in HV (B0) but no additional answer is found. As there is no additional answers (because k=2) and all tuples are read in selected buckets, TopINC jumps to the next level, i.e, the level 1. At this level, the first selected buckets are jB = [B0, B1, B0], thus leading to read the only one tuple </p><formula xml:id="formula_21">i := i + 1;</formula><p>of bucket B1 of relation V into HV (B1). But no additional answer is found and no others buckets in level 1 can be selected bringing TopINC to level 2. Finally, TopINC processes level 2 and then level 3 as shown in Figure <ref type="figure" target="#fig_3">3</ref> and halts when it reaches |res| = 2.</p><p>The following two lemmas state the correctness and the worst case complexity of TopINC, respectively.  Unsurprisingly, and like most of state of the art top-k join algorithms that do not use specific knowledge related to the join attributes (e.g., see <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b30">31]</ref>), the worst case time complexity of TopINC is in O(|I| m ), with m the number of input relations in Q. Interestingly, the previous lemma also provides a tighter upper bound regarding the space complexity. This lemma is a consequence of the level-wise approach followed by TopINC which ensures that query answers are computed in the ascending order of their inconsistency degree. Hence, TopINC strictly computes the answers that belong to the output (and the algorithm stops when k answers are computed). All the proofs are reported in appendix section. Optimality of TopINC. As discussed in Section 3, the presence of the non-monotonic function CBS prevents us from exploiting the existing frameworks <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b30">31]</ref> to analyze the performance of TopINC. We define hereafter a new class of algorithms, called Semi-Blind Algorithms (SBA), which includes the algorithms that exploit only the prov column (i.e., the scoring function) without imposing any predefined data access strategy 3 . We show that in this general class, and modulo non deterministic choices, TopINC is optimal w.r.t. the number of tuples read from the inputs.</p><p>We start by defining the family of SBA algorithms as follows. We define SA as a database schema where each table R has a set of attributes A. Let I1 and I2 be two relational instances over SA, we define equivalent instances under attributes A: I1 ≡A I2 iff ∀R ∈ SA, πA(I1(R)) = πA(I2(R)) with πA(R) the projection over table R on attributes A.</p><p>Let Q(X) ← R1(X1), . . . , Rn(Xm) and I be respectively a conjunctive query and an instance over schema S {prov} . Let AL be an algorithm that allows to compute the answers of Q k,α (I), with α ∈ {CBS, CBM }. A join test J of AL when processing Q k,α over an instance I has the following form J = t1 . . . tm where ti ∈ I(Ri) with i ∈ <ref type="bibr">[1, m]</ref>. A score of a join test is defined as follows: α(J) = α(t1 . . . tm). We define jP ath(AL, Q, I) as the sequence of joins test performed by the algorithm AL when evaluating Q k,α over I. The intuition is that jP ath(AL, Q, I) enables to capture the behavior of the algorithm AL when it evaluates Q k,α over I. Formally, jP ath(AL, Q, I) = [J1, ..., Jn], where</p><formula xml:id="formula_22">Ji = t i 1 . . . t i m , with t i j ∈ I(Rj) and j ∈ [1, m]. We define label(Ji) def = πprov(t i 1 ), . . . , πprov(t i m )</formula><p>. We are now ready to give the formal definition of the class of Semi-Blind Algorithms (SBA), the algorithms that use only information from the prov column when processing inconsistency-aware queries.</p><p>Definition 6 (SBA algorithms). Let Q k,α be a topk query, let I1, I2 be two instances, and let AL be an algorithm such that: jP ath(AL, Q, I2) = [J 1 , ..., J n 2 ] and jP ath(AL, Q, I1) = [J1, ..., Jn 1 ]. The algorithm AL belongs to the class SBA iff:</p><formula xml:id="formula_23">I1 ≡ {prov} I2 ⇒ label(Ji) = label(J i ), for i ∈ [1, max(n1, n2)]</formula><p>According to this definition, an algorithm AL ∈ SBA will have a similar behavior when evaluating a query Q k,α over different instances that are equivalent under prov, i.e., AL will explore the same sequence of join tests but may stop earlier or later depending on the success or failure of the join tests. The outcome of this latter test is related to the content of the join attributes of each specific input instance and remains independent from the prov column. As one can easily notice, TopINC belongs to SBA. Indeed, it only relies on the information given by the prov column without exploiting any auxiliary information. A natural metric to measure the performance of an algorithm AL is to compute the number of tuples of the input relations accessed by AL, denoted cost(Al, Q, I).</p><p>Let J = t1 . . . tm, we denote by tuple(J) = {t1, . . . , tm} the set of tuples involved in a join test J. Consider an algorithm AL with jP ath(AL, Q, I1) = [J1, ..., Jn 1 ]. 3 Note that the popular family of top-k algorithms using sorted data access <ref type="bibr" target="#b21">[22,</ref><ref type="bibr" target="#b27">28,</ref><ref type="bibr" target="#b29">30]</ref> is a strict subset of SBA.</p><p>Then, the cost of AL is given by: cost(Al, Q, I) = | n i=1 tuple(Ji)|. The following lemma states that there exists no algorithm in the class SBA that is optimal w.r.t. the cost metric defined above. Lemma 5. Let Q k,α be a top-k query.</p><p>Then, we have: ∀Al1 ∈ SBA, ∃Al2 ∈ SBA and an instance I such that, cost(Al1, I, Q) &gt; cost(Al2, I, Q).</p><p>The intuition behind the above lemma 10 is that the SBA algorithms need to make a non-deterministic choice among the join tests that have equivalent score. We illustrate this case by relying on a corner case of an instance Î containing exclusively consistent tuples. Consider a query Q over n inputs R1, . . . Rn such that |Q( Î)| = 1. Consider now the evaluation of the query Q 1,CBS by SBA algorithms. Since all the join tests among the tuples of the input relations will have the same score, an SBA algorithm needs to make a nondeterministic choice among the elements of R1 × . . . × Rn to decide in which order the join tests will be performed. Hence, the best algorithm Al would luckily pick the right tuples in the first round of choice which leads to an optimal cost: cost(Al, Î, Q) = n. The worst-case algorithm Al might end up with the least good cost after exploring the entire cartesian product of the inputs, which leads to</p><formula xml:id="formula_24">cost(Al, Î, Q) = n i=1</formula><p>|Ri| (i.e., the algorithms Al needs to read the entire inputs). Consequently, we argue that it is not worthwhile to distinguish between SBA algorithms w.r.t. to the order of exploring join tests with equivalent score (since this is a non-deterministic choice). We formalize this notion using regions, defined as maximal subsequences of join tests with equivalent score, and we define a new metric based on the number of regions explored by the algorithm. The region-based cost enables us to get ride of lucky choices when comparing the performances of SBA algorithms.</p><p>Below, we define the notion of a region. Let jP ath(AL, Q, I) = [J1, ..., Jn]. A region of jP ath(AL, Q, I) is a maximal subsequence of jP ath(AL, Q, I) made of join tests with equal inconsistency degree. More formally, a sequence [J1, ..., Jn], with l ≤ p, is a region of jP ath(AL, Q, I) = [J1, ..., Jn] iff l, p ∈ [1, n], and: (i) α(Ji) = α(Jj), ∀i, j ∈ [l, p], and (ii) α(J l-1 ) = α(J l ) and α(Jp+1) = α(Jp). We define Regs(Al, Q, I) to be the set of regions of jP ath(AL, Q, I). We define the cost model cost ∇ (Al, Q, I) as the number of regions explored by the algorithm Al during processing of query Q over I:</p><formula xml:id="formula_25">cost ∇ (Al, Q, I) = |Regs(Al, Q, I)|.</formula><p>The introduced cost model cost ∇ (Al, Q, I) conveniently prevents an algorithm to compute an answer that can be dropped after to the top-k answers, thus avoiding more useless I/O operations, as proved in the following theorem.</p><p>Theorem 1. For any instance I and any top-k conjunctive query Q k,α , we have:</p><formula xml:id="formula_26">cost ∇ (TopINC, Q, I) ≤ cost ∇ (AL, Q, I), ∀AL ∈ SBA.</formula><p>Notice that the TopINC algorithm is only sensitive to the class of queries and unsensitive to the class of constraints, the latter being hardcoded in the inconsistency annotations. TopINC and Theorem 2 are established for conjunctive queries, which are by definition monotonic queries (i.e. for which a partial output can be computed starting  from a partial input). Non-monotonic queries (such as aggregate queries and queries with negation) are not covered by our algorithm and are far from being trivial due to the non-monotonic nature of the CBS scoring function.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7.">EMPIRICAL EVALUATION</head><p>Our experimental assessment has been carried out with two main objectives in mind. In the first part, we aimed at measuring the time required to transform a database instance into a N[Υ]-instance. The latter transformation is considered as the pre-processing time for our approach. In second part, we empirically evaluate the TopINC algorithm to perform top-k query answering. We have implemented our framework in PostgreSQL 10 by leveragingPLSQL and JDK 11. All the experiments have been executed on a DELL Core i7 2.5 GHz laptop with 16 GB RAM running Linux OS. The datasets used in our study are summarized in Table 3. As real-life datasets, we employed the Hospital, Tax and Pstock datasets from <ref type="bibr" target="#b16">[17]</ref> as they are the only datasets in the literature that are equipped with denial constraints. In addition, we generated our own synthetic datasets and companion denial constraints.</p><p>In Table <ref type="table" target="#tab_5">3</ref>, the column Inc denotes the percentage of inconsistency per relation, whereas #Tup and #Rel denote the number of tuples and relations in the dataset, respectively. Finally, #Cons indicates the number of denial constraints per dataset. The column #atom gives interval of number of atoms for the constraints of a given dataset. The column Syn indicates the type of dataset (synthetic or not). All the queries used are described as follows: Q1 to Q5 are on the Hospital dataset and they contain one join; Q6 to Q9 are on the Tax dataset and they contain one join; Q10 to Q14 are on the synthetic dataset; Q10, Q11 have a join across three tables, Q12, Q13 have a join across four tables and Q14 has a join across five tables.</p><p>Table <ref type="table" target="#tab_5">3</ref> shows the constraints in each dataset. Columns #Equal and #(In-)equal provide the number of constraints that use exclusively equality predicates and those using a mixture of predicates from {≤, ≥, =, &lt;, &gt;, =}, respectively. As one can notice, the latter are in greater number. Runtimes of the instance transformation. In this Section, we measure the runtimes of the transformation of a database instance into a N[Υ]-instance. Figure <ref type="figure" target="#fig_4">4</ref> shows the runtimes for each dataset while varying the number of constraints. We can observe that the runtimes of the Kinstance transformation linearly scale with the number of constraints for all datasets. They range between tens and thousands of seconds, depending on the dataset. We ob-  served the highest runtimes only with one dataset (Tax), which has fifty denial constraints and took approximately 1h to transform 100000 tuples. Such a transformation is part of the pre-processing and only done one time for the annotated instances, thus it remains quite reasonable. One can also notice that there is a huge gap between runtimes of transformation of Tax (Figure <ref type="figure" target="#fig_4">4</ref>.a) and Hospital (Figure <ref type="figure" target="#fig_4">4</ref>.b) despite the fact that these two datasets have similar characteristics. The observed gap is due to the fact that the constraints in the dataset Tax are more sophisticated than the constraints in the dataset Hospital (i.e., with larger built-in atoms). Overhead of inconsistency measures on query execution. In order to gauge the overhead of running a query Q with inconsistency degrees, we have employed our 14 queries and measured the overhead per each tuple in the answer (Table <ref type="table">5</ref>.a) as well as the total overhead for the complete output of the query (Table <ref type="table">5</ref>.b). The obtained results are reported in Table <ref type="table">5</ref>. The greater is the size of the output of a query the larger is the overhead of query execution with inconsistency degrees. The columns query and #answers in Table <ref type="table">5</ref>.a are the total query runtime of the original query on an inconsistency-free database instance and the size of query answer, respectively. Depending to the size of output of the queries, the overhead ranges between 2ms and 6m, respectively for queries Q4 and Q12. (respectively, yellow and red cells in Table <ref type="table">5</ref>.a). The difference can be explained by looking at the size of the answer set of Q4 and Q1 that are 50 tuples and 15M tuples, respectively. These overhead are, however, not trustworthy to understand the overhead of our approach, since they concern the entire output set of queries, whereas our algorithms returns the top-k results tuple by tuple. Thus, one should look at the overhead per tuple in Table <ref type="table">5</ref>.b. We can observe that the overheads per tuple are reasonable in all cases, and range between 5 microseconds and 293 microseconds (yellow and red cells in Table <ref type="table">5</ref>.b). TopINC Performance vs. baseline. We have implemented a baseline algorithm leveraging PostgreSQL, where all answers of a query are computed beforehand and then sorted (ORDER BY) and filtered (LIMIT k). Figure <ref type="figure" target="#fig_8">7</ref> shows the performance of TopINC (with k varying from 10 to 300) as opposed to the aforementioned baseline algorithm.</p><p>We have chosen five queries as representatives of different datasets and join sizes ranging from one join (Q1,Q2, Q8) and three joins (Q11) to five joins (Q14). The algorithm TopINC (blue bar) can be up to 2 8 times faster than the baseline approach as shown in Figure <ref type="figure" target="#fig_8">7</ref>.a. There is only one query, i.e. the most complex query Q14, for which TopInc has lower performance compared to the baseline, starting from a value of k ≥ 200. The reason for that is the fact that TopInc for higher values of k and higher number of joins in the query will inspect more buckets and try to perform more joins that will likely produce no answers. Furthermore, notice that in all these experiments the baseline turns to have advantageous with respect to TopInc, as it leverages the query planning of Postgres and opportunistically picks the most efficient join algorithm. Despite these advantages, our approach is still superior in terms of performance in the majority of the cases.</p><p>In Figure <ref type="figure" target="#fig_8">7</ref>, from 7.f to 7.j, we measure the memory consumption of our approach for the same queries. We observe that TopINC always consumes less memory than the baseline.</p><p>We also ran another experiment on synthetic datasets to study the impact of other parameters on the performance of TopINC. The results are reported in Figure <ref type="figure">6</ref>. Precisely, we wanted to study the dependency of TopINC on the following parameters: the number of answers to be returned (k), the number of violated constraints (DC), the size of search space formed by DC (i.e, the number of subsets of constraints violated by base tuples) and the exact size of output of Q (i.e, |Q(I)|). In these results, we focused on a relatively simple query Q containing a join between two synthetic relations (of size 1000 each one) and we kept constant the value of k (equal to 20). We ran this experiment with varying number of denial constraints DC from 10 to 30, respectively in Figures 6.a, 6.b and 6.c. In each of these plots, we vary the selectivities of Q and the size of the search space of the algorithm. One can see that TopINC outperforms the baseline in all cases and is particularly advantageous with larger query outputs and smaller search space.. The underlying reason is that the greater is the output size of the query, the larger is the probability to find answers within the first combinations scanned within the search space.</p><p>Qualitative evaluation. We have designed an experiment devoted to show the utility of our inconsistency measures on real-world inconsistent data. We chose two real-life datasets, namely Adult, used in <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b36">37]</ref> and containing census data, along with and Food Inspection <ref type="bibr" target="#b1">[2]</ref> including information about inspections of food establishments in Chicago. The features of the two datasets are shown in Table <ref type="table" target="#tab_8">4</ref>.a. Table <ref type="table" target="#tab_8">4</ref>.b reports the the constraints of Adult, namely A1 and A2, that have been derived using Holoclean <ref type="bibr" target="#b37">[38]</ref>. While A1 indicates that men who have 'married' as marital status are husbands, A2 expresses the dual constraint for women.In addition, we handcrafted a third constraint A3 establishing that adults who are not in a family should not have 'married' as marital status. This third constraint allows to capture violated tuples that overlap with the tuples violated by the two former constraints. We also built meaningful denial constraints for the second dataset as shown in Table <ref type="table" target="#tab_8">4</ref>.c. The constraint F1 (respectively, F2) states that a licence number, which is a unique number assigned to an establishment, uniquely identifies the legal name of the establishment (re-  </p><formula xml:id="formula_27">F 3 2 F 3 1 1 1 6 F3 1 2 16 F 2 3 1 3 3 F 3 3 2 4 72 F3F 3 1 3 8 135 F 2 3 F 3 2 F 3 1 3 9 36 F 3 1 F 3 3 F 3 2 (d) Distrib. of FQ1 Answ.</formula><p>Table <ref type="table">5</ref>: Results of the qualitative study. We report in Table <ref type="table" target="#tab_8">4</ref>.d the considered queries for the two datasets. The query AQ1 on Adult finds all couples of male and female living in the same country and earning the same income. The query FQ1 on Food Inspection retrieves the licenses of establishments in a specific area that were subject to three inspections: the first one having either a failing inspection or a violation related to "food and non-food contact Runtime (ms)  surface", followed by an inspection issued as a response to a complaint and then a non-failing normal inspection. Table <ref type="table">5</ref>.a. shows the violations of constraint for the two datasets. We can notice that there are different kinds of tuples returned by AQ1 as illustrated in Table <ref type="table">5</ref>.b. The majority of the results (276M tuples) are consistent, thus both CBS and CBM are equal to 0, while the remaining answers exhibit 1 or 2 as inconsistency degrees. Most of the inconsistent tuples violate one constraint at a time (in the order A3, A1 and A2) while the rest of the tuples violate two constraints. For this dataset, in the majority of the cases a constraint is violated at most once and hence CBS and CBM measures are not discriminating, except for the 23 answers where violations occur twice (5th line of Table <ref type="table">5</ref>.b). These tuples are captured when running TopINC for top-100 tuples starting from the most inconsistent ones as illustrated in Table <ref type="table">5</ref>.c. Note that, while CBM does not distinguish between the 71 most inconsistent answers of AQ1 (answers with CBM = 2 corresponding to the first four rows of Table <ref type="table">5</ref>.c), the CBS measure provides a different ranking for the 23 answers of the 4th row of this Table.</p><note type="other">TopInc Baseline</note><p>We show in Table <ref type="table">5</ref>.d the inconsistency degrees of the answers when evaluating query FQ1 on the second dataset. Note that for this query the CBS degrees vary from 0 up to 3 while the CBM degrees range from 0 up to 9. We observe now that many answers are not distinguishable under CBS while they exhibit a wider range of CBM degrees (e.g., CBM varies from 1 to 3 for answers having CBS = 1). This again shows that CBS and CBM provide the user with two different types of information, both being useful to carry out the ranking. Furthermore, by looking at the tuples that contribute to the last row of Table <ref type="table">5</ref>.d (CBM = 9) violating the three consraints F1, F 2 and F3 in tandem, we made an interesting discovery. These violations (and also those corresponding to CBM = 8) are all related to the same erroneous license numbers (all set to 0 in the corresponding tuples).</p><p>Finally, we show by means of examples the remarkable difference between our approach and CQA 4 . Note that as we already pinpointed in Section 3, these are complementary approaches. Table <ref type="table">5</ref>.e shows three CQA-consistent answers for query F Q1. First, we note that all our consistent answers (i.e., with CBS = CBM = 0) are also CQA-consistent as 4 We consider repair by deletion and symmetric set difference as measure of minimality <ref type="bibr" target="#b4">[5]</ref>. stated in Lemma 1. The converse is not true as it can be observed in Table <ref type="table">5</ref>.e where the answer 34183 is CQAconsistent but not consistent in our framework (with CBS and CBM = 0). On another note, we can notice that the CQA approach does not distinguish between the three CQAconsistent answers of Table <ref type="table">5</ref>.e. In particular, the information that the CQA-consistent answer 34183 is computed using inconsistent base tuples (violation of F1) is not conveyed by CQA.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="8.">CONCLUSION AND OUTLOOK</head><p>We have presented a novel framework for inconsistencyaware query answering leveraging two different measures of inconsistency. We have grounded the computation of inconsistency degrees in why-provenance annotations and we have designed a novel top-k rank algorithm suitable for the above measures while proving its optimality.</p><p>As future work, we plan to investigate the extension of our approach to other classes of constraints and queries, such as universal constraints and aggregate queries. Techniques developed in the literature e.g. <ref type="bibr" target="#b17">[18]</ref> for tracing lineage of first order queries could be employed to extend our approach to the upper class of constraints beyond DCs (e.g., universal constraints). However, in the presence of negation, the connection between provenance and inconsistency degrees of base tuples remains unclear and raises intriguing research questions. On the other hand, while recent literature, e.g., <ref type="bibr" target="#b3">[4]</ref>, provides foundations to study the computation of inconsistency measures for aggregate queries using polynomial provenance, the problem of efficiently computing top-k aggregate queries in presence of non-monotonic scoring functions such as CBS remains open and unsolved up to date.</p><p>Handling updates of tuples or denial constraints in our framework is also in our research agenda. One has to resort to classical incremental view maintenance mechanisms. However, handling constraint modifications without fully recomputing both the constraint-based annotations and the TopINC's index, remains an open challenge.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="9.">ACKNOWLEDGEMENTS</head><p>Our research is supported by the French National Agency (ANR) through the grant nr. 18-CE23-0002 QualiHealth.</p><p>Theorem 2. For any instance I and any top-k conjunctive query Q k,α , we have: cost ∇ (TopINC, Q, I) ≤ cost ∇ (AL, Q, I), ∀AL ∈ SBA.</p><p>Proof. Let Q k,α , with α ∈ {CBM, CBS}, be a topk query over an instance I.</p><p>Assume that there exists an algorithm AL ∈ SBA that outputs Q k,α (I) with cost ∇ (AL, Q, I) &lt; cost ∇ (TopINC, Q, I). The intuition behind our proof is that if TopINC explores a region Z that is not explored by AL then AL is not correct (i.e., it do not correctly compute the top-k answers). Note that, when Top-INC starts performing join tests with inconsistency degree d, it fully explores the region (i.e., performs all the possible join tests with inconsistency degree d) before moving to another region. In addition, TopINC processes the regions sequencially in increasing order of their inconsistency degrees (i.e, starting from region of inconsistency degree 0 to upper degrees of inconsistency). Let Z be the region having the biggest inconsistency degree, noted dz, among the regions explored by AL. Two cases occur: (i) either AL has exhaustively explored all the regions with inconsistency degree &lt; dz and in this case cost ∇ (AL, Q, I) ≥ cost ∇ (TopINC, Q, I) (because TopINC will also explore the same regions or a subset of them), or (ii) AL skips some regions with inconsistency degree &lt; dz. In this case, one can prove that AL is incorrect. Indeed, since AL ∈ SBA, one can build an instance I ≡prov I such that AL outputs incorrect answers when it evaluates Q k,α over I .</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The K-instances hdb LP (without prov column) and hdb Υ (without lprov column).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head></head><label></label><figDesc>e., B ≤ B iff |label(B)| ≤ |label(B )|. Example 10. The following indexes are associated with the relations D, S and V of our example database: Ind(D) = [B0, B4], Ind(V ) = [B0, B6] and Ind(S) = [B0, B1, B5].</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Algorithm 1 : 2 / 3 level:=0 ; 4 while 5 curVSet := ∅ ; 6 IterateJoin</head><label>123456</label><figDesc>TopINC Input : ViolC: set of violated constraints Q k,α : a top-k query over R1, . . . , Rm with α ∈ {CBM, CBS} ind(R1), . . . , ind(Rm) : indexes of the input relations Output: Res: k best answers w.r.t. α Data structures: HR1, . . . , HRm: input buffers; jB : an array of size m begin 1 Res=[] be an empty list ; * Contr. violated by current answer */ l ≤ |V iolC| ∧ Res.size &lt; k do</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Lemma 3 .</head><label>3</label><figDesc>Let α ∈ {CBM, CBS}. The algorithm Top-INC computes correctly Q k,α (I).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Lemma 4 .</head><label>4</label><figDesc>Let Q(X) ← R1(X1), . . . , Rm(Xm) be a conjunctive query, let s = |X| and let k be an integer. A query Q k,α is evaluated by the TopINC in time O(n m ) and in space O(|I| + k × s).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 4 :</head><label>4</label><figDesc>Figure 4: Transformation of an instance into a N[Υ]-instance</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 5 :Figure 6 :</head><label>56</label><figDesc>Figure 5: CBS and CBM computation overhead.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: TopINC performance vs baseline (α = CBS). (a)-(e) Runtime, (f)-(j) Memory footprint</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Summary of the notation used in the paper.</figDesc><table><row><cell>that alleviate the assumptions on the permitted data access</cell></row><row><cell>strategies, and (ii) a new cost model that enable to deal</cell></row><row><cell>with nondeterministic choices due to the assumption that</cell></row><row><cell>SBA algorithms do not exploit any specific knowledge on</cell></row><row><cell>join attributes. Using this framework, we show the optimal-</cell></row><row><cell>ity of our algorithm w.r.t. the SBA class.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>Table 3 :</head><label>3</label><figDesc>Datasets used in our empirical evaluation.</figDesc><table><row><cell>Dataset</cell><cell>Syn</cell><cell>#Rel</cell><cell>#Tup</cell><cell>#Equal</cell><cell>#Cons #(In-)equal</cell><cell>#atom</cell><cell>Inc(%)</cell></row><row><cell>Hospital</cell><cell></cell><cell>1</cell><cell>114919</cell><cell>3</cell><cell>39</cell><cell>2</cell><cell>100</cell></row><row><cell>T ax</cell><cell></cell><cell>1</cell><cell>99999</cell><cell>1</cell><cell>49</cell><cell>2</cell><cell>100</cell></row><row><cell>Synthetic</cell><cell></cell><cell>5</cell><cell>1012524</cell><cell>6</cell><cell>9</cell><cell>[1, 3]</cell><cell>89.34</cell></row><row><cell>P stock</cell><cell></cell><cell>1</cell><cell>244992</cell><cell>1</cell><cell>9</cell><cell>[1, 2]</cell><cell>18.62</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_7"><head></head><label></label><figDesc>Characteristics of Adult and Food Inspection. A1:← Adult(A,MS,Re,S,...)∧ S='Female' ∧ Re='Husband' A2:← Adult(A,MS,Re,S,...) ∧ S='Male' ∧ Re='Wife' A3:← Adult(A,MS,Re,S,...) ∧ Re='Husband' ∧ MS='Marr-civ-sp.' (b) Constraints on Adult. F1: ← Inspection(I1,F T1, V1, Re1, L1, . . .) ∧ L1 = L2 ∧</figDesc><table><row><cell cols="2">Dataset</cell><cell></cell><cell cols="2">Table</cell><cell cols="2">#tuples</cell><cell cols="2">Attributes</cell></row><row><cell>Adult</cell><cell></cell><cell></cell><cell cols="2">Adult</cell><cell cols="2">48842</cell><cell>11</cell></row><row><cell cols="3">Food Inspection</cell><cell cols="2">Inspection</cell><cell cols="2">204896</cell><cell>17</cell></row><row><cell cols="9">(a) Inspection(I2,F T2, V2, Re2, L2, ...) ∧ N1 = N2</cell></row><row><cell cols="8">F2: ← Inspection(I1,F T1, V1, R1, L1, ...) ∧</cell></row><row><cell cols="9">Inspection(I2,F T2, V2, R2, L2, ...) ∧ L1 = L2 ∧</cell></row><row><cell cols="2">R1 = R2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="9">F3: ← Inspection(I1,F T1, V1, R1, L1, D1, ...) ∧</cell></row><row><cell cols="9">Inspection(I2,F T2, V2, R2, L2, D2, ...) ∧</cell></row><row><cell cols="2">IT1 =</cell><cell cols="5">consultation ∧ IT2 =</cell><cell cols="2">consultation ∧</cell></row><row><cell cols="2">D2 &lt; D1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell cols="7">(c) Constraints on Food Inspection.</cell></row><row><cell cols="9">AQ1: SELECT * FROM adult a1, adult a2 WHERE a1.sex = 'Male'</cell></row><row><cell cols="9">AND a2.sex = 'Female'AND a1.country = a2.country AND</cell></row><row><cell cols="4">a1.income = a2.income</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>FQ1: Select</cell><cell cols="2">t2.license</cell><cell cols="2">From</cell><cell cols="2">inspection</cell><cell>t1,</cell><cell>inspection</cell></row><row><cell>t2,</cell><cell cols="2">inspection</cell><cell>t3</cell><cell>where</cell><cell cols="2">(t1.results</cell><cell>=</cell><cell>'Fail'</cell><cell>or</cell></row><row><cell cols="9">t1.violations like '%food and non-food contact %')</cell></row><row><cell>and</cell><cell cols="4">t1.license=t2.license</cell><cell>and</cell><cell cols="3">t1.license=t3.license</cell></row><row><cell>and</cell><cell cols="2">t2.results</cell><cell>=</cell><cell>'Fail'</cell><cell>and</cell><cell cols="3">t2.inspection type</cell><cell>=</cell></row><row><cell cols="2">'Canvass'</cell><cell>and</cell><cell></cell><cell cols="5">t3.inspection type='Complaint'</cell><cell>and</cell></row><row><cell cols="9">t1.inspection date&lt;t3.inspection date and t3.inspection date</cell></row><row><cell cols="9">&lt;t2.inspection date and t1.zip &gt;= 60666 and t2.zip &gt; 60655</cell></row><row><cell cols="3">and t3.zip &gt; 60655</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="8">(d) Queries on Adult and Food Inspection.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>Table 4 :</head><label>4</label><figDesc>Real-world datasets with their denial constraints.</figDesc><table><row><cell cols="2">Viol.</cell><cell cols="2">#Viol.</cell><cell>Viol.</cell><cell>#Viol.</cell><cell></cell><cell cols="2">CBS CBM #Ans Annot.</cell></row><row><cell cols="2">Const.</cell><cell cols="2">F.Insp.</cell><cell>Const.</cell><cell>Adult</cell><cell></cell><cell>0</cell><cell>0</cell><cell>276M ∅</cell></row><row><cell>∅</cell><cell></cell><cell>191K</cell><cell></cell><cell>∅</cell><cell>48K</cell><cell></cell><cell>1</cell><cell>1</cell><cell>99K A1</cell></row><row><cell>F1</cell><cell></cell><cell>7715</cell><cell></cell><cell>A1</cell><cell>7</cell><cell></cell><cell>1</cell><cell>1</cell><cell>28K A2</cell></row><row><cell>F2</cell><cell></cell><cell>360</cell><cell></cell><cell>A2</cell><cell>5</cell><cell></cell><cell>1</cell><cell>1</cell><cell>13K A3</cell></row><row><cell cols="2">F3 F2F1</cell><cell>2366 1977</cell><cell></cell><cell>A3 A1A2</cell><cell>23 0</cell><cell></cell><cell>1 2</cell><cell>2 2</cell><cell>23 10</cell><cell>A 2 3 A1A2</cell></row><row><cell cols="2">F3F1</cell><cell>181</cell><cell></cell><cell>A1A2</cell><cell>0</cell><cell></cell><cell>2</cell><cell>2</cell><cell>32</cell><cell>A1A3</cell></row><row><cell cols="2">F3F2</cell><cell>2</cell><cell></cell><cell>A2A3</cell><cell>0</cell><cell></cell><cell>2</cell><cell>2</cell><cell>6</cell><cell>A2A3</cell></row><row><cell cols="3">F3F2F1 439</cell><cell></cell><cell cols="2">A1A2A3 0</cell><cell></cell><cell></cell><cell>(b) Distrib.</cell></row><row><cell></cell><cell cols="4">(a) Data Inconsistency.</cell><cell></cell><cell></cell><cell></cell><cell>of AQ1 Answ.</cell></row><row><cell cols="5">CBS CBM #Ans Annot. 2 2 32 A1, A3 2 2 6 A2, A3 2 2 10 A1, A2 1 2 23 3 A 2</cell><cell>CBS 0 1 2</cell><cell>CBM 0 3 6</cell><cell cols="2">#Ans 6239 495 17</cell><cell>Annot. ∅ F 3 1</cell></row><row><cell>1</cell><cell>1</cell><cell>29</cell><cell>A1</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">(c) Top-100 AQ1 Answ.</cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="2">CBS CBM</cell><cell></cell><cell>Ans.</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>0</cell><cell>0</cell><cell cols="3">1141505</cell><cell></cell><cell></cell><cell></cell></row><row><cell>0</cell><cell>0</cell><cell cols="3">1042895</cell><cell></cell><cell></cell><cell></cell></row><row><cell>1</cell><cell>3</cell><cell cols="2">34183</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">(e) Comparison with CQA.</cell><cell></cell><cell></cell><cell></cell></row></table><note><p>spectively, its risk category). The constraint F3 states that if a given establishment has been inspected for 'consultation' at a date d, one cannot expect to have an inspection of a different type prior to d for the same establishment. This is because the attribute Inspection type takes the value 'consultation' when the inspection "is done at the request of the owner prior to the opening of the establishment."</p></note></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>For ease of exposition and to avoid clutter, the relations have the same schema. Our approach is applicable to relations with arbitrary schemas as also shown in our experimental study.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>i.e., ⊕ (resp. ⊗) is associative and commutative and 0 (resp. 1) is its neutral element.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_2"><p>This is because the optimum of the function f (x) = sx-x 2 , for a constant s, is given by x = s/2.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>11. APPENDIX Lemma 6. Let I, Q, DC be defined as previously. ∀t ∈ Q(I) we have: CBM (t, Q, I, DC) = CBS(t, Q, I, DC) = 0 ⇒ t is a CQA.</p><p>Proof. Given an instance I, a query Q and a set of denial constraint DC. An answer t of Q over I such that CBM (t, Q, I, DC) = CBS(t, Q, I, DC) = 0 is a CQA because all the tuples used to compute it do not involve in any violation of constraints DC. So, trivially any king of answer as t is CQA under any semantic of repair. Lemma 7. A scoring function that associates to each tuple t a score computed using CBM (respectively, using CBS) is monotonic (respectively, non-monotonic) w.r.t. .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof.</head><p>Recall that in the context of bag semantics, the scoring functions CBM and CBS are applied over monomials. Let M1, . . . , Mm be monomials corresponding, respectively, to the annotations of m base tuples t1, . . . , tm in an N[Υ]-instance I Υ . Let t = t1 . . . tm be an answer to the quey Q over I Υ . The annotation of t using provenance polynomials semiring is given by the monomial Q(I Υ )(t) = M1 × . . . × Mm. The monotonicity of CBM is derived from the following property of the weight function W (i.e, the sum of powers of variables in a monomial):</p><p>. This makes W monotonic w.r.t. the product (i.e., ×) which implies that CBM is monotonic w.r.t.</p><p>. We show the non-monotonicity of CBS by counterexample. Assume</p><p>Proof. The TopINC algorihtm proceeds one level at a time. It starts from inconsistency degree 0 to upper inconsistency degrees. At each inconsistency degree d fixed, it looks for all the joins of buckets (from join relations) where the union of their labels has cardinality d; the join is only performed among the tuples within the buckets found. It stops processing when k answers are found otherwise Top-INC continues to look for the remaining joins of buckets for the same inconsistency degree d; if there exists no other join of buckets that leads to inconsistency degree d, the TopINC moves forward to inconsistent degree d + 1. Hence, this processing ensures that the K answers output by TopINC are correct.</p><p>Lemma 9. Let Q(X) ← R1(X1), . . . , Rm(Xm) be a conjunctive query, let s = |X| and let k be an integer. A query Q k,α is evaluated by the TopINC in time O(n m ) and in space</p><p>Proof. This lemma is a consequence of the level-wise approach followed by TopINC which ensures that query answers are computed in the ascending order of their inconsistency degree. Hence, TopINC strictly computes the answers that belong to the output (and the algorithm stops when k answers are computed).</p><p>Lemma 10. Let Q k,α be a top-k query.</p><p>Then, we have: ∀Al1 ∈ SBA, ∃Al2 ∈ SBA and an instance I such that, cost(Al1, I, Q) &gt; cost(Al2, I, Q).</p><p>Proof. W.l.o.g, assume that m = 2 (i.e., Q is a join between two relations R1 and R2). Take two integers l &gt; 1, p &gt; 1 such that k ≤ l * p. We build an instance I1 as follows:</p><p>• The relation I1(R1) contains two subsets of tuples (the l-tuples and the p-tuples): l tuples t l 1 , . . . , t l l with πprov(t l i ) = πprov(t l j ), ∀i, j ∈ )). Consider an algorithm Al1 ∈ SBA with jP ath(Al1, Q, I) = [J1, ..., Jn 1 ]. We exhibit the following cases regarding the first test join J1:</p><p>starts reading a p-tuple from R1). We construct an instance I2 such that I2 ≡prov I1 and all the answers of Q over I2 are exactly those answers obtained by joining l-tuples of I2(R1) with p-tuples from I2(R2), i.e., any other join test between tuples of I2(R1) and tuples of I2(R2) will evaluate to false. Clearly, Al1 is not optimal to evaluate Q k,α over I2 because Al1 starts to process join test that does not lead to any output answer as a result of the fact that label(jP ath(Al1, Q, I2) <ref type="bibr" target="#b0">[1]</ref>) = label(J1) (since I2 ≡prov I1) and hence Al1 reads at least one useless tuple (the p-tuple t p 1 which, by contruction of I2, do not contribute to any answer). It is easy to see that a round robbin algorithm that alternate reading l-tuples from R1 and p-tuples from R2 and performing join tests between the tuples loaded in the memory is optimal. Indeed, to maximize the generated answers for a given cost s (i.e., reading s base tuples), the best strategie is to read s/2 base l-tuples from R1 and s/2 base p-tuples from R2 (or inversely) 5 , which enables to compute the maximal number of s/2 × s/2 answers. The behavior of such an algorithm Al2 is given by jP ath(Al2, Q</p><p>p , J 5 = t3 l t 1 p , J 6 = t3 l t 2 p . . . Since, Al2 reads the minimal number of base tuples to compute k answers from I2 and Al1 reads at least one useless base tuple, we can conclude that cost(Al1, I2, Q) &gt; cost(Al2, I2, Q).</p><p>• Case when J1 = t l 1 t l 2 or J1 = t l 1 t P 2 (i.e., Al1 starts reading an l tuple from R1). This case is the dual of the first one and can be proved following the same reasoning while inverting the roles of p-tuples and l-tuples when building I2 and Al2.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<ptr target="https://github.com/HoloClean/holoclean/blob/master/testdata/AdultFull.csv" />
+		<title level="m">Adult dataset</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<ptr target="https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5" />
+		<title level="m">Food inspection dataset</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Fairness in online jobs: A case study on taskrabbit and google</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Amer-Yahia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Elbassuoni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ghizzawi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">M</forename><surname>Borromeo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hoareau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Mulhem</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EDBT 2020</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="510" to="521" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Provenance for aggregate queries</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Amsterdamer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tannen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS</title>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<biblScope unit="page" from="153" to="164" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Consistent query answers in inconsistent databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS</title>
+		<imprint>
+			<date type="published" when="1999">1999. 1999</date>
+			<biblScope unit="page" from="68" to="79" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">User-guided repairing of inconsistent knowledge bases</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Arioua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EDBT 2018</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="133" to="144" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Database Repairing and Consistent Query Answering</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>Morgan &amp; Claypool</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Database repairs and consistent query answering: Origins and further developments</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS 2019</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="48" to="58" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Introduction to inconsistency tolerance</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schaub</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Inconsistency Tolerance</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="volume">3300</biblScope>
+			<biblScope unit="page" from="1" to="14" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Repair-based degrees of database inconsistency: Computation and complexity</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+		<idno>CoRR, abs/1809.10286</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Query answering in inconsistent databases</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Logics for Emerging Applications of Databases</title>
+		<editor>
+			<persName><forename type="first">R</forename><forename type="middle">V D M J</forename><surname>Chomicki</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Saake</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Why and where: A characterization of data provenance</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Buneman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">C</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT 2001</title>
+		<imprint>
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Counting database repairs under primary keys revisited</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Calautti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Console</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pieris</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS 2019</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="104" to="118" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">On the decidability and complexity of query answering over inconsistent and incomplete databases</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Calì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS</title>
+		<imprint>
+			<date type="published" when="2003">2003. 2003</date>
+			<biblScope unit="page" from="260" to="271" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Supporting ad-hoc ranking aggregates</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chengkai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C.-C</forename><forename type="middle">C</forename><surname>Kevin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Ihab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGMOD</title>
+		<imprint>
+			<date type="published" when="2006">2006. 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Computing consistent query answers using conflict hypergraphs</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marcinkowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM 2004</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="417" to="426" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Discovering denial constraints</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Papotti</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">13</biblScope>
+			<biblScope unit="page" from="1498" to="1509" />
+			<date type="published" when="2013-08">Aug. 2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Tracing the lineage of view data in a warehousing environment</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Widom</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Wiener</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TODS</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="179" to="227" />
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Possibilistic logic</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Dubois</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Prade</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of Logic in Artificial Intelligence and Logic Programming</title>
+		<imprint>
+			<publisher>Oxford University Press</publisher>
+			<biblScope unit="page" from="439" to="513" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Modeling, measuring and monitoring the quality of information</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Decker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Martinenghi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ER 2009 Workshops</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Circuits for datalog provenance</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Milo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tannen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT 2014</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page">3</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Optimal aggregation algorithms for middleware</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fagin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lotem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Naor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS 2001</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="102" to="113" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">First-order under-approximations of consistent query answers</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Geerts</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Pijcke</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wijsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">83</biblScope>
+			<biblScope unit="issue">C</biblScope>
+			<biblScope unit="page" from="337" to="355" />
+			<date type="published" when="2017-04">Apr. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Measuring inconsistency in knowledgebases</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Intelligent Information Systems</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Containment of conjunctive queries on annotated relations</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Green</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="296" to="309" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Provenance semirings</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Karvounarakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tannen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2007">2007. 2007</date>
+			<biblScope unit="page" from="31" to="40" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Supporting top-k join queries in relational databases</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">G</forename><surname>Aref</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Elmagarmid</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The VLDB Journal</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="207" to="221" />
+			<date type="published" when="2004-09">Sept. 2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">A survey of top-k query processing techniques in relational database systems</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Beskales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Soliman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys (CSUR)</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<monogr>
+		<title level="m" type="main">Data Cleaning</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>ACM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Evaluating rank joins with optimal cost</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">P</forename><surname>Karl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schnaitter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS</title>
+		<imprint>
+			<date type="published" when="2008">2008. 2008</date>
+			<biblScope unit="page" from="43" to="52" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Optimal algorithms for evaluating rank joins in database systems</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">P</forename><surname>Karl</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schnaitter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TODS</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">On approximating optimum repairs for functional dependency violations</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kolahi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">V S</forename><surname>Lakshmanan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT 2009</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="53" to="62" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Reasoning under inconsistency: A forgetting-based approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">174</biblScope>
+			<biblScope unit="issue">12-13</biblScope>
+			<biblScope unit="page" from="799" to="823" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Counting and enumerating (preferred) database repairs</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM PODS 2017</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="289" to="301" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Information and evidence in logic systems</title>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">L</forename><surname>Lozinskii</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Experimental and Theo-retical Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="page" from="163" to="193" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">A dichotomy in the complexity of counting database repairs</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Maslowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wijsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computer and System Sciences</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Explaining repaired data with cfds</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rammelaere</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Geerts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1387" to="1399" />
+			<date type="published" when="2018-07">July 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Holoclean: Holistic data repairs with probabilistic inference</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rekatsinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1190" to="1201" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Database repairing using updates</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wijsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM TODS</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Progressive and selective merge: computing top-k with ad-hoc ranking functions</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Xin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">C</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">-C</forename><surname>Chang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ACM SIGMOD</title>
+		<imprint>
+			<date type="published" when="2007">2007. 2007</date>
+			<biblScope unit="page" from="103" to="114" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

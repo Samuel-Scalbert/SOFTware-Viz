@@ -1,0 +1,933 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Comparative Study of Gamma Markov Chains for Temporal Non-Negative Factorization</title>
+				<funder ref="#_hYfqU4e">
+					<orgName type="full">European Union</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">European Research Council</orgName>
+					<orgName type="abbreviated">ERC</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+				<date type="published" when="2021-02-25">February 25, 2021</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Louis</forename><surname>Filstroff</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department" key="dep1">Department of Computer Science</orgName>
+								<orgName type="department" key="dep2">School of Science</orgName>
+								<orgName type="institution">Aalto University</orgName>
+								<address>
+									<country key="FI">Finland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Olivier</forename><surname>Gouvert</surname></persName>
+							<affiliation key="aff1">
+								<orgName type="institution">Mila -Quebec Artificial Intelligence Institute</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Cédric</forename><surname>Févotte</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">IRIT</orgName>
+								<orgName type="institution" key="instit1">Université de Toulouse</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Olivier</forename><surname>Cappé</surname></persName>
+							<affiliation key="aff3">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">INRIA</orgName>
+								<orgName type="institution" key="instit3">Université PSL</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Comparative Study of Gamma Markov Chains for Temporal Non-Negative Factorization</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2021-02-25">February 25, 2021</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">17CBFF0E1F498586321AC8FE94E4B203</idno>
+					<idno type="DOI">10.1109/TSP.2021.3060000</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Non-negative matrix factorization</term>
+					<term>Time series data</term>
+					<term>Gamma Markov chains</term>
+					<term>MAP estimation</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>Non-negative matrix factorization (NMF) has become a well-established class of methods for the analysis of non-negative data. In particular, a lot of effort has been devoted to probabilistic NMF, namely estimation or inference tasks in probabilistic models describing the data, based for example on Poisson or exponential likelihoods. When dealing with time series data, several works have proposed to model the evolution of the activation coefficients as a non-negative Markov chain, most of the time in relation with the Gamma distribution, giving rise to so-called temporal NMF models. In this paper, we review four Gamma Markov chains of the NMF literature, and show that they all share the same drawback: the absence of a well-defined stationary distribution. We then introduce a fifth process, an overlooked model of the time series literature named BGAR(1), which overcomes this limitation. These temporal NMF models are then compared in a MAP framework on a prediction task, in the context of the Poisson likelihood.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Introduction 1.Non-negative matrix factorization</head><p>Non-negative matrix factorization (NMF) <ref type="bibr" target="#b26">(Paatero and Tapper, 1994;</ref><ref type="bibr" target="#b23">Lee and Seung, 1999)</ref> has become a widely used class of methods for analyzing non-negative data. Let us consider N samples in R F + . We can store these samples column-wise in a matrix, which we denote by V (therefore of size F × N ). Broadly speaking, NMF aims at finding an approximation of V as the product of two non-negative matrices:</p><formula xml:id="formula_0">V WH,<label>(1)</label></formula><p>where W is of size F × K, and H is of size K × N . W and H are referred to as the dictionary and the activation matrix, respectively. The factorization rank K is usually chosen such that K min(F, N ), hence producing a low-rank approximation of V. This factorization is often retrieved as the solution of an optimization problem, which we can write as: min</p><formula xml:id="formula_1">W≥0, H≥0 D(V|WH),<label>(2)</label></formula><p>where D is a measure of fit between V and its approximation WH, and the notation A ≥ 0 denotes the non-negativity of the entries of the matrix A. One of the key aspects to the success of NMF is that the non-negativity of the factors W and H yields an interpretable, part-based representation of each sample: v n Wh n <ref type="bibr" target="#b23">(Lee and Seung, 1999)</ref>.</p><p>Various measures of fit have been considered in the literature, for instance the family of β-divergences <ref type="bibr" target="#b13">(Févotte and Idier, 2011)</ref>, which includes some of the most popular cost functions in NMF, such as the squared Euclidian distance, the generalized Kullback-Leibler divergence, or the Itakura-Saito divergence. As it turns out, for many of these cost functions, the optimization problem described in Eq. ( <ref type="formula" target="#formula_1">2</ref>) can be shown to be equivalent to the joint maximum likelihood estimation of the factors W and H in a statistical model, that is: max</p><formula xml:id="formula_2">W,H p(V|W, H).<label>(3)</label></formula><p>This leads the way to so-called probabilistic NMF, i.e., estimation or inference tasks in probabilistic models whose observation distribution may be written as:</p><formula xml:id="formula_3">v n ∼ p( . ; Wh n , Θ), W ≥ 0, H ≥ 0,<label>(4)</label></formula><p>that is to say that the distribution of v n is parametrized by the dot product of the factors W and h n . Other potential parameters of the distribution are generically denoted by Θ. Most of the time these distributions are such that E(v n ) = Wh n . This large family encompasses many well-known models of the literature, for example models based on the Gaussian likelihood <ref type="bibr" target="#b29">(Schmidt et al., 2009)</ref> or the exponential likelihood <ref type="bibr" target="#b12">(Févotte et al., 2009;</ref><ref type="bibr" target="#b20">Hoffman et al., 2010)</ref>. It also includes factorization models for count data, which are most of the time based on the Poisson distribution<ref type="foot" target="#foot_0">1</ref>  <ref type="bibr" target="#b4">(Canny, 2004;</ref><ref type="bibr" target="#b6">Cemgil, 2009;</ref><ref type="bibr" target="#b33">Zhou et al., 2012;</ref><ref type="bibr" target="#b17">Gopalan et al., 2015)</ref>, but can also make use of distributions with a larger tail, e.g., the negative binomial distribution <ref type="bibr" target="#b32">(Zhou, 2018)</ref>. Finally, more complex models using the compound Poisson distribution have been considered <ref type="bibr" target="#b34">(S ¸imşekli et al., 2013;</ref><ref type="bibr" target="#b2">Basbug and Engelhardt, 2016;</ref><ref type="bibr" target="#b18">Gouvert et al., 2019)</ref>, allowing to extend the use of the Poisson distribution to various supports (N, R + , R, . . . ).</p><p>In the vast majority of the aforementioned works, prior distributions are assumed on the factors W and H. This is sometimes referred to as Bayesian NMF. In this case, the columns of H are most of the time assumed to be independent:</p><formula xml:id="formula_4">p(H) = N n=1 p(h n ).</formula><p>(5)</p><p>The factors being non-negative, a standard choice is the Gamma distribution<ref type="foot" target="#foot_1">2</ref> , which can be sparsity-inducing if the shape parameter is chosen to be lower than one. The inverse Gamma distribution has also been considered.</p></div>
+<div><head n="1.2.">Temporal structure of the activation coefficients</head><p>In this work, we are interested in the analysis of specific matrices V whose columns cannot be treated as exchangeable, because the samples v n are correlated. Such a scenario arises in particular when the columns of V describe the evolution of a process over time.</p><p>From a modeling perspective, this means that correlation should be introduced in the statistical model between successive columns of V. This can be achieved by lifting the prior independence assumption of Eq. ( <ref type="formula">5</ref>), thus introducing correlation between successive columns of H. In this paper, we consider a Markov structure on the columns of H:</p><formula xml:id="formula_5">p(H) = p(h 1 ) n≥2 p(h n |h n-1 ).<label>(6)</label></formula><p>We will refer to such a model as a dynamical NMF model. Note that recent works go beyond the Markovian assumption, i.e., assume dependency with multiple past time steps, and are labeled as "deep" <ref type="bibr" target="#b16">(Gong and Huang, 2017;</ref><ref type="bibr" target="#b19">Guo et al., 2018)</ref>. Several works <ref type="bibr" target="#b14">(Févotte et al., 2013;</ref><ref type="bibr" target="#b28">Schein et al., 2016</ref><ref type="bibr" target="#b27">Schein et al., , 2019) )</ref> assume that the transition distribution p(h n |h n-1 ) makes use of a transition matrix Π of size K × K to capture relationships between the different components. In this case, the distribution of h kn depends on a linear combination of all the components at the previous time step:</p><formula xml:id="formula_6">p(h n |h n-1 ) = k p(h kn | l π kl h l(n-1) ).<label>(7)</label></formula><p>In this work, we will restrict ourselves to Π = I K . Equivalently, this amounts to assuming that the K rows of H are a priori independent, and we have</p><formula xml:id="formula_7">p(H) = k p(h k1 ) n≥2 p(h kn |h k(n-1) ). (<label>8</label></formula><formula xml:id="formula_8">)</formula><p>We will refer to such a model as a temporal NMF model. A first way of dealing with the temporal evolution of a non-negative variable is to map it to R + . It is then commonly assumed that this variable evolves in Gaussian noise. This is for example exploited in the seminal work of <ref type="bibr" target="#b3">Blei and Lafferty (2006)</ref> on the extension of latent Dirichlet allocation to allow for topic evolution<ref type="foot" target="#foot_2">3</ref> . A similar assumption is made in <ref type="bibr" target="#b8">Charlin et al. (2015)</ref>, which introduces dynamics in the context of a Poisson likelihood (factorizing the user-item-time tensor). Gaussian assumptions allow to use well-known computational techniques, such as Kalman filtering, but result in loss of interpretability.</p><p>We will focus in this paper on naturally non-negative Markov chains. Various nonnegative Markov chains have been proposed in the NMF literature (see Section 2 and references therein). They are all built in relation with the Gamma (or inverse Gamma) distribution. As a matter of fact, these models exhibit the same drawback: the chains all have a degenerate stationary distribution. This can lead to undesirable behaviors, such as the instability or the degeneracy of realizations of the chains. We emphasize that this is problematic from the probabilistic perspective only, since these prior distributions may still represent an appropriate regularization in a MAP setting.</p></div>
+<div><head n="1.3.">Contributions and organization of the paper</head><p>The contributions of this paper are 4-fold:</p><p>• We review the existing non-negative Markov chains of the NMF literature and discuss some of their limitations. In particular we show that these chains all have a degenerate stationary distribution;</p><p>• We present an overlooked non-negative Markov chain from the time series literature, the first-order autoregressive Beta-Gamma process, denoted as BGAR(1) <ref type="bibr" target="#b25">(Lewis et al., 1989)</ref>, whose stationary distribution is Gamma. To the best of our knowledge, this particular chain has never been considered to model temporal dependencies in matrix factorization problems;</p><p>• We derive majorization-minimization-based algorithms for maximum a posteriori (MAP) estimation in the NMF models (with a Poisson likelihood) with four of the presented prior structures on H, including BGAR(1);</p><p>• We compare the performance of all these models on a prediction task on three real-world datasets.</p><p>The paper is organized as follows. Section 2 introduces and compares non-negative Markov chains from the literature. Section 3 presents MAP estimation in temporal NMF models. Experimental work is conducted in Section 4, before concluding in Section 5.</p></div>
+<div><head n="2.">Comparative study of Gamma Markov chains</head><p>This section reviews existing models of Gamma Markov chains, i.e., Markov chains which evolve in R + in relation with the Gamma distribution. We have identified four different models in the NMF literature:</p><p>1. Chaining on the rate parameter of a Gamma distribution (Section 2.1); 2. Chaining on the rate parameter of a Gamma distribution with an auxiliary variable (Section 2.2);</p><p>3. Chaining on the shape parameter of a Gamma distribution (Section 2.3);</p><p>4. Chaining on the shape parameter of a Gamma distribution with an auxiliary variable (Section 2.4).</p><p>As will be discussed in these subsections, these four models all lack a well-defined stationary distribution, which leads to the degeneracy of the realizations of the chains. A fifth model from the time series literature, called BGAR(1), is presented in Section 2.5.</p><p>It is built to have a well-defined stationary distribution (it is marginally Gamma distributed). The realizations of the chain are not degenerate and exhibit some interesting properties. To the best of our knowledge, this kind of process has never been used in a probabilistic NMF problem to model temporal evolution. Throughout the section, (h n ) n≥1 denotes the (scalar) Markov chain of interest, where the index k as in Eq. ( <ref type="formula" target="#formula_7">8</ref>) has been dropped for enhanced readability. It is further assumed that h 1 is set to a fixed, deterministic value.</p></div>
+<div><head n="2.1.">Chaining on the rate parameter</head></div>
+<div><head n="2.1.1.">Model</head><p>Let us consider a general Gamma Markov chain model with a chaining on the rate parameter:</p><formula xml:id="formula_9">h n |h n-1 ∼ Gamma α, β h n-1 .<label>(9)</label></formula><p>As it turns out, Eq. ( <ref type="formula" target="#formula_9">9</ref>) can be rewritten as a multiplicative noise model:</p><formula xml:id="formula_10">h n = h n-1 × φ n ,<label>(10)</label></formula><p>where φ n are i.i.d. Gamma random variables with parameters (α, β). We have</p><formula xml:id="formula_11">E(h n |h n-1 ) = α β h n-1 , var(h n |h n-1 ) = α β 2 h 2 n-1 . (<label>11</label></formula><formula xml:id="formula_12">)</formula><p>This model was introduced in <ref type="bibr" target="#b12">Févotte et al. (2009)</ref> to add smoothness to the activation coefficients in the context of audio signal processing. The parameters were set to α &gt; 1 and β = α -1, such that the mode would be located at h n = h n-1 . It is also a particular case of the dynamical model of <ref type="bibr" target="#b14">Févotte et al. (2013)</ref> and is considered in <ref type="bibr" target="#b30">Virtanen and Girolami (2020)</ref>. A similar inverse Gamma Markov chain was also considered in <ref type="bibr" target="#b12">Févotte et al. (2009)</ref> and in Févotte (2011).</p></div>
+<div><head n="2.1.2.">Analysis</head><p>From Eq. ( <ref type="formula" target="#formula_10">10</ref>) we can write:</p><formula xml:id="formula_13">h n = h 1 n i=2 φ i . (<label>12</label></formula><formula xml:id="formula_14">)</formula><p>The independence of the φ i yields:</p><formula xml:id="formula_15">E(h n ) = h 1 α β n-1 ,<label>(13) var</label></formula><formula xml:id="formula_16">(h n ) = h 2 1 α 2 β 2 + α β 2 n-1 - α 2 β 2 n-1 . (<label>14</label></formula><formula xml:id="formula_17">)</formula><p>We enumerate all the possible regimes (n → +∞), which all give rise to degenerate stationary distributions for different reasons:</p><p>• β &gt; α(α + 1): both mean and variance go to zero;</p><p>• β = α(α + 1): variance converges to 1, however the mean goes to zero;</p><p>• β ∈ α; α(α + 1) : variance goes to infinity, mean goes to zero;</p><p>• β = α: mean is equal to 1, but the variance goes to infinity;</p><p>• β &lt; α: both mean and variance go to infinity.</p><p>Each subplot of Figure <ref type="figure" target="#fig_5">1</ref> displays ten independent realizations of the chain, for a different set of parameters (α, β). As we can see, the realizations of the chain either collapse to 0, or diverge.</p></div>
+<div><head n="2.2.">Hierarchical chaining on the rate parameter</head></div>
+<div><head n="2.2.1.">Model</head><p>Let us consider the following Gamma Markov chain model introduced in <ref type="bibr" target="#b7">Cemgil and Dikmen (2007)</ref>:</p><formula xml:id="formula_18">z n |h n-1 ∼ Gamma(α z , β z h n-1 ),<label>(15)</label></formula><formula xml:id="formula_19">h n |z n ∼ Gamma(α h , β h z n ). (<label>16</label></formula><formula xml:id="formula_20">)</formula><p>As it turns out, this model can also be rewritten as a multiplicative noise model:</p><formula xml:id="formula_21">h n = h n-1 × φn ,<label>(17)</label></formula><p>where φn are i.i.d. random variables defined as the ratio of two independent Gamma random variables with parameters (α h , β h ) and (α z , β z ). The distribution of φn is actually known in closed form, namely</p><formula xml:id="formula_22">φn ∼ BetaPrime α h , α z , 1, β ,<label>(18)</label></formula><p>with β = βz β h (see Appendix A for a definition). We have</p><formula xml:id="formula_23">E(h n |h n-1 ) = β α h α z -1 h n-1 for α z &gt; 1, (19) var(h n |h n-1 ) = β2 α h (α h + α z -1) (α z -1) 2 (α z -2) h 2 n-1 for α z &gt; 2. (<label>20</label></formula><formula xml:id="formula_24">)</formula><p>This model is less straightforward in its construction than the previous one, as it makes use of an auxiliary variable z n (note that a similar inverse Gamma construction was proposed as well in <ref type="bibr" target="#b7">Cemgil and Dikmen (2007)</ref>). There are two motivations behind the introduction of this auxiliary variable:</p><p>1. Firstly, it ensures what is referred to as "positive correlation" in <ref type="bibr" target="#b7">Cemgil and Dikmen (2007)</ref>, i.e., E(h n |h n-1 ) ∝ h n-1 (something the model described by Eq. ( <ref type="formula" target="#formula_9">9</ref>) does as well).</p><p>2. Secondly, it ensures the so-called conjugacy of the model, i.e., the conditional distributions p(z n |h n-1 , h n ) and p(h n |z n , z n+1 ) remain Gamma distributions. Indeed, these are the distributions of interest when considering Gibbs sampling or variational inference. This property is not satistfied by the model described by Eq. ( <ref type="formula" target="#formula_9">9</ref>) (i.e., p(h n |h n-1 , h n+1 ) is neither Gamma, nor a known distribution).</p><p>This particular chain has been used in the context of audio signal processing in <ref type="bibr" target="#b31">Virtanen et al. (2008)</ref> (under the assumption of a Poisson likelihood, which does not fit the nature of the data), and also to model the evolution of user and item preferences in the context of recommender systems <ref type="bibr" target="#b22">(Jerfel et al., 2017;</ref><ref type="bibr" target="#b10">Do and Cao, 2018)</ref>.</p></div>
+<div><head n="2.2.2.">Analysis</head><p>From Eq. ( <ref type="formula" target="#formula_21">17</ref>), we can write:</p><formula xml:id="formula_25">h n = h 1 n i=2 φi . (<label>21</label></formula><formula xml:id="formula_26">)</formula><p>We have by independence of the φi :</p><formula xml:id="formula_27">E(h n ) = h 1 β α h α z -1 n-1 for α z &gt; 1, (22) var(h n ) = h 2 1 β2(n-1) α 2 h (α z -1) 2 + α h (α h + α z -1) (α z -1) 2 (α z -2) n-1 - α 2 h (α z -1) 2 n-1 for α z &gt; 2. (<label>23</label></formula><formula xml:id="formula_28">)</formula><p>As in the previous model, we can show that either the expectation or the variance diverges or collapses as n → ∞ for every possible choice of parameters, which means that they all give rise to a degenerate stationary distribution of the chain. Each subplot of Figure <ref type="figure">2</ref> displays ten independent realizations of the chain, for a different set of parameters (α z , β z , α h , β h ). As we can see, the realizations of the chain either collapse to 0 or diverge.</p></div>
+<div><head n="2.3.">Chaining on the shape parameter</head></div>
+<div><head n="2.3.1.">Model</head><p>Let us consider a general Gamma Markov chain model with a chaining on the shape parameter:</p><formula xml:id="formula_29">h n |h n-1 ∼ Gamma(αh n-1 , β). (<label>24</label></formula><formula xml:id="formula_30">)</formula><p>We have</p><formula xml:id="formula_31">E(h n |h n-1 ) = α β h n-1 , var(h n |h n-1 ) = α β 2 h n-1 .<label>(25)</label></formula><p>In contrast with the two models presented previously, this model cannot be rewritten as a multiplicative noise model. This model is therefore more intricate to interpret. It was introduced in <ref type="bibr" target="#b0">Acharya et al. (2015)</ref> in the context of Poisson factorization. It is mainly motivated by a data augmentation trick that can be used when working with a Poisson likelihood, which enables a Gibbs sampling procedure. The authors set the value of α to 1 (although the same trick can be applied for any value of α). This model is also a particular case of the dynamical model of <ref type="bibr" target="#b28">Schein et al. (2016)</ref>. It has since been used in the context of topic modeling <ref type="bibr" target="#b1">(Acharya et al., 2018)</ref>.</p></div>
+<div><head n="2.3.2.">Analysis</head><p>Using the law of total expectation and total variance, it can be shown that</p><formula xml:id="formula_32">E(h n ) = h 1 α β n-1 , var(h n ) = h 1 1 β α β n-1 n-2 i=0 α β i . (<label>26</label></formula><formula xml:id="formula_33">)</formula><p>The discussion is hence driven by the value of r = α/β.</p><p>• If r &lt; 1, mean and variance go to zero;</p><p>• If r = 1, mean is fixed but variance goes to infinity (linearly);</p><p>• If r &gt; 1, mean and variance go to infinity.</p><p>This chain only exhibits degenerate stationary distributions. Each subplot of Figure 3 displays ten independent realizations of the chain, for a different set of parameters (α, β). As we can see, the realizations of the chain either collapse to 0, or diverge.</p></div>
+<div><head n="2.4.">Hierarchical chaining on the shape parameter 2.4.1. Model</head><p>Let us consider the following Gamma Markov chain model</p><formula xml:id="formula_34">z n |h n-1 ∼ Poisson(βh n-1 ), (<label>27</label></formula><formula xml:id="formula_35">)</formula><formula xml:id="formula_36">h n |z n ∼ Gamma(α + z n , β). (<label>28</label></formula><formula xml:id="formula_37">)</formula><p>This model is a particular case of the dynamical model firstly introduced in <ref type="bibr" target="#b27">Schein et al. (2019)</ref>. It cannot be rewritten as a multiplicative noise model. Using the law of total expectation and total variance, we obtain</p><formula xml:id="formula_38">E(h n |h n-1 ) = h n-1 + α β ,<label>(29) var</label></formula><formula xml:id="formula_39">(h n |h n-1 ) = 2 β h n-1 + α β 2 . (<label>30</label></formula><formula xml:id="formula_40">)</formula><p>The motivation behind the introduction of this model is once again computational: it leads to closed-form conditional distributions when considering a Poisson likelihood. As stated in <ref type="bibr" target="#b27">Schein et al. (2019)</ref>, the auxiliary variable z n can actually be marginalized out, leading to the so-called randomized Gamma distribution of the first type (RG1), whose analytical expression makes use of modified Bessel functions.</p><p>The authors also consider the particular limit case α = 0, which leads here to a chain which will only take value 0 after obtaining z n = 0.</p></div>
+<div><head n="2.4.2.">Analysis</head><p>Using the law of total expectation and total variance, it can be shown that</p><formula xml:id="formula_41">E(h n ) = h 1 + (n -1) α β ,<label>(31) var</label></formula><formula xml:id="formula_42">(h n ) = (n -1) 2 β h 1 + (n -1) 2 α β 2 . (<label>32</label></formula><formula xml:id="formula_43">)</formula><p>As such, for α, β &gt; 0, when n → +∞, both the expectation and variance of h n diverge, leading to a degenerate stationary distribution of the chain. Each subplot of Figure <ref type="figure">4</ref> displays ten independent realizations of the chain, for a different set of parameters (α, β).</p></div>
+<div><head n="2.5.">BGAR(1)</head><p>We now discuss the first order autoregressive Beta-Gamma process of <ref type="bibr" target="#b25">Lewis et al. (1989)</ref>, a stochastic process which is marginally Gamma distributed. The authors referred to the process as "BGAR(1)". However, to the best of our knowledge, no extension to higher-order autoregressive processes exists in the time series literature. As such, from now on, we will simply refer to it as "BGAR".</p></div>
+<div><head n="2.5.1.">Model</head><p>Consider α &gt; 0, β &gt; 0, ρ ∈ [0, 1[. The BGAR process is defined as:</p><formula xml:id="formula_44">h 1 ∼ Gamma(α, β),<label>(33)</label></formula><formula xml:id="formula_45">h n = b n h n-1 + n for n ≥ 2, (<label>34</label></formula><formula xml:id="formula_46">)</formula><p>where b n and n are i.i.d. random variables distributed as:</p><formula xml:id="formula_47">b n ∼ Beta(αρ, α(1 -ρ)), (<label>35</label></formula><formula xml:id="formula_48">) n ∼ Gamma(α(1 -ρ), β). (<label>36</label></formula><formula xml:id="formula_49">)</formula><p>The sequence (h n ) n≥1 is called the BGAR process. It is parametrized by α, β and ρ. We emphasize that the distribution p(h n |h n-1 ) is not known in closed form. Only</p><formula xml:id="formula_50">p(h n |h n-1 , b n ) is known; it is a shifted Gamma distribution.</formula><p>The generative model may therefore be rewritten as</p><formula xml:id="formula_51">h 1 ∼ Gamma(α, β), (<label>37</label></formula><formula xml:id="formula_52">) b n ∼ Beta(αρ, α(1 -ρ)) for n ≥ 2, (<label>38</label></formula><formula xml:id="formula_53">)</formula><formula xml:id="formula_54">h n |b n , h n-1 ∼ Gamma(α(1 -ρ), β, loc = b n h n-1 ) (39) for n ≥ 2,</formula><p>where the distribution in Eq. ( <ref type="formula">39</ref>) is a shifted Gamma distribution with a location parameter "loc".</p><p>We have</p><formula xml:id="formula_55">E(h n |h n-1 ) = ρh n-1 + α(1 -ρ) β ,<label>(40) var</label></formula><formula xml:id="formula_56">(h n |h n-1 ) = ρ(1 -ρ) α + 1 h 2 n-1 + α(1 -ρ) β 2 .</formula><p>(41)</p></div>
+<div><head n="2.5.2.">Analysis</head><p>To study the marginal distribution of the process, we recall the following lemma.</p><formula xml:id="formula_57">Lemma 1. If X ∼ Beta(a, b) and Y ∼ Gamma(a + b, c) are independent random vari- ables, then Z = XY is Gamma(a, c) distributed. Proposition 1. Let (h n ) n≥1 be a BGAR process. Then h n is marginally Gamma(α, β) distributed.</formula><p>Proof. Follows by induction. Consider n such that</p><formula xml:id="formula_58">h n is Gamma(α, β) distributed. Then, n+1 h n is Gamma(αρ, β) distributed (Lemma 1). Finally, h n+1 = n+1 h n + b n+1</formula><p>is Gamma(α, β) distributed (sum of independent Gamma random variables), which concludes the proof.</p><p>Therefore the parameters α and β control the marginal distribution. The parameter ρ controls the correlation between successive values, as discussed in the following proposition.</p><p>Proposition 2. Let (h n ) n≥1 be a BGAR process. Let n and r be two integers such that r &gt; 1. We have corr(h n , h n+r ) = ρ r .</p><p>Proof. See Appendix B for r = 1.</p><p>Proposition 2 implies that the BGAR(1) process admits a (second order) AR(1) representation. Two limit cases of BGAR can be exhibited:</p><p>• When ρ = 0, the h n are i.i.d. random variables;</p><p>• When ρ → 1, the process is not random anymore, and h n = h 1 for all n (note that ρ = 1 is not an admissible value).</p><p>Finally, from Eq. ( <ref type="formula" target="#formula_55">40</ref>), we have</p><formula xml:id="formula_59">E(h n |h n-1 ) &gt; h n-1 ⇔ h n-1 &lt; α β . (<label>42</label></formula><formula xml:id="formula_60">)</formula><p>If h n-1 is below the mean of the marginal distribution E(h n ) = α β , then h n will be in expectation above h n-1 , and vice-versa.</p><p>Note that BGAR is not the only Markovian process with a marginal Gamma distribution considered in the literature. We mention the GAR(1) process (first-order autoregressive Gamma process) of <ref type="bibr" target="#b15">Gaver and Lewis (1980)</ref>, which is also marginally Gamma distributed. However, this particular process is piecewise deterministic, and its parameters are "coupled": the parameters of the marginal distribution also have an influence on other properties of the model. As such, it is less suited to our problem, and will not be considered here.</p><p>Figure <ref type="figure" target="#fig_2">5</ref> displays three realizations of the BGAR process, with parameters fixed to α = 2 and β = 1, and a different parameter ρ in each subplot. The mean of the marginal distribution is displayed in red. When ρ = 0.5, the correlation is weak, and no particular structure is observed. However, as ρ goes to 1, the correlation becomes stronger, and we typically observe piecewise constant trajectories.  <ref type="formula" target="#formula_18">15</ref>)-( <ref type="formula" target="#formula_19">16</ref>). The initial value h 1 is set to 1, and chains were simulated until n = 50. Each subplot contains ten independent realizations, with the value of the parameters (α z , β z , α h , β h ) given at the top of the subplot. log 10 (h n ) is displayed.  <ref type="formula" target="#formula_34">27</ref>)-( <ref type="formula" target="#formula_36">28</ref>). The initial value h 1 is set to 1, and chains were simulated until n = 50. Each subplot contains ten independent realizations, with the value of the parameters (α, β) given at the top of the subplot. log 10 (h n ) is displayed. </p></div>
+<div><head n="3.">MAP estimation in temporal NMF models</head><p>We now turn to the problem of maximum a posteriori (MAP) estimation in temporal NMF models. More precisely, we assume a Poisson likelihood, that is</p><formula xml:id="formula_61">v f n ∼ Poisson([WH] f n ),<label>(43)</label></formula><p>and we also assume that W is a deterministic variable. The variables V and H then define a hidden Markov model, as displayed on Figure <ref type="figure">6</ref>. We consider four different models corresponding to the temporal structures on H presented in subsections 2.1, 2.2, 2.3, and 2.5. Only the temporal structure presented in 2.4 is left out. Indeed, deriving a MAP algorithm in this model using the auxiliary variables Z (similar to the one of Section 3.3) would involve integer programming. This leads to technical developments which are out-of-scope of our current study.</p><formula xml:id="formula_62">h n-1 h n h n+1 v n-1 v n v n+1</formula><p>• W</p><p>Figure <ref type="figure">6</ref>: Hidden Markov model arising in temporal NMF models. v n is of dimension F , while h n is of dimension K. Observed variables are in blue.</p><p>Generally speaking, joint MAP estimation in such models amounts to minimizing the following criterion</p><formula xml:id="formula_63">C(W, H) = -log p(V, H; W) (44) = -log p(V|H; W) - k   log p(h k1 ) + n≥2 log p(h kn |h k(n-1) )   ,<label>(45)</label></formula><p>that is to say that the factors W and H are going to be estimated. Both shape hyperparameters (α k or ρ k ) and scale hyperparameters (β k ) will be treated as fixed and selected using a validation set. However, note that deriving the maximum likelihood estimate of β k is feasible in closed form for all the models presented below. Unfortunately, estimating β k this way led to overly flat priors in our experience (likely due to the MAP estimation setting).</p><p>The optimization of the function C is carried out with a block coordinate descent scheme over the variables W and H. We resort to a majorization-minimization (MM) scheme, which consists in iteratively majorizing the function C (by a so-called auxiliary function, tight for some W or H), and minimizing this auxiliary function instead.</p><p>We refer the reader to <ref type="bibr" target="#b21">Hunter and Lange (2004)</ref> for a detailed tutorial. Under this scheme, the function C is non-increasing. As it turns out, only the Poisson likelihood term -log p(V|H; W) needs to be majorized. This is a well-studied issue in the NMF literature. As stated in <ref type="bibr" target="#b24">Lee and Seung (2000)</ref>; <ref type="bibr" target="#b13">Févotte and Idier (2011)</ref>, the function</p><formula xml:id="formula_64">G 1 (H; H) = - k,n p kn log(h kn ) + k,n q k h kn ,<label>(46)</label></formula><p>with the notations</p><formula xml:id="formula_65">p kn = hkn f w f k v f n [W H] f n , q k = f w f k ,<label>(47)</label></formula><p>is a tight auxiliary function of -log p(V|H; W) at H = H. Similarly the function</p><formula xml:id="formula_66">G 2 (W; W) = - f,k p f k log(w f k ) + f,k q k w f k ,<label>(48)</label></formula><p>with the notations</p><formula xml:id="formula_67">p f k = wfk n h kn v f n [ WH] f n , q k = n h kn ,<label>(49)</label></formula><p>is a tight auxiliary function of -log p(V|H; W) at W = W.</p></div>
+<div><head n="3.1.">Minimization w.r.t. W</head><p>The optimization w.r.t. W is common to all algorithms, and amounts to minimizing G 2 (W; W) only. The scale of W must be however be fixed in order to prevent potential degenerate solutions such that W → +∞ and H → 0. Indeed, consider W and H minimizers of Eq. ( <ref type="formula">44</ref>), and let Λ be a diagonal matrix with non-negative entries. Then</p><formula xml:id="formula_68">C(W Λ -1 , ΛH ) = -log p(V|ΛH ; W Λ -1 ) -log p(ΛH ) (50) = -log p(V|H ; W ) -log p(ΛH ),<label>(51)</label></formula><p>and depending on the choice of the prior distribution p(H), we may obtain C(W Λ -1 , ΛH ) &lt; C(W , H ), i.e., a contradiction. Therefore, in the following we impose that ||w k || 1 = 1. The constrained optimization is performed with the following update rule</p><formula xml:id="formula_69">w f k = p f k f p f k , (<label>52</label></formula><formula xml:id="formula_70">)</formula><p>see Appendix C for the proof.</p><p>The following subsections detail the optimization w.r.t. H (and other variables when necessary) in the four considered models, which amounts to the minimization of G 1 (H; H)log p(H).</p><p>Table <ref type="table">1</ref>: Coefficients of the polynomial equation Eq. ( <ref type="formula">53</ref>) n a 2,kn a 1,kn a 0,kn</p><formula xml:id="formula_71">1 q k α k -p 1k -β k h k2 2, . . . , N -1 q k + β k h k(n-1) 1 -p kn -β k h k(n+1) N 0 q k + β h k(N -1) 1 -α k -p N</formula></div>
+<div><head n="3.2.">Chaining on the rate parameter</head><p>The transition distribution p(h kn |h k(n-1) ) is given by Eq. ( <ref type="formula" target="#formula_9">9</ref>). The optimization w.r.t. h kn amounts to solving an order-2 polynomial equation on R + a 2,kn h 2 kn + a 1,kn h kn + a 0,kn = 0.</p><p>(53)</p><p>As it turns out, there is always exactly one non-negative root. The coefficients of the polynomial equation are given in Table <ref type="table">1</ref>. This bears resemblance with the methodology described in <ref type="bibr" target="#b12">Févotte et al. (2009)</ref>, where the authors aimed at retrieving MAP estimates with a EM-like algorithm (with an exponential likelihood).</p></div>
+<div><head n="3.3.">Hierarchical chaining on the rate parameter</head><p>In this case, we resort to using the auxiliary variables Z, which results in the the slightly more involved following criterion</p><formula xml:id="formula_72">C(W, H, Z) = -log p(V|H; W) (54) - k   log p(h k1 ) + n≥2 log p(z kn |h k(n-1) ) + log p(h kn |z kn )   .</formula><p>We recall that p(z kn |h k(n-1) ) and p(h kn |z kn ) are given by Eq. ( <ref type="formula" target="#formula_18">15</ref>) and Eq. ( <ref type="formula" target="#formula_19">16</ref>), respectively. Note that <ref type="bibr" target="#b7">Cemgil and Dikmen (2007)</ref> proposed a Gibbs sampler and variational inference, and as such the development of the MAP algorithm is novel. Imposing α h,k ≥ 1, we obtain the following update for z kn</p><formula xml:id="formula_73">z kn = α z,k + α h,k -1 β z,k h k(n-1) + β h,k h kn , (<label>55</label></formula><formula xml:id="formula_74">)</formula><p>and the following updates for h kn</p><formula xml:id="formula_75">h k1 = p k1 + α z,k q k + β z,k z k2 ,<label>(56)</label></formula><formula xml:id="formula_76">h kn = p kn + α h,k + α z,k -1 q k + β h,k z kn + β z,k z k(n+1)</formula><p>, n ∈ {2, . . . , N -1}, ( <ref type="formula">57</ref>)</p><formula xml:id="formula_77">h kN = p kN + α h,k -1 q k + β h,k z kN . (<label>58</label></formula><formula xml:id="formula_78">)</formula></div>
+<div><head n="3.4.">Chaining on the shape parameter</head><p>The transition distribution p(h kn |h k(n-1) ) is given by Eq. ( <ref type="formula" target="#formula_29">24</ref>). The optimization w.r.t. h kn amounts to solving the following equations on R</p><formula xml:id="formula_79">+ -p k1 + (q k -α k log(β k h k2 ) + α k Ψ(αh k1 ))h k1 = 0, (<label>59</label></formula><formula xml:id="formula_80">) (1 -α k h k(n-1) -p kn ) + (q k + β k -α k log(β k h k(n+1) ))h kn + α k Ψ(α k h kn )h kn = 0, (<label>60</label></formula><formula xml:id="formula_81">)</formula><p>for n ∈ {2, . . . , N -1}, where Ψ denotes the digamma function. Solving such equations can be done numerically with Newton's method. Finally the update for h kN is given by</p><formula xml:id="formula_82">h kN = p kn + α k h k(N -1) -1 q k + β k . (<label>61</label></formula><formula xml:id="formula_83">)</formula><p>Note that a Gibbs sampling procedure is proposed in <ref type="bibr" target="#b0">Acharya et al. (2015)</ref>; <ref type="bibr" target="#b28">Schein et al. (2016)</ref>, and as such the development of the MAP algorithm is novel.</p></div>
+<div><head n="3.5.">BGAR(1)</head><p>In this case, since the transition distribution p(h kn |h k(n-1) ) is not known in closed form, we resort to optimizing the slightly more involved following criterion</p><formula xml:id="formula_84">C(W, H, B) = -log p(V|H; W) (62) - k   log p(h k1 ) + n≥2 log p(h kn |h k(n-1) , b kn ) + log p(b kn )   .</formula><p>In the following, we will use the notations</p><formula xml:id="formula_85">γ k = α k (1 -ρ k ) and η k = α k ρ k .</formula></div>
+<div><head n="3.5.1.">Constraints</head><p>By construction, the variables h kn and b kn must lie in a specific interval given the values of all the other variables. Indeed, as h kn = b kn h k(n-1) + kn (see Eq. ( <ref type="formula" target="#formula_45">34</ref>)), where kn is a non-negative random variable, we obtain</p><formula xml:id="formula_86">h kn ≥ b kn h k(n-1) , b kn ≤ h kn h k(n-1)</formula><p>, and </p><formula xml:id="formula_87">h kn ≤ h k(n+1) b k(n+1) .</formula><formula xml:id="formula_88">1 [0, d k1 ] 0 -(q k + β k (1 -b k2 )) -(1 -α k -p k1 ) + (q k + β k (1 - b k2 ))d k1 -(1 -γ k ) (1 -α k -p k1 )d k1 2, . . . , N -1 [c kn , d kn ] -(q k + β k (1 - b k(n+1) )) p kn -2(1 - γ k ) + (q k + β k (1 - b k(n+1) ) (c kn + d kn ) -p kn (c kn + d kn ) + (1 - γ k ) (c kn + d kn ) - (q k + β k (1 - b k(n+1) ))c kn d kn p kn c kn d kn N [c kN , +∞[ 0 q k + β k -p kN -c kN (q k + β k ) + (1 -γ k ) c kN p kN</formula><p>This leads to the following constraints</p><formula xml:id="formula_89">0 ≤ h k1 ≤ h k2 b k2 ,<label>(63)</label></formula><formula xml:id="formula_90">b kn h k(n-1) ≤ h kn ≤ h k(n+1) b k(n+1) n ∈ {2, . . . , N -1}, (<label>64</label></formula><formula xml:id="formula_91">) b kN h k(N -1) ≤ h kN ,<label>(65) and 0</label></formula><formula xml:id="formula_92">≤ b kn ≤ min 1, h kn h k(n-1) .<label>(66)</label></formula><p>We therefore introduce the notations</p><formula xml:id="formula_93">c kn = b kn h k(n-1) , d kn = h k(n+1) b k(n+1) , x kn = h kn h k(n-1) ,<label>(67)</label></formula><p>as these quantities arise naturally in our derivations.</p></div>
+<div><head n="3.5.2.">Minimization w.r.t. h kn</head><p>The optimization of Eq. ( <ref type="formula">62</ref>) w.r.t. h kn may give rise to intractable problems, due to the logarithmic terms in the objective function. To alleviate this issue, we propose to control the limit values of the auxiliary function, by restricting ourselves to certain values of the hyperparameters. In particular, choosing (1 -γ k ) &lt; 0 ensures the existence of at least one minimizer.</p><p>For all n, the optimization w.r.t. h kn amounts to solving an order-3 polynomial equation</p><formula xml:id="formula_94">a 3,kn h 3 kn + a 2,kn h 2 kn + a 1,kn h kn + a 0,kn = 0. (<label>68</label></formula><formula xml:id="formula_95">)</formula><p>The coefficients of the equation and definition intervals are given in Table <ref type="table" target="#tab_0">2</ref>. If several roots belong to the definition interval, we simply choose the root which gives the lowest objective value. Similarly, logarithmic terms of the objective function may give rise to degenerate solutions. Using the same reasoning, we choose to impose (1 -γ k ) &lt; 0 and (1 -η k ) &lt; 0 to ensure the existence of at least one minimizer.</p><p>The minimization of the auxiliary function w.r.t. b kn amounts to solving the following order 3 polynomial over the interval [0, min(1, x kn )]</p><formula xml:id="formula_96">a 3,kn b 3 kn + a 2,kn b 2 kn + a 1,kn b kn + a 0,kn d kn = 0,<label>(69)</label></formula><p>where</p><formula xml:id="formula_97">a 3,kn = -β k h k(n-1) ,<label>(70)</label></formula><formula xml:id="formula_98">a 2,kn = 2(1 -γ k ) + (1 -η k ) + β k h k(n-1) (x kn + 1),<label>(71)</label></formula><formula xml:id="formula_99">a 1,kn = -(1 -γ k )(x kn + 1) -(1 -η k )(x kn + 1)<label>(72)</label></formula><p>-</p><formula xml:id="formula_100">β k h k(n-1) x kn , a 0,kn = (1 -η k )x kn .<label>(73)</label></formula></div>
+<div><head n="3.5.4.">Admissible values of hyperparameters</head><p>To recap the discussion on admissible values of hyperparameters, to ensure the existence of minimizers of the auxiliary function, we have restricted ourselves to</p><formula xml:id="formula_101">α k (1 -ρ k ) &gt; 1, α k ρ k &gt; 1. (<label>74</label></formula><formula xml:id="formula_102">)</formula><p>This set is graphically displayed on Figure <ref type="figure" target="#fig_3">7</ref>. As we can see, choosing the value of ρ k to be close to one (to ensure correlation) leads to high values of α k .</p></div>
+<div><head n="4.">Experimental work</head><p>We now compare the performance of all considered temporal NMF models on a prediction task on three real datasets. This task will consist in hiding random columns of the considered datasets and estimating those missing values. We will also include the performance of a naive baseline, which we detail in the following subsection. Adapting the MAP algorithms presented in Section 2 in a setting with a mask of missing values only consist in a slight modification, presented in Appendix D. Python <software ContextAttributes="used">code</software> is available online<ref type="foot" target="#foot_3">4</ref> .</p></div>
+<div><head n="4.1.">Experimental protocol</head><p>For each considered dataset, the experimental protocol is as follows. First of all, a value of the factorization rank K (which will be used for all considered methods) must be selected. To do so, we apply the standard KL-NMF algorithm <ref type="bibr" target="#b24">(Lee and Seung, 2000;</ref><ref type="bibr" target="#b13">Févotte and Idier, 2011)</ref> on 10 random training sets, which consist of 80% of the original data, with a pre-defined grid of values for K. We then select the value of K which yields the lowest generalized Kullback-Leibler error (KLE) (see definition below) on the remaining 20% of the data, on average.</p><p>For the prediction experiment itself, we create 5 random splits of the data matrix, where 80% corresponds to the training set, 10% to the validation set, and the remaining 10% to the test set. To do so, we randomly select non-adjacent columns of the data matrix (excluding the first one and always including the last one), half of which will make up the validation set and the other half the test set (the last column is always included in the test set). We also consider 5 different random initializations.</p><p>Then, for each split-initialization pair, all the algorithms are run from this initialization point on the training set until convergence (the algorithms are stopped when the relative decrease of the objection function falls under 10 -5 ). For each method, a grid of hyperparameters is considered, and their selection is based on the lowest KLE on the validation set. Details of the grids used for each method can be found in Appendix E. The predictive performance of each method is then computed on the test set by comparing the original value v f n and its associated estimate vfn = [WH] f n with the following metric. Denoting by T the test set, we compute the generalized Kullback-Leibler error (KLE), which is defined as</p><formula xml:id="formula_103">KLE = (f,n)∈T v f n log v f n vfn -v f n + vfn .<label>(75)</label></formula><p>Finally, we construct a baseline based on the Gamma-Poisson (GaP) model of <ref type="bibr" target="#b4">Canny (2004)</ref>. The GaP model is based on independent Gamma priors on H, i.e., a nontemporal prior. However, it is unable to estimate columns h n associated with missing columns v n . We propose to set h n = 1 2 (h n-1 + h n+1 ) and h N = h N -1 for these columns. MAP estimation in the GaP model is described in <ref type="bibr" target="#b9">Dikmen and Févotte (2012)</ref>  </p></div>
+<div><head n="4.2.">Datasets</head><p>The following datasets are considered</p><p>• The NIPS dataset<ref type="foot" target="#foot_4">5</ref> , which contains word counts (with stop words removed) of all the articles published at the NIPS<ref type="foot" target="#foot_5">6</ref> conference between 1987 and 2015. We grouped the articles per publication year, yielding an observation matrix of size 11463 × 29. We obtained K = 3.</p><p>• The last.fm dataset, based on the so-called "last.fm 1K" users<ref type="foot" target="#foot_6">7</ref> , which contains the listening history with timestamps information of users of the music website last.fm. We preprocessed this dataset to obtain the monthly evolution of the listening counts of artists with at least 20 different listeners. This yields a dataset of size 7017 × 53 (i.e., we have the listening history of 7017 artists over 53 months). We obtained K = 5.</p><p>• The ICEWS dataset<ref type="foot" target="#foot_7">8</ref> , an international relations dataset, which contains the number of interactions between two countries for each day of the year 2003. The matrix is of size 6197 × 365. We obtained K = 5.</p></div>
+<div><head n="4.3.">Experimental results</head><p>As previously mentioned, the test set consists of 10 % of the columns of the data matrix V, always including the last one. The KLE will be computed separately on all the columns minus the last one (denoted by "S" for smoothing), and on the last one (denoted by "F" for forecasting). Their averaged values over the 25 split-initialization pairs are reported on Table <ref type="table" target="#tab_1">3</ref> for the NIPS dataset, on Table <ref type="table" target="#tab_2">4</ref> for the last.fm dataset, and on Table <ref type="table" target="#tab_3">5</ref> for the ICEWS dataset.</p><p>All considered temporal models achieve comparable predictive performance, both on smoothing and forecasting tasks, and the slight advantage of one method over the others seems to be data-dependent. The methods "Rate" and "Hier" rank first or second most of time but not always significantly so. The method "Shape" tends to achieve worse results than others, but not consistently. This suggests that in the MAP estimation framework, prior distributions do not act as strong regularization terms, and are outweighed by the likelihood term. Moreover, the baseline based on the GaP model also achieves good performance. This might be attributed to the high correlation between successive columns on the datasets, and as such, using adjacent columns for estimation is reasonable. We conclude this section by saying a few words about computational complexity, which can act as a differentiating criterion, as all models achieve similar predictive performance. The algorithms for chains involving the rate parameters of the Gamma distribution, described in Sections 3.2 and 3.3 have closed-form update rules for all their variables. This leads to efficient block-descent algorithms. This is in contrast with the algorithms for the model based on the chaining on the shape parameter (Section 3.4), which involves solving K(N -1) equations numerically at each iteration, and the algorithm for BGAR (Section 3.5), which involves serially solving 2K(N -1) order-3 polynomials at each iteration.</p></div>
+<div><head n="5.">Conclusion</head><p>In this paper, we have reviewed existing temporal NMF models in a unified MAP framework and introduced a new one. These models differ by the choice of the Markov chain structure used on the activation coefficients to induce temporal correlation. We began by studying the previously proposed Gamma Markov chains of the NMF literature, only to find that they all share the same drawback, namely the absence of a welldefined stationary distribution. This leads to problematic behaviors from the generative perspective, because the realizations of the chains are degenerate (although this is not necessarily a problem in MAP estimation). We then introduced a Markovian process from the time series literature, called BGAR(1), which overcomes this limitation, and which, to the best of our knowledge, had never been exploited for learning tasks.</p><p>We then derived MAP estimation algorithms in the context of a Poisson likelihood, which allowed for a comprehensive comparison on a prediction task on real datasets. As it turns out, we cannot claim that there is a single model which outperforms all the others. It seems that in our framework, MAP estimation will tend to homogenize the performance of all the models. Future work will focus on finding a way to perform inference with the BGAR prior for a less restrictive set of hyperparameters, which might increase the performance of this particular model. Moreover, it should be noted that this work can easily be extended to other likelihoods than Poisson thanks to the MM framework. To illustrate this, we present in Appendix G the derivation of an algorithm for MAP estimation in a model consisting in an exponential likelihood and BGAR(1) temporal prior. Finally, it would be interesting to carry out similar experimental work within a fully Bayesian estimation paradigm, which might make the differences between the models more striking. ((1 -α k )h kn + β k h kn ) , which leads to the following MM update rule <ref type="bibr" target="#b9">(Dikmen and Févotte, 2012)</ref> h kn = 0 if p kn + α k -1 ≤ 0,</p><formula xml:id="formula_104">p kn +α k -1 q kn +β k else. (<label>90</label></formula><formula xml:id="formula_105">)</formula><p>Appendix G BGAR with an exponential likelihood</p><p>Another popular likelihood used in probabilistic NMF models is the Exponential likelihood <ref type="bibr" target="#b12">(Févotte et al., 2009;</ref><ref type="bibr" target="#b20">Hoffman et al., 2010)</ref> which writes</p><formula xml:id="formula_106">v f n ∼ Exp 1 [WH] f n ,<label>(91)</label></formula><p>where Exp(β) = Gamma(1, β) refers to the exponential distribution with mean 1/β. This model underlies so-called Itakura-Saito NMF and has most notably been used in audio signal processing applications. We consider MAP estimation in this model with BGAR(1) prior on H. To do so, we resort to the same MM scheme than what was presented in the beginning of Section 3. In this case, the majorization of the likelihood term is known from <ref type="bibr" target="#b5">(Cao et al., 1999;</ref><ref type="bibr" target="#b13">Févotte and Idier, 2011)</ref>. In particular, the function</p><formula xml:id="formula_107">G(H; H) = k,n p kn h kn + q kn h kn ,<label>(92)</label></formula><p>with the notations</p><formula xml:id="formula_108">p kn = h2 kn f w f k v f n [W H] 2 f n , q kn = f w f k [W H] f n ,<label>(93)</label></formula><p>is a tight auxiliary function of -log p(V; W, H) at H = H (up to irrelevant constants).</p><p>The exact same constraints on h kn and admissible values of hyperparameters detailed in Section 3.5 apply. The minimization w.r.t. h kn then amounts to solving an order-4 polynomial equation a 4,kn h 4 kn + a 3,kn h 3 kn + a 2,kn h 2 kn + a 1,kn h 1 kn + a 0,kn = 0, (94) whose coefficients are detailed below.</p><p>For h k1 : a 4,kn = 0, (95) a 3,kn = -(q k1 + β k (1 -b k2 )), ( <ref type="formula">96</ref>) </p><formula xml:id="formula_109">a 2,kn = (q k1 + β k (1 -b k2 ))d k1 -(1 -α k ) -(1 -γ k ),<label>(97)</label></formula><formula xml:id="formula_110">a 3,kn = q kN + β k ,<label>(106)</label></formula><p>a 2,kn = -(q kN + β k )c kN + (1 -γ k ), ( <ref type="formula">107</ref>)</p><formula xml:id="formula_111">a 1,kn = -p kN ,<label>(108)</label></formula><p>a 0,kn = c kN p kN .</p><p>(109)</p></div><figure xml:id="fig_0"><head>Figure 1 :Figure 2 :</head><label>12</label><figDesc>Figure1: Realizations of the Markov chain defined in Eq. (9). The initial value h 1 is set to 1, and chains were simulated until n = 50. Each subplot contains ten independent realizations, with the value of the parameters (α, β) given at the top of the subplot. log 10 (h n ) is displayed.</figDesc></figure>
+<figure xml:id="fig_1"><head>Figure 3 :Figure 4 :</head><label>34</label><figDesc>Figure 3: Realizations of the Markov chain defined in Eq. (24). The initial value h 1 is set to 1, and chains were simulated until n = 50. Each subplot contains ten independent realizations, with the value of the parameters (α, β) given at the top of the subplot. log 10 (h n ) is displayed.</figDesc></figure>
+<figure xml:id="fig_2"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Three realizations of the BGAR(1) process, with parameters fixed to α = 2 and β = 1, and a different parameter ρ in each subplot. The mean of the process is displayed by a dashed red line.</figDesc></figure>
+<figure xml:id="fig_3"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Admissible values of the hyperparameters in the MAP algorithm presented in Section 3.5. Admissible values are in white.</figDesc></figure>
+<figure xml:id="fig_4"><head /><label /><figDesc>MAP estimation amounts to minimizing C(W, H) = -log p(V|H; W)</figDesc></figure>
+<figure xml:id="fig_5"><head>a 1 ,</head><label>1</label><figDesc>kn = (1 -α k )d k1 + p k1 ,(98)a 0,kn = -p k1 d k1 .(99)For h kn , n ∈ {2, . . . , N -1}:a 4,kn = -(q kn + β k (1 -b k(n+1) )), (100)a 3,kn = (q kn + β k (1 -b k(n+1) ))(c kn + d kn ) -2(1 -γ k ),(101)a 2,kn = -c kn d kn (q kn + β k (1 -b k(n+1) ))(102)+ p kn + (1 -γ k )(c kn + d kn ), a 1,kn = -p kn (c kn + d kn ),(103)a 0,kn = p kn c kn d kn .</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 2 :</head><label>2</label><figDesc>Coefficients of the polynomial equation Eq. (68). Def. int. = Definition interval.</figDesc><table><row><cell>n</cell><cell>Def. interval a 3,kn</cell><cell>a 2,kn</cell><cell>a 1,kn</cell><cell>a 0,kn</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 3 :</head><label>3</label><figDesc>GaP (App. F) 6.19 × 10 4 ± 9.69 × 10 3 1.08 × 10 5 ± 2.67 × 10 3 Rate (3.2) 6.07 × 10 4 ± 8.97 × 10 3 1.03 × 10 5 ± 3.53 × 10 3 Hier (3.3) 6.06 × 10 4 ± 9.18 × 10 3 3.24 × 10 5 ± 2.09 × 10 5 Prediction results on the NIPS dataset. Lower values are better. The mean and standard deviation of each metric are reported over 25 runs.</figDesc><table><row><cell>and is</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 4 :</head><label>4</label><figDesc>GaP (App. F) 1.30 × 10 4 ± 3.35 × 10 2 6.89 × 10 3 ± 5.84 × Rate (3.2) 1.23 × 10 4 ± 2.35 × 10 2 7.76 × 10 3 ± 4.13 × Hier (3.3) 1.23 × 10 4 ± 2.95 × 10 2 6.35 × 10 3 ± 1.57 × Prediction results on the last.fm dataset. Lower values are better. The mean and standard deviation of each metric are reported over 25 runs.</figDesc><table><row><cell>Model</cell><cell>KLE-S</cell><cell>KLE-F</cell></row><row><cell>Shape (3.4)</cell><cell cols="2">1.58 × 10 4 ± 2.45 × 10 3 2.04 × 10 4 ± 9.92 ×</cell></row><row><cell>BGAR (3.5)</cell><cell cols="2">1.24 × 10 4 ± 3.00 × 10 2 9.65 × 10 3 ± 2.91 ×</cell></row><row><cell>Model</cell><cell>KLE-S</cell><cell>KLE-F</cell></row><row><cell cols="3">GaP (App. F) 8.91 × 10 4 ± 2.82 × 10 3 1.59 × 10 3 ± 6.34 ×</cell></row><row><cell>Rate (3.2)</cell><cell cols="2">9.17 × 10 4 ± 2.99 × 10 3 1.62 × 10 3 ± 7.57 ×</cell></row><row><cell>Hier (3.3)</cell><cell cols="2">9.11 × 10 4 ± 2.81 × 10 3 1.62 × 10 3 ± 9.02 ×</cell></row><row><cell>Shape (3.4)</cell><cell cols="2">9.95 × 10 4 ± 3.82 × 10 3 1.84 × 10 3 ± 1.37 ×</cell></row><row><cell>BGAR (3.5)</cell><cell cols="2">8.99 × 10 4 ± 2.80 × 10 3 1.78 × 10 3 ± 8.62 ×</cell></row></table></figure>
+<figure type="table" xml:id="tab_3"><head>Table 5 :</head><label>5</label><figDesc>Prediction results on the ICEWS dataset. Lower values are better. The mean and standard deviation of each metric are reported over 25 runs.</figDesc><table /></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>These models are sometimes generically referred to as "Poisson factorization" or "Poisson factor analysis".</p></note>
+			<note place="foot" n="2" xml:id="foot_1"><p>Throughout the article, we consider the "shape and rate" parametrization of the Gamma distribution, i.e. Gamma(x|α, β) ∝ x α-1 exp(-βx).</p></note>
+			<note place="foot" n="3" xml:id="foot_2"><p>Note that this particular mapping is actually slightly more complex, as the K-dimensional real vector must be mapped to the (K -1) simplex due to further constraints in the model.</p></note>
+			<note place="foot" n="4" xml:id="foot_3"><p>https://github.com/lfilstro/TemporalNMF</p></note>
+			<note place="foot" n="5" xml:id="foot_4"><p>https://archive.ics.uci.edu/ml/datasets/NIPS+Conference+Papers+1987-2015</p></note>
+			<note place="foot" n="6" xml:id="foot_5"><p>Now called NeurIPS.</p></note>
+			<note place="foot" n="7" xml:id="foot_6"><p>http://ocelma.net/MusicRecommendationDataset/</p></note>
+			<note place="foot" n="8" xml:id="foot_7"><p>https://github.com/aschein/pgds</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work has received funding from the <rs type="funder">European Research Council (ERC)</rs> under the <rs type="funder">European Union</rs>'s <rs type="programName">Horizon 2020 research and innovation program</rs> under grant agreement No <rs type="grantNumber">681839</rs> (project <rs type="projectName">FACTORY</rs>). <rs type="person">Louis Filstroff</rs> and <rs type="person">Olivier Gouvert</rs> were with <rs type="institution">IRIT</rs>, <rs type="institution">Univ. Toulouse, CNRS, France</rs> at the time this research was conducted.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_hYfqU4e">
+					<idno type="grant-number">681839</idno>
+					<orgName type="project" subtype="full">FACTORY</orgName>
+					<orgName type="program" subtype="full">Horizon 2020 research and innovation program</orgName>
+				</org>
+			</listOrg>
+			<div type="annex">
+<div><head>Appendix A The Beta-Prime distribution</head><p>Distribution for a continuous random variable in [0, +∞[, with parameters α &gt; 0, β &gt; 0, p &gt; 0 and q &gt; 0. Its probability density function writes, for x ≥ 0: f (x; α, β, p, q) = p x q αp-1</p><p>Appendix B BGAR(1) linear correlation</p><p>We have between two successive values h n and h n+1 :</p></div>
+<div><head>Appendix C Constrained optimization</head><p>We want to optimize G 2 (W; W) w.r.t. W s.t.</p><p>Deriving w.r.t w f k yields</p><p>We retrieve the constraint by summing this expression over f . This gives the expression of the Lagrange multiplier:</p><p>Substituting this expression into Eq. ( <ref type="formula">83</ref>), we obtain the following update rule</p></div>
+<div><head>Appendix D Algorithms with missing values</head><p>In the context of missing values, let us consider a mask matrix M of size F × N such that m f n = 1 if the entry v f n is observed and 0 otherwise. The likelihood term can then be written as</p><p>The auxiliary function G 1 of Eq. ( <ref type="formula">46</ref>) and G 2 of Eq. ( <ref type="formula">48</ref>) can then be written is the same way, with</p><p>for G 1 , and</p><p>for G 2 .</p></div>
+<div><head>Appendix E Hyperparameter grids</head><p>For all methods, we have considered constant hyperparameters w.r.t. k (for example α k = α for all k). Additional details regarding each method can be found in the list below.</p><p>• For GaP, we have considered a two-dimensional grid for the parameters α and β.</p><p>Values were α = {0.1, 1, 10} and β = {0.1, 1, 10}.</p><p>• For "Rate", we have set α = β, which implies that E(h kn |h k(n-1) ) = h k(n-1) . We considered a one-dimensional grid with values {1.5, 10, 100}.</p><p>• For "Hier", we have set α h = β h , and α z = β z , which implies E(z kn |h k(n-1) ) = h k(n-1) and E(h kn |z kn ) = z kn . We considered a two-dimensional grid with values α h = {1.5, 10, 100} and α z = {1.5, 10, 100}.</p><p>• For "Shape", we have set α = β, which implies that E(h kn |h k(n-1) ) = h k(n-1) . We considered a one-dimensional grid with values {0.1, 1, 10}.</p><p>• For "BGAR", we have set ρ = 0.9, and considered a two-dimensional grid for the parameters α and β (note that setting ρ = 0.9 implies α &gt; 10 in our MAP framework). Values were α = {11, 110, 1100} and β = {0.1, 1, 10}.</p></div>
+<div><head>Appendix F MAP estimation in the GaP model</head><p>The prior distribution on H is such that</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Nonparametric Bayesian Factor Analysis for Dynamic Count Matrices</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Acharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Artificial Intelligence and Statistics (AISTATS)</title>
+		<meeting>the International Conference on Artificial Intelligence and Statistics (AISTATS)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1" to="9" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">A dual markov chain topic model for dynamic environments</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Acharya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ghosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining (KDD)</title>
+		<meeting>the ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining (KDD)</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1099" to="1108" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Hierarchical Compound Poisson Factorization</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Basbug</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">E</forename><surname>Engelhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning (ICML)</title>
+		<meeting>the International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="1795" to="1803" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Dynamic Topic Models</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Lafferty</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning (ICML)</title>
+		<meeting>the International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="113" to="120" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">GaP: A Factor Model for Discrete Data</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Canny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International ACM SIGIR Conference on Research and Development in Information Retrieval</title>
+		<meeting>the International ACM SIGIR Conference on Research and Development in Information Retrieval</meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="122" to="129" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Cross burg entropy maximization and its application to ringing suppression in image reconstruction</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">P</forename><surname>Eggermont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Terebey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Image Processing</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="286" to="292" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Bayesian Inference for Nonnegative Matrix Factorisation Models</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Cemgil</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational Intelligence and Neuroscience</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note>Article ID 785152</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Conjugate Gamma Markov random fields for modelling nonstationary sources</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Cemgil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Dikmen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Independent Component Analysis and Signal Separation (ICA)</title>
+		<meeting>the International Conference on Independent Component Analysis and Signal Separation (ICA)</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="697" to="705" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Dynamic Poisson Factorization</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Charlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ranganath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mcinerney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM Conference on Recommender Systems (RecSys)</title>
+		<meeting>the ACM Conference on Recommender Systems (RecSys)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="155" to="162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Maximum marginal likelihood estimation for nonnegative dictionary learning in the Gamma-Poisson model</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Dikmen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Signal Processing</title>
+		<imprint>
+			<biblScope unit="volume">60</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="5163" to="5175" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Gamma-Poisson Dynamic Matrix Factorization Embedded with Metadata Influence</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D T</forename><surname>Do</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5829" to="5840" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Majorization-Minimization Algorithm for Smooth Itakura-Saito Nonnegative Matrix Factorization</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting>the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1980" to="1983" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Nonnegative matrix factorization with the itakura-saito divergence: With application to music analysis</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bertin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-L</forename><surname>Durrieu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computation</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="793" to="830" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Algorithms for nonnegative matrix factorization with the β-divergence</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Idier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Neural Computation</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="2421" to="2456" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Non-negative Dynamical System with Application to Speech and Audio</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Le Roux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Hershey</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting>the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="3158" to="3162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">First-order autoregressive gamma sequences and point processes</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gaver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Advances in Applied Probability</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="727" to="745" />
+			<date type="published" when="1980">1980</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Deep Dynamic Poisson Factorization Model</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W.-B</forename><surname>Huang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1666" to="1674" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Scalable Recommendation with Hierarchical Poisson Factorization</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gopalan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Hofman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Conference on Uncertainty in Artificial Intelligence (UAI)</title>
+		<meeting>the Conference on Uncertainty in Artificial Intelligence (UAI)</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="326" to="335" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Recommendation from Raw Data with Adaptive Compound Poisson Factorization</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Gouvert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Oberlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Févotte</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of Uncertainty in Artificial Intelligence (UAI)</title>
+		<meeting>Uncertainty in Artificial Intelligence (UAI)</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Deep Poisson Gamma Dynamical Systems</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8451" to="8461" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Bayesian Nonparametric Matrix Factorization for Recorded Music</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Hoffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Cook</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning (ICML)</title>
+		<meeting>the International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="439" to="446" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">A Tutorial on MM Algorithms</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">R</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Lange</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The American Statistician</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="30" to="37" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Dynamic Collaborative Filtering With Compound Poisson Factorization</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Jerfel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Basbug</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">E</forename><surname>Engelhardt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Artificial Intelligence and Statistics (AISTATS)</title>
+		<meeting>the International Conference on Artificial Intelligence and Statistics (AISTATS)</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="738" to="747" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Learning the parts of objects by non-negative matrix factorization</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Seung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nature</title>
+		<imprint>
+			<biblScope unit="volume">401</biblScope>
+			<biblScope unit="issue">6755</biblScope>
+			<biblScope unit="page" from="788" to="791" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Algorithms for Non-negative Matrix Factorization</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">D</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">S</forename><surname>Seung</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="556" to="562" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Gamma processes</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lewis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Mckenzie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">K</forename><surname>Hugus</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications in Statistics. Stochastic Models</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="30" />
+			<date type="published" when="1989">1989</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Positive matrix factorization: A non-negative factor model with optimal utilization of error estimates of data values</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Paatero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Tapper</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Environmetrics</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="111" to="126" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Poisson-Randomized Gamma Dynamical Systems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Linderman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wallach</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NeurIPS)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="782" to="793" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Poisson-Gamma Dynamical Systems</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Schein</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">M</forename><surname>Wallach</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems (NIPS)</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="5005" to="5013" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Bayesian non-negative matrix factorization</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">N</forename><surname>Schmidt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Winther</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">K</forename><surname>Hansen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Independent Component Analysis and Signal Separation (ICA)</title>
+		<meeting>the International Conference on Independent Component Analysis and Signal Separation (ICA)</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="540" to="547" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Dynamic content based ranking</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Virtanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Girolami</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Artificial Intelligence and Statistics (AISTATS)</title>
+		<meeting>the International Conference on Artificial Intelligence and Statistics (AISTATS)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="2315" to="2324" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Bayesian Extensions to Non-negative Matrix factorisation for Audio Signal Modelling</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Virtanen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Cemgil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Godsill</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</title>
+		<meeting>the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="1825" to="1828" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Nonparametric Bayesian Negative Binomial Factor Analysis</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Bayesian Analysis</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1065" to="1093" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Beta-Negative Binomial Process and Poisson Factor Analysis</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Hannah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dunson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carin</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Artificial Intelligence and Statistics (AISTATS)</title>
+		<meeting>the International Conference on Artificial Intelligence and Statistics (AISTATS)</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="1462" to="1471" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Learning the beta-divergence in Tweedie compound Poisson matrix factorization models</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Cemgil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">T</forename><surname>Yılmaz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">K</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Conference on Machine Learning (ICML)</title>
+		<meeting>the International Conference on Machine Learning (ICML)</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="1409" to="1417" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

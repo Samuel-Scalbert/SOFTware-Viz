@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main"></title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Antoine</forename><surname>Vidal-Mazuy</surname></persName>
+							<email>antoine.vidal-mazuy@etu.univ-cotedazur.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+							<email>buffa@univ-cotedazur.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">UNE STATION DE TRAVAIL AUDIO</orgName>
+								<orgName type="institution" key="instit2">NUMÉRIQUE POUR LA PLATE-FORME WEB</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">University Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">INRIA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">University Côte d&apos;Azur</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">INRIA</orgName>
+							</affiliation>
+						</author>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">ED6B1C5FA4D276D6B9C29C56E75F68A0</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Cet article présente WAM Studio (Figure <ref type="figure">1</ref>), une station de travail audio numérique (DAW) en ligne open source qui tire parti de plusieurs APIs et technologies standards du W3C, telles que Web Audio, WebAssembly, Web Components, Web Midi, Media Devices, etc. WAM Studio s'appuie également sur le standard Web Audio Modules (WAM), qui a été conçu pour faciliter le développement de plugins audio inter-opérables (effets, instruments virtuels, claviers virtuels de piano comme contrôleurs, etc.) sortes de "VSTs pour le Web". Les DAWs sont des logiciels riches en fonctionnalités et donc particulièrement complexes à développer en termes de conception, d'implémentation, de performances et d'ergonomie. Aujourd'hui, la majorité des DAWs en ligne sont commerciaux alors que les seuls exemples open source manquent de fonctionnalités (pas de prise en charge de plugins par exemple) et ne tirent pas parti des possibilités récentes offertes (comme WebAssembly). WAM Studio a été conçu comme un démonstrateur technologique pour promouvoir les possibilités offertes par les innovations récentes proposées par le W3C. L'article met en évidence certaines des difficultés que nous avons rencontrées (par exemple, les limitations dues aux environnements sandboxés et contraints que sont les navigateurs Web, la compensation de latence quand on ne peut pas connaître le hardware utilisé, etc.). Une démonstration en ligne, ainsi qu'un repository GitHub pour le code source sont disponibles.</p><p>1 .</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">INTRODUCTION</head><p>La Musique Assistée par Ordinateur (MAO) est un domaine en constante évolution qui utilise des ordinateurs pour enregistrer, éditer et produire de la musique. Les stations de travail audio numérique (Digital Audio Workstations en anglais, ou "DAWs") sont des logiciels spécialement conçus pour la MAO, permettant aux utilisateurs de créer et de manipuler du contenu audio numérique ainsi que du contenu MIDI. Les plugins audio sont des modules logiciels qui ajoutent des fonctionnalités supplémentaires aux DAWs, offrant aux utilisateurs une plus grande flexibilité et un meilleur contrôle sur leur production musicale. Le marché de la MAO est né avec l'Atari <ref type="bibr">ST (1985)</ref> -premier ordinateur supportant le standard MIDI-et le DAW Cubase proposée par <ref type="bibr">Steinberg (1989)</ref>. Peu après, le standard VST pour les plugins audio a été proposé (1997) et depuis lors, des milliers de plugins ont été développés, pouvant être utilisés dans les principaux DAWs natifs disponibles sur le marché.</p><p>Un DAW est un logiciel riche en fonctionnalités et donc particulièrement complexe à développer en termes de conception, d'implémentation et d'ergonomie. Il permet la création de pièces multipistes en utilisant directement des échantillons audio (par exemple en incorporant dans une piste un fichier audio ou en enregistrant à partir d'un microphone ou d'une entrée de carte son), en les mélangeant, en appliquant des effets sonores à chaque piste (par exemple, réverbération, égalisation de fréquence ou auto-tune sur les voix), mais également en utilisant des pistes avec des instruments virtuels (reproduction logicielle d'un piano, d'un violon, d'un synthétiseur, d'une batterie, etc.). La piste est ensuite enregistrée au format MIDI sous forme d'événements correspondant aux notes et à des paramètres supplémentaires (comme la vélocité avec laquelle on a appuyé sur les touches d'un clavier de piano, par exemple). Ces événements permettent à la piste d'être jouée en demandant à un instrument virtuel de synthétiser le signal. Une DAW permet donc la lecture, l'enregistrement et le mixage à la fois de pistes audio et MIDI, l'édition de ces pistes (copier/couper/coller dans une piste ou entre les pistes), la gestion des effets audio en temps réel et des instruments virtuels, le mixage et l'exportation du projet final dans un format simple (par exemple, un fichier WAVE ou MP3). Dans le monde natif, ces effets et instruments sont les "plugins audio" qui étendent les capacités des DAWs standard. Depuis 1997, un marché important pour les développeurs de plugins tiers s'est développé. Quatre DAWs dominent le marché (Logic Audio, Ableton, Pro Tools, Cubase) 1 et l'existence de plusieurs formats de plugins propriétaires complique la tâche des développeurs. D'un autre côté, le marché de la MAO sur le Web est encore émergent, les premiers DAWs en ligne sont apparus en 2008 et exploitaient la technologie Flash. Ceux utilisant HTML5 et l'API Web Audio ne sont apparus que dans la période entre 2015 et 2016 car les technologies sont beaucoup plus récentes (les premières implémentations de l'API Web Audio dans les navigateurs datent de 2012). En 2023, plusieurs DAWs basés web sont disponibles, principalement commerciaux. Un format de plugins inter-opérables appelé Web Audio Modules (WAM) existe et est soutenu par au moins un DAW en ligne. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">L'API WEB AUDIO</head><p>Depuis 2018, l'API Web Audio du W3C est une "recommandation" (une norme figée). Elle offre un ensemble de "noeuds audio" qui traitent ou produisent du son et on utilise ces noeuds depuis du code JavaScript en instanciant des classes fournies par l'API. Ces noeuds peuvent être connectés pour former un "graphe audio". Le son se déplace à travers ce graphe à la fréquence d'échantillonnage (valeur par défaut 44100Hz, cette valeur peut être modifiée) et subit des transformations <ref type="bibr" target="#b2">[3]</ref>. Certains noeuds sont des générateurs d'ondes ou des sources sonores correspondant à une entrée de microphone ou à un fichier sonore chargé en mémoire, d'autres transforment le son. La connexion de ces noeuds dans le navigateur se fait via JavaScript et permet de concevoir une large gamme d'applications différentes impliquant le traitement audio en temps réel <ref type="bibr" target="#b7">[6]</ref>. Les applications musicales ne sont pas les seules à nécessiter du traitement audio complexes, l'API est également conçue pour répondre à d'autres besoins, par exemple pour le développement de jeux vidéo, pour le multimédia, la visio-conférence, etc. L'API est livrée avec un ensemble limité de noeuds "standards" pour des opérations courantes telles que le contrôle de gain, le filtrage de fréquences, l'ajout de delay, de réverbération, pour des traitements sur la dynamique, sur la spatialisation du son 2D et 3D, etc.</p><p>En général les bibliothèques/API audio répartissent le travail entre un thread de contrôle et un thread de rendu <ref type="bibr" target="#b8">[7,</ref><ref type="bibr" target="#b12">11,</ref><ref type="bibr" target="#b13">12]</ref>. L'API Web Audio ne fait pas exception et utilise également ce modèle : un thread de rendu appelé "audio thread" est chargé exclusivement du traitement du son par le graphe audio et de la livraison des échantillons sonores au système d'exploitation pour qu'ils puissent être lus par le matériel. Ce thread est soumis à des contraintes de temps réel strictes et a une priorité élevée -s'il ne parvient pas à fournir le prochain bloc d'échantillons audio à temps (128 échantillons par défaut dans le cas de l'API Web Audio), il y aura des anomalies audibles. D'autre part, le thread de contrôle est généralement en charge d'exécuter le code JavaScript de l'interface utilisateur et d'effectuer les appels à l'API Web Audio. Il gère aussi toutes les modifications apportées au graphe audio : il permet par exemple à l'utilisateur de connecter/déconnecter des noeuds et d'ajuster leurs paramètres. Les noeuds standards sont tous des instances de sous-classes de la classe AudioNode. A une exception près, ils fournissent des traitements prédéfinis codés en C++ ou en Rust (Firefox) et exécutent le traitement du son dans le thread audio, mais les algorithmes utilisés ne peuvent pas être modifiés, seules les modifications de paramètres sont autorisées depuis du JavaScript. L'exception citée est l'ajout récent (2018) du noeud Au-dioWorklet qui fournit une solution pour implémenter un traitement audio personnalisé de bas niveau s'exécutant dans le thread audio <ref type="bibr" target="#b7">[6]</ref>, avec de nombreuses contraintes (pas d'opérations asynchrones, d'imports de fichiers, pas d'accés au DOM de la page HTML, etc.).</p><p>Les noeuds de l'API Web Audio peuvent être assemblés dans un graphe permettant aux développeurs de créer des effets ou instruments audio plus complexes. Voici quelques exemples construits de cette manière : effet delay (De-layNode, BiquadFilterNode, GainNode), auto-wah (Bi-quadFilterNode, OscillatorNode), chorus (multiples Delay-Nodes et OscillatorNodes pour la modulation), distorsion (GainNode, WaveShaperNode), synthétiseurs (Oscillator-Nodes), samplers (AudioBufferNodes), etc. Du code DSP existant dans d'autres langages tels que C/C++ ou écrit en utilisant des langages spécifiques à un domaine tels que FAUST <ref type="bibr" target="#b14">[13]</ref>, peut être compilé en WebAssembly et exécuté dans un seul noeud AudioWorklet. Au fil des années, de nombreux effets et instruments audio de haut niveau ont ainsi été développés <ref type="bibr" target="#b3">[4]</ref>. Cependant, il est souvent nécessaire de chaîner de tels effets et instruments audio (par exemple, le pédalier d'un guitariste est composé de pédales d'effets connectés entre elles) et lors de la composition/production musicale dans des DAWs, plusieurs effets et instruments sont en général utilisés. Ce sont des cas où les noeuds de l'API Web Audio sont de trop bas niveau, d'où la nécessité d'une unité de plus haut niveau pour représenter l'équivalent d'un plugin audio natif <ref type="bibr" target="#b0">[1]</ref>. Pour la plate-forme Web, un tel standard de haut niveau pour les "plugins audio" et les applications "hôtes" n'existait pas avant 2015 <ref type="bibr" target="#b9">[8]</ref>. Plusieurs initiatives ont été lancées et l'une d'entre elles est devenue un "standard communautaire" que nous détaillons dans la section suivante.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">WEB AUDIO MODULES</head><p>En 2015, Jari Kleimola et Olivier Larkin ont proposé une norme pour des plugins Web Audio sur le Web, intitulée "Web Audio Modules" (WAM) <ref type="bibr" target="#b9">[8]</ref>. Peu après, Jari Kleimola a participé à la création d'ampedstudio.com, l'un des premiers DAWs en ligne utilisant l'API Web Audio. En 2018, le projet WAM initial a été étendu par des chercheurs avec l'aide de développeurs de l'industrie de la MAO, ce qui a donné lieu à une norme plus polyvalente <ref type="bibr" target="#b2">[3]</ref>. Finalement, la version 2.0 des Web Audio Modules a été publiée en 2021. Cette version vise, en plus d'établir une norme communautaire (API, SDK), à apporter plus de liberté aux développeurs (support d'outils de build, TypeScript, frameworks React, etc.), à améliorer les performances, à simplifier l'accès aux paramètres de plugin et à faciliter l'intégration dans les DAWs <ref type="bibr" target="#b4">[5]</ref>. Nous reviendrons sur cette fonctionnalité plus tard, mais le standard WAM 2.0 utilise une conception originale pour la gestion de la communication entre les plugins et les applications hôtes qui ne repose pas sur la gestion des paramètres fournie par l'API Web Audio. La raison principale est de permettre des performances élevées dans le cas où à la fois un DAW et des plugins sont implémentés en tant qu'AudioWorklet. En effet, au moment de la conception de l'API Web Audio, les AudioWorklets n'existaient pas et certains cas d'utilisation ne pouvaient pas être pris en compte. Si le DAW est construit en utilisant des noeuds AudioWorklet pour le traitement audio, alors certaines parties du code s'exécutent dans le thread audio à haute priorité. En outre, si un plugin WAM est associé à une piste donnée dans un projet DAW, et si le plugin est lui-même construit en utilisant un noeud AudioWorklet, il dispose également de code personnalisé s'exécutant dans le thread audio. Le standard WAM a été conçu pour gérer ce cas particulier et permet une communication DAW/plugins sans quitter le thread audio. Prenons un exemple : pendant la lecture, une piste MIDI envoie des notes à un plugin d'instrument virtuel et modifie certains des paramètres de ce plugin à la fréquence d'échantillonage (a-rate). N'oublions pas qu'un DAW peut avoir plusieurs pistes, chacune associée à des dizaines de plugins, et que chaque plugin peut avoir des dizaines de paramètres. Le standard WAM détectera automatiquement le cas où DAW et plugins sont des AudioWorklets et optimisera en coulisse la communication (avec utilisation de mémoire partagée et de buffer tournant), sans franchir la barrière du thread audio. Pas besoin d'envoyer des événements à partir du thread de contrôle/GUI, ce qui aurait été obligatoire si la gestion des paramètres de l'API Web Audio était utilisée.</p><p>En résumé, le standard WAM simplifie la création de plugins et d'applications hôtes et permet une communication optimale entre les hôtes et les plugins.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">ANALYSE DE L'EXISTANT : DAWS COMMERCIAUX ET OPEN SOURCE Figure 2. Table de comparaison des principaux DAWs commerciaux disponibles</head><p>Les premiers DAWs en ligne basés sur l'API Web Audio sont apparus entre 2015 et 2018 et sont encore disponibles aujourd'hui : Audiotools <ref type="bibr" target="#b10">[9]</ref>, Bandlab, Amped-Studio, Soundtrap <ref type="bibr">[10]</ref>, Soundation. Ces DAWs ont en commun le fait qu'ils sont commerciaux, fermés et ont fait l'objet de très peu de publications académiques. Ils facilitent la collaboration à distance sur des projets musicaux, notons que la pandémie de COVID-19 (2021-2022) leur a été profitable et a augmenté leur popularité. Le mode de collaboration varie (synchrone comme Google Docs ou asynchrone grâce au partage de liens), ainsi que les outils de communication fournis (chat, vidéo-conférence), mais tous ces DAWs proposent les fonctionnalités classiques : enregistrement audio et MIDI, édition de pistes, mixage, support pour effets et instruments virtuels, etc. Certains ont été conçus principalement pour les ordinateurs de bureau, tandis que d'autres sont particulièrement adaptés aux appareils mobiles.</p><p>Ils diffèrent principalement en termes d'ergonomie : certaines de ces applications sont destinées à un public très large et ont mis l'accent sur la simplicité (BandLab, SoundTrap), tandis que d'autres ont choisi un aspect plus "professionnel" et sobre, comme AmpedStudio. <ref type="bibr">De</ref>  Il existe également des bibliothèques JavaScript populaires pour développer un lecteur/enregistreur multipiste, telles que wavesurfer.js<ref type="foot" target="#foot_1">3</ref> , peaks.js<ref type="foot" target="#foot_2">4</ref> ou waveformplaylist <ref type="foot" target="#foot_3">5</ref> , et des éditeurs de fichiers audio de type audacity tels que AudioMass <ref type="foot" target="#foot_4">6</ref> .</p><p>Aucune de ces initiatives open source n'utilise de traitement DSP personnalisé de bas niveau (pas d'AudioWorklets), ni ne se soucie d'optimiser la communication entre DAW/plugin, ni n'utilise de plugins externes. C'est la raison principale pour laquelle nous avons développé WAM Studio : en tant que démonstrateur de ces techniques.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.">WAM STUDIO DESIGN ET IMPLÉMENTATION</head><p>Wam-Studio est un outil en ligne pour créer des projets audio que l'on peut imaginer comme de la musique multipistes. Chaque piste correspond à une "couche" différente de contenu qui peut être enregistré, édité, joué ou simplement intégré (en utilisant des fichiers audio, par exemple). Certaines pistes peuvent être utilisées pour contrôler des instruments virtuels : dans ce cas, elles ne contiennent que les notes qui doivent être jouées, avec quelques métadonnées. Des pistes peuvent être ajoutées ou supprimées, jouées isolément ou avec d'autres pistes. Elles peuvent également être "armées" pour l'enregistrement, et lorsque l'enregistrement commence, toutes les autres pistes joueront simultanément, tandis que les pistes armées enregistreront un nouveau contenu.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1.">Les pistes</head><p>Dans un DAW, chaque piste est un conteneur de données liées à l'audio qui s'accompagne d'une représentation interactive de ces données, de fonctionnalités d'édition et de traitement ainsi que de quelques paramètres par défaut tels que le volume et le panoramique gauche/droite de la piste. La figure <ref type="figure" target="#fig_1">3</ref> montre des pistes audio dans WAM-Studio avec l'affichage de la forme d'onde des buffers audio associés et les contrôles/paramètres par défaut des pistes, sur le côté gauche (mute/solo, armement pour l'enregistrement, volume, panoramique stéréo, affichage des courbes d'automation). Comme de nombreuses pistes peuvent être affichées, scrollées pendant la lecture, zoomées et éditées, nous avons utilisé la bibliothèque pixi.js pour gérer de manière efficace le dessin et les interactions dans un canvas HTML. Cette bibliothèque utilise un rendu WebGL accéléré par GPU et offre de nombreuses fonctionnalités pour la gestion de plusieurs calques sur un seul canvas HTML5 (Figure <ref type="figure" target="#fig_1">3</ref>). On voit sur la Figure <ref type="figure" target="#fig_4">5</ref> que chaque piste peut également être associée à un ensemble de plugins pour ajouter des effets audio ou générer de la musique (dans le cas de plugins instrumentaux).</p><p>La Figure <ref type="figure" target="#fig_3">4</ref>   Il existe deux types de pistes : les pistes "audio" : elles contiennent de l'audio enregistré, tel qu'une prise vocale, un enregistrement de guitare ou tout autre type de signal sonore, qui sont généralement rendus graphiquement avec une forme d'onde représentant le signal stocké (sous forme d'un ensemble d'échantillons sonores). Ces pistes peuvent être éditées, traitées et mélangées en copiant/coupant et collant des échantillons dans le buffer audio associé à la piste. Le signal de sortie des pistes audio peut être traité par une chaîne de plugins d'effet audio. Les pistes "MIDI" : elles contiennent des données MIDI (le pitch -la note qu'un instrument jouerait, sa vélocité et sa durée). Les données MIDI ne contiennent pas d'informations audio mais sont plutôt utilisées pour contrôler des instruments virtuels tels que des synthétiseurs, des samplers, des boîtes à rythmes, etc. Les pistes MIDI peuvent être éditées, auquel cas il est possible de modifier les événements MIDI stockés dans la piste dans un affichage de type matriciel. Les pistes MIDI sont généralement associées à un ou plusieurs plugins WAM d'instruments virtuels. Les événements MIDI peuvent cibler tous les plugins d'instruments de la piste ou certains en particulier.</p><p>Les pistes sont généralement organisées verticalement dans l'interface utilisateur et peuvent être gérées séparé-ment en termes de volume, de panning stéréo, de plugins et d'automatisation des paramètres de ces plugins d'effets ou d'instruments (comme le montre la Figure <ref type="figure" target="#fig_4">5</ref>). Une piste DAW est également capable de "rendre" la piste en un signal audio audible (lorsque la piste est en lecture). Lorsque l'on appuie sur le bouton de lecture du DAW, toutes les pistes sont rendues simultanément, et le signal de sortie final est ce que l'on appelle "le mix". Les DAWs disposent également d'une option de "rendu hors ligne" pour exporter le mix final sous forme de fichier, sur le disque dur local ou sur le cloud (en utilisant l'OfflineAudioContext 8 fourni par l'API Web Audio).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2.">Le coeur des pistes est un AudioWorklet Processor</head><p>Concentrons-nous pour le moment sur une piste de type audio. L'API Web Audio fournit le noeud Audio-BufferSourceNode qui est un conteneur pour un buffer audio, et qui permet la lecture d'un buffer audio stocké en mémoire. Cette approche simple à mettre en oeuvre est néanmoins non adaptée pour un DAW devant gérer 7 . A la fréquence d'échantillonage (a-rate), du quantum audio (k-rate), personnalisée : cela dépend de l'implémentation du plugin au format WAM 8 . Contrairement à un AudioContext standard, qui sert à créer les noeuds du graphe audio pour un rendu "live", un OfflineAudioContext sert lui, à générer aussi rapidement que possible un graphe audio et à envoyer le résultat dans un AudioBuffer, qui peut ensuite être converti en format WAVE par exemple. l'automation de paramètres. Cette tâche consiste à interpoler, pendant la lecture ou l'enregistrement multipiste, les paramètres des plugins et des pistes à de hautes fréquences (à la fréquence d'échantillonnage a-rate ou de contrôle k-rate). Un paramètre automatisé peut être celui de n'importe quel plugin associé à n'importe quelle piste. Il peut y avoir potentiellement des dizaines, des centaines de paramètres à automatiser. Cela représente une quantité substantielle d'informations qui peut être échangée entre le DAW et les plugins WAM, ce qui fait de la performance un aspect crucial qui nécessite une attention particulière. En concevant notre propre lecteur audio de bas niveau (au lieu d'utiliser le noeud standard AudioBufferSource-Node), nous avons un contrôle total sur le comportement de lecture/enregistrement de chaque piste. Nous avons ainsi conçu le noyau de chaque piste audio comme un "Audio-Worklet processor", qui permet l'exécution de code DSP personnalisé dans le thread audio à très haute priorité. Plus précisément, ce noyau est une instance d'une sous-classe de la classe WamProcessor fournie par le SDK des Web Audio Modules, qui hérite de la classe AudioWorkletProcessor. Selon l'API, chaque processeur implémente une méthode process(input, output) qui sera appelée à la fréquence d'échantillonnage. À l'intérieur de cette méthode, nous traitons les échantillons sonores et procédons au rendu du buffer audio, mais nous pouvons également envoyer des données aux plugins WAM. La classe WAMProcessor dont nous héritons fournit en effet des méthodes pour gérer efficacement la communication entre le DAW et les plugins.</p><p>Avec l'API Web Audio, les AudioWorklets sont composés de deux composants, reflétant la nature multi-threadée de l'environnement : le noeud AudioWorkletNode et le Au-dioWorkletProcessor. Le standard WAM les étend avec les classes WamNode et WamProcessor, qui s'exécutent respectivement dans le main thread du navigateur (thread de la GUI) et dans le thread audio. WAM-Studio est une application hôte WAM, et ses pistes sont donc mises en oeuvre en tant que sous-classes de WamProcessor. Les plugins WAM associés à ces pistes peuvent également avoir leur coeur DSP implémenté en tant que sous-classes de Wam-Node avec un WamProcessor, mais ce n'est pas obligatoire car certaines implémentations de plugins WAM utilisent plutôt un graphe composé d'une combinaison de noeuds, dans ce cas ils étendent la classe WAM CompositeNode. Quelle que soit l'implémentation des plugins le code de communication de l'hôte vers le plugin est le même, et les optimisations mise en oeuvre se font en coulisse (dans le WAM SDK).</p><p>Cette abstraction permet une inter-opérabilité transparente entre les hôtes et les plugins WAM, indépendamment de la mise en oeuvre sous-jacente et sur tous les threads. En d'autres termes : si une piste est un WamProcessor et que les plugins sont également des WamProcessor, leur code DSP s'exécute dans le thread audio et une communication hautement optimisée peut être réalisée : les Shared Array Buffers peuvent être utilisés pour la communication entre DAW et plugins. Si un plugin n'est pas un WamProcessor, alors le code DAW qui "communique" avec lui reste inchangé et la mise en oeuvre sous-jacente sera moins optimale et impliquera le franchissement de la barrière des threads. Pour gérer plusieurs plugins en chaîne, le standard WAM utilise un objet singleton, appelé WamEnv, qui est attaché à la portée globale du thread audio et sert de médiateur pour les interactions entre les hôtes et les plugins. Les plugins sont structurés en WamGroup, regroupés dans un "WamEnv", qui encapsule le code de la version du SDK WAM utilisé. Si une nouvelle version du SDK sort, il sera ainsi possible de charger les plugins dans un environnement WamEnv protégé, chaque plugin utilisant sa propre version du SDK. Chaque groupe de plugins (WamGroup) comprend les plugins créés par un hôte spécifique et il est possible d'envoyer des événements (MIDI par exemple) à tous les plugins à la chaîne. Un effort considérable a été déployé pour réduire le nombre d'hypothèses faites par l'API WAM concernant la mise en oeuvre de l'hôte, avec Wa-mEnv et les instances de WamGroup étant les seuls objets du système WAM qui sont fournis par l'hôte. Le WamEnv est alloué lors de la création du DAW et les instances de WamGroup sont associées à chaque piste.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3.">Gestion des chaînes de plugins</head><p>Les chaînes de plugins sont gérées à l'aide d'un plugin WAM spécial qui agit également en tant que "mini-hôte" (Figure7). Nous l'avons appelé le WAM pedalboard <ref type="bibr" target="#b0">[1]</ref>. Il se connecte à un serveur de plugins qui renvoie la liste des plugins disponibles sous forme de tableau JSON d'URIs (un plugin WAM peut être chargé simplement à l'aide d'une importation dynamique et de son URI, voir <ref type="bibr" target="#b4">[5]</ref>). À partir de cette liste d'URIs, les descripteurs de plugins WAM sont récupérés, qui contiennent des méta-données sur les plugins : nom, version, fournisseur, URI d'image miniature, etc. Lorsque le plugin pedalboard est affiché dans le DAW, la chaîne de plugins actifs est vide, et les plugins peuvent être ajoutés à la chaîne de traitement, supprimés, ré-ordonnés et leurs paramètres peuvent être définis. Toute configuration peut être enregistrée en tant que preset nommé (par exemple, "son de guitare crunch 1"). Les presets peuvent être organisés en banks ("rock", "funk", "blues"). La gestion de l'organisation et de la nomination des banks et des presets relève de la responsabilité du pedalboard plugin. Les paramètres exposés par ce plugin correspondent à l'ensemble des paramètres du preset ac-tif (c'est-à-dire la somme des paramètres des plugins du preset), et peuvent être automatisés par le DAW. L'API Web Audio Modules permet d'envoyer des événements au DAW lorsque des modifications se produisent dans la configuration du plugin (ajout ou suppression), et un menu fourni dans le DAW avec chaque piste pour sélectionner les paramètres pouvant être automatisés est automatiquement mis à jour (Figure <ref type="figure" target="#fig_6">7</ref>). Tous les plugins WAMs implémentent également des méthodes getState/setState pour sérialiser/dé-sérialiser leur état. Lorsqu'un projet est enregistré, l'état de chaque piste, des buffers audio, etc. est enregistré, ainsi que l'état de la configuration de chaque plugin.  Nous avons effectué de telles mesures dans le passé <ref type="bibr" target="#b1">[2]</ref>. On peut aussi l'estimer avec un programme émettant des sons (en général des sons de type métronome) et en enregistrant ces mêmes sons en plaçant un micro devant les haut-parleurs. Paul Adenot propose une implémentation d'un outil permettant de mesurer cette latence et aussi la latence de sortie 9 . Le résultat est en général moins précis que lors de la mesure avec des outils externes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.4.">Enregistrement, gestion de la latence</head><p>Par ailleurs, l'API Web Audio expose une propriété outputLatency de l'AudioContext dont la valeur est une approximation de la latence de sortie, soit le nombre de secondes entre l'audio atteignant l'AudioDestinationNode (conceptuellement, la sortie du graphe de traitement audio) et le dispositif de sortie audio. Si on sait mesurer la latence round-trip, alors on peut connaître la latence d'entrée puisque latence d'entrée + latence de sortie = latence round-trip.</p><p>Lors de l'enregistrement d'une piste de guitare, par exemple, d'autres pistes telles que des pistes de batterie et de basse peuvent être jouées simultanément. Le son de la guitare est traité en temps réel par une chaîne de plugins (simulation d'amplificateur de guitare, égaliseur, retard, etc.) et doit être entendu en temps réel par le guitariste, en synchronisation avec les autres pistes et sans latence perceptible lorsqu'il est joué (et enregistré). C'est pourquoi la latence round-trip globale doit être aussi faible que possible. Nous avons représenté la route permettant de s'entendre jouer pendant l'enregistrement avec le chemin rouge dans la Figure <ref type="figure" target="#fig_7">8</ref>, une partie du signal traverse la chaîne de plugins et peut être entendue (wet route) et le signal non traité est enregistré (dry route, vers l'AudioWorklet). En utilisant une taille de buffer de 128 échantillons (valeur par défaut lors de la création d'un AudioContext), la latence round-trip mesurée sur MacOS est de 23 ms avec le navigateur Chrome, 15ms avec Firefox, suffisamment confortable et comparable à ce que nous pouvons obtenir avec des applications natives dans des cas d'utilisation similaires (guitare, Logic Audio, plugin de simulation d'amplificateur de guitare, taille de buffer audio de 128), même avec des guitaristes jouant très vite <ref type="bibr" target="#b1">[2]</ref>.</p><p>Néanmoins, lors de la lecture simultanée de la nouvelle piste enregistrée, un décalage de plusieurs millisecondes est visible et audible, la piste nouvellement enregistrée est "en retard" par rapport aux autres. Il est nécessaire de décaler en arrière dans le temps la nouvelle piste. Cette opération s'appelle la "compensation de latence", et la valeur de compensation est égale à -valeur de la latence d'entrée. Nous avons vu que cette valeur peut être calculée si on connaît la latence round-trip (puis que la latence de sortie est fournie par l'AudioContext).</p><p>Dans WAM Studio, un menu de configuration permet de calculer automatiquement la compensation de latence en approchant un micro des haut parleurs et en lançant le processus de calibration (le DAW émet des sons, enregistre le résultat et compare les temps d'émission et de réception). Pour une configuration matérielle donnée cette opération n'est à effectuer qu'une seule fois.</p><p>Le DAW AmpedStudio propose une approche similaire. Les auteurs de SoundTrap ont expliqué qu'ils utilisent plutôt des tables prédéfinies avec des entrées pour les paires OS/carte son les plus courantes, dont la latence d'entrée a été mesurée à la main et codées en dur dans le code <ref type="bibr">[10]</ref>. SoundTrap utilise ensuite des heuristiques pour déterminer la configuration (vérification de l'OS, deviner le modèle de la carte son en regardant le nombre d'entrées/sorties exposées en utilisant l'API MediaDevices, etc.). D'autres optimisations classiques ont été mises en place dans WAM-studio : dès que les pistes sont armées pour l'enregistrement, on alloue le buffer tournant, on démarre les Workers (tâches de fond JavaScript) d'enregistrement, on pré-alloue les buffers audio et on ne commence à enregistrer que lors de l'appui sur les boutons "record" puis "play", à ce moment là, l'enregistrement à proprement parler commence. Ceci évite de perdre du temps au démarrage, avec les allocations et le lancement des Workers.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.">CONCLUSION</head><p>À ce jour, WAM-Studio est un exemple de DAW open source utilisant des fonctionnalités avancées telles que la prise en charge de plugins externes, des communications DAW/plugins à haute performance, la lecture, l'enregistrement et l'édition de pistes audio avec compensation de latence. En tant que démonstrateur, il montre les capacités de l'API Web Audio et comment le standard Web Audio Modules peut être utilisé pour faciliter le développement d'applications audio web complexes. La prise en charge des pistes MIDI est prévue à court terme 10 et le développement est actif. Le code source du DAW peut être trouvé sur GitHub 11 , et l'application est également disponible en ligne 12 .</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>Figure 1. WAM-Studio, une station de travail audio numérique en ligne et open source. On peut voir des plugins d'effets associés à la dernière piste et des courbes d'automation de paramètres.</figDesc><graphic coords="3,81.92,54.39,433.70,230.40" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 .</head><label>3</label><figDesc>Figure 3. Pistes et régions dans la GUI du DAW Wam-Studio. Les régions peuvent être déplacées, supprimées, etc.</figDesc><graphic coords="5,310.11,506.08,229.60,113.09" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head></head><label></label><figDesc>montre le graphe audio correspondant à la chaîne de traitement d'une piste audio. Le son va de gauche à droite : d'abord le "lecteur/enregistreur/éditeur de piste" est implémenté en tant que noeud AudioWorklet, en utilisant du code personnalisé pour le rendu d'un buffer audio, puis le signal de sortie a son gain et son panoramique stéréo ajustés, ensuite nous avons un autre noeud AudioWorklet pour le rendu du volume dans un canvas (VU-mètre), et enfin nous trouvons une chaîne de plugins WAM pour ajouter des effets audio.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 4 .</head><label>4</label><figDesc>Figure 4. Graphe d'une piste audio dans Wam-Studio</figDesc><graphic coords="6,57.83,342.02,229.61,91.18" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 .</head><label>5</label><figDesc>Figure 5. Une chaîne de plugins associés à la piste sélectionnée. Chaque sortie de piste est connectée à une "piste maître" (master track) où il est possible d'ajuster globalement le volume et le panning stéréo du mix final. Comme pour toutes les autres pistes, il est également possible d'associer une chaîne d'effets audio à la piste maître (par exemple pour ajuster la dynamique et les fréquences finales). Tous les effets audio et instruments virtuels sont des plugins WAM dans le cas de notre DAW, et tous leurs paramètres sont automatisables 7 . Cette conception offre un degré de contrôle et d'adaptabilité étendu et permet aux utilisateurs de mélanger et de manipuler le son de chaque piste avec une grande précision et sophistication, rendant ainsi plus facile la création de productions audio complexes, le tout sans quitter le navigateur Web. WAM-studio est le seul logiciel open source à proposer l'ensemble de ces fonctionnalités.Une piste DAW est également capable de "rendre" la piste en un signal audio audible (lorsque la piste est en lecture). Lorsque l'on appuie sur le bouton de lecture du DAW, toutes les pistes sont rendues simultanément, et le signal de sortie final est ce que l'on appelle "le mix". Les DAWs disposent également d'une option de "rendu hors ligne" pour exporter le mix final sous forme de fichier, sur le disque dur local ou sur le cloud (en utilisant l'OfflineAudioContext 8 fourni par l'API Web Audio).</figDesc><graphic coords="6,310.11,102.30,229.60,120.77" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 6 .</head><label>6</label><figDesc>Figure 6. Le plugin WAM Pedalboard qui gère les chaînes de plugins associés à chaque piste. Ici chargé dans une simple page HTML hôte, en mode stand-alone.</figDesc><graphic coords="7,310.11,519.23,229.60,93.63" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head>Figure 7 .</head><label>7</label><figDesc>Figure 7. Chaque piste a un menu d'automation qui se met à jour en fonction des plugins associés.</figDesc><graphic coords="8,57.83,162.26,229.60,103.50" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Figure 8 .</head><label>8</label><figDesc>Figure 8. Schéma logique de l'enregistrement audio dans une piste de WAM-Studio</figDesc><graphic coords="8,80.79,419.17,183.68,157.80" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0"><head></head><label></label><figDesc></figDesc><graphic coords="4,333.07,271.15,183.69,291.78" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>son côté, Audiotools est davantage un "studio virtuel" qu'un DAW pur et trouve son marché principalement dans le domaine de l'éducation. Les détails de mise en oeuvre de ces applications sont inconnus car le code source n'est pas accessible au public. Cependant, à travers des publications académiques limitées et des présentations/interviews, on sait qu'AmpedStudio utilise un moteur C++ cross-compilé en WebAssembly et des AudioWorklets, tandis que Soundtrap a principalement utilisé les noeuds standard de l'API Web Audio. BandLab est censé avoir un noyau écrit en C++ et s'appuie également sur WebAssembly/AudioWorklet, avec peut-être une version mobile spécifique. Audiotools fonctionne également dans des noeuds AudioWorklet avec un portage du moteur audio initialement écrit en Flash. Récemment, un nouveau DAW appelé Arpeggi.io est apparu, mettant en avant l'utilisation de la technologie blockchain (pour suivre qui, quand et comment les sons et la musique sont utilisés) et des NFTs pour monétiser les créations.Ces DAW diffèrent également dans la manière dont ils gèrent les effets et les instruments audio. Il est évident que certains prennent en charge des plugins externes : Amped-Studio prend en charge la norme WAM -les développeurs de la société ont contribué à sa création-et le site web a une boutique pour "activer" des plugins premiums. Les autres DAWs en ligne commerciaux semblent utiliser un format propriétaire, tout en intégrant des portages tiers de plugins natifs (SoundTrap propose le célèbre plugin "Auto-tune" d'Antares). Propellerheads, une entreprise bien connue pour son DAW natif Reason, a également publié des versions web de son synthétiseur Europa sous forme de plugin Web (disponible maintenant dans AmpedStudio et dans Soundation, il s'agit d'un portage de Plugin Rack, un standard de plugins propre à Propellerheads dans le monde natif).Jusqu'à présent, AmpedStudio est le seul DAW à prendre en charge une norme de plugins ouverte : Web Audio Modules. La figure 2 illustre les similitudes et les différences entre les DAW en ligne commerciaux cités.</figDesc><table><row><cell>Dans le monde de l'open source, le choix est limité :</cell></row><row><cell>GridSound est un DAW développé depuis 2015 2 qui prend</cell></row><row><cell>en charge l'audio et le MIDI. Bien que les effets et ins-</cell></row><row><cell>truments proposés demeurent simples, GridSound est un</cell></row><row><cell>DAW entièrement fonctionnel. Il ne prend pas en charge</cell></row><row><cell>de plugins.</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>ou en utilisant des solutions de bas niveau à l'aide d'un AudioWorklet. La solution MediaRecorder a pour avantage sa simplicité, mais tous les tests que nous avons effectués ont montré que c'est une solution peu fiable car le temps nécessaire pour allouer des buffers audio et commencer l'enregistrement est imprévisible, même lorsque nous effectuons des mesures/calibrations de latence, comme expliqué plus loin. Nous avons finalement opté pour une solution de bas niveau plus précise qui utilise un WamProcessor dont le rôle est d'enregistrer en continu les échantillons sonores dans un un ring buffer contenant à peu près une seconde de son numérisé, situé dans une mémoire partagée avec un Worker JavaScript qui lui tourne dans un thread moins prioritaire et dont le rôle est de consommer les échantillons envoyés par le WamProcessor, et les copier à la fin d'un buffer qui grossit au fur et à mesure. Cette approche évite des allocations dans le thread audio, elle et également plus robuste contre un éventuel stress CPU. Le Worker envoie également sous forme de message le buffer audio courant à un code JavaScript exécuté dans le thread de la GUI. Ce dernier peut ainsi dessiner la forme d'onde du signal audio enregistré qui grandit visuellement au fur et à mesure que l'enregistrement avance. Lors qu'on stoppe l'enregistrement, la piste est prête à être jouée puisque le buffer audio a été mis à jour au fur et à mesure.Compensation de latence : Le processus d'enregistrement avec un DAW est plus contraint et structuré que dans un simple enregistreur de mémos audio, car nous devons prendre en compte différents types de latences. La latence d'entrée est le temps entre la capture d'un signal audio par le dispositif d'entrée (carte son) et son traitement par le contexte audio. Elle dépend du système d'exploitation, de la configuration du dispositif d'entrée, du temps de traitement du système audio et de la taille du buffer utilisé par le contexte audio. La latence de sortie représente le temps entre la génération d'un son et sa perception par l'utilisateur. La somme de ces deux latences représente la latence round-trip et peut être mesurée à l'aide d'un dispositif d'enregistrement externe avec deux microphones : un sur la source du son physique (par exemple, sur le corps d'une guitare branchée sur une carte son), et un devant les haut-parleurs. Frappez le corps de la guitare, enregistrez la sortie et comparez les signaux d'entrée et de sortie.</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>. https ://gridsound.com/. Voir également la présentation vidéo de GridSound à la conférence ADC 2021 : https ://www.youtube.com/watch ?v=ejTtENwRxnA</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>. https ://wavesurfer-js.org/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>. https ://github.com/bbc/peaks.js/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>. https ://github.com/naomiaro/waveform-playlist</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_4"><p>. https ://audiomass.co/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Making a guitar rack plugin -WebAudio Modules 2.0</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pierre</forename><surname>Kouyoumdjian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quentin</forename><surname>Beauchet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Forner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Marynowic</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-03812948" />
+	</analytic>
+	<monogr>
+		<title level="m">Web Audio Conference 2022</title>
+		<meeting><address><addrLine>Cannes, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Real time tube guitar amplifier simulation using WebAudio</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerome</forename><surname>Lebrun</surname></persName>
+		</author>
+		<ptr target="https://hal.univ-cotedazur.fr/hal-01589229" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Web Au-dio Conference (Queen Mary Research Online (QMRO) repository)</title>
+		<meeting>the Web Au-dio Conference (Queen Mary Research Online (QMRO) repository)<address><addrLine>London, London, United Kingdom</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+		<respStmt>
+			<orgName>Mary University</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Towards an open Web Audio plugin standard</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerome</forename><surname>Lebrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jari</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Larkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Letz</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3184558.3188737</idno>
+		<ptr target="https://doi.org/10.1145/3184558.3188737" />
+	</analytic>
+	<monogr>
+		<title level="m">WWW2018 -The-WebConf 2018 : The Web Conference, 27th International World Wide Web Conference</title>
+		<meeting><address><addrLine>Lyon, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Emerging W3C APIs opened up commercial opportunities for computer music applications</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerome</forename><surname>Lebrun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihong</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stéphane</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominique</forename><surname>Fober</surname></persName>
+		</author>
+		<idno type="DOI">10.13140/RG.2.2.16456.19202</idno>
+		<ptr target="https://doi.org/10.13140/RG.2.2.16456.19202" />
+	</analytic>
+	<monogr>
+		<title level="m">The Web Conference 2020 DevTrack</title>
+		<meeting><address><addrLine>Taipei, Taiwan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Web Audio Modules 2.0 : An Open Web Audio Plugin</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shihong</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Owen</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jari</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Larkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tom</forename><surname>Burns</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Nous avons écrit des démonstrations de lecture de pistes MIDI à l&apos;aide de WAMs sur le site de tutoriels WAM</title>
+		<ptr target="https://wam-examples.vidalmazuy.fr/11" />
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<idno type="DOI">10.1145/3487553.3524225</idno>
+		<ptr target="https://doi.org/10.1145/3487553.3524225" />
+		<title level="m">The ACM Web Conference 2022</title>
+		<meeting><address><addrLine>Virtual Event, France</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<biblScope unit="page" from="364" to="369" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Audioworklet : the Future of Web Audio</title>
+		<author>
+			<persName><forename type="first">Hongchan</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the International Computer Music Conference</title>
+		<meeting>the International Computer Music Conference<address><addrLine>Daegu, South Korea</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="110" to="116" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">jMax : an environment for real-time musical applications</title>
+		<author>
+			<persName><forename type="first">François</forename><surname>Déchelle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Riccardo</forename><surname>Borghesi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Maurizio</forename><surname>De Cecco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Enzo</forename><surname>Maggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Butch</forename><surname>Rovan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Norbert</forename><surname>Schnell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Music Journal</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="50" to="58" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Web Audio Modules</title>
+		<author>
+			<persName><forename type="first">Jari</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oliver</forename><surname>Larkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Sound and Music Computing Conference</title>
+		<meeting>the Sound and Music Computing Conference</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Unrevealed Potential in Delivering Distance Courses : the Instructional Value of Audio</title>
+		<author>
+			<persName><forename type="first">Bojan</forename><surname>Lazarevic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danijela</forename><surname>Scepanovic</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">eLearning and Software for Education</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title level="m" type="main">Soundtrap : A collaborative music studio with Web Audio In Proceedings of the Web Audio Conference</title>
+		<author>
+			<persName><forename type="first">Fredrik</forename><surname>Lind</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Macpherson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>Queen Mary University</publisher>
+			<pubPlace>London, London, United King</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Rethinking the computer music language : Super collider</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Mccartney</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer Music Journal</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="61" to="68" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">FTS : A real-time monitor for multiprocessor music synthesis</title>
+		<author>
+			<persName><surname>Miller Puckette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer music journal</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="58" to="67" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Using Faust DSL to Develop Custom, Sample Accurate DSP Code and Audio Plugins for the Web Browser</title>
+		<author>
+			<persName><forename type="first">Stephane</forename><surname>Shihong Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Romain</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominique</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Fober</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the Audio Engineering Society</title>
+		<imprint>
+			<biblScope unit="volume">68</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<biblScope unit="page" from="703" to="716" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

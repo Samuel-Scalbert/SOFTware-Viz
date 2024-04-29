@@ -1,0 +1,314 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Extracting statistical mentions from textual claims to provide trusted content</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Tien</forename><surname>Duc Cao</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria Saclay Île-de</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory" key="lab1">LIX (</orgName>
+								<orgName type="laboratory" key="lab2">UMR 7161</orgName>
+								<orgName type="institution">CNRS and École Polytechnique</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Inria Saclay Île-de</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="laboratory" key="lab1">LIX (</orgName>
+								<orgName type="laboratory" key="lab2">UMR 7161</orgName>
+								<orgName type="institution">CNRS and École Polytechnique</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Xavier</forename><surname>Tannier</surname></persName>
+							<affiliation key="aff2">
+								<orgName type="laboratory">LIMICS (UMRS 1142</orgName>
+								<orgName type="institution" key="instit1">Sorbonne Université</orgName>
+								<orgName type="institution" key="instit2">Inserm</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Extracting statistical mentions from textual claims to provide trusted content</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">A8AA65B67EB354E5735078647D3199CF</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Claims on statistic (numerical) data, e.g., immigrant populations, are often fact-checked. We present a novel approach to extract from text documents, e.g., online media articles, mentions of statistic entities from a reference source. A claim states that an entity has certain value, at a certain time. This completes a fact-checking pipeline from text, to the reference data closest to the claim. We evaluated our method on the INSEE dataset and show that it is efficient and effective.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>With the increase of disinformation in online media, social networks and the Web in general, we witness a strong interest in computational fact-checking, defined as a set of computer-assisted techniques capable of assessing the truthfulness of a given statement <ref type="bibr" target="#b3">[4]</ref>. In this context, computational fact-checking is a manystage pipeline, whereas (i) claims are extracted from text, (ii) possible sources of reference are identified, (iii) a check is made combining automated and manual means; (iv) an interpretation is produced.</p><p>In this paper, we focus on steps (i) and (ii). We use data from French national institute for statistics and economic studies (INSEE) as an example as highquality, trustful reference database. In previous work, we have extracted tens of thousands of RDF graphs out of INSEE statistic tables <ref type="bibr" target="#b1">[2]</ref> <ref type="foot" target="#foot_0">4</ref> . We also developed a novel keyword search algorithm which, given a set of search terms, e.g. "unemployment", " Île-de-France", "2018" locates the RDF nodes corresponding to the most relevant table cells <ref type="bibr" target="#b2">[3]</ref>  <ref type="foot" target="#foot_1">5</ref> .</p><p>In this work, we describe the last missing step of our system: the extraction of claims referring to statistical mentions from text sources. This step allows to automatically formulate the search queries which our system <ref type="bibr" target="#b2">[3]</ref> can solve against the RDF corpus we gathered <ref type="bibr" target="#b1">[2]</ref>. Our whole system can help factchecking journalists to find checkable claims in massive text sources, as well as the closest reference datasource value for the given claim. Based on these, the journalists can choose the truth label which seems most appropriate.</p><p>The architecture of the system is presented by Figure <ref type="figure" target="#fig_0">1</ref>. From the publication context of statistic data (the text in header of statistics tables) we extract a set of statistical entities (step (1) in the figure), those whose reference values are known in the statistic dataset for some time periods and/or geographical area, such as "unemployment", "youth unemployment", "unemployment in Aquitaine in 2015", "gross domestic product". From 111,145 tables published by INSEE, we have obtained a total of 1,397 statistic entities, as we detail in Section 2.1.</p><p>We have built a text corpus which we selected with an interest in topics that INSEE studies. We focused on news articles from three French newspapers, and because most INSEE metrics refer to the economy domain, we looked only for articles on such topics, by using URL keywords or an LDA <ref type="bibr" target="#b0">[1]</ref> topic selection <ref type="foot" target="#foot_2">6</ref> . From these articles, we have extracted (step (2)) 322,873 sentences containing at least one numerical value. From now on, we will refer to these sentences as S.</p><p>From S, we extract (step (3)) all the verbs which state a numerical value, e.g., "amounts to", "is worth", "decreases" etc., as well as all the measurement units, e.g., "people", "euros", "percentage" etc.</p><p>Next, we identify among S sentences the candidate sentences which could claim a relationship between a statistical entity and a value. This is done (step (4)) by selecting those S sentences which mention statistic entities. From each candidate sentence, e.g., "France's public debt fell slightly, by 11.4 billion euros, between the second and third quarters of 2013", we extract: (1) a mention of statistical entity M , e.g., public debt; (2) optionally, a location L, e.g., France, by extracting geographical places using the <software ContextAttributes="used">spaCy</software> Named Entity Recognition tool<ref type="foot" target="#foot_3">7</ref> ;</p><p>(3) optionally, a time period T , e.g., 2013, extracted using HeidelTime <ref type="bibr" target="#b8">[9]</ref>; (4) a relation R, e.g., fell, connecting M to V in the sentence. R may also be missing, e.g., in a phrase such as "France's 60 million inhabitants..."; (5) a statistical value V , e.g., "11.4 billion euros".</p><p>For each (M, L, T, R, V ) tuple extracted as above, the (M, L, T ) query is generated (step <ref type="bibr" target="#b6">(7)</ref>) and sent to our keyword search algorithm <ref type="bibr" target="#b2">[3]</ref>. We omit R in the query since the purpose of extracting R is to confirm the relationship between M and V .</p></div>
+<div><head n="2">Entity, relation and value extraction</head><p>We present our approach to extract the components M , R and V .</p></div>
+<div><head n="2.1">Statistical entities</head><p>We made a hypothesis of the existence of statistical entities in the headers of statistic tables. For example, one header of table <ref type="foot" target="#foot_4">8</ref> is "Taux de chômage au T1 2015" ("Unemployment rate in the first quarter of 2015"). We keep only headers that contain a measurement unit such as euro, %, etc. These headers are usually noun phrases in format Entity + (Unit) such as "Unemployment rate in 2015 (in %)". We prefer to rely on table headers and not on table titles and comments, since the latter are longer sentences that could (or could not) contain the entities, and customarily do contain much more irrelevant information. We also filter out possible date time values and their associated prepositions. In the above example, this leads to the snippet "Unemployment rate". A final manual filtering allowed us to weed out some text snippets which do not in fact comprise relevant entities. We thus obtained 1,397 statistical entities, some of which are presented, with their frequencies from the statistics publication context, in Table <ref type="table" target="#tab_0">1</ref>.</p></div>
+<div><head n="2.2">Relevant verbs and measurement units</head><p>We use the annotation S I to refer to the candidate sentences that contain the word "insee". These sentences are likely to feature a relationship between a mention of statistical entity M as a noun phrase (e.g. "unemployment rate") and a statistical value V as a numerical value, optionally followed by a measurement unit (e.g. "5%").</p><p>We used <software ContextAttributes="used">spaCy</software> <ref type="bibr" target="#b6">[7]</ref> to collect the syntactic dependency paths connecting M , R and V . For each NOUN node, we located the paths that connect it to a NUM node. Many paths start with (NOUN, nsubj, VERB) (a noun is subject of a verb); we refer to them as P aths I . As the relation R of M and V is generally introduced by specific verbs, we collected all the verbs associated with VERB nodes from P aths I . To make sure of the quality of the collected verbs, we filtered manually from the original list to retain 129 relevant ones; in the sequel, we denote them by I verbs. Based on P aths I , we also gathered a set of measurement units by collecting all the NOUN nodes connected to a NUM node via a nmod edge (nominal modifiers of nouns or noun phrases). We call this list I units.</p></div>
+<div><head n="2.3">Extraction rules</head><p>Given the input sentence i and a statistical entity e, we extract the mention of statistical entity M , the statistical value V and their relation R. If there is no relationship between e and the statistical value, or there is no statistical value in i, we return the value M = None. We identify from the dependency tree the statistical entity e and the numerical value(s), as follows.</p><p>1. We filter out the year values (e.g. 2018) since we only want to search for the relationship of statistical entity and statistical value. 2. We define the distance d(n 1 , n 2 ) of two nodes n 1 and n 2 in t(i) as the absolute value of n 1 's position -n 2 's position. For instance, d(inflation, établie) = 3. 3. The distance D(e, v) from e to a numerical value v is the minimum value of d(e's first word, v) and d(e's last word, v). In case there are more than one numerical values, we select the one that has the smallest D(e, v) as the statistical value of e. 4. We identify the dependency path p(i) that connects the first word of e (let's call it s) and e's statistical value (if available), let's call it n. With our sample dependency tree, p(i) = (NOUN, nsubj:pass, VERB, obl, NOUN, nummod, NUM) 5. We look for the node u directly connected to n (the last one before n) in p(i). If u is a noun and there is a nmod edge (nominal modifiers of nouns or noun phrases) between u and n, we return M = None in the following cases:</p><p>u does not appear in I units.</p><p>u appears in I units and in the input sentence, there is an article or an adposition between s and u.</p><p>On the contrary, we extract the relevant nodes from:</p><p>(a) the first NOUN node s: we identify the nodes that connect to s via nmod and amod (adjectival modifier) edges, and we collect their subtrees. (b) the VERB node verb: the subtree of nodes that connect to verb via obl edge (a nominal dependent of a verb), the leftmost node of subtree must be a preposition among en, à, dans and verb has to appear in I verbs.</p><p>If the nodes from these subtrees appear in p(i), we do not include them.</p><p>All the extracted nodes form the mention of statistical entity M . The statistical value V is composed of n and u. The relation R is composed the nodes from p(i) which do not belong to M and V .</p></div>
+<div><head n="3">Evaluation</head><p>Evaluation of the extraction rules We select some statistical entities<ref type="foot" target="#foot_5">9</ref> from the list of statistical entities in Section 2.1. For each entity e we pick randomly 50 sentences that contain e then we split randomly 25 sentences for development set and 25 sentences for test set. Finally there are 200 sentences for each set. If there is no relationship between e and the statistical value, or there is no statistical value in the given sentence, we assign a label NoStats. Otherwise we annotate each sentence with e and the relevant phrases (we call these phrases contexts of e) to form a mention of statistical entity<ref type="foot" target="#foot_6">10</ref> . For a given sentence, if the extraction rules return M = None and we have the NoStats label from the annotated sentence then the extraction is an accurate one. On the contrary, we verify if the extracted M contains e and one of its contexts. In that case, the extraction is also accurate. The accuracy of our extraction rules in the development, resp. test set and obtain is 71.35%, respectively and 69.63%. Evaluation of the end-to-end system We selected randomly 38 sentences for the test set (from which 26 were considered as extracted correctly at previous step -section 3). We gave the corresponding generated queries q = M + L + T as input to the <software ContextAttributes="used">INSEE-Search</software> system <ref type="bibr" target="#b2">[3]</ref>. We evaluated the accuracy of the system using a modified version of the mean average precision metric, (MAP) widely used for evaluating ranked lists of results. MAP is traditionally defined based on a binary relevance judgment (relevant or irrelevant in our case). We experimented with the two possibilities:</p><p>-M AP h is the mean average precision where only highly relevant datasets are considered as relevant (M AP h (10) is computed on the top 10 search results).</p><p>-M AP p is the mean average precision where both partially and highly relevant datasets are considered relevant. Note that there is no guarantee that any "highly relevant" element at all exists in the dataset for each query.</p><p>The results (Table <ref type="table" target="#tab_1">2</ref>) show that, given an arbitrary claim (related to statistic entities), fine-grained and relevant information can be returned in the vast majority of the cases. They also show that, as in all keyword-based search systems, building a perfect query is neither necessary or sufficient for obtaining good results. Even if a good entity extraction improves the results, we can still find highly or partially relevant information even if the entity extraction is not perfectly achieved. Our findings should be confirmed by an evaluation on more claims, more databases and in a real-user study. We also showed in <ref type="bibr" target="#b2">[3]</ref> that the performance of our query system was similar to a document-level search engine such as <software ContextAttributes="used">Google</software>, but with a much better granularity (data cell instead of page).  and on bootstrapping to increase the number of seed facts and to learn patterns. We tried their approach, but found that the learnedt patterns were either too generic or too specific and failed to capture the correct dependency path in the new texts. <software ContextAttributes="used">ClausIE</software> <ref type="bibr" target="#b4">[5]</ref> is an open information extraction system. It first detects clauses in a sentence and then apply specific rules for each type of clause in order to extract the entity of interest. <software ContextAttributes="used">ClausIE</software> also makes use of a hand-crafted dictionary of verbs to identify the existence of relation in sentence. Compare to their approach, we have a "semi-automated" solution to identify the list of verbs.</p></div>
+<div><head n="4">Related Work and Perspectives</head><p>ClaimBuster <ref type="bibr" target="#b5">[6]</ref> was the first work on check-worthiness. They used annotated sentences from US election debates to train a SVM classifier in order to determine whether or not a sentence is a check-worthy claim. This is the common approach when having a large amount of training data, which is not the case in French.</p><p>In this article we have presented an end-to-end system for identifying statistic claims and finding in a statistic database the relevant statistic data for checking this claim. A classic defect of these pipeline approaches in NLP systems is that errors accumulate at each step. Nevertheless, our results show that we often manage to find useful information for the user, which will make the human work of fact-checking easier and faster. To make the RDF graph up-to-date, our crawler works on a daily basis to collect the latest statistic tables. We also leave journalists state whether the claim is "true", "mostly true", "mostly false" etc.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Main processing steps of our statistical claim extraction method.</figDesc><graphic coords="3,134.77,93.16,345.82,182.83" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>BONIE [ 8 ]</head><label>8</label><figDesc>claims to be the first open numerical relation extractor. The system is based on high precision patterns to extract seed facts from input sentences</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>Sample extracted statistical entities.</figDesc><table><row><cell>Extracted statistical entities</cell><cell /><cell>Frequency</cell></row><row><cell>intensité de la pauvreté</cell><cell>(intensity of poverty)</cell><cell>190</cell></row><row><cell>nombre d'entreprises</cell><cell>(number of companies)</cell><cell>176</cell></row><row><cell cols="2">taux de pauvreté au seuil de 60% (poverty rate at 60% median wages)</cell><cell>130</cell></row><row><cell>chômeurs</cell><cell>(unemployed people)</cell><cell>104</cell></row><row><cell>excédent brut d'exploitation</cell><cell /><cell>68</cell></row><row><cell cols="2">(Earnings before Interest, Taxes and Amortization)</cell><cell /></row><row><cell>PIB</cell><cell>(gross domestic product, GDP)</cell><cell>54</cell></row><row><cell>taux de population en sous-emploi</cell><cell /><cell>54</cell></row><row><cell cols="2">(share of people working less than they would like)</cell><cell /></row><row><cell>solde migratoire</cell><cell>(net migration)</cell><cell>44</cell></row><row><cell>taux de marge</cell><cell>(margin rate)</cell><cell>28</cell></row><row><cell>taux de pauvreté</cell><cell>(poverty rate)</cell><cell>21</cell></row></table></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 .</head><label>2</label><figDesc>Evaluation of INSEE-Search.</figDesc><table><row><cell>M AP h (10) M APp(10)</cell></row></table></figure>
+			<note place="foot" n="4" xml:id="foot_0"><p>https://gitlab.inria.fr/tcao/insee-search/blob/master/insee-rdf.ttl.gz</p></note>
+			<note place="foot" n="5" xml:id="foot_1"><p>The search algorithm is deployed online at http://statsearch.inria.fr</p></note>
+			<note place="foot" n="6" xml:id="foot_2"><p>All topics and their keywords are available at https://gitlab.inria.fr/tcao/newsscraper/blob/master/lesechos topics all.txt. In this work, we use topics 1, 2, 3</p></note>
+			<note place="foot" n="7" xml:id="foot_3"><p>, 7. 7 https://spacy.io/models/fr#fr core news md</p></note>
+			<note place="foot" n="8" xml:id="foot_4"><p>https://www.insee.fr/fr/statistiques/1288156#tableau-Figure2</p></note>
+			<note place="foot" n="9" xml:id="foot_5"><p>"taux de chômage", "nombre de demandeurs d'emploi", "niveau de vie", "consommation des ménages", "PIB", "inflation", "SMIC", "taux d'emploi"</p></note>
+			<note place="foot" n="10" xml:id="foot_6"><p>  10  The annotated data is available at https://gitlab.inria.fr/tcao/text2insee/</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Latent dirichlet allocation</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="993" to="1022" />
+			<date type="published" when="2003-03">Mar 2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Extracting linked data from statistic spreadsheets</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tannier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int'l. Workshop on Semantic Big Data</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Searching for Truth in a Database of Statistics</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tannier</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>WebDB</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<author>
+			<persName><forename type="first">S</forename><surname>Cazalens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Lamarre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leblay</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Tannier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">A content management perspective on fact-checking</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">ClausIE : Clause-Based Open Information Extraction</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D</forename><surname>Corro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Gemulla</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>WWW</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Claimbuster: The first-ever end-to-end fact-checking system</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Hassan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Arslan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Caraballo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jimenez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gawsane</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hasan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Joseph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kulkarni</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K</forename><surname>Nayak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Sable</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tremayne</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">PVLDB</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">An improved non-monotonic transition system for dependency parsing</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Honnibal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Johnson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Mausam: Bootstrapping for Numerical Open IE</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Saha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pal</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACL</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">HeidelTime: High quality rule-based extraction and normalization of temporal expressions</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Strötgen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gertz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int'l. Workshop on Semantic Evaluation</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

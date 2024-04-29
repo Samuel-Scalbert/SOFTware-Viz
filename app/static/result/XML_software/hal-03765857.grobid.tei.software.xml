@@ -1,0 +1,583 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">LOV-ES: Guiding the Ontology Selection to Structure Textual Data using Topic Modeling</title>
+				<funder ref="#_Ht3bUBP">
+					<orgName type="full">UCA Academy 1</orgName>
+				</funder>
+				<funder ref="#_BbFdaeM">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">idex uca otesia</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">French government</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">3IA Côte d'Azur Investments</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Damien</forename><surname>Graux</surname></persName>
+							<email>damien.graux@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Anaïs</forename><surname>Ollagnier</surname></persName>
+							<email>ollagnier@inria.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">Université Côte d'Azur</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<region>I3S</region>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">LOV-ES: Guiding the Ontology Selection to Structure Textual Data using Topic Modeling</title>
+					</analytic>
+					<monogr>
+						<idno type="ISSN">1613-0073</idno>
+					</monogr>
+					<idno type="MD5">51BF804A685D5B88C0C93A03772F0B13</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Topic Modeling</term>
+					<term>Textual source</term>
+					<term>LDA</term>
+					<term>LOV</term>
+					<term>Vocabulary Recommender</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><p>On-line availability of text corpora nowadays allow data practitioners to build complex knowledge combining various sources. One common shared challenge lays in the modelisation of intermediate knowledge structures able to gather at once the various topics present in the texts. Practically, practitioners often go through the creation of vocabularies. In order to help these domain experts, we design LOV-ES: a solution able to help them in this creative process, guiding them in the selection and the combination of already existing vocabularies available online. Technically, our solution relies on LDA to detect topics and on the LOV to then propose candidate vocabularies.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1.">Introduction</head><p>Since its early days, natural language processing has knowledge acquisition as a prominent goal. Formally, we would like to have machines able to read text and express its embedded knowledge in a formal representation so to rely on it to later solve various problems. One of the first tasks to tackle in this context is therefore to have an ontology able to capture the knowledge structure of the considered texts: the ontology induction.</p><p>Ontology induction (constructing an ontology) and ontology population (mapping textual expressions to concepts and relations in the ontology) have been explored by the community <ref type="bibr" target="#b0">[1]</ref>. In particular, early efforts have been made to bridge Semantic Web and ontology learning <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3]</ref>; and machine learning approaches were developed <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref>, some being unsupervised <ref type="bibr" target="#b5">[6]</ref>. Nevertheless, as highlighted by Tsujii <ref type="bibr" target="#b6">[7]</ref>, most approaches induce and populate a deterministic ontology, which does not capture the uncertainty among entities and relations. Moreover, they focus on inducing ontology over individual words rather than arbitrarily large meaning units.</p><p>In parallel, the Semantic Web community has been structuring many knowledge domains in an open manner, i.e. sharing their datasets and their ontologies, see e.g. the LOD-cloud 1  and the LOV-dataset 2 providing data on respectively open linked datasets and vocabularies. As a consequence, in this article, we propose to rely on these available resources to design a vocabulary recommender from text, aiming to guide and help data practitioners in their ontology selection and design process. Following a similar goal, domain-specific solutions have been designed e.g. for medical data <ref type="bibr" target="#b7">[8]</ref>.</p><p>In this article, we propose an end-to-end solution named LOV-ES for Linked Open Vocabulary Enhanced Selection. We show how LDA and SPARQL <ref type="bibr" target="#b8">[9]</ref> can be associated to obtain a list of candidate vocabularies. Moreover, we propose a metric to rank the vocabularies against each other (combining words' weights and vocabulary frequencies in the list) in order to suggest the most relevant results.</p></div>
+<div><head n="2.">Vocabulary Suggestion using LDA</head><p>The LOV initiative created in 2014 <ref type="bibr" target="#b9">[10]</ref> has contributed to the deployment of Linked Data providing a high-quality catalogue of reusable vocabularies for the description of data on the Web. Currently, the LOV gathers around 800 vocabularies in more than 50 languages ranging from English to French. The task of Topic Modeling consists of discovering abstract semantic themes, or topics, hidden within data. Among existing topic model techniques, Latent Dirichlet Allocation (LDA) <ref type="bibr" target="#b10">[11]</ref> and its extensions have been successfully applied to many data types and application domains, including bioinformatics, computer vision, and social network analysis, in addition to text mining and analytics <ref type="bibr" target="#b11">[12]</ref>.</p><p>The proposed architecture performs two main tasks: (1) applying LDA to identify underlying topics of a given text block, and (2) ranking candidate vocabularies considering their relevance to the topics. In detail, we rely on the original version of LDA <ref type="bibr" target="#b10">[11]</ref> based on two hyperparameters 𝛼 (controlling the prior distribution over topic weights in each document) and 𝛽 (setting the prior distribution over word weights in each topic), respectively set to 0.1 and 0.01. Each topic word bag resulting from applying LDA is then used to build a SPARQL query aiming at extracting candidate vocabularies. Typically, the words are given to the SPARQL endpoint taking advantage of the VALUES variable passing method as presented schematically below: SELECT ?word ?voc WHERE { VALUES ?word { "word1" "word2" "word3" } # Word list from an LDA bag. ?voc a lod:Vocabulary . ?voc dcterms:description ?description . [...] FILTER ( CONTAINS ( STR(?description),?word ) ) }</p><p>The rest of the query then returns candidate vocabularies ?voc if occurrences of ?word are present within the vocabulary description, making the assumption that specific words would be present to describe more generic vocabularies.</p><p>Once candidate vocabularies are obtained. We apply the following metric to give each vocabulary a score of relevancy. Formally, considering 𝑘 topics, we have for each topic 𝑡 a bag containing 𝑛 𝑡 words and their associated weights i.e. {(𝑤 𝑖,𝑡 , 𝑝 𝑖,𝑡 } 𝑡 , with 𝑖 ∈ [1, 𝑛 𝑡 ] and 𝑡 ∈ [1, 𝑘]. As there might be multiple possible candidate vocabularies for a single word, we obtained (after running the 𝑘 SPARQL queries) 𝑘 lists containing 𝑐 𝑡 3-tuples of the form (𝑣𝑜𝑐 𝑗 , 𝑤 𝑖,𝑡 , 𝑝 𝑖,𝑡 ), with 𝑗 ∈ [1, 𝑐 𝑡 ], 𝑖 ∈ [1, 𝑛 𝑡 ] and 𝑡 ∈ [1, 𝑘]. Moreover, a specific vocabulary can be suggested multiple times for a single topic e.g. a vocabulary about travel may be returned two times considering the bag {"plane", "trip"}. To rank the list, we propose to first attribute an aggregated weight for each vocabulary per topic, summing the weights of the words it matches while normalising by the sum of the weights in the 3-tuple list for the considered topic; and then to combine the topics summing the aggregated weights of same vocabularies together:</p><formula xml:id="formula_0">∀𝑉 ∈ 𝑣𝑜𝑐𝐿𝑖𝑠𝑡, 𝑠𝑐𝑜𝑟𝑒(𝑉 ) = 𝑘 ∑︁ 𝑡=1 ∑︀ 𝑣𝑜𝑐 𝑖 =𝑉 𝑝 𝑖,𝑡 𝑐𝑡 ∑︀ 𝑖=1 𝑝 𝑖,𝑡</formula><p>, considering 𝑘 lists of 𝑐 𝑡 3-tuples</p><p>We then just have to decreasingly sort the 𝑠𝑐𝑜𝑟𝑒 of each vocabulary of 𝑣𝑜𝑐𝐿𝑖𝑠𝑡 to provide an ordered list of suggestions.</p><p>The graphical user interface takes as input a text block split by line and allows to select the number of topics to be identified, ranging from 2 to 10. By clicking on the Analyse button, word clouds are generated corresponding to detected topics, graphically the larger a word, the more weight it has in the topic. In parallel, a ranking list of candidate vocabularies is displayed by descending order of relevancy (using the scoring function aforementioned) including among other information: the link to the vocabulary, its description and various explanations to describe the internal step of the process. In particular, it provides information referring to the distribution of words over topics after applying the scoring metric. Figure <ref type="figure" target="#fig_0">1</ref> presents our pure JavaScript <software ContextAttributes="created">Web-App</software>: LOV-ES.</p></div>
+<div><head n="3.">Related Work</head><p>Most of existing works focusing on the task of ontology research relies on the content of ontology and user query to perform vocabulary recommendation <ref type="bibr" target="#b12">[13]</ref>. In these works, the core idea consists of using a set of keywords or ontology metadata to describe the domain to suggest appropriate ontology according to the user query. Swoogle 3 , Sindice.com 4 or Watson 5 are semantic search engines performing a search of ontology resources using the aforementioned methodology. Among proposed works, some of them have especially focused on the LOV ecosystem. Initially consisting of a full-text inverted index and a ranking algorithm based on the term popularity <ref type="bibr" target="#b9">[10]</ref>, related works have extended the recommendation capabilities of the LOV search engine proposing ranking metrics <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b15">16]</ref> and evaluation parameters <ref type="bibr" target="#b16">[17]</ref>. Recently, Sarwar et al. <ref type="bibr" target="#b17">[18]</ref> have addressed the task as an information retrieval problem, introducing a framework-based on text categorisation and unsupervised learning techniques. To overcome the well-known limitations related to domain coverage and keyword-based searching/matching, LOV-ES benefits from NLP-powered techniques allowing it to consider full text data to performing ontology resource recommendation.</p></div>
+<div><head n="4.">Conclusion</head><p>This article presents LOV-ES: a solution combining an LDA-based model together with a novel scoring metric to extract relevant vocabularies from the LOV catalog in order to structure a text. A pure JavaScript <software>Web-App</software> is openly available from: https://dgraux.github.io/LOV-ES/ with the aim of guiding data practitioners selecting relevant vocabularies to structure textual knowledge. Currently working exclusively with resources released on LOV, it constitutes the main limitation of the proposed solution. In future work, we plan to extend the coverage of available vocabularies by aggregating resources from other catalogs. In addition, several approaches for estimating LDA parameters have been proposed in the literature and should be considered in an improved version of LOV-ES, together with an evaluation of the results.</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Screenshot of the LOV-ES interface.</figDesc><graphic coords="3,89.29,84.19,416.69,180.96" type="bitmap" /></figure>
+			<note place="foot" xml:id="foot_0"><p>ACCESS.2020.3047364.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgments. This work is funded under the <rs type="funder">idex uca otesia</rs>, the <rs type="funder">UCA Academy 1</rs> project (<rs type="grantNumber">C870A021-D103-ACAD1_FIN_17_20Y</rs>) and the <rs type="funder">French government</rs>, through the <rs type="funder">3IA Côte d'Azur Investments</rs> managed by the <rs type="funder">National Research Agency</rs> (<rs type="grantNumber">ANR-19-P3IA-0002</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_Ht3bUBP">
+					<idno type="grant-number">C870A021-D103-ACAD1_FIN_17_20Y</idno>
+				</org>
+				<org type="funding" xml:id="_BbFdaeM">
+					<idno type="grant-number">ANR-19-P3IA-0002</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Handbook on ontologies</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Studer</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Ontology learning and population from text: algorithms, evaluation and applications</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cimiano</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<publisher>Springer Science &amp; Business Media</publisher>
+			<biblScope unit="volume">27</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Ontology learning for the semantic web</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maedche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staab</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Intelligent systems</title>
+		<imprint>
+			<biblScope unit="volume">16</biblScope>
+			<biblScope unit="page" from="72" to="79" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Semantic taxonomy induction from heterogenous evidence</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Snow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Ng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21st International Conference on Computational Linguistics and 44th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 21st International Conference on Computational Linguistics and 44th Annual Meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="801" to="808" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Automatically refining the wikipedia infobox ontology</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Weld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th international conference on World Wide Web</title>
+		<meeting>the 17th international conference on World Wide Web</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="635" to="644" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Unsupervised ontology induction from text</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Poon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Domingos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 48th annual meeting of the Association for Computational Linguistics</title>
+		<meeting>the 48th annual meeting of the Association for Computational Linguistics</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="296" to="305" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Thesaurus or logical ontology, which do we need for mining text?</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tsujii</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LREC</title>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Ncbo ontology recommender 2.0: an enhanced approach for biomedical ontology recommendation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Martínez-Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Jonquet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>O'connor</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Graybeal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pazos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Musen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of biomedical semantics</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="1" to="22" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">hommeaux, Sparql 1.1 query language</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Harris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Seaborne</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Prud</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">W3C recommendation</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="page">778</biblScope>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Linked open vocabularies (LOV): A gateway to reusable semantic vocabularies on the web</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Vandenbussche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Atemezing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Poveda-Villalón</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Vatant</surname></persName>
+		</author>
+		<idno type="DOI">10.3233/SW-160213</idno>
+		<ptr target="https://doi.org/10.3233/SW-160213.doi:10.3233/SW-160213" />
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="437" to="452" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Latent dirichlet allocation</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Blei</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Ng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of machine Learning research</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="993" to="1022" />
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A review of topic modeling methods</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Vayansky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">A P</forename><surname>Kumar</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.is.2020.101582</idno>
+		<ptr target="https://doi.org/10.1016/j.is.2020.101582.doi:10.1016/j.is.2020.101582" />
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">94</biblScope>
+			<biblScope unit="page">101582</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">DWRank: Learning concept ranking for ontology search</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Butt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Haller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="447" to="461" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Information content based ranking metric for linked open vocabularies</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">A</forename><surname>Atemezing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Troncy</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2660517.2660533</idno>
+		<ptr target="https://doi.org/10.1145/2660517.2660533.doi:10.1145/2660517.2660533" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 10th International Conference on Semantic Systems</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Sack</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Filipowska</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Lehmann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Hellmann</surname></persName>
+		</editor>
+		<meeting>the 10th International Conference on Semantic Systems<address><addrLine>SEMANTiCS; Leipzig, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2014-09-04">2014. September 4-5, 2014. 2014</date>
+			<biblScope unit="page" from="53" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Linked open vocabulary ranking and terms discovery</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Stavrakantonakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Fensel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fensel</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2993318.2993338</idno>
+		<ptr target="https://doi.org/10.1145/2993318.2993338.doi:10.1145/2993318.2993338" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th International Conference on Semantic Systems</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Fensel</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Zaveri</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Hellmann</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Pellegrini</surname></persName>
+		</editor>
+		<meeting>the 12th International Conference on Semantic Systems<address><addrLine>SEMANTiCS; Leipzig, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2016-09-12">2016. September 12-15, 2016. 2016</date>
+			<biblScope unit="page" from="1" to="8" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Lovbench: Ontology ranking benchmark</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kolbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Vandenbussche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kubler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">L</forename><surname>Traon</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3366423.3380245</idno>
+		<ptr target="https://doi.org/10.1145/3366423.3380245.doi:10.1145/3366423.3380245" />
+	</analytic>
+	<monogr>
+		<title level="m">WWW '20: The Web Conference 2020</title>
+		<editor>
+			<persName><forename type="first">Y</forename><surname>Huang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">I</forename><surname>King</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Liu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Van Steen</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Taipei, Taiwan</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2020">April 20-24, 2020. 2020</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="1750" to="1760" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Linked vocabulary recommendation tools for internet of things: A survey</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Kolbe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kubler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Robert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><forename type="middle">L</forename><surname>Traon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename><surname>Zaslavsky</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3284316</idno>
+		<ptr target="https://doi.org/10.1145/3284316.doi:10.1145/3284316" />
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="page">31</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Exploiting ontology recommendation using text categorization approach</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Sarwar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ahmed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Habib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khalid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">A</forename><surname>Ali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Raza</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hussain</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ahmed</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ACCESS.2020.3047364</idno>
+		<idno>doi:</idno>
+		<ptr target="10.1109/" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Access</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="27304" to="27322" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

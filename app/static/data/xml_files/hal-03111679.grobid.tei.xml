@@ -1,0 +1,901 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Certifying Top-Down Decision-DNNF Compilers</title>
+				<funder ref="#_Ut6fEAK #_E33h4Ef">
+					<orgName type="full">unknown</orgName>
+				</funder>
+				<funder ref="#_fyYnfRp #_xCkTzqZ">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Florent</forename><surname>Capelli</surname></persName>
+							<email>florent.capelli@univ-lille.fr</email>
+							<affiliation key="aff0">
+								<orgName type="laboratory" key="lab1">UMR 9189</orgName>
+								<orgName type="laboratory" key="lab2">CRIStAL</orgName>
+								<orgName type="institution" key="instit1">Université de Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS &amp; Inria</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jean-Marie</forename><surname>Lagniez</surname></persName>
+							<email>lagniez@cril.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">CRIL</orgName>
+								<orgName type="institution" key="instit1">Université d&apos;Artois</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Marquis</surname></persName>
+							<email>marquis@cril.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">CRIL</orgName>
+								<orgName type="institution" key="instit1">Université d&apos;Artois</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+							</affiliation>
+							<affiliation key="aff2">
+								<orgName type="institution">Institut Universitaire de France</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Certifying Top-Down Decision-DNNF Compilers</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">CFE4DEB88EEDE582B7F7245DF87F50F0</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Certifying the output of tools solving complex problems so as to ensure the correctness of the results they provide is of tremendous importance. Despite being widespread for SATsolvers, this level of exigence has not yet percolated for tools solving more complex tasks, such as model counting or knowledge compilation. In this paper, the focus is laid on a general family of top-down Decision-DNNF compilers. We explain how those compilers can be tweaked so as to output certifiable Decision-DNNF circuits, which are mainly standard Decision-DNNF circuits decorated by annotations serving as certificates. We describe a polynomial-time checker for testing whether a given CNF formula is equivalent or not to a given certifiable Decision-DNNF circuit. Finally, leveraging a modified version of the compiler D4 for generating certifiable Decision-DNNF circuits and an implementation of the checker, we present the results of an empirical evaluation that has been conducted for assessing how large are the certifiable Decision-DNNF circuits that can be generated in practice, and how much time is needed to compute and to check such circuits.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Introduction</head><p>Certifying the output of tools solving hard problems is necessary to ensure the correctness of the results they provide. Certification has proven to be fruitful to detect bugs in SATsolvers. In SAT competitions, since 2013, it is mandatory that solvers output unsatisfiability certificates whenever the instance under consideration is classified as unsatisfiable. The widespread and quick adoption of certification techniques in the SAT-solving community has been facilitated by the fact that most SAT-solvers rely on the same architecture, namely CDCL, for which the underlying proof system is well-understood <ref type="bibr" target="#b27">(Pipatsrisawat and Darwiche 2011</ref>) and for which a description such as DRAT <ref type="bibr" target="#b33">(Wetzler, Heule, and Hunt 2014)</ref> -whose implementation follows closely the way the software works -is available.</p><p>The picture is quite different for tools tackling instances of more complex problems based on (possibly extended) CNF formulae such as QBF-solving, max SAT-solving or #SAT-solving. While many efforts have been invested into designing and understanding efficient and usable proof systems for QBF-solvers <ref type="bibr" target="#b14">(Heule, Seidl, and Biere 2014;</ref><ref type="bibr" target="#b3">Beyersdorff, Chew, and Janota 2015;</ref><ref type="bibr" target="#b4">Beyersdorff et al. 2018)</ref> and max SAT-solvers <ref type="bibr" target="#b7">(Bonet, Levy, and Manyà 2007;</ref><ref type="bibr" target="#b6">Bonet et al. 2018)</ref>, there is no consensus on the format to be adopted for certifying the outputs generated by such solvers. Furthermore, from the practical side, there have been only few tries to adding a certification functionality to max SATsolvers <ref type="bibr" target="#b23">(Morgado and Marques-Silva 2011)</ref>. To the best of our knowledge, today, no #SAT-solver is able to output a certificate that can be used to check in polynomial time that the result returned by the #SAT-solver is the correct one.</p><p>In order to achieve this goal, an approach consists in compiling the input CNF formula into a specific Boolean circuit. Indeed, it has been observed by Huang and Darwiche <ref type="bibr" target="#b15">(Huang and Darwiche 2005)</ref> that the traces of DPLLbased #SAT-solvers on CNF formulae can be viewed as restricted forms of Boolean circuits known as Decision-DNNF circuits <ref type="bibr" target="#b10">(Darwiche 2001;</ref><ref type="bibr" target="#b26">Oztok and Darwiche 2014)</ref> in the knowledge compilation community. The main advantage of such circuits is that they can later be used to analyze efficiently the Boolean function represented by the input CNF formula. Indeed, Decision-DNNF circuits support many tractable queries, such as model counting.</p><p>More sophisticated AI tasks leveraging propositional reasoning can also be targeted. Thus, in the growing body of work about explainable and robust AI (XAI) (see among others <ref type="bibr" target="#b28">(Ribeiro, Singh, and Guestrin 2018;</ref><ref type="bibr" target="#b19">Leofante et al. 2018;</ref><ref type="bibr" target="#b22">Molnar, Casalicchio, and Bischl 2018;</ref><ref type="bibr">Shih, Darwiche, and Choi 2019;</ref><ref type="bibr" target="#b13">Guidotti et al. 2019;</ref><ref type="bibr" target="#b20">Miller 2019;</ref><ref type="bibr" target="#b21">Molnar 2019</ref>), recent works have shown how ML classifiers of various types can be mapped to CNF formulae encoding them in terms of input-output behaviours (see e.g., <ref type="bibr" target="#b25">(Narodytska et al. 2018;</ref><ref type="bibr">Shih, Choi, and Darwiche 2019;</ref><ref type="bibr" target="#b30">Shi et al. 2020)</ref>. Thanks to such mappings, XAI queries about classifiers (especially, verification queries) can be delegated to the corresponding propositional representations. Though those queries are typically NP-hard when the inputs are CNF formulae, many of them become tractable once compiled into Decision-DNNF circuits <ref type="bibr" target="#b0">(Audemard, Koriche, and Marquis 2020)</ref>. Obviously enough, within such an approach to XAI, the certification of the results furnished by the XAI system goes through the certification of the Decision-DNNF circuit that has been computed.</p><p>A first step in this direction is <ref type="bibr" target="#b9">(Capelli 2019)</ref>, where proof systems for #SAT that are suited for existing #SAT-solvers have been provided. The idea is to use the Decision-DNNF circuit corresponding to the trace of a DPLL-based #SATsolver running on a CNF formula as a certificate witnessing the number of models of this CNF formula. While computing the number of models of the Decision-DNNF circuit can be done in polynomial time, no polynomial-time algorithm is available for deciding whether the input CNF formula actually represents the same Boolean function as the Decision-DNNF circuit (and it is unlikely that such an algorithm exists since the problem to be solved is coNP-complete). Using only the Decision-DNNF circuit makes it impossible to check whether the solver ran correctly on the input. To circumvent this issue, it has been proposed to add labels into the Decision-DNNF circuit. Those labels can be used (intuitively) to explain when the solver rejects a partial assignment. This approach is enough to make tractable the problem of checking whether the Decision-DNNF circuit that is generated is equivalent to the input CNF formula. Moreover, most DPLL-based #SAT-solvers could theoretically be modified to output such a certificate. In practice, however, this approach may need to be adapted to accommodate the specific optimizations of the solver such as its cache policy or oracle calls to a CDCL SAT-solver. In addition, no implementation of the proof systems presented in <ref type="bibr" target="#b9">(Capelli 2019)</ref> has been provided yet.</p><p>In order to fill the gap, our main objective in this paper is to show how many top-down Decision-DNNF compilers can be tweaked so as to output certifiable Decision-DNNF circuits, that are mainly standard Decision-DNNF circuits decorated by additional pieces of information serving as certificates for addressing efficiently the verification issue. Among them are the state-of-the-art Decision-DNNF compilers, D4 <ref type="bibr">(Lagniez and Marquis 2017a)</ref> and DSHARP <ref type="bibr" target="#b24">(Muise et al. 2012)</ref>. We start by defining the language of certifiable Decision-DNNF circuits and introduce a notion of equivalence between a CNF formula and a certifiable Decision-DNNF circuit, that we call syntactic equivalence. Syntactic equivalence is a restriction of logical equivalence (i.e., whenever a certifiable Decision-DNNF circuit and a CNF formula are syntactically equivalent, they are logically equivalent), and syntactic equivalence can be checked in polynomial time (which contrasts with logical equivalence, unless P = NP). This directly leads to a polynomial-time checker for testing whether a given CNF formula is equivalent or not to a given certifiable Decision-DNNF circuit. Then we explain how to modify a top-down Decision-DNNF compiler in order to generate certifiable Decision-DNNF circuits instead of Decision-DNNF circuits. Finally, leveraging CD4, a modified version of D4 for generating certifiable Decision-DNNF circuits, and an implementation of the checker, we present the results of an empirical evaluation that has been conducted for assessing in practice the sizes of the certifiable Decision-DNNF circuits, and the computation times needed to generate them and to check them.</p><p>The proofs of the propositions reported in the paper and a folder containing the code of CD4, the code of the checker, the benchmarks used in our experiments, and a spreadsheet containing detailed empirical results are available on www. cril.fr/kc/.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Preliminaries</head><p>Formulae and Boolean functions. We assume the reader familiar with Boolean functions and CNF formulae. We introduce a few notations that we will be used throughout the paper.</p><p>Given a finite set of variables X, {0, 1} X denotes the set of all possible Boolean assignments to variables in X. Given a literal on variable x and a CNF formula F , F [ ] is the CNF formula over variables var(F ) \ {x} obtained by removing every clause of F containing and by removing ¬ from every remaining clause. It is easy to see that there is a one-to-one correspondence between the satisfying assignments of F [ ] and the set of satisfying assignments of F whose value on is 1.</p><formula xml:id="formula_0">If L = { 1 , . . . , k } is a set of lit- erals such that var( i ) = var( j ) for i = j, then F [L] is a short for F [ 1 ] . . . [ k ]. Observe that F [L]</formula><p>does not depend on the order of the elements in L. For example, if F = (x ∨ y ∨ ¬z) ∧ (¬x ∨ y ∨ z) ∧ (¬x ∨ ¬y), we have F [¬x] = y ∨ ¬z and F [¬x, ¬y] = ¬z. If F and F are two CNF formulae, we write F = F if F and F have exactly the same clauses after having removed duplicated clauses and tautological clauses (that is, clauses containing both a literal and its negation).</p><p>Given a CNF formula F on variables X and Y ⊆ X, the connected component of F associated with Y , denoted as</p><formula xml:id="formula_1">cc(F, Y ) is the smallest set S of clauses C of F such that S contains every clause of F such that Y ∩ var(C) = ∅ and for every clause C of F , if var(C ) ∩ var(S) = ∅ then C ∈ S.</formula><p>It is easy to see that one can construct cc(F, Y ), starting from the set of clauses C of F such that Y ∩ var(C) = ∅ and iteratively adding to this set every clause of F having a non-empty intersection with it until no such clause remains.</p><p>If f and g are two Boolean functions, we write f |= g if f entails g, that is, if f ∧ ¬g is not satisfiable. DRAT (Wetzler, Heule, and Hunt 2014) is a proof system that has been specifically designed to certify the output of CDCL SATsolvers. We refer the reader to <ref type="bibr" target="#b33">(Wetzler, Heule, and Hunt 2014)</ref> for precise definitions as we will be using DRAT proofs as black boxes in this paper. We only need to know that a DRAT proof R can be seen as a list of clauses R 1 , . . . , R N such that for every i, R 1 . . . R i |= DRAT R i+1 , where |= DRAT is a syntactic condition that can be checked in polynomial time and such that if</p><formula xml:id="formula_2">A |= DRAT B then A |= B. Given a CNF formula F and a DRAT proof R = R 1 , . . . , R N , we write F |= DRAT R if for every i &lt; N , F ∪ R 1 . . . R i |= DRAT R i+1 . Observe in particular that for every i ≤ N , F |= R i .</formula><p>The language of Decision-DNNF circuits. The language of Decision Decomposable Negation Normal Form circuits, Decision-DNNF for short, is a class of restricted Boolean circuits used in knowledge compilation to represent Boolean functions. Formally, a decision circuit D on variables X is a DAG having one distinguished vertex v called the output of D (v is the unique vertex in D with out-degree zero). The vertices of D with in-degree 0 are called the sinks and are labeled by constant 0 or 1. All vertices but the sinks are either ∧-gates, labeled by ∧, or decision-gates that are of in-degree 2 and labeled by a variable x ∈ X. For every decision-gate v labeled by variable x, the ingoing arcs (alias directed edges) e 0 , e 1 of v are labeled by ¬x and x, respectively. Given an arc e of D reaching a decision-gate, we denote by e the literal labelling it.</p><p>Let D be a decision circuit. var(D) denotes the set of all variables appearing on the labels of the arcs of D (observe that var(D) ⊆ X but the inclusion may be proper). Given a gate v of D, D v is the Decision-DNNF circuit whose output is v and gates are all gates w such that there is an (oriented) path from w to v. Given a gate v of D that is not a sink, we call the inputs of v the gates w such that (w, v) is an ingoing arc of v.</p><p>Given a ∧-gate v of D with inputs v 1 , v 2 , v is said to be decomposable if var(D v1 ) ∩ var(D v2 ) = ∅. The Decision-DNNF circuit D is said to be read-once if on every path P from a sink of D to the output of D, each variable of X appears at most once in the literals labelling the arcs of P .</p><p>A Decision-DNNF circuit is a decision circuit that is readonce and such that every ∧-gate of D is decomposable. Let D be a Decision-DNNF circuit on variables X, P a path from a sink of D to the output of D, and τ ∈ {0, 1} X . τ is said to be compatible with P if for every arc e of P going in a decision-gate, we have that τ ( e ) = 1. We let lit(P ) denote the set of all literals labelling the arcs it contains. Observe that the read-once property of decision-gates ensures that lit(P ) is a consistent set of literals. The size of a Decision-DNNF circuit D, denoted as |D|, is the number of arcs of its underlying graph.</p><p>A Decision-DNNF circuit D on variables X defines a Boolean function on variables X defined inductively as follows. One defines first for every gate v of D the set of assignments τ ∈ {0, 1} X that are accepted by v. If v is a 1sink, then it accepts every τ ∈ {0, 1} X . If v is a 0-sink, then it accepts no τ ∈ {0, 1} X . If v is a ∧-gate, then v accepts τ ∈ {0, 1} X if and only if every input of v accepts τ . If v is a decision-gate, it accepts τ ∈ {0, 1} X if and only if there exists an input w of v such that the arc (w, v) is labeled by and τ ( ) = 1 and that w accepts τ . The Boolean function computed by D is the set of assignments accepted by its output. Observe that if D accepts τ then every path consistent with it from a sink to the output of D starts at a 1-sink of D. In this paper, we assume that the underlying graph of a Decision-DNNF circuit D is connected and that the output is the only gate of D that is of out-degree 0.</p><p>Top-down Decision-DNNF knowledge compilers. Topdown Decision-DNNF knowledge compilers are based on a natural generalization of the well-known DPLL algorithm for SAT-solving <ref type="bibr" target="#b12">(Davis, Logemann, and Loveland 1962)</ref>, so as to count models instead of deciding "only" whether a model exists (see e.g., <ref type="bibr" target="#b5">(Birnbaum and Lozinskii 1999;</ref><ref type="bibr" target="#b1">Bacchus, Dalmao, and Pitassi 2003)</ref>). A top-down knowledge compiler works by recursively branching on a variable x until either a contradiction is reached or the for-mula is satisfied, relying on the simple observation that</p><formula xml:id="formula_3">F = (x ∧ F [x]) ∨ (¬x ∧ F [¬x]), which translates in terms of model counting into #F = #F [x] + #F [¬x] when var(F [x]) = var(F [¬x]).</formula><p>To avoid visiting all possible branches, the computed values are cached so that if the algorithm is recursively called on a subformula that has already been seen during computation, the number of models of this subformula is directly returned by the cache. An improvement of this algorithm has been proposed by <ref type="bibr" target="#b2">Bayardo and Pehoushek (Bayardo Jr and Pehoushek 2000)</ref> who observed that if</p><formula xml:id="formula_4">F = F 1 ∧ F 2 with var(F 1 ) ∩ var(F 2 ) = ∅, then #F = #F 1 × #F 2</formula><p>which allows to significantly reduce the number of recursive calls.</p><p>Darwiche and Huang established in <ref type="bibr" target="#b15">(Huang and Darwiche 2005</ref>) that the trace of such an algorithm on a given CNF formula corresponds to a Decision-DNNF circuit where the operation of branching on a variable corresponds to a decisiongate and the operation of decomposing the formula into disjoint connected components corresponds to a ∧-gate. Topdown Decision-DNNF knowledge compilers use at their core this algorithm whose pseudocode is presented in Algorithm 1. We will refer to this algorithm as a generic topdown DPLL-based Decision-DNNFcompiler, since it does not do anything else as propagating literals in the formula and checking for connected components.</p><p>Many top-down Decision-DNNF knowledge compilers, such as D4 or DSHARP, improve on this algorithm by taking advantage of a CDCL SAT-solver, used as an oracle for generating the compiled circuit. Leveraging a CDCL SAT-solver serves two purposes. The first purpose is to detect unsatisfiable branches as early as possible in order to avoid visiting them. The second purpose is to learn clauses that are entailed by the input CNF formula F . Indeed, when a conflict is reached in a CDCL SAT-solver, a clause formed by a minimal subset of literals generating this conflict is extracted. This clause is entailed by the CNF formula and it allows to detect further conflicts more quickly. In CDCL SAT-solvers, learnt clauses are used to trigger unit propagations that would have been missed when using the original clauses, only. The CDCL SAT-solver is configured in a way that each clause that has been learnt during this step is entailed by the original CNF formula F . The pseudocode of a generic top-down CDCL-based Decision-DNNFcompiler can be simply obtained by adding a couple of additional instructions into the pseudocode of a generic top-down DPLL-based Decision-DNNFcompiler (those instructions are framed in Algorithm 1). Observe that this pseudocode does not correspond to a specific top-down CDCL-based Decision-DNNFcompiler, but to a family of such compilers. In order to get specific compilers, some additional features should be specified (e.g., the branching variable heuristics and the cache management that are used).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Certifiable Decision-DNNF Circuits</head><p>It is coNP-complete to decide, given a CNF formula F and a Decision-DNNF circuit D, both on variables X, whether F and D define the same Boolean function <ref type="bibr" target="#b9">(Capelli 2019)</ref>. This can easily be seen by reducing it to the problem of deciding whether F is unsatisfiable, which boils down to Algorithm 1: Pseudocode for Decision-DNNF topdown compilers. Specific instructions for certification in compilers based on a CDCL SAT-solver are framed.  deciding whether F defines the same Boolean function as the Decision-DNNF circuit that is reduced to a single 0sink. To be able to efficiently check whether the output of a knowledge compiler is correct, that is, to check whether the Boolean function represented by the output Decision-DNNF circuit is indeed equivalent to its input CNF formula, it is thus necessary to provide a certificate. In this paper, we consider Decision-DNNF circuits decorated with annotations that are used to efficiently check the equivalences with the CNF formulae represented by the Decision-DNNF circuits. They are called certifiable Decision-DNNF circuits.</p><formula xml:id="formula_5">1 Algorithm COMPILE(F ) Data: A CNF formula F Result: A Decision-DNNF circuit associated with F 2 cache ← ∅; 3 return CONSTRUCT GATE(F , ∅, ∅); 4 Algorithm CONSTRUCT GATE(F , L , R ) Data: • Input: A CNF formula F • Input/output: A set L of literals</formula><formula xml:id="formula_6">R ← R ∪ R ; 11 if UNSAT(F ) then return a new 0-sink; 12 if cache(F [L]) = nil then return cache(F [L]); 13 F ← {C ∈ F | C[L] is not satisfied}; 14 if F = F1 ∧ • • • ∧ F k with k ≥ 2 and var(Fi[L]) ∩ var(Fj [L]) = ∅ then 15 v ← a new ∧-gate;</formula><p>The language of certifiable Decision-DNNF is closely related to the language of "certified" Decision-DNNF circuits, as introduced in (Capelli 2019). The "certified" Decision-DNNF circuits from <ref type="bibr" target="#b9">(Capelli 2019)</ref> only contain certificates for 0-sinks, in the sense that each input labeled by 0 should also be labeled by a clause of the original CNF formula F -or, more generally, by a clause C that is entailed by F , with a proof of such a fact. Moreover, each path from this 0-sink to the output of D has to violate C. Intuitively, C is the clause that is responsible for the conflict when the solver reached it. For this reason, the syntactic cache management that is used in implemented compilers like D4 and DSHARP must be disabled if one wants to take advantage of them to compute "certified" Decision-DNNF circuits. Indeed, it is possible that two clauses, for example C 1 = x ∨ y ∨ z and C 0 = x ∨ y ∨ ¬z, become equal under two distinct partial assignments. In this case, we could have a cache hit in the solver after having set z to 0 then to 1, but the conflict generated by later assigning x and y to 0 would not be raised by the same clause, depending on the value of z. Thus, the approach based on "certified" Decision-DNNF circuits as described in <ref type="bibr" target="#b9">(Capelli 2019)</ref> is not suited for compilers using such a cache management. This motivated the introduction of certifiable Decision-DNNF circuits that are better suited to certify the output of top-down CDCL-based Decision-DNNF compilers.</p><p>Formally, a certifiable Decision-DNNF circuit (D, e, R) is a Decision-DNNF circuit D together with a list of clauses R and a labelling e associating with every gate v of D, but its output, an arc e(v) going out of v. e(v) = (v, w) is called the canonical arc of v and w is the canonical father of v.</p><p>Let e = (v, w) be an arc of D. We define F/e as follows: if w is a decision-gate, then</p><formula xml:id="formula_7">F/e = F [ e ]; if w is a ∧-gate, then F/e = cc(F, var(D v )).</formula><p>Let F be a CNF formula on variables X and v a gate of D. We define F v and lit(v) inductively as follows: if v is the output of D, then</p><formula xml:id="formula_8">F v = F and lit(v) = ∅. Otherwise, let (v, w) = e(v). We define F v = F w /e(v) and lit(v) = lit(w) ∪ if w is a decision-gate and is the literal labelling e(v). Otherwise, lit(v) = lit(w).</formula><p>We can then extend this definition to any path P from a node v to the output of D: if P is empty, then we let F/P = F . Otherwise, let e = (v, w) be the first arc on P and P be the path from w to the output of D obtained by removing e from P . F/P is defined as (F/P )/e.</p><p>As explained previously, each gate of the Decision-DNNF circuit produced by a top-down compiler corresponds to a recursive call of Algorithm 1. In a certifiable Decision-DNNF circuit, the canonical arc e(v) of a gate v intuitively corresponds to the first arc that was connected to v after its creation. Moreover, R corresponds to the clauses that have been learnt during the compilation through calls to the CDCL SAT-oracle, and F v corresponds to the state the solver was in when v has been created.</p><p>This motivates the following definition of syntactic equivalence. A certifiable Decision-DNNF circuit (D, e, R) is syntactically equivalent to a CNF formula F , denoted as F ≡ s (D, e, R), if var(D) ⊆ var(F ) and the following conditions are met:</p><formula xml:id="formula_9">(i) Learnt clauses entailment: F |= R.</formula><p>(ii) Satisfiable gates: if R = ∅, then for every gate v that is not a 0-sink of D, D v is satisfiable.</p><p>(iii) DNNF entailment: D |= F .</p><p>(iv) Cache consistency: for every gate v of D that is not a sink and arc e = (v, w) of D, F w /e = F v .</p><p>(v) 0-sinks consistency: for every 0-sink v and arc e = (v, w), either F w /e contains the empty clause or w is a decision-gate and R[lit(w) ∪ e ] contains the empty clause. Clearly enough, syntactic equivalence is a restriction of equivalence in the sense that whenever a certifiable Decision-DNNF circuit is syntactically equivalent to a CNF formula, it is logically equivalent to it, but the converse does not hold. Indeed, consider the CNF formula F = (x ∨ y) ∧ (¬x ∨ y) ∧ (x ∨ ¬y) ∧ (¬x ∨ ¬y) and a certifiable Decision-DNNF circuit (D, e, R) where D is reduced to a single decision-gate w on variable x connected only to the 0-sink v (so that e is reduced to {(v, w)}) and R is empty (there are no learnt clauses). (D, e, R) is a certifiable Decision-DNNF circuit logically equivalent to F but not syntactically equivalent to F as Condition v is not satisfied.</p><p>Example of certifiable Decision-DNNF circuit. To illustrate the notion of certifiable Decision-DNNF circuit and the previous definition of syntactic equivalence, we now provide a full example. Let us consider the following CNF formula:</p><formula xml:id="formula_10">F =(¬x ∨ ¬y) ∧ (x ∨ z)∧ (x ∨ a ∨ w) ∧ (x ∨ ¬a ∨ w)∧ (¬x ∨ y ∨ a ∨ w) ∧ (¬x ∨ y ∨ ¬a ∨ w)</formula><p>Let us also consider the Decision-DNNF circuit D represented on Figure <ref type="figure" target="#fig_1">1</ref>. Some arcs of this Decision-DNNF circuit have been represented in bold. They correspond to the canonical arcs: a bold arc going out of a vertex v is the canonical arc e(v) of v. R = {¬x∨y ∨w} is the set of learnt clauses.</p><p>We claim that the certifiable Decision-DNNF circuit (D, e, R) is syntactically equivalent to F . It is clear that Condition (i) is satisfied as F |= R holds (it can be shown by applying the resolution rule to the last two clauses of F ). Condition (ii) can also be readily verified. Condition (iii) can be checked by tested that for every clause C of F , the circuit D conditioned by the negation of C is not satisfiable. For example, focusing on the clause x ∨ z of F , the path of D associated with ¬x ∧ ¬z in D starts from a 0-sink.</p><p>We now turn to checking Condition (iv) and (v). To this end, we observe the following:</p><formula xml:id="formula_11">• F v1 = def F [x] = ¬y ∧ (y ∨ a ∨ w) ∧ (y ∨ ¬a ∨ w), • F v2 = def F [¬x] = (a ∨ w) ∧ (¬a ∨ w) ∧ z, • F v3 = def (F v1 )[¬y] = (a ∨ w) ∧ (¬a ∨ w),</formula><p>• F v4 = z, as var(D v4 ) = {z} and the connected component corresponding to z in F v3 consists only of the unit clause z.</p><p>Condition (iv) is trivially verified at nodes having exactly one outgoing arc. We just have to check it at gate v 3 . That is, we have to verify that F v3 = F v2 /e where e = (v 2 , v 3 ). By definition, F v2 /e consists of all clauses of F v2 that are in the connected component of var(D v3 ) = {w}. Thus, F v2 /e = (a ∨ w) ∧ (¬a ∨ w) which is indeed F v3 from what precedes.</p><p>Finally, we have to check Condition (v) for every 0-sink of D. We start with the arc f from the 0-sink going in v 1 . We have to show that F v1 /f contains the empty clause. By definition, F v1 /f = F v1 [y], which indeed contains the empty clause. A similar check can be done with the arc going in v 4 .</p><p>The case of the arc g between the 0-sink and v 3 is more interesting. Indeed, by definition F v3 /g = F v3 [¬w] = a ∧ ¬a. It does not contain the empty clause. However, it can be checked that lit(v 3 ) = {x, ¬y} and R[lit(v 3 ) ∪ ¬w] = R[x, ¬y, ¬w] contains the empty clause, that is, Condition (v) holds. Observe that in this case, the learnt clause helped to detect a conflict that was not direct in F v3 /g. Indeed, if the canonical path to v 3 was P = {v 3 , v 2 , v 0 }, then since lit(P ) = {¬x, ¬w}, we would have R[¬x, ¬w] = ∅, which does not contain the empty clause. In this case, Condition (v) would not be verified. This example highlights the importance of registering canonical arcs in the certifiable Decision-DNNF circuit to check for unit propagations entailed by learnt clauses.</p><p>Syntactic equivalence of a certifiable Decision-DNNF circuit with a CNF formula. We can now describe easily how to implement a verification algorithm CHECKER for deciding whether or not a given certifiable Decision-DNNF circuit D is syntactically equivalent to a given CNF formula F . The verification algorithm just consists in verifying all the conditions for syntactic equivalence in a successive way. Our actual implementation, presented in the following, contains some optimizations to better scale up for large CNF formulae and certifiable Decision-DNNF circuits.</p><p>A key property is that the verification step is tractable:</p><p>Theorem 1 Let F be a CNF formula and (D, e, R) be a certifiable Decision-DNNF circuit on variables X. Under the assumption that F |= R, we can check whether F ≡ s (D, e, R) in polynomial time.</p><p>The modified version of Algorithm 1 outputs a set of clauses R that have been learnt via oracle calls to a CDCL SAT-solver. R is such that F |= DRAT R (Wetzler, Heule, and Hunt 2014) (meaning that every clause from R has a DRAT proof from F ) and this implication can be checked in polynomial time.</p><p>Moreover, the syntactic equivalence of a CNF formula and a certifiable Decision-DNNF circuit ensures that they are logically equivalent:</p><p>Theorem 2 Let F be a CNF formula and (D, e, R) be a certifiable Decision-DNNF circuit such that F ≡ s (D, e, R). It holds that F ≡ D.</p><p>The intuition behind Theorem 2 is the following. Conditions (iv) and (v) check that the hypothesis made by the solver when caching, decomposing or deciding for a conflict were legit, the state of the solver when it took the decision corresponding to F v . Condition (iii) ensures one way of the equivalence. It is tractable even without the additional decoration of certifiable Decision-DNNF as it boils down to checking D |= C for every clause C of F , and this query (known as clause entailment) is tractable for the Decision-DNNF language <ref type="bibr" target="#b11">(Darwiche and Marquis 2002)</ref>. Finally, Conditions (ii) and (i) ensure that conflicts derived from learnt clauses of R are also conflicts of F .</p><p>Condition (ii) may seem surprising and unnecessary but it is actually essential to ensure that, when checking for <ref type="bibr">Condition (v) if R[lit(v)</ref>]/e contains a conflict for some gate v of D, then this conflict is also a logical consequence of F v , that is the only formula for which the cache consistency has been checked. The potentially incorrect interaction between the caching policy and the use of learnt clauses was already known to be problematic in parallel model counter <ref type="bibr" target="#b8">(Burchard, Schubert, and Becker 2015)</ref> and in CACHET <ref type="bibr" target="#b29">(Sang et al. 2004)</ref> where it has been resolved thanks to a method known as sibling pruning, that consists in cleaning the cache of unsatisfiable gates and that corresponds to Condition (ii). In Algorithm 1, this condition is guaranteed by the fact that oracle calls to CDCL SAT-solvers are done at each recursion, ensuring that unsatisfiable branches are never explored. Note that for DPLL-based compilers, there are no conflicts involving learnt clauses, so that R is empty and Condition (ii) also holds.</p><p>Finally, observe that the labelling e in the (D, e, R) triple is necessary to certify the circuit as it allows to recover the partial assignment L that the solver was considering when creating a new gate. It is crucial as it may be that some unit propagation triggered by learnt clauses under partial assignment L is not triggered under another partial assignment L , even if</p><formula xml:id="formula_12">F [L] = F [L ]</formula><p>. By recording the canonical father of every gate of D (but its output), we can reconstruct L during the certification and thus certify the unit propagations that were triggered by learnt clauses at this point.</p><p>Turning top-down Decision-DNNF compilers into certifiable Decision-DNNF compilers. In this section, we explain how top-down knowledge compilers of the family presented in Algorithm 1 can be tweaked so as to generate certifiable Decision-DNNF circuits that are syntactically equivalent to the input CNF formula.</p><p>The only change that has to be performed is that each time a new gate w is created by Algorithm 1, we define e(w) to be the first arc going out of w that is created by the solver. To do so, we only have to modify the CONSTRUCT GATE procedure in such a way that instead of returning a gate, it returns a gate and a Boolean flag telling whether the gate has been obtained from a cache hit or by constructing it from scratch. Then, in Lines 18 and 24 of Algorithm 1, if one detects that the returned gate w has not resulted from a cache hit, then one registers e(w) to be (w, v).</p><p>Accordingly, the DAG D generated by CD4 is the same as the one generated by D4, which shows that certification does not change the size of the Decision-DNNF circuit that is produced: only the certification labellings may increase its size (of course, they can be left aside afterwards, when leveraging the circuit for reasoning purposes).</p><p>Finally, the COMPILE procedure returns (D, e, R) where D is the Decision-DNNF circuit that has been constructed by the algorithm, where e is the labelling that has been defined above, and R is the set of all clauses learnt during the compilation. For any instance of Algorithm 1 that is not using a CDCL SAT-solver, R is empty so that (D, e, ∅) is returned.</p><p>Interestingly, compared to the pseudocode of the generic compiler targeting Decision-DNNF as given by Algorithm 1, only a few additional instructions must be inserted to derive certifiable Decision-DNNF circuits. We denote by C COMP ("certifiable compiler") the generic compiler given by Algorithm 1 when expanded with those instructions. The correctness of C COMP is established by the next theorem:</p><p>Theorem 3 Let F be a CNF formula and (D, e, R) be the output of C COMP on input F . It holds that (D, e, R) is a certifiable Decision-DNNF circuit such that F ≡ s (D, e, R) and F |= DRAT R.</p><p>From Theorem 3, 1, 2 and the fact that F |= DRAT R can be checked in polynomial time, one gets that the output of C COMP can be verified in polynomial time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Experimental Results</head><p>Empirical setting. We have implemented the CD4 compiler, obtained by tweaking the state-of-the-art Decision-DNNF compiler D4 <ref type="bibr">(Lagniez and Marquis 2017a)</ref>, following the approach described in the previous sections, so as to generate certifiable Decision-DNNF circuits. CD4 is thus the instance of C COMP associated with D4. We have also implemented the checker CHECKER described previously.</p><p>The objective of our experiments was twofold. A first goal was to assess the difficulty of computing certifiable Decision-DNNF circuits in comparison to (unconstrained) Decision-DNNF circuits. From the theory side, it can be easily established that the full language of Decision-DNNF circuits is strictly more succinct than the language of certifiable Decision-DNNF circuits unless NP = coNP. Indeed, any unsatisfiable CNF formula, whatever its size, is equivalent to the Decision-DNNF circuit that reduces to a single 0-sink, but there is no polynomial-size certificates for unsatisfiable CNF formulae unless NP = coNP. In the worst case, the size of a certifiable Decision-DNNF circuit for a given unsatisfiable CNF formula must thus be super-polynomial in the size of the CNF formula, hence in practice, arbitrarily larger than the size of the Decision-DNNF circuit that reduces to a single 0-sink. For this reason, it is important to evaluate from the practical side the extra effort needed to derive certifiable Decision-DNNF circuits in comparison to the one required by the generation of (unconstrained) Decision-DNNF circuits.</p><p>A second goal was to assess the difficulty of computing a certified Decision-DNNF circuit associated with a given CNF formula. To do the job, the computation time aggregates the one needed to derive first a certifiable Decision-DNNF circuit for the CNF formula, and then to verify that this certifiable Decision-DNNF circuit is equivalent to the CNF formula, using the above-mentioned checker. Indeed, though the checker runs in time polynomial in its input size, the sizes of the certifiable Decision-DNNF circuits and the sizes of the DRAT proofs that are generated can be very large in comparison to the one of the CNF formula, rendering prohibitive in practice the time required by the verification step. Experiments are required to determine the extent to which the verification step can be done.</p><p>In our experiments, we have considered 703 CNF instances from the SATLIB<ref type="foot" target="#foot_0">1</ref> and other repositories (for instance, the benchmarks from the BN family (Bayesian networks) come from http://reasoning.cs.ucla.edu/ace/). They are gathered into 8 data sets, as follows: <ref type="bibr">BN (192)</ref>, BMC (Bounded Model Checking) (18), Circuit (41), Configuration (35), Handmade (58), Planning (248), Random (104), Qif (7) (Quantitative Information Flow analysis -security).</p><p>All the experiments have been conducted on a cluster equipped with quadcore bi-processors Intel XEON E5-5637 v4 (3.5 GHz) and 128 GiB of memory. The kernel used was CentOS 7, Linux version 3.10.0-514.16.1.el7.x86 64. The compiler used was gcc version 5.3.1. Hyperthreading was disabled, and no cache share between cores was allowed. A time-out of 1h for the generation of certifiable Decision-DNNF circuits plus 1h for the verification step has been considered per instance. A memory-out of 7.6 GiB has been considered per instance.</p><p>Results. We have first measured the number of instances (out of 703) for which a certifiable Decision-DNNF circuit has been computed by CD4 in due time given the allocated ressources and compared it with the number of instances for which a Decision-DNNF circuit has been computed by D4 using the same time and memory ressources. It turns out that 584 instances over 703 have been solved by D4, and that among them, CD4 has been able to solve 580 instances, hence more than 99% of the instances solved by D4.</p><p>Then we focused on the generation of certified Decision-DNNF circuits (taking account for the verification time within a time limit of 1h). For 69 out of the 580 certifiable Decision-DNNF circuits generated by CD4, the verification of the DRAT proofs involved in the certificates using the DRAT-trim proof checker<ref type="foot" target="#foot_1">2</ref>  <ref type="bibr" target="#b33">(Wetzler, Heule, and Hunt 2014)</ref> crashed with a segmentation fault, and for 42 additional instances a time-out has been reached before the checker terminated. Thus, 469 circuits out of 580 have been certified.</p><p>Assuming that the DRAT proofs are ok for the 69 instances for which the DRAT-trim proof checker crashed, a proportion of more than 92% of the Decision-DNNF circuits that have been computed would have been certified.</p><p>The resulting values clearly show that in practice, the extra effort needed by the certification requirement does not drastically reduce the set of instances that can be addressed within a reasonable time. This observation highly contrasts with what is predicted from the theory side, suggesting that the worst scenario is not encountered very often in practice.</p><p>We have performed more fine-grained measurements at the instance level, in order to determine for each CNF instance (out of 580) the size of the (possibly decorated) circuits that have been generated by CD4 and by D4. We have considered a new output format for representing Decision-DNNF circuits and certifiable Decision-DNNF circuits (see www.cril.fr/kc/ for details); unlike the previous format used (which was suited to the representation of (general) DNNF circuits <ref type="bibr" target="#b10">(Darwiche 2001</ref>)), decision-gates are now represented natively and literals obtained via unit propagation once a decision has been made label the corresponding arc). For the sake of homogeneity, sizes are measured in bytes (the size of a certifiable Decision-DNNF circuit includes the arcs that are generated, the extra-information labelling the arcs, as well as the sizes of the DRAT proofs of the clauses that have been learnt). We also measured for each CNF instance (out of 469) the time needed to get a certified Decision-DNNF circuit equivalent to it, by generating first a certifiable Decision-DNNF circuit and adding to this generation time the time required by the checker to ensure that this certifiable Decision-DNNF circuit is a certified Decision-DNNF circuit equivalent to the CNF formula as input. Then we were able to compare it with the the time needed by D4 to derive a Decision-DNNF circuit equivalent to the input CNF formula.</p><p>Interestingly, our approach to certification was able to handle large benchmarks, like the blockmap 22 03.net instance from the BN family (the formula has 119003 variables and 247486 clauses). Indeed, a certifiable Decision-DNNF circuit for it has been computed in 275s, and its size is approximately twice the size of the corresponding Decision-DNNF circuit.</p><p>Our experiments have also shown that the time needed to certify a certifiable Decision-DNNF circuit in light of the CNF formula used to generate it typically depends on the size of the circuit, but not solely of it. For instance, the benchmark lang12 from the Handmade family led to a certifiable Decision-DNNF circuit represented using 1518068287 bytes and the certification of the latter using the checker required 263s (242s being spent in verifying the DRAT part of the certificate). This contrasts with the instance emptyroom d20 g10 corners p t8 from the Planning domain which has been associated with a certifiable Decision-DNNF circuit that is more than twice larger (3351189294 bytes), but has been certified in 141s only (using less than 2s in the verification of the DRAT part of the certificate). This can be explained by the fact that emptyroom d20 g10 corners p t8 contains less than half clauses as lang12. For each of the 580 instances for which both D4 and CD4 terminated in due time, we have also computed the size ratio sc s , where s c (resp. s) is the size of the certifiable Decision-DNNF circuit (resp. Decision-DNNF circuit) generated by CD4 (resp. D4). Figure <ref type="figure" target="#fig_2">2b</ref> gives a boxplot picture that is helpful to figure out how much spread the distribution of the size ratios is. Though the median size ratio is quite small (1.94) and the upper whisker is reasonable enough (19.31), the distribution has a number of outliers, corresponding to values that are really far from the values usually encountered (the maximum size ratio is equal to 88409).</p><p>Accordingly, it turns out that the additional space needed to represent the information used for the certification task remains reasonable enough for many instances (as reflected by the fact that the certifiable Decision-DNNF compilations succeeded most of the time -hence without leading to an error-of-memory).</p><p>Finally, Figure <ref type="figure" target="#fig_2">2c</ref> is similar to Figure <ref type="figure" target="#fig_2">2a</ref>, but it focuses on the times needed to derive certified Decision-DNNF circuits in comparison to the times needed to derive Decision-DNNF circuits. Thus, the x-axis represents the cumulated time (in seconds) needed to get a certified Decision-DNNF circuit of the instance, by using CD4 first to generate a certifiable Decision-DNNF circuit and the checker next to verify that it is equivalent to the instance. This figure shows that when the certification step succeeds, this extra time remains reasonable enough. Thus, for a large majority of instances out of 469, the cumulated time required first by CD4 to generate a certifiable Decision-DNNF circuit, then by the checker to verify it, is less than twice the time required by D4 to generate a Decision-DNNF circuit (the median cumulated time is equal to 1.69s). In the global verification time, the part of the time spent for verifying the DRAT proofs highly depends on the instance under consideration. For instance, as already mentioned, it took almost all the verification time for the benchmark lang12. Contrastingly, though the global verification time used for the instance sat-grid-pbl-0030 from the BN family was significant (159s), the amount of it taken by the verification of the DRAT proofs was negligible (less than 1s).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Conclusion</head><p>In this paper, we have introduced the language of certifiable Decision-DNNF circuits for the certification purpose.</p><p>A key feature of certifiable Decision-DNNF circuits is that a strong notion of equivalence to CNF formulae can be tested in polynomial time (while the problem is coNP-complete when Decision-DNNF circuits are considered instead).</p><p>We have explained how compilers from a general family of top-down Decision-DNNF compilers (including D4 and DSHARP) can be modified so as to output certifiable Decision-DNNF circuits. Using a modified version of D4 for generating certifiable Decision-DNNF circuits and an implementation of the checker, we have presented the results of an empirical evaluation showing that the sizes of the certifiable Decision-DNNF circuits, and the times needed to compute them and to check them, remain in general small enough to ensure the feasibility of the approach from the practical side.</p><p>A final remark is that since the model counts of certifiable Decision-DNNF circuits can be computed in polynomial time, one can obviously take advantage of certifiable Decision-DNNF circuits to derive certified numbers of models for CNF formulae. This paper opens a number of perspectives for further research. One of them will consist in analyzing the language of certifiable Decision-DNNF circuits in a more systematic way so as to determine the queries and transformations it offers and to insert it into the knowledge compilation map.</p><p>It would be also valuable to compare in practice the performances of our approach to certification with other techniques. For instance, when dealing with CNF instances which are known to have (relatively) "few models", an ap-proach to certifying their numbers consists in enumerating those models -a polynomial-time model enumeration algorithm exists for Decision-DNNF circuits -and once the enumeration is done, to test that every model of the CNF instance has been enumerated -this requires to consider a DRAT proof of the fact that the formula entails the disjunction of all the models found. Another approach would consist in building a Miter to test the equivalence of the input CNF formula and the output Decision-DNNF circuit. Checking the equivalence of both representations would require to leverage a SAT-oracle. A valuable feature of this approach is that it may be less space demanding than computing a certifiable Decision-DNNF circuit. On the other hand, the equivalence check boils down to solving an instance of a coNP-complete problem, so that one cannot get any guarantee on the execution time of the checker. This contrasts with our approach where the complexity of the certification step is directly related to the size of the certificate.</p><p>Finally, since the performances of D4 over many CNF instances are typically boosted when those instances have been first preprocessed using pmc (Lagniez and Marquis 2017b) (or B+E <ref type="bibr" target="#b16">(Lagniez, Lonca, and Marquis 2020)</ref> when D4 is used as a model counter), it would be useful to develop and evaluate certification techniques for such preprocessors. This would permit to take advantage of them upstream to CD4, while maintaining the certification requirement.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>16 for i ∈ {1, . . . , k} do 17 wi ← CONSTRUCT GATE(Fi, L, R); 18 connects v to wi; 19 else 20 Choose x ∈ var(F [L]); 21 v ← a new decision-gate on variable x; 22 for ∈ {x, ¬x} do 23 w ← CONSTRUCT GATE(F , L ∪ { }, R); 24 connect v to w with label ; 25 cache(F [L]) ← v; 26 return v</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A certifiable Decision-DNNF circuit.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Figure 2a compares the sizes of the compiled forms that are obtained when certifiable Decision-DNNF and Decision-DNNF are targeted. Figures2b and 2cgive respectively the distribution of the size ratios and a comparison of the times needed to get certified Decision-DNNF circuits with the times needed to get Decision-DNNF circuits.</figDesc><graphic coords="9,266.94,72.80,78.12,110.44" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>www.cs.ubc.ca/ ∼ hoos/SATLIB/index-ubc.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>The DRAT-trim proof checker is available at https://github. com/marijnheule/drat-trim.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgments</head><p>This work has been partly supported by the <rs type="funder">PING/ACK</rs> project (<rs type="grantNumber">ANR-18-CE40-0011</rs>) and the <rs type="projectName">AI Chair EXPEKC-TATION</rs> (<rs type="grantNumber">ANR-19-CHIA-0005-01</rs>) from the <rs type="funder">French National Agency for Research</rs>. It was also supported by <rs type="projectName">TAI-LOR</rs>, a project funded by <rs type="programName">EU Horizon 2020 research and innovation programme</rs> under <rs type="grantNumber">GA</rs> No <rs type="grantNumber">952215</rs></p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_fyYnfRp">
+					<idno type="grant-number">ANR-18-CE40-0011</idno>
+					<orgName type="project" subtype="full">AI Chair EXPEKC-TATION</orgName>
+				</org>
+				<org type="funded-project" xml:id="_xCkTzqZ">
+					<idno type="grant-number">ANR-19-CHIA-0005-01</idno>
+					<orgName type="project" subtype="full">TAI-LOR</orgName>
+					<orgName type="program" subtype="full">EU Horizon 2020 research and innovation programme</orgName>
+				</org>
+				<org type="funding" xml:id="_Ut6fEAK">
+					<idno type="grant-number">GA</idno>
+				</org>
+				<org type="funding" xml:id="_E33h4Ef">
+					<idno type="grant-number">952215</idno>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">On Tractable XAI Queries based on Compiled Representations</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Audemard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Koriche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of KR&apos;20</title>
+		<meeting>of KR&apos;20</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="838" to="849" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Algorithms and Complexity Results for #SAT and Bayesian Inference</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bacchus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dalmao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pitassi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of FOCS&apos;03</title>
+		<meeting>of FOCS&apos;03</meeting>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="340" to="351" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Counting models using connected components</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">J</forename><surname>Bayardo</surname><genName>Jr</genName></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Pehoushek</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI&apos;00</title>
+		<meeting>of AAAI&apos;00</meeting>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="157" to="162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Proof complexity of resolution-based QBF calculi</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Beyersdorff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Janota</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of STACS&apos;15</title>
+		<meeting>of STACS&apos;15</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">30</biblScope>
+			<biblScope unit="page" from="76" to="89" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Understanding cutting planes for QBFs</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Beyersdorff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chew</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mahajan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shukla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information and Computation</title>
+		<imprint>
+			<biblScope unit="volume">262</biblScope>
+			<biblScope unit="page" from="141" to="161" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">The Good Old Davis-Putnam Procedure Helps Counting Models</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Birnbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">L</forename><surname>Lozinskii</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="457" to="477" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">MaxSAT resolution with the dual rail encoding</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Bonet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Buss</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ignatiev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marques-Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Morgado</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI&apos;18</title>
+		<meeting>of AAAI&apos;18</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="6565" to="6572" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Resolution for Max-SAT</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">L</forename><surname>Bonet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Levy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Manyà</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">171</biblScope>
+			<biblScope unit="issue">8-9</biblScope>
+			<biblScope unit="page" from="606" to="618" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Laissez-Faire Caching for Parallel #SAT Solving</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Burchard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Schubert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Becker</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of SAT&apos;15</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Heule</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Weaver</surname></persName>
+		</editor>
+		<meeting>of SAT&apos;15</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="46" to="61" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Knowledge compilation languages as proof systems</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Capelli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of SAT&apos;19</title>
+		<meeting>of SAT&apos;19</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="90" to="99" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Decomposable negation normal form</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="608" to="647" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">A Knowledge Compilation Map</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="page" from="229" to="264" />
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">A Machine Program for Theorem-proving</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Davis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Logemann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Loveland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="394" to="397" />
+			<date type="published" when="1962">1962</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A Survey of Methods for Explaining Black Box Models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Guidotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Monreale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruggieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Turini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giannotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pedreschi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Computing Surveys</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1" to="93" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A unified proof system for QBF preprocessing</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Heule</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Seidl</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Biere</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of IJCAR&apos;14</title>
+		<meeting>of IJCAR&apos;14</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="91" to="106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">DPLL with a Trace: From SAT to Knowledge Compilation</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of IJCAI&apos;05</title>
+		<meeting>of IJCAI&apos;05</meeting>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="156" to="162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Definability for model counting</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lagniez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Lonca</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">281</biblScope>
+			<biblScope unit="page">103229</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">An Improved Decision-DNNF Compiler</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lagniez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of IJCAI&apos;17</title>
+		<meeting>of IJCAI&apos;17</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="667" to="673" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">On Preprocessing Techniques and Their Impact on Propositional Model Counting</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lagniez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Automated Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">58</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="413" to="481" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<monogr>
+		<title level="m" type="main">Automated Verification of Neural Networks: Advances, Challenges and Perspectives</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Leofante</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Narodytska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Pulina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tacchella</surname></persName>
+		</author>
+		<idno>CoRR abs/1805.09938</idno>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Explanation in artificial intelligence: Insights from the social sciences</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Miller</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">267</biblScope>
+			<biblScope unit="page" from="1" to="38" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Interpretable Machine Learning -A Guide for Making Black Box Models Explainable</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Molnar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Leanpub</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">iml: An R package for Interpretable Machine Learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Molnar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Casalicchio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Bischl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Open Source Software</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">26</biblScope>
+			<biblScope unit="page">786</biblScope>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">On validating Boolean optimizers</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Morgado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marques-Silva</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of ICTAI&apos;11</title>
+		<meeting>of ICTAI&apos;11</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="924" to="926" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Dsharp: Fast d-DNNF Compilation with sharpSAT</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Muise</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Mcilraith</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Beck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AI&apos;12</title>
+		<meeting>of AI&apos;12</meeting>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<biblScope unit="page" from="356" to="361" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Verifying Properties of Binarized Deep Neural Networks</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Narodytska</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">P</forename><surname>Kasiviswanathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Ryzhyk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sagiv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Walsh</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI&apos;18</title>
+		<meeting>of AAAI&apos;18</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="6615" to="6624" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">On Compiling CNF into Decision-DNNF</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Oztok</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of CP&apos;14</title>
+		<meeting>of CP&apos;14</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="42" to="57" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">On the power of clause-learning SAT solvers as resolution engines</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Pipatsrisawat</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">175</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="512" to="525" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Anchors: High-Precision Model-Agnostic Explanations</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI&apos;18</title>
+		<meeting>of AAAI&apos;18</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="1527" to="1535" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Combining Component Caching and Clause Learning for Effective Model Counting</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Sang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Bacchus</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Beame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">A</forename><surname>Kautz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Pitassi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of SAT&apos;04</title>
+		<meeting>of SAT&apos;04</meeting>
+		<imprint>
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">On Tractable Representations of Binary Neural Networks</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of KR&apos;20</title>
+		<meeting>of KR&apos;20</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="882" to="892" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Compiling Bayesian Networks into Decision Graphs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Choi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of AAAI&apos;19</title>
+		<meeting>of AAAI&apos;19</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="7966" to="7974" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Verifying Binarized Neural Networks by Angluin-Style Learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shih</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Choi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of SAT&apos;19</title>
+		<meeting>of SAT&apos;19</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="354" to="370" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">DRATtrim: Efficient checking and trimming using expressive clausal proofs</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Wetzler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Heule</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">A</forename><surname>Hunt</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of SAT&apos;</title>
+		<meeting>of SAT&apos;</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="422" to="429" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

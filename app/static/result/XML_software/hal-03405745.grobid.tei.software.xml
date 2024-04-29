@@ -1,0 +1,1014 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Parallelisable Existential Rules: a Story of Pieces</title>
+				<funder ref="#_wv7szcn">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Maxime</forename><surname>Buron</surname></persName>
+							<email>maxime.buron@cs.ox.ac.uk</email>
+							<affiliation key="aff0">
+								<orgName type="institution">University of Oxford</orgName>
+								<address>
+									<country key="GB">United Kingdom</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Marie-Laure</forename><surname>Mugnier</surname></persName>
+							<email>mugnier@lirmm.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">LIRMM</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">University of Montpellier</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michaël</forename><surname>Thomazo</surname></persName>
+							<email>michael.thomazo@inria.fr</email>
+							<affiliation key="aff2">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">Inria</orgName>
+								<orgName type="institution" key="instit2">ENS</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">PSL University &amp; Inria</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Parallelisable Existential Rules: a Story of Pieces</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">48BA840B92E7BCBEFF1F0731690EDF05</idno>
+					<idno type="DOI">10.24963/kr.2021/16</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:43+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>In this paper, we consider existential rules, an expressive formalism well suited to the representation of ontological knowledge and data-to-ontology mappings in the context of ontology-based data integration. The chase is a fundamental tool to do reasoning with existential rules as it computes all the facts entailed by the rules from a database instance. We introduce parallelisable sets of existential rules, for which the chase can be computed in a single breadth-first step from any instance. The question we investigate is the characterization of such rule sets. We show that parallelisable rule sets are exactly those rule sets both bounded for the chase and belonging to a novel class of rules, called pieceful. The pieceful class includes in particular frontier-guarded existential rules and (plain) datalog. We also give another characterization of parallelisable rule sets in terms of rule composition based on rewriting.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>Ontology-based data access (OBDA) systems aim at facilitating data querying through a conceptual layer formalized by an ontology <ref type="bibr" target="#b29">(Poggi et al. 2008;</ref><ref type="bibr" target="#b33">Xiao et al. 2018)</ref>. They rely on a three-level architecture comprising the ontology, the data sources and the mapping between the two. The key idea is that a user expresses queries at a conceptual level, and the system translates these queries into queries on the data via the mapping, while integrating ontological reasoning.</p><p>When we abstract away from data sources and mappings, we obtain the fundamental ontology-based query answering problem, which takes as input an ontology O, an instance (or set of facts) I and a (Boolean) conjunctive query q, both expressed in the vocabulary of O, and asks whether I, O |= q. Ontological knowledge is typically represented in description logics (e.g., <ref type="bibr" target="#b1">(Baader et al. 2017;</ref><ref type="bibr" target="#b8">Bienvenu and Ortiz 2015)</ref>) or existential rules (e.g., <ref type="bibr" target="#b14">(Calì, Gottlob, and Lukasiewicz 2009;</ref><ref type="bibr" target="#b2">Baget et al. 2009</ref>)) and we shall consider the latter language in this paper. Existential rules are an extension of first-order function-free Horn rules allowing for existentially quantified variables in the rule heads (e.g., ∀x(s(x) → ∃z t(x, z))), which makes them able to infer the existence of unknown individuals. They generalise datalog and most description logics used to do reasoning on data, namely Horn description logics.</p><p>Two dual techniques are used to solve the ontology-based query answering problem: the chase, which enriches I by performing a fixpoint computation with O until a canonical model of I and O is obtained (then q is asked on the result of the chase), and query rewriting, where q is rewritten with O into a query q , such that for all instance I, holds I, O |= q if and only if holds I |= q . Query answering is undecidable with general existential rules, however there are expressive subclasses ensuring the termination of either technique.</p><p>In the OBDA paradigm, the instance I is not materialized, but virtually defined by the mapping and the data. Precisely, an OBDA specification is given by an ontology O, a relational schema S and a mapping M from S to O (Lenzerini 2018). The mapping is itself composed of assertions of the form q S (x) → q O (x), where q S is a query on schema S and q O is a conjunctive query on the vocabulary of O, both with tuple of answer variables x. When q S is also a conjunctive query, or a relational view, a mapping assertion can be seen as an existential rule. Then, the virtual instance I (D,M) , associated with a database D (on S) and the mapping M, is the set of facts that would be obtained by chasing D with M. Note that only a single (breadth-first) step of the chase is required here, as bodies and heads of mapping assertions are on disjoint sets of predicates. Since I (D,M) is virtual, an incoming query has to be rewritten, first with O, then with M, which yields a query directly asked on D. As rewriting is performed at query time, speeding up this process is a crucial issue. In particular, query rewriting with O is a recursive process, which is not the case with M. For very lightweight ontology languages (the DL-Lite family or the W3C language RDFS), a practically efficient approach consists of compiling (part of) the ontological reasoning into the mapping, so that the rewriting step with O can be avoided or drastically reduced <ref type="bibr" target="#b24">(Kontchakov et al. 2014;</ref><ref type="bibr">Buron et al. 2020b)</ref>. In these settings, each mapping assertion can be processed independently, the mapping head being enriched with knowledge it entails. Whether such technique can be extended to more expressive languages is an open issue, which motivated the work presented here.</p><p>Consider an OBDA setting where existential rules are used as a uniform language to express both the ontology and the mapping. Compiling ontological reasoning into the mapping can be seen as computing a new mapping M such that query rewriting with O and M is reduced to query rewriting with M . From a dual viewpoint, for any database D, the instance I (D,M ) is equivalent to the chase of I (D,M) with O. The next example illustrates the approach. Example 1. Let M = {M 1 , M 2 } and O = {R 1 , R 2 }, where s i and t i denote predicates from S and O, respectively, and universal quantifiers are omitted:</p><formula xml:id="formula_0">M 1 = s 1 (x, y) → t 1 (x, y) M 2 = s 2 (x) → t 2 (x) R 1 = t 2 (x) → ∃z t 3 (x, z) R 2 = t 1 (x, y) ∧ t 3 (x, z) → t 4 (y)</formula><p>Here, the ontology can be compiled into the mapping, which yields M = M ∪ {M 3 , M 4 }, where:</p><formula xml:id="formula_1">M 3 = s 2 (x) → ∃z t 3 (x, z) M 4 = s 1 (x, y) ∧ s 2 (x) → t 4 (y).</formula><p>Intuitively, M is obtained by composing the rules from M ∪ O until a fixpoint is reached (see Sect. 4), then keeping only mapping assertions, i.e., rules whose all body predicates are in S. We can check that, for any database D on S, a single breadth-first step of the chase of D with M suffices to produce the chase of D with M ∪ O.</p><p>With the aim of developing compilation techniques for OBDA systems based on existential rules, we asked ourselves the following question: under which conditions on the rules can the chase be simulated in a single step?</p><p>We formalize the desired property by the notion of parallelisable existential rule sets. Informally, a (finite) rule set R is parallelisable if there exists a finite rule set R able to produce (an equivalent superset of) the chase of R in a single breadth-first step, independently from any instance. The question we investigate in this paper is how to characterize such rule sets. Our main results are the following.</p><p>• Clearly, boundedness, which expresses that the number of chase steps is bounded independently from any instance, is a necessary condition for parallelisability. This notion has long been studied for datalog <ref type="bibr" target="#b22">(Hillebrand et al. 1995)</ref> and more recently for existential rules <ref type="bibr" target="#b9">(Bourhis et al. 2019;</ref><ref type="bibr" target="#b18">Delivorias et al. 2021)</ref>. While boundedness is equivalent to parallelisability in the case of datalog, it does not ensure the parallelisability of an existential rule set. This leads us to define a new class of existential rules, namely pieceful. We show that parallelisable rule sets are exactly those sets that are both bounded and pieceful.</p><p>• The novel pieceful class has an interest in itself, as it generalizes datalog as well as a main class of existential rules, namely frontier-guarded, which itself covers some prominent description logics (see the last section for details).</p><p>• Piecefulness is based on the behavior of rules during the chase. Adopting the viewpoint of query rewriting, we study an operator of rule composition (that we call existential composition) based on so-called piece-unifiers, a notion at the core of rewriting with existential rules. We show that any bounded and pieceful rule set can be parallelized by a finite set of composed rules.</p><p>• This allows us to provide another characterization of pieceful rule sets based on their behavior during rule composition. Roughly, a certain property (that we call existential stability) has to be fulfilled by every pair of rules of the set and preserved whenever composed rules are added to the set.</p><p>• Finally, noting that rule composition does not fit well with the behavior we intuitively expected, we introduce another rule composition operator (that we call compact composition). The result of this operator goes beyond the existential rule language. We show however that, when the stability property is satisfied, both kinds of compositions yield logically equivalent formulas.</p><p>We believe that these results open up many practical and theoretical perspectives, which we discuss in the last section. Full proofs that could not be included due to space restrictions are available in a technical report <ref type="bibr" target="#b12">(Buron, Mugnier, and Thomazo 2021)</ref>.</p></div>
+<div><head n="2">Preliminaries</head><p>Generalities. A vocabulary is a pair V = (P, C), where P is a finite set of predicates and C is a possibly infinite set of constants. A term on V is a constant from C or a variable. An atom on V has the form p(t) where p ∈ P is a predicate of arity n and t is a tuple of terms on V with |t| = n. An atom is ground if it has no variable. Given an atom or set of atoms S, we denote by var(S), const(S) and term(S) its sets of variables, constants and terms, respectively. We will often see a tuple x of pairwise distinct variables as a set. We denote by |= the classical logical consequence. Given two sets of atoms S 1 and S 2 , a homomorphism h from S 1 to S 2 is a substitution of var(S 1 ) by term(S 2 ) such that h(S 1 ) ⊆ S 2 (we say that S 1 maps to S 2 by h).</p></div>
+<div><head>Instances and</head><p>Rules. An instance is a finite set of ground atoms. Any finite set of atoms S can be turned into an instance, denoted by freeze(S), by freezing its variables, i.e., bijectively renaming each variable by a fresh constant. An extended instance is a (possibly infinite) set of atoms, in which variables are classically called nulls. The associated (possibly infinite) formula is the existential closure of the conjunction of the atoms. An existential rule R (or simply rule hereafter) is a closed formula of the form</p><formula xml:id="formula_2">∀x∀y [ B(x, y) → ∃z H(x, z) ]</formula><p>where B and H are non-empty and finite conjunctions of atoms on variables, respectively called the body and the head of the rule, denoted by body(R) and head(R), and x, y and z are pairwise disjoint. We make the common assumption that rules do not contain constants, which simplifies technical tools. The set x is called the frontier of R and is denoted by fr(R). Its elements are called frontier variables. The set z is called the set of existential variables (of R) and is denoted by exist(R). An existential rule R is datalog if |head(R)| = 1 and exist(R) = ∅. For brevity, we often denote by B → H a rule with body B and head H. In the following, we denote by R a finite set of existential rules and assume w.l.o.g. that distinct rules in R have disjoint sets of variables. In our examples, we reuse variables for simplicity.</p><p>A rule R = B → H is applicable to a set of atoms S if there is a homomorphism π from B to S. The pair (R, π) is called a trigger for S. The application of R according to π (or: of the trigger (R, π)) produces a set of atoms obtained from head(R) by replacing each frontier variable x with π(x) and each existential variable with a fresh variable, called a null. We denote by π safe this extension of π that "safely" renames existential variables; hence, atoms produced by distinct applications of the same rule have disjoint sets of nulls. The set of atoms resulting from the application of (R, π) to S is α(S, R, π) = S ∪ π safe (H).</p><p>An R-derivation (from I to I k ) is a finite sequence</p><formula xml:id="formula_3">(I 0 = I), (R 1 , π 1 , I 1 ), . . . , (R k , π k , I k ) such that for all 0 &lt; i ≤ k, R i ∈ R, (R i , π i ) is a trigger for I i-1 and I i = α(I i-1 , R i , π i ).</formula><p>When only the successive (extended) instances are needed, we note (I 0 = I), I 1 , . . . , I k . Chase. The chase builds a derivation from an instance by repeatedly applying rules until a fixpoint is reached. We rely on the semi-oblivious chase variant (in short, so-chase), in which two triggers (R, π 1 ) and (R, π 2 ) that coincide on the frontier of R produce exactly the same result <ref type="bibr" target="#b27">(Marnette 2009)</ref>. More precisely, we assume that nulls are named as follows: given a trigger (R, π), for all z ∈ exist(R),</p><formula xml:id="formula_4">π safe (z) = z (R,π |fr(R) )</formula><p>, where π |fr(R) denotes the restriction of π to the domain fr(R). Hence, the name of a null created by a trigger (R, π) is based on R and π |fr(R) , not π itself. We consider a breadth-first so-chase defined as follows: chase 0 (I, R) = I and, for any i &gt; 0,</p><formula xml:id="formula_5">chase i (I, R) = chase i-1 (I, R) ∪ (R,π) (π safe (head(R)))</formula><p>where (R, π) is any trigger for chase i-1 (I, R) and for any z ∈ exist(R),</p><formula xml:id="formula_6">π safe (z) = z (R,π |fr(R) ) . Finally, chase ∞ (I, R) = i≥0 chase i (I, R).</formula><p>Example 2. Let I = {p(a, b)} and R = {p(x, y) → ∃z p(x, z) ∧ A(z)}. By the trigger t 1 = (R, {x → a, y → b}), we obtain chase 1 (I, R) = {p(a, b), p(a, ν), A(ν)} with ν = z (R,{x →a}) . The trigger t 2 = (R, {x → a, y → ν}) then produces the same atoms as t 1 . Finally, chase ∞ (I, R) = chase 1 (I, R).</p><p>Query Answering. A conjunctive query (CQ) is of the form q(x) = ∃y ϕ(x, y), where x and y are disjoint tuples of variables, ϕ is a conjunction of atoms, and x ∪ y = var(ϕ); the free variables in ϕ (i.e., x) are called answer variables. A Boolean CQ has no free variables. A union of conjunctive queries (UCQ) is a disjunction of CQs that have the same arity |x|. An (extended) instance I answers positively to a Boolean CQ q iff I |= q. More generally, a tuple of constants c is an answer to a CQ q(x), with |x| = |c|, on</p><formula xml:id="formula_7">I if I |= q[c],</formula><p>where q[c] is obtained by substituting the i-th variable in x by the i-th constant in c. The CQ answering problem takes as input an instance I, a rule set R, a query q(x) and a tuple of constants (c), with |x| = |c|, and asks whether</p><formula xml:id="formula_8">I, R |= q[c]. It holds that I, R |= q[c] iff there is an R-derivation from I to I such that I |= q[c]. Equivalently, I, R |= q[c] iff there is k such that chase k (I, R) |= q[c].</formula><p>Pieces. The notion of piece is key in this paper. Given a set of atoms S, a piece of S with respect to a set of terms T is a non-empty set S ⊆ S such that (1) for any atom a ∈ S, if a shares a term from T with some a ∈ S then a ∈ S , and (2) there is no strict subset of S that satisfies (1), i.e., S is minimal. Intuitively, atoms of S are glued together by the terms of T , which yields pieces. Note that, for any set of atoms S and set of terms T , S can be partitioned into pieces w.r.t. T . Here, pieces are defined with respect to existential variables or to nulls, depending on the considered objects. By default, a piece of S is w.r.t. exist(S) if S is a rule head and w.r.t. the nulls in S if S is an (extended) instance.</p><p>A rule is called single-piece if its head forms a single piece. Any rule can be decomposed into a (trivially) equivalent set of single-piece rules. For instance, a rule r(x, y) → ∃z 1 ∃z 2 p(x, z 1 ) ∧ A(z 1 ) ∧ A(z 2 ) ∧ p(x, y) has a head with three pieces: {p(x, z 1 ), A(z 1 )}, {A(z 2 )} and {p(x, y)}, hence can be decomposed into three single-piece rules: r(x, y) → ∃z 1 p(x, z 1 )∧A(z 1 ); r(x, y) → ∃z 2 A(z 2 ) and r(x, y) → p(x, y). In the following, we assume that rules are single-piece. This assumption simplifies our setting, although all notions and results of this paper could be reformulated without making it.</p><p>Piece-Unifiers. Piece-unifiers are a generalization of classical unifiers that take care of existential variables in rule heads by unifying sets of atoms instead of single atoms <ref type="bibr" target="#b2">(Baget et al. 2009)</ref>. Query rewriting as well as rule composition (see Sect. 4) are based on this notion. In the definition below, we give a simplified version of piece-unifiers, which does not take constants into account. See, e.g., <ref type="bibr" target="#b23">(König et al. 2015)</ref> for details about piece-unifiers.</p><p>Given sets of atoms S and S ⊆ S, the set of separating variables in S w.r.t. S, denoted by sep S (S ), is the set of variables that belong to both S and S\S . Note that when S is a piece of an extended instance I, sep I (S ) is necessarily empty (as S shares only constants with the rest of I). Definition 1 (Piece-unifier). Let S be a set of atoms and R = B → H be a rule (both without constants) such that var(S) ∩ var(B ∪ H) = ∅. A piece-unifier of S with R (or with H) is a triple µ = (S , H , u) with S = ∅, S ⊆ S, H ⊆ H, and u is a substitution of fr(R) ∪ var(S ) by var(head(R)) such that:</p><formula xml:id="formula_9">1. For all x ∈ fr(R), u(x) ∈ fr(R) 2. For all x ∈ sep S (S ), u(x) ∈ fr(R) 3. u(S ) = u(H ).</formula><p>Let S be a set of atoms and µ = (S , H , u) be a pieceunifier of S with R :</p><formula xml:id="formula_10">B → H. The (direct) rewriting of S w.r.t. µ is β(S, R, µ) = u(B) ∪ u(S \ S ). An R-rewriting S k of S is obtained by a finite sequence (S 0 = S), . . . , S k such that, for all 0 &lt; i ≤ k, S i is a direct rewriting of S i-1 w.r.t. a piece-unifier of S i-1 with a (copy of a) rule from R. Example 3 (Piece-Unifier). Let R = A(x) → ∃z p(x, z) and S 1 = {p(w, v), B(v)}. There is no piece-unifier of S 1 with R since v is a separating variable of S 1 = {p(w, v)}, hence cannot be unified with z. Let S 2 = {p(w 1 , v), B(w 1 ), p(w 2 , v), C(w 2 )}. The triple µ = (S 2 , H , u) with S 2 = {p(w 1 , v), p(w 2 , v)}, H = {p(x, z)} and u = {w 1 , w 2 → x, v → z} is a piece- unifier of S 2 with R, which yields the direct rewriting {A(x), B(x), C(x)}.</formula><p>A fundamental property of piece-unifiers is the following: given any instance I, rule set R and Boolean CQ q, there is an R-derivation from I to an I i such that q maps to I i (I i |= q) iff there is an R-rewriting q of q such that q maps to I (I |= q ). Note that this property does not rely on rules being single-piece.</p><p>Fundamental Properties of Rule Sets. A rule set R is so-chase finite if for any instance I, there is k such that chase k (I, R) = chase ∞ (I, R). A rule set R is a finite unification set (fus) if for any Boolean CQ q, there is a finite set Q of R-rewritings of q, such that, for any R-rewriting q of q, there is q ∈ Q that maps to q <ref type="bibr" target="#b2">(Baget et al. 2009)</ref>. It is not hard to see that fus is equivalent to first-order rewritability (introduced in <ref type="bibr" target="#b15">(Calvanese et al. 2007</ref>)): R is first-order rewritable if for any Boolean CQ q, there is a UCQ Q, such that for any instance I, it holds that I, R |= q iff I |= Q. Moreover, as several times remarked, fus is equivalent to the bounded derivation depth property <ref type="bibr" target="#b14">(Calì, Gottlob, and Lukasiewicz 2009)</ref>: for any Boolean CQ q, there is k such that for any instance I, if I, R |= q then chase k (I, R) |= q. Finally, a rule set is so-bounded if there is k (a bound) such that for any instance I, chase k (I, R) = chase ∞ (I, R) <ref type="bibr" target="#b18">(Delivorias et al. 2021)</ref>. Clearly, when a rule set is so-bounded, it is also so-chase finite and fus. The reciprocal holds true for single-piece rules (follows from <ref type="bibr" target="#b9">(Bourhis et al. 2019)</ref>). In the remaining, we will simply write chase and bounded in place of so-chase and so-bounded.</p><formula xml:id="formula_11">Example 4. R 1 = {A(x) → ∃z p(x, z) ∧ A(z)} is fus and not chase- finite. R 2 = {R 1 : p(x, y) ∧ p(y, z) → p(x, z)} is datalog (hence chase-finite) and not fus (hence not bounded). R 3 = R 2 ∪ {R 2 : p(x, y) ∧ p(u, z) → p(x, z)} is bounded.</formula><p>Note that the body of R 2 contains 'disconnected' atoms and all the atoms produced by R 1 are also produced by R 2 ; moreover, for any instance I, all the atoms producible by R 2 are produced at the first breadth-first step of the chase. That is why R 3 is bounded with bound 1.</p></div>
+<div><head n="3">Characterizing Parallelisable Rule Sets</head><p>In this section, we define parallelisable rule sets and motivate the introduction of a new class of existential rules, namely pieceful. We show that parallelisable rule sets are exactly those rule sets that are both bounded and pieceful.</p></div>
+<div><head n="3.1">Parallelisable Rule Sets</head><p>Parallelisability intuitively means that a sound superset of the chase can be obtained in a single breadth-first step by a finite set of rules independent from any instance.</p><p>Definition 2 (Parallelisability). A set of rules R is parallelisable if there exists a finite rule set R such that for any instance I:</p><p>1. there is an injective homomorphism from chase ∞ (I, R)</p><p>to chase 1 (I, R ); 2. there is a homomorphism from chase 1 (I, R ) to chase ∞ (I, R).</p><p>Such rule set R is said to parallelise R.</p><p>Note on this definition. A more powerful notion of parallelisability could be obtained by dropping the injectivity requirement in Point 1. Then, chase 1 (I, R ) would be equivalent to chase ∞ (I, R) but would not necessarily include it. This notion could also be obtained without changing the definition but considering a stronger chase variant for chase ∞ (I, R), namely the core chase, which produces a minimal canonical model of I∪R <ref type="bibr" target="#b19">(Deutsch, Nash, and Remmel 2008)</ref>. However, the core chase is not monotonic and its result may even not be obtainable by any R-derivation. We have chosen here to consider the well-behaved so-chase. Proposition 1. If R is parallelisable, then it is bounded.</p><p>Proof. Let us assume that R is parallelised by R . For any instance I, chase</p><formula xml:id="formula_12">1 (I, R ) is finite because R is finite. As there is an injection from chase ∞ (I, R) to chase 1 (I, R ), chase ∞ (I, R) is finite. Now, for each rule R ∈ R , let I = freeze(body(R)): since R is applicable to I and chase 1 (I, R ) maps to chase ∞ (I, R), there is k R such that head(R) maps to chase k R (I, R). Let k be the maximum k R over all rules R ∈ R. For any instance I, there is n such that chase ∞ (I, R) = chase n (I, R) with n ≤ k. Hence, R is bounded (by k).</formula><p>The converse is however not true, as witnessed by the following example.</p><formula xml:id="formula_13">Example 5 (Prime Example). Let R = {R 1 , R 2 } where: R 1 : A(x) → ∃z p(x, z) R 2 : p(x, z) ∧ B(y) → r(z, y)</formula><p>R is bounded but not parallelisable. Let, for any n,</p><formula xml:id="formula_14">I n = {A(a), B(b 1 ), . . . , B(b n )}.</formula><p>There is a null in chase ∞ (I n , R) that appears in n + 1 atoms (apply R 1 once, which creates a null, then apply R 2 n times). Hence, there is no finite set of rules R such that chase ∞ (I n , R) injectively maps to chase 1 (I, R ) for any n.</p><p>Motivated by this example, we now introduce a new class of rules, called pieceful.</p></div>
+<div><head n="3.2">The Pieceful Class</head><p>In short, pieceful rule sets ensure that for any rule application, the entire rule frontier is mapped either to terms from the initial instance or to terms that occur in atoms brought by a single previous rule application. Definition 3 (Pieceful Derivation). An R-derivation </p><formula xml:id="formula_15">(I 0 = I), . . . , I k , is pieceful if for all i with 0 &lt; i ≤ k, ei- ther π i (fr(R i )) ⊆ term(I) or there is j &lt; i such that π i (fr(R i )) ⊆ term(A j ), where A j = π safe j (head(R j )). Definition 4 (Pieceful Rule Set). A rule set R is pieceful if (for</formula><formula xml:id="formula_16">= I)(R 1 , π 1 , I 1 )(R 2 , π 2 , I 2 ).</formula><p>Indeed, (R 1 , π 1 ) produces π safe 1 (head(R 1 )) = A 1 = {p(a, ν 0 )}, with ν 0 the null created from z. Then, π 2 = {x → a, y → b, z → ν 0 }. Since fr(R 2 ) = {y, z} is mapped to {b, ν 0 }, with b ∈ term(A 1 ) and ν 0 ∈ term(I), this derivation is not pieceful, hence neither is R.</p><p>Interestingly, when a rule set is not pieceful, it is possible to build instances that generalize the situation from Example 5, so that the chase creates nulls that occur in an arbitrarily large number of atoms, as shown by next Proposition 2. As will become clear later (Proposition 5), the reciprocal statement is true when the rule set is chase-finite. Proposition 2. If R is not pieceful then, for all n, there exist an instance I n and a null ν n such that ν n occurs in at least n atoms in chase ∞ (I n , R).</p><p>Proof. (Sketch) Let I 0 , . . . , I n-1 , I n be a non-pieceful derivation such that I 0 , . . . , I n-1 is pieceful, i.e., (R n , π n ) applied on I n-1 is the first application that violates the pieceful condition. From that derivation, we build a set of instances {I i } such that the chase of I i contains a null that occurs in at least i (distinct) atoms.</p><p>At least one frontier variable of R n is mapped to a null. Let k be the largest integer such that (R k , π k ) introduces a null (in I k ) to which a frontier variable of R n is mapped by π n . Let ν * be this null. We define by induction on i the instance I i as follows, where each f i (I k-1 ) denotes a freezing of I k-1 : (i) I 0 = f 0 (I k-1 ) and (ii) for any i ≥ 1,</p><formula xml:id="formula_17">I i = I i-1 ∪ f i (I k-1 ) where: if x ∈ π k (fr(R k )), then f i (x) = f 0 (x), otherwise f i (x)</formula><p>is a fresh constant (w.r.t. the whole construction). Intuitively, I i is built from i + 1 copies of I k-1 , where all the terms have been freshly renamed except for those in π k (fr(R k )). From any I i , we can build a derivation that mimics the initial derivation I k-1 , . . . , I n and show that ν occurs in i + 1 atoms.</p><p>It follows that any parallelisable set is pieceful: Proposition 3. If R is parallelisable, then it is pieceful.</p><p>Proof. Assume that R is parallelisable by R . Notice that for any I, any null in chase ∞ (I, R) occurs in at most h atoms, where h is the maximal size of a rule head in R (indeed, two distinct rule applications from R cannot share any null). Since h is bounded independently from I, by contraposite of Proposition 2, R is pieceful.</p><p>How does the pieceful class fit in the existential rule landscape? Clearly, pieceful rule sets are greedy-boundedtreewidth sets (gbts) <ref type="bibr">(Baget et al. 2011b;</ref><ref type="bibr" target="#b30">Rudolph et al. 2014)</ref> 1 , an expressive family for which CQ answering is decidable. The gbts class includes some prominent existential classes, see Figure <ref type="figure" target="#fig_1">1</ref>. There are three basic classes: (plain) datalog (e.g., <ref type="bibr" target="#b0">(Abiteboul, Hull, and Vianu 1994)</ref>), in which there are no existential variables at all; guarded rules, in which all the variables from a rule body are guarded, i.e., jointly occur in a body atom <ref type="bibr" target="#b14">(Calì, Gottlob, and Lukasiewicz 2009;</ref><ref type="bibr" target="#b13">Calì, Gottlob, and Kifer 2013)</ref>; frontier-one rules, in which the frontier of a rule is restricted to (at most) one variable <ref type="bibr" target="#b2">(Baget et al. 2009)</ref>. Combining guardedness and frontier-based restrictions leads to frontier-guarded rules, in which only the frontier of a rule needs to be guarded <ref type="bibr" target="#b6">(Baget, Leclère, and Mugnier 2010)</ref>. The guardedness condition is further relaxed in weakly (frontier) guarded (w(f)g) rules, in 1 Indeed, a pieceful derivation is a specific greedy derivation and gbts are those sets for which all derivations are greedy. which only the (frontier) variables possibly mapped to nulls during the chase need to be guarded.</p><p>As pictured in Figure <ref type="figure" target="#fig_1">1</ref>, the pieceful class includes datalog and frontier-guarded, but not wg (Example 5 is wg) and it is not difficult to see that it is actually incomparable with wfg. Proposition 4. Any set of frontier-guarded existential rules or of datalog rules is pieceful.</p></div>
+<div><head n="3.3">Characterizing Parallelisability</head><p>We first point out that the chase of any instance I is equal to the union of its pieces (w.r.t. nulls). A fundamental property of pieceful rules is that the application of a rule B → H at level i can never connect two pieces of chase i-1 (I, R); when it does not produce an atom already present in chase i-1 (I, R), either it creates a new piece of size |H| (when the frontier is mapped to terms from I), or it makes an existing piece grow by |H| atoms (when the frontier is mapped to terms with at least one null).</p><p>Proposition 5. If R is pieceful then for any instance I and integer k, the maximal size of a piece in chase k (I, R) is bounded independently from I.</p><p>Proof. (Sketch) Given I and R, we note P (i) the maximal size of a piece in chase i (I, R). We prove that P (0) = 1 and, for i ≥ 0, P (i + 1) ≤ (P (i) × a) fr × h × |R|, where a is the maximal arity of a predicate, fr and h are the maximal size of a rule frontier in R and a rule head in R, respectively.</p><p>Corollary 1. If R is pieceful and bounded, then for any instance I, the maximal size of a piece in chase ∞ (I, R) is bounded independently from I.</p><p>Based on this corollary, we are now able to show that any bounded pieceful set is parallelisable. We will give another proof of this result in Sect. 4 (see Cor. 2). Proposition 6. If R is pieceful and bounded then it is parallelisable.</p><p>Proof. (Sketch) As R is pieceful and bounded, there is a finite set of pieces P such that for any instance I, any piece of chase(I, R) is isomorphic to a piece of P. By isomorphism from a piece P 1 to a piece P 2 , we mean a bijection b from term(P 1 ) to term(P 2 ) such that, for all x ∈ term(P 1 ), b(x) is a null iff x is a null, and b(P 1 ) = P 2 .</p><p>For any piece P ∈ P, let (c P ) be a tuple obtained by a total ordering on const(P ), and consider the query q P (c P ) = ∃y P (c P , y), with y denoting the variables from P . Let Q P be a finite complete set R-rewritings of q P (note that we need here the general definition of piece-unifiers that deals with constants). There is such set for any P , as R is bounded, hence fus. We define R as the set of rules of the shape q P (x) → ∃yP (x, y), where x is a tuple of variables in bijection with c P , for P ∈ P and q P ∈ Q P .</p><p>From Propositions 1, 3 and 6, we finally obtain the following characterization of parallelisability: Theorem 1. A rule set is parallelisable if and only if it is both bounded and pieceful.</p></div>
+<div><head n="4">Parallelisability and Rule Composition</head><p>Early work on datalog has shown that a datalog rule set R is 'parallelisable' (according to our definition) if and only if it is bounded (see, e.g., <ref type="bibr" target="#b20">(Gaifman et al. 1993)</ref>). Moreover, such set, say R , can be computed by an operation called unfolding: given rules R 1 : B 1 → H 1 and R 2 : B 2 → H 2 , and a (most general) unifier u of an atom A in B 2 with the atom in H 1 , the unfolding of R 2 by R 1 is the rule u(B 1 ) ∪ u(B 2 \{A}) → u(H 2 ); starting from R, on can build R by repeatedly unfolding a rule from R by a rule from R, until a fixpoint is reached. This is illustrated by the next example.</p></div>
+<div><head>Example 7 (Datalog Unfolding</head><formula xml:id="formula_18">). Let R = {R 1 , R 2 , R 3 } with: R 1 : A(x) → B(x) R 2 : C(x) → D(x) R 3 : B(x) ∧ D(x) → G(x) Denoting R i • R j the unfolding of R i by R j , we obtain: R 3 • R 1 : A(x) ∧ D(x) → G(x) R 3 • R 2 : C(x) ∧ B(x) → G(x) (R 3 • R 1 ) • R 2 : A(x) ∧ C(x) → G(x) (R 3 • R 2 ) • R 1 = (R 3 • R 1 ) • R 2 . Finally, R = R ∪ {R 3 • R 1 , R 3 • R 2 , (R 3 • R 1 ) • R 2 }.</formula><p>Here R is finite, as R is bounded.</p><p>In the following, we will consider composition of existential rules, which generalizes this notion of unfolding.</p></div>
+<div><head n="4.1">Rule Composition</head><p>Composition of existential rules has been exploited as a means of tracing 'chained' sequences of rule applications (e.g., <ref type="bibr" target="#b5">(Baget et al. 2014;</ref><ref type="bibr" target="#b32">Wang, Wang, and Zhang 2018)</ref>). It is naturally based on the notions of piece-unifier and rewriting. The next definition of rule composition furthermore takes pieces into account. Definition 5 (Rule Composition). Given rules R 1 : B 1 → H 1 and R 2 : B 2 → H 2 on disjoint sets of variables, and µ = (B 2 , H 1 , u) a piece-unifier of B 2 with R 1 , the (existential) composition of R 2 with R 1 w.r.t. µ is the following existential rule, denoted by</p><formula xml:id="formula_19">R 2 • µ R 1 , or simply R 2 • R 1 : 1. If u(fr(R 2 )) ∩ exist(R 1 ) = ∅: R 2 • µ R 1 = u(B 1 ) ∪ u(B 2 \ B 2 ) → u(H 2 ) 2. Otherwise: R 2 • µ R 1 = u(B 1 ) ∪ u(B 2 \ B 2 ) → u(H 1 ) ∪ u(H 2 ) Note that u(B 1 ) ∪ u(B 2 \ B 2 ) is exactly the rewriting of B 2 w.r.t. µ.</formula><p>The first case in the definition is when no frontier variable from R 2 is unified with an existential variable from R 1 , i.e., u(fr(B 2 )) ⊆ fr(R 1 ). Then, defining R 2 • µ R 1 as in Point 2 would lead to a rule with a two-piece head (resp., u(H 1 ) and u(H 2 )), which can be decomposed into two single-piecehead rules. Moreover, the rule u(B 1 )∪u(B 2 \B 2 ) → u(H 1 ) is useless because every application of this rule can be obtained with an application of R 1 . In the second case, since at least one frontier variable from B 2 is unified with an existential variable from R 1 , u(H 1 ) ∪ u(H 2 ) forms a single piece. Therefore, restricting the rule head to u(H 2 ) would result in a loss of information. Note that in both cases, the obtained rule R 2 • R 1 has a single piece head. Example 8. Let R contain three rules:</p><formula xml:id="formula_20">R 1 : A(x) → ∃z p(x, z) R 2 : p(x, z) → B(z) R 3 : C(x) ∧ B(y) → r(x, y) The composed rule R 3 • R 2 = p(x , z) ∧ C(x) → r(x, z)</formula><p>illustrates Point 1. Defining R 3 •R 2 as in Point 2 would lead to the following rule with a two-piece head:</p><formula xml:id="formula_21">p(x , z) ∧ C(x) → B(z) ∧ r(x, z) We can see that p(x , z) ∧ C(x) → B(z) is useless w.r.t. R 2 . R 2 • R 1 = A(x) → ∃z p(x, z) ∧ B(z) illustrates Point 2.</formula><p>The set R includes the original set R as well as all rules obtained by composition. Definition 6. (R ) The set of (existentially-) composed rules associated with R, denoted by R , is the possibly infinite set inductively defined as follows:</p><formula xml:id="formula_22">(base) R ⊆ R , (induction) if R i , R j ∈ R and there is a piece-unifier µ of body(R i ) with R j , then R i • µ R j ∈ R .</formula><p>R is sound and complete in the sense that entailment of Boolean CQs is preserved (with R applied in a single breadth-first step). Formally: for any rule set R, instance I and Boolean CQ q, holds I, R |= q if and only if holds chase 1 (I, R ) |= q. Soundness relies on the fact that all the rules in R are entailed by R and completeness follows from <ref type="bibr" target="#b32">(Wang, Wang, and Zhang 2018)</ref>, Prop. 2.</p><p>The next proposition yields a more specific completeness result: if R is a pieceful rule set, then for any instance I, each piece of chase ∞ (I, R) can be obtained by applying a rule from R to I.</p><p>Proposition 7. Let I be an instance and R be a set of rules. For any pieceful derivation of length i resulting in I i , for any piece P in I i , either P ⊆ I or there exist a rule R * ∈ R and a homomorphism π from body(R * ) to I such that P maps to π safe (head(R * )) by an injective homomorphism.</p><p>Proof. (Sketch) We prove the result by induction on the length i of the derivation. For i = 1, if P ⊆ I, then P has been generated by an application of a rule from R ∈ R ⊆ R . Assuming that the result holds for any piece P of I i-1 with i &gt; 1, we show it also holds for any piece P of I i . Let I 0 , (R 1 , π 1 , I 1 ), . . . , (R i , π i , I i ) be a derivation of length i. The body of R i is mapped by π i to k pieces of I i-1 , where k ≤ |var(body(R i ))|. Let P be the piece created or completed by the application of R i by π i . As the derivation is pieceful, P is either a piece of I i-1 to which π safe i (head(R i )) has been added, or a new piece. We build by induction on k a rule R P that maps by π P to I and such that P injectively maps to the result of the application of R P by π P .</p><p>We conjecture that the previous result actually holds without the pieceful restriction, but its proof would be more intricate. Thanks to this result, we can refine Proposition 6: Corollary 2. If R is pieceful and bounded then it is parallelisable by a (finite) subset of R .</p><p>Proof. Since R is bounded, the maximum size of a piece is bounded and each piece can be generated by a derivation of length bounded by an integer n, where n is independent of the instance.</p><p>Since CQ answering with general existential rules is not decidable, R can be infinite. The next example shows that R can be infinite even for R a bounded set of rules, which may seem surprising. Example 9. We consider again the prime example, where</p><formula xml:id="formula_23">R = {R 1 , R 2 } is bounded. Let us build R : R 1 : A(x) → ∃z p(x, z) R 2 : p(x, z) ∧ B(y) → r(z, y) R 2 • R 1 : A(x) ∧ B(y) → ∃z p(x, z) ∧ r(z, y) R 2 • (R 2 • R 1 ) : A(x) ∧ B(y) ∧ B(y 1 ) →</formula><p>∃z p(x, z)∧r(z, y)∧r(z, y 1 ) etc. At each step, one obtains a new rule by the composition R 2 • R * , where R * is the rule created at the preceding step: A(x) ∧ B(y) ∧ B(y 1 ) . . . B(y i ) → ∃z p(x, z)∧r(z, y)∧r(z, y 1 ) . . .∧r(z, y i ) Not only R is infinite, but no finite subset of it is complete. Moreover, the previous example shows that rule compositions of the form R • R * , with R ∈ R and R * ∈ R are required to achieve completeness, while rule compositions of the form R * • R are sufficient in the datalog fragment.</p></div>
+<div><head n="4.2">Existential Stability</head><p>In Sect. 3.3, we have shown that a rule set is parallelisable if and only if it is both bounded and pieceful, with this last notion being defined by the behavior of rules during the chase. The next question we study is whether pieceful rule sets can be characterized by their behavior during rule composition.</p><p>We first introduce the 'existential stability' property (the reason for this name will be explained in Sect. 4.3). Definition 7 (Existential stability). Given rules R 1 and R 2 , we say that a piece-unifier µ = (B 2 , H 1 , u) of body(R 2 ) with R 1 satisfies the (existential) stability property if the following holds:</p><formula xml:id="formula_24">• either u(fr(R 2 )) ∩ exist(R 1 ) = ∅, • or fr(R 2 ) ⊆ var(B 2 ).</formula><p>This notion is extended to a rule set: R satisfies the stability property if, for any rules R 1 and R 2 in R, any pieceunifier of R 2 with R 1 satisfies the stability property.</p><p>Informally, the stability property says that when a frontier variable from R 2 is unified with an existential variable from R 1 then all the frontier variables from R 2 are unified. By the next example, we point out that the stability property of a rule set may not be preserved when composed rules are added. Example 10. Let R from Example 8. It can be checked that it has the stability property. Now, consider R 2 • R 1 and R 3 :</p><formula xml:id="formula_25">R 2 • R 1 : A(x) → ∃z p(x, z) ∧ B(z) R 3 : C(x) ∧ B(y) → r(x, y) Then, R 3 • (R 2 • R 1</formula><p>) involves a piece-unifier that does not satisfy the stability property:</p><formula xml:id="formula_26">fr(R 3 ) = {x, y}; y is unified with z ∈ exist(R 2 • R 1 ) but x is not unified, hence R ∪ {R 2 • R 1 } does not have the stability property.</formula><p>We say that a rule set R is stable at the infinite if R satisfies the stability property. Next, we show that pieceful rule sets are exactly those rule sets stable at the infinite. Proposition 8. Any pieceful rule set satisfies the stability property.</p><p>Proof. Let R 1 : B 1 → H 1 and R 2 : B 2 → H 2 be two rules of a pieceful rule set and let µ = (B 2 , H 1 , u) be a piece-unifier of body(R 2 ) with R 1 . Assume that µ does not satisfy the stability property. Let</p><formula xml:id="formula_27">I = u(B 1 ) ∪ u(B 2 \ B 2 ).</formula><p>For simplicity here, we confuse I and its freezing, and we assume that safe renamings are the identity (indeed, we will consider a single application of R 1 followed by a single application of R 2 ). R 1 is applicable on I by a homomorphism h 1 extending u |var(B1) (i.e., for all x ∈ var(B 1 ),</p><formula xml:id="formula_28">h 1 (x) = u(x) if x ∈ fr(R 1 ), otherwise h 1 (x) = x). R 2 is</formula><p>applicable on the result of this application, i.e., I ∪ h 1 (H 1 ), by a homomorphism h 2 extending u |var(B2) (i.e., for all x ∈ var(B 2 ), h 2 (x) = u(x) if u(x) is defined, otherwise h 2 (x) = x). Since u does not satisfy the stability property, for some x ∈ fr(R 2 ), u(x) ∈ exist(R 1 ) and for another x ∈ fr(R 2 ), u(x ) is not defined. Hence, h 2 (x) ∈ term(I), while h 2 (x ) ∈ term(h 1 (H 1 )), which shows that the derivation is not pieceful. Proposition 9. If R is pieceful, then for any rules R 1 and</p><formula xml:id="formula_29">R 2 from R, R ∪ {R 2 • µ R 1 } is also pieceful. Proof. (Sketch) We show the contrapositive. Assume R = R ∪ {R 2 • µ R 1 } is not pieceful. Let D = I 0 , .</formula><p>. . , I n be a pieceful R -derivation on which (R n+1 , π n+1 ) is applicable in a non-pieceful way. We build a non-pieceful R-derivation D = I 1 , . . . , I ϕ(n) by induction on n, which satisfies the following:</p><p>• For all 1 ≤ i ≤ n, there is an isomorphism ψ i from I i to I ϕ(i) • For any set A j (produced by an application in D), there is A k (produced by an application in D ) s.t. A j ⊆ ψ n (A k ).</p><p>Consider now (R n+1 , π n+1 ). Then ψ n • π n+1 is a homomorphism from body(R n+1 ) to I ϕ(n) . If R n+1 ∈ R, by hypothesis on (R n+1 , π n+1 ), there is no A k s.t. π n+1 (fr(R n+1 ))) ⊆ term(A k ). By induction hypothesis, for every A j in D, there is A k s.t. A j ⊆ ψ n (A k ). Hence, there is no A j in D s.t. ψ n • π n+1 (fr(R n+1 )) ⊆ term(A j ), and R is not pieceful. If R n+1 = R 2 • µ R 1 , the same reasoning applies, noting that, since µ satisfies the stability property, either fr(R n+1 ) ⊆ u(fr(R 2 )) or fr(R n+1 ) ⊆ u(fr(R 1 )).</p><p>From Prop. 8 and 9, we obtain that pieceful rule sets are stable at the infinite. We now show the converse direction.</p><p>Proposition 10. Any rule set that is stable at the infinite is pieceful.</p><p>Proof. (Sketch) We prove the result by contrapositive. Considering the first application (R, π) that violates the pieceful constraint in a derivation, we consider a piece P that contains π(x) for some x ∈ fr(R). We consider R P that generates P (using Proposition 7), and build a piece-unifier µ of body(R) with R P that violates the stability property.</p><p>From the three previous propositions, we obtain the desired result: Theorem 2. A rule set is pieceful if and only if it is stable at the infinite.</p><p>Finally, as a corollary of Th. 1 and 2, we obtain another characterization of parallelisable sets of rules. Corollary 3. A rule set is parallelisable if and only if it is both bounded and stable at the infinite.</p></div>
+<div><head n="4.3">Beyond Existential Composition</head><p>In this section, we question the notion of rule composition and provide preliminary findings. We define another rule composition operation, which seems to fit with our intuition and is more succinct (hence, its name 'compact'), but which goes beyond existential rules. We then show that, for piece-unifiers that satisfy the stability property, existential and compact compositions actually coincide.</p><p>For datalog, we know that R is finite if and only if R is bounded. To better understand why this is no longer true for existential rules, let us focus on compositions of the form R 2 • R 1 , with exist(R 1 ) = ∅. Intuitively, the rules R 2 • R 1 capture the situations in the chase where 'an application of R 1 leads to trigger a new application of R 2 '. More formally: for any instance I, application of R 1 to I yielding I 1 , homomorphism π 2 from body(R 2 ) to I 1 such that π 2 (body(R 2 )) ⊆ I, with I 2 = α(I 1 , R 2 , π 2 ), there is a composed rule R 2 • R 1 whose application to I yields an instance isomorphic to I 2 . One might be tempted to conclude that the set of all rules of the form R 2 • µ R 1 (i.e., for all piece-unifiers µ) is able to capture 'all applications of R 2 that use an atom brought by an application of R 1 ', i.e., chase 1 (I, {R 1 , R 2 • µ R 1 |∀µ}) would be equivalent to</p><formula xml:id="formula_30">I 1 = chase 1 (I, {R 1 })) ∪ {α(I 1 , R 2 , π 2 )|π 2 (body(R 2 )) ⊆ I}).</formula><p>However, this does not hold, as illustrated below.</p><p>Example 11. Consider again the prime example with R = {R 1 , R 2 }: As it is obtained by one application of R 1 which triggers two parallel applications of R 2 , this also corresponds to the above</p><formula xml:id="formula_31">(I 1 = chase 1 (I, {R 1 })) ∪ {α(I 1 , R 2 , π 2 )|π 2 (body(R 2 )) ⊆ I}. One (breadth-first) chase step with R ∪ {R 2 • R 1 } would produce instead: I ∪ {p(a, z 0 ), p(a, z 1 ), r(z 1 , b), p(a, z 2 ), r(z 2 , c)} Note that this is here equal to chase 1 (I, {R 1 , R 2 • µ R 1 |∀µ}).</formula><p>We can see that two nulls z 1 and z 2 are created instead of a single one. Obviously, both results are not equivalent. F.i., the Boolean CQ q() = ∃u r(u, b) ∧ r(u, c) would be answered positively in the first case, but not in the second.</p><p>In the previous example, the logical formula associated with R 2 • R 1 is the following:</p><formula xml:id="formula_32">∀x∀y (A(x) ∧ B(y) → ∃z (p(x, z) ∧ r(z, y))).</formula><p>Instead, we propose to interpret rule composition as: ∀x (A(x) → ∃z (p(x, z) ∧ ∀y (B(y) → r(z, y))))</p><p>By removing the knowledge entailed by R 1 , we obtain:</p><formula xml:id="formula_33">R 2 • R 1 = ∀x∃z∀y (A(x) ∧ B(y) → p(x, z) ∧ r(z, y)) Definition 8 (Compact Composition). Let R 1 = ∀x 1 ∀y 1 [ B 1 (x 1 , y 1 ) → ∃z 1 H 1 (x 1 , z 1 ) ] and R 2 = ∀x 2 ∀y 2 [ B 2 (x 2 , y 2 ) → ∃z 2 H 2 (x 2 , z 2 ) ]. Let µ = (B 2 , H 1 , u) be a piece-unifier of B 2 with R 1 . The compact composition of R 2 with R 1 w.r.t. µ, denoted by R 2 • µ R 1 is the following closed formula: ∀x 1 ∀y 1 ∃z 1 ∀x 2 ∀y 2 (u(B 1 ) ∧ u(B 2 \ B 2 ) → ∃z 2 (u(H 1 ) ∧ u(H 2 ))) where x 1 = u(x 1 ), x 2 = x 2 \ var(B 2 ), y 2 = y 2 \ var(B 2 ).</formula><p>Compact composition is more succinct than existential composition, since a single •-composed rule may capture an unbounded number of •-composed rules. However, the resulting formula is generally not an existential rule. We show below that, when the piece-unifiers involved in rule composition satisfy the stability property, the result of compact composition is equivalent to an existential rule (hence the name 'existential stability') and it coincides with existential composition (for clarity, we consider below the general form of existential composition, i.e., ignore Point 1 in Def. 5).</p><p>Proposition 11. When the stability property is satisfied, the compact composition is equivalent to the existential composition, i.e., for all rules R 1 and R 2 , and any piece-unifier µ of body(R 2 ) with R 1 satisfying the stability property, R 2 • µ R 1 ≡ R 2 • µ R 1 (where ≡ denotes the logical equivalence and • is defined according to Point 2 of Def. 5).</p><p>Proof. Note that R 2 • µ R 1 is equivalent to the formula obtained from R 2 • µ R 1 by moving ∃z 1 after ∀x 2 ∀y 2 . Here, such an inversion of quantifiers can be done without change of semantics if we can group the atoms in R 2 • µ R 1 into two sets, such that one contains all the atoms with variables in z 1 and the other all the atoms with variables in x 2 ∪ y 2 . Since u(H 2 ) may contain variables from both x 2 and z 1 , this is possible if and only if u(H 2 ) contains no variable from x 2 or no variable from z 1 . We check that it is indeed the case when µ has the stability property: if u(fr(R 2 ))∩exist(R 1 ) = ∅, then u(H 2 ) does not contain any variable from z 1 ; if fr(R 2 ) ⊆ var(B 2 ), then x 2 is empty, hence u(H 2 ) does not contain any variable from x 2 .</p><p>Finally, one could think of skolemizing existential rules to get (specific) logic-programming rules. Briefly, skolemization consists of replacing each existential variable in a rule head by a fresh functional term over the rule frontier. Then, rule composition is based on classical (most general) unifiers. However, as illustrated below, the composition of two skolemized existential rules may not be a skolemized existential rule. Actually, such composition can be seen as the skolemization of the formula obtained by compact composition, which leads us again beyond the existential rule fragment.</p><p>Example 12 (Skolem composition). Consider the skolemization (noted sk) of the rules from the prime example: sk(R 1 ) : A(x) → p(x, f (x)) sk(R 2 ) = R 2 : p(x, z) ∧ B(y) → r(z, y) Then, the composition of sk(R 2 ) with sk(R 1 ) yields the following rule, where p(x, f (x)) could be removed:</p><p>A(x) ∧ B(y) → p(x, f (x)) ∧ r(f (x), y) This rule is not the skolemization of any existential rule because f does not span over the whole rule frontier {x, y}. Instead, it is sk(R 2 • R 1 ).</p></div>
+<div><head n="5">Concluding Remarks</head><p>In this paper, we introduce the notion of parallelisability of a set of existential rules and characterize parallelisable rule sets in two different ways. One characterization relies on the behavior of rules during the chase, which leads to define a new class of existential rules, namely pieceful. Another characterization relies on the behavior of rules during rewriting, which led us to question the notion of rule composition. We believe that these results open up many perspectives, which we now outline.</p><p>Application to OBDA Mature systems, such as <software ContextAttributes="used">OnTop</software> <ref type="bibr" target="#b17">(Calvanese et al. 2017)</ref> or <software ContextAttributes="used">Mastro</software> <ref type="bibr" target="#b16">(Calvanese et al. 2011)</ref>, are based on lightweight description logics (typically DL-Lite R underpinning the W3C language OWL2 QL) and the mapping is GAV (i.e., mapping assertions q S (x) → q O (x) satisfy var(q O ) ⊆ x). Some other OBDA systems are based on the lightweight ontological language RDFS, e.g., <software ContextAttributes="used">UltraWrap</software> <ref type="bibr" target="#b31">(Sequeda, Arenas, and Miranker 2014)</ref>, where RDFS is extended with inverse and transitive properties, and mappings are still GAV, and Obi-Wan <ref type="bibr">(Buron et al. 2020a)</ref>, strictly restricted to RDFS but with GLAV mappings (i.e., q O is any CQ).We believe that the existential rule framework is particularly well suited to the development of OBDA systems in more expressive settings. Indeed, existential rules are able to express both ontological knowledge and relational GLAV mappings; GLAV mappings provide increased flexibility compared to GAV mappings, by their ability to invent values, thanks to existential variables. This yields a uniform setting for the whole OBDA specification, thereby facilitating the analysis of the interactions between O and M, which is key to efficiency. Furthermore, a rich family of existential rule dialects achieving various expressivity/tractability tradeoffs are available. In this paper, we have taken a first step towards the design of compilation techniques for this setting, by characterizing the notion of parallelisability. Indeed, when the rule set is parallelisable, ontological reasoning can be totally compiled into the mapping. Our results pave the way for the development of query answering techniques exploiting parallelisation and the specificities of existential rule dialects. Another interesting extension of our work would be to investigate combined reasoning <ref type="bibr" target="#b26">(Lutz, Toman, and Wolter 2009)</ref> or partitioned reasoning <ref type="bibr">(Baget et al. 2011a)</ref>, which would allow us to go beyond parallelisable rule sets.</p></div>
+<div><head>Deepening Theoretical Foundations</head><p>The novel pieceful class is of interest in itself, specially in the context of query answering. It includes both datalog and frontier-guarded, a prominent class of existential rules. Frontier-guarded itself covers some major DL dialects used in query answering (e.g., DL-Lite R or ELHI, see <ref type="bibr" target="#b28">(Mugnier 2020)</ref> for more details on the relationships between these DLs and the gbts family). We conjecture that CQ answering with pieceful rules is in PTime for data complexity. By all these features, the pieceful class is related to the recently introduced warded class <ref type="bibr" target="#b7">(Bellomarini, Sallinger, and Gottlob 2018)</ref>, even if both are incomparable, at least from a syntactic viewpoint (our prime example is warded but not pieceful, on the other hand warded does not include frontier-guarded).</p><p>Concerning the notion of parallelisability itself, we based our study on the semi-oblivious chase. In line with this, parallelisability requires an injective homomorphism from chase ∞ (I, R) to chase 1 (I, R ) (where R is the parallelisation of R). Dropping the injectivity requirement, i.e., considering logical equivalence, would lead to a more general notion of parallelisability, which remains to be investigated.</p><p>Finally, we have seen that compact rule composition leads us beyond the existential rule fragment. The obtained formulas belong to strictly more expressive logical fragments that have been studied in particular in <ref type="bibr" target="#b21">(Gottlob, Pichler, and Sallinger 2015)</ref>. Whether such fragments could lead to parallelisation techniques is another open issue.</p></div><figure xml:id="fig_0"><head /><label /><figDesc>any instance I) any R-derivation (from I) is pieceful. Example 6. Consider again Example 5. From I = {A(a), B(b)}, one builds a non-pieceful derivation (I 0</figDesc></figure>
+<figure xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The gbts classes ordered by syntactic inclusion (and the data complexity of the associated Boolean CQ answering problem)</figDesc><graphic coords="6,354.18,54.00,169.15,226.77" type="bitmap" /></figure>
+<figure xml:id="fig_2"><head /><label /><figDesc>R 1 : A(x) → ∃z p(x, z) R 2 : p(x, z) ∧ B(y) → r(z, y) R 2 • R 1 : A(x) ∧ B(y) → ∃z p(x, z) ∧ r(z, y). Let I = {A(a), B(b), B(c)}. Then: chase ∞ (I, R) = I ∪ {p(a, z 0 ), r(z 0 , b), r(z 0 , c)}</figDesc></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work is partly supported by the <rs type="funder">ANR</rs> project <rs type="projectName">CQFD</rs> (<rs type="grantNumber">ANR-18-CE23-0003</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_wv7szcn">
+					<idno type="grant-number">ANR-18-CE23-0003</idno>
+					<orgName type="project" subtype="full">CQFD</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Foundations of Databases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Abiteboul</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Hull</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Vianu</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1994">1994</date>
+			<publisher>Addison Wesley</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<author>
+			<persName><forename type="first">F</forename><surname>Baader</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Horrocks</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">U</forename><surname>Sattler</surname></persName>
+		</author>
+		<title level="m">An Introduction to Description Logic</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Extending Decidable Cases for Rules with Existential Variables</title>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Salvat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21st International Joint Conference on Artificial Intelligence, IJCAI</title>
+		<meeting>the 21st International Joint Conference on Artificial Intelligence, IJCAI</meeting>
+		<imprint>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="677" to="682" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">On rules with existential variables: Walking the decidability line</title>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Salvat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">175</biblScope>
+			<biblScope unit="issue">9-10</biblScope>
+			<biblScope unit="page" from="1620" to="1654" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Walking the Complexity Lines for Generalized Guarded Existential Rules</title>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rudolph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thomazo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd International Joint Conference on Artificial Intelligence, IJCAI</title>
+		<meeting>the 22nd International Joint Conference on Artificial Intelligence, IJCAI</meeting>
+		<imprint>
+			<date type="published" when="2011">2011. 2011</date>
+			<biblScope unit="page" from="712" to="717" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Extending acyclicity notions for existential rules</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Garreau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rocher</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECAI 2014 -21st European Conference on Artificial Intelligence</title>
+		<title level="s">Frontiers in Artificial Intelligence and Applications</title>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Schaub</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Friedrich</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">B</forename><surname>O'sullivan</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Prague, Czech Republic -; PAIS</addrLine></address></meeting>
+		<imprint>
+			<publisher>IOS Press</publisher>
+			<date type="published" when="2014-08">2014. August 2014. 2014</date>
+			<biblScope unit="volume">263</biblScope>
+			<biblScope unit="page" from="39" to="44" />
+		</imprint>
+	</monogr>
+	<note>Including Prestigious Applications of Intelligent Systems</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Walking the Decidability Line for Rules with Existential Variables</title>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Principles of Knowledge Representation and Reasoning: Proceedings of the Twelfth International Conference</title>
+		<meeting><address><addrLine>KR</addrLine></address></meeting>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2010">2010. 2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">The vadalog system: Datalog-based reasoning for knowledge graphs</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bellomarini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sallinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="975" to="987" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Ontology-mediated query answering with data-tractable description logics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ortiz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Reasoning Web</title>
+		<title level="s">Lecture Notes in Computer Science</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2015">2015. 9203</date>
+			<biblScope unit="page" from="218" to="307" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Oblivious and semi-oblivious boundedness for existential rules</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Bourhis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tison</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ulliana</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gallois</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Eighth International Joint Conference on Artificial Intelligence, IJCAI 2019</title>
+		<editor>
+			<persName><forename type="first">S</forename><surname>Kraus</surname></persName>
+		</editor>
+		<meeting>the Twenty-Eighth International Joint Conference on Artificial Intelligence, IJCAI 2019<address><addrLine>Macao, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-08-10">2019. August 10-16, 2019</date>
+			<biblScope unit="page" from="1581" to="1587" />
+		</imprint>
+	</monogr>
+	<note>ijcai.org</note>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Obi-wan: Ontology-based RDF integration of heterogeneous data</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2933" to="2936" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Ontology-based RDF integration of heterogeneous data</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23nd International Conference on Extending Database Technology, EDBT 2020</title>
+		<meeting>the 23nd International Conference on Extending Database Technology, EDBT 2020<address><addrLine>Copenhagen, Denmark</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2020-03-30">2020. March 30 -April 02, 2020</date>
+			<biblScope unit="page" from="299" to="310" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Parallelisable existential rules: a story of pieces</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buron</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thomazo</surname></persName>
+		</author>
+		<idno>CoRR abs/2107.06054</idno>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Taming the infinite chase: Query answering under expressive relational constraints</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Calì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kifer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res. (JAIR)</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="115" to="174" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A General Datalog-Based Framework for Tractable Query Answering over Ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Calì</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lukasiewicz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Eigth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<meeting>the Twenty-Eigth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems<address><addrLine>PODS</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="77" to="86" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Tractable Reasoning and Efficient Query Answering in Description Logics: The DL-Lite Family</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Automated Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="385" to="429" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">The MASTRO system for ontology-based data access</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rodriguez-Muro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ruzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Savo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Ontop: Answering SPARQL queries over relational databases</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cogrel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Komla-Ebri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lanti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rezk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rodriguez-Muro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Characterizing boundedness in chase variants</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Delivorias</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Ulliana</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theory Pract. Log. Program</title>
+		<imprint>
+			<biblScope unit="volume">21</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="51" to="79" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">The chase revisited</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Deutsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nash</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Remmel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Seventh ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<meeting>the Twenty-Seventh ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems<address><addrLine>PODS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2008">2008. 2008</date>
+			<biblScope unit="page" from="149" to="158" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Undecidable optimization problems for database logic programs</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Gaifman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">G</forename><surname>Mairson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sagiv</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="683" to="713" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Function symbols in tuple-generating dependencies: Expressive power and computability</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pichler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Sallinger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 34th ACM Symposium on Principles of Database Systems, PODS 2015</title>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Milo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</editor>
+		<meeting>the 34th ACM Symposium on Principles of Database Systems, PODS 2015<address><addrLine>Melbourne, Victoria, Australia</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2015-05-31">2015. May 31 -June 4, 2015</date>
+			<biblScope unit="page" from="65" to="77" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Undecidable boundedness problems for datalog programs</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">G</forename><surname>Hillebrand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">C</forename><surname>Kanellakis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">G</forename><surname>Mairson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Log. Program</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="163" to="190" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Sound, complete and minimal ucq-rewritings for existential rules</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>König</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Leclère</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thomazo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web Journal</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="451" to="475" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Answering SPARQL queries over databases under OWL 2 QL entailment regime</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rezk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Rodriguez-Muro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Semantic Web -ISWC 2014 -13th International Semantic Web Conference</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="volume">8796</biblScope>
+			<biblScope unit="page" from="552" to="567" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Managing data through the lens of an ontology</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">AI Mag</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="65" to="74" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Conjunctive Query Answering in the Description Logic EL Using a Relational Database System</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Toman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 21st Inter-national Joint Conference on Artificial Intelligence, IJCAI 2009</title>
+		<meeting>the 21st Inter-national Joint Conference on Artificial Intelligence, IJCAI 2009</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="2070" to="2075" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Generalized schema-mappings: from termination to tractability</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Marnette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Eigth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems</title>
+		<meeting>the Twenty-Eigth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems<address><addrLine>PODS</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2009">2009. 2009</date>
+			<biblScope unit="page" from="13" to="22" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Data access with horn ontologies: Where description logics meet existential rules</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mugnier</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Künstliche Intell</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="475" to="489" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Linking data to ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Data Semantics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="133" to="173" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">Worst-case optimal query answering for greedy sets of existential rules and their subclasses</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rudolph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thomazo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-F</forename><surname>Baget</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M.-L</forename><surname>Mugnier</surname></persName>
+		</author>
+		<idno>CoRR abs/1412.4485</idno>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<monogr>
+		<title level="m" type="main">OBDA: query rewriting or materialization? in practice, both! In ISWC</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Sequeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">P</forename><surname>Miranker</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Forgetting and unfolding for existential rules</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI-18), the 30th innovative Applications of Artificial Intelligence (IAAI-18), and the 8th AAAI Symposium on Educational Advances in Artificial Intelligence (EAAI-18)</title>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">A</forename><surname>Mcilraith</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">Q</forename><surname>Weinberger</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New Orleans, Louisiana, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2013">2018. February 2-7, 2018, 2013-2020</date>
+		</imprint>
+	</monogr>
+	<note>Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence</note>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Ontologybased data access: A survey</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+		<ptr target="ijcai.org" />
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5511" to="5519" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

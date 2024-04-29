@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Flattening a Hierarchical Clustering through Active Learning</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+				<date type="published" when="2019-10-12">12 Oct 2019</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Fabio</forename><surname>Vitale</surname></persName>
+							<email>fabio.vitale@inria.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Anand</forename><surname>Rajagopalan</surname></persName>
+							<email>arajagopalan@google.com</email>
+						</author>
+						<author>
+							<persName><forename type="first">Claudio</forename><surname>Gentile</surname></persName>
+							<email>cgentile@google.com</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Computer Science Lille (France)</orgName>
+								<orgName type="institution">INRIA</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Sapienza University of Rome (</orgName>
+								<address>
+									<country key="IT">Italy</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Google (New York</orgName>
+								<address>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">Google (New York</orgName>
+								<address>
+									<country key="US">USA</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Flattening a Hierarchical Clustering through Active Learning</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2019-10-12">12 Oct 2019</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">8E13ECDAA33C2AC270173B9CC9263FAF</idno>
+					<idno type="arXiv">arXiv:1906.09458v2[cs.LG]</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We investigate active learning by pairwise similarity over the leaves of trees originating from hierarchical clustering procedures. In the realizable setting, we provide a full characterization of the number of queries needed to achieve perfect reconstruction of the tree cut. In the non-realizable setting, we rely on known important-sampling procedures to obtain regret and query complexity bounds. Our algorithms come with theoretical guarantees on the statistical error and, more importantly, lend themselves to linear-time implementations in the relevant parameters of the problem. We discuss such implementations, prove running time guarantees for them, and present preliminary experiments on real-world datasets showing the compelling practical performance of our algorithms as compared to both passive learning and simple active learning baselines.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Active learning is a learning scenario where labeled data are scarse and/or expensive to gather, as they require careful assessment by human labelers. This is often the case in several practical settings where machine learning is routinely deployed, from image annotation to document classification, from speech recognition to spam detection, and beyond. In all such cases, an active learning algorithm tries to limit human intervention by seeking as little supervision as possible, still obtaining accurate prediction on unseen samples. This is an attractive learning framework offering substantial practical benefits, but also presenting statistical and algorithmic challenges. A main argument that makes active learning effective is when combined with methods that exploit the cluster structure of data (e.g., <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b19">20,</ref><ref type="bibr" target="#b9">10]</ref>, and references therein), where a cluster typically encodes some notion of semantic similarity across the involved data points. An obiquitous solution to clustering is to organize data into a hierarchy, delivering clustering solutions at different levels of resolution. An (agglomerative) Hierarchical Clustering (HC) procedure is an unsupervised learning method parametrized by a similarity function over the items to be clustered and a linkage function that lifts similarity from items to clusters of items. Finding the "right" level of resolution amounts to turning a given HC into a flat clustering by cutting the resulting tree appropriately. We would like to do so by resorting to human feedback in the form of pairwise similarity queries, that is, yes/no questions of the form "are these two products similar to one another ?" or "are these two news items covering similar events ?". It is well known that such queries are relatively easy to respond to, but are also intrinsically prone to subjectiveness and/or noise. More importantly, the hierarchy at hand need not be aligned with the similarity feedback we actually receive. In this paper, we investigate the problem of cutting a tree originating from a pre-specified HC procedure through pairwise similarity queries generated by active learning algorithms. Since the tree is typically not consistent with the similarity feedback, that is to say, the feedback is noisy, we are lead to tackle this problem under a variety of assumptions about the nature of this noise (from noiseless to random but persistent to general agnostic). Moreover, because different linkage functions applied to the very same set of items may give rise to widely different tree topologies, our study also focuses on characterizing active learning performance as a function of the structure of the tree at hand. Finally, because these hierarchies may in practice be sizeable (in the order of billion nodes), scalability will be a major concern in our investigation. Our contribution. In the realizable setting (both noiseless and persistent noisy, Section 3), we introduce algorithms whose expected number of queries scale with the average complexity of tree cuts, a notion which is introduced in this paper. A distinctive feature of these algorithms is that they are rather ad hoc in the way they deal with the structure of our problem. In particular, they cannot be seen as finding the query that splits the version space as evenly as possible, a common approach in many active learning papers (e.g., <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b14">15,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b22">23]</ref>, and references therein). We then show that, at least in the noiseless case, this average complexity measure characterizes the expected query complexity of the problem. Our ad hoc analyses are beneficial in that they deliver sharper guarantees than those readily available from the above papers. In addition, and perhaps more importantly for practical usage, our algorithms admit linear-time implementations in the relevant parameters of the problem (like the number of items to be clustered). In the non-realizable setting (Section 4), we build on known results in importance-weighted active learning (e.g., <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b5">6]</ref>) to devise a selective sampling algorithm working under more general conditions. While our statistical analysis follows by adaptating available results, our goal here is to rather come up with fast implementations, so as to put the resulting algorithms on the same computational footing as those operating under (noisy) realizability assumptions. By leveraging the specific structure of our hypothesis space, we design a fast incremental algorithm for selective sampling whose running time per round is linear in the height of the tree. In turn, this effort paves the way for our experimental investigation (Section 5), where we compare the effectiveness of the two above-mentioned approaches (realizable with persistent noise vs non-realizable) on real data originating from various linkage functions. Though quite preliminary in nature, these experiments seem to suggest that the algorithms originating from the persistent noise assumption exhibit more attractive learning curves than those working in the more general non-realizable setting. Related work. The literature on active learning is vast, and we can hardly do it justice here. In what follows we confine ourselves to the references which we believe are closest to our paper. Since our sample space is discrete (the set of all possible pairs of items from a finite set of size n), our realizable setting is essentially a pool-based active learning setting. Several papers have considered greedy algorithms which generalize binary search <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b18">19,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b22">23]</ref>. The query complexity can be measured either in the worst case or averaged over a prior distribution over all possible labeling functions in a given set. The query complexity of these algorithms can be analyzed by comparing it to the best possible query complexity achieved for that set of items. In <ref type="bibr" target="#b11">[12]</ref> it is shown that if the probability mass of the version space is split as evenly as possible then the approximation factor for its average query complexity is O(log(1/p m )), where p m is the minimal prior probability of any considered labeling function. <ref type="bibr" target="#b13">[14]</ref> extended this result through a more general approach to approximate greedy rules, but with the worse factor O(log 2 (1/p m )). <ref type="bibr" target="#b18">[19]</ref> observed that modifying the prior distribution always allows one to replace O(log(1/p m )) by the smaller factor O(log N ), where N is the size of the set of labeling functions. Results of a similar flavor are contained in <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b22">23]</ref>. In our case, N can be exponential in n (see <ref type="bibr">Section 2)</ref>, making these landmark results too broad to be tight for our specific setting. Furthermore, some of these papers (e.g., <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b22">23]</ref>) have only theoretical interest because of their difficult algorithmic implementation. Interesting advances on this front are contained in the more recent paper <ref type="bibr" target="#b25">[26]</ref>, though when adapted to our specific setting, their results give rise to worse query bounds than ours. In the same vein are the papers by <ref type="bibr" target="#b6">[7,</ref><ref type="bibr" target="#b7">8]</ref>, dealing with persistent noise. Finally, in the non-realizable setting, our work fully relies on <ref type="bibr" target="#b5">[6]</ref>, which in turns builds on standard references like <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b4">5,</ref><ref type="bibr" target="#b15">16]</ref> -see, e.g., the comprehensive survey by <ref type="bibr" target="#b16">[17]</ref>. Further references specifically related to clustering with queries are mentioned in Appendix A.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Preliminaries and learning models</head><p>We consider the problem of finding cuts of a given binary tree through pairwise similarity queries over its leaves. We are given in input a binary<ref type="foot" target="#foot_0">1</ref> tree T originating from, say, an agglomerative corresponding to the leaves of the subtrees rooted at the 3 green-bordered nodes just below the cut (the lower boundary of the cut). Clustering C1 is therefore realized by T . On the contrary, clustering C2 = {{x1, x2, x3}, {x4, x5, x6}, {x7, x8}} is not. Close to each node i is also displayed the number N (i) of realized cuts by the subtree rooted at i. For instance, in this figure, 7 = 1 + 3 • 2, and 22 = 1 + 7 • 3, so that T admits overall N (T ) = 22 cuts. Right: The same figure, where below each node i are the probabilities P(i) encoding a uniform prior distribution over cuts. Notice that P(i) = 1/N (i) so that, like all other cuts, the depicted green cut has probability (1</p><formula xml:id="formula_0">-1/22) • (1 -1/3) • (1/7) • 1 • (1/2) = 1/22.</formula><p>(i.e., bottom-up) HC procedure (single linkage, complete linkage, etc.) applied to a set of items L = {x 1 , . . . , x n }. Since T is the result of successive (binary) merging operations from bottom to top, T turns out to be a strongly binary tree<ref type="foot" target="#foot_1">2</ref> and the items in L are the leaves of T . We will denote by V the set of nodes in T , including its leaves L, and by r the root of T . The height of T will be denoted by h. When referring to a subtree T of T , we will use the notation V (T ), L(T ), r(T ), and h(T ), respectively. We also denote by T (i) the subtree of T rooted at node i, and by L(i) the set of leaves of T (i), so that L(i) = L(T (i)), and r(T (i)) = i. Moreover, par(i) will denote the parent of node i (in tree T ), left(i) will be the left-child of i, and right(i) its right child. A flat clustering C of L is a partition of L into disjoint (and non-empty) subsets. A cut c of T of size K is a set of K edges of T that partitions V into two disjoint subsets; we call them the nodes above c and the nodes below c. Cut c also univocally induces a clustering over L, made up of the clusters L(i 1 ), L(i 2 ), . . . , L(i K ), where i 1 , i 2 , . . . , i K are the nodes below c that the edges of c are incident to. We denote this clustering by C(c), and call the nodes i 1 , i 2 , . . . , i K the lower boundary of c. We say that clustering C 0 is realized by T if there exists a cut c of T such that C(c) = C 0 . See Figure <ref type="figure" target="#fig_0">1</ref> (left) for a pictorial illustration. Clearly enough, for a given L, and a given tree T with set of leaves L, not all possible clusterings over L are realized by T , as the number and shape of the clusterings realized by T are strongly influenced by T 's structure. Let N (T ) be the number of clusterings realized by T (notice that this is also equal to the number of distinct cuts admitted by T ). Then N (T ) can be computed through a simple recursive formula. If we let N (i) be the number of cuts realized by T (i), one can easily verify that N (i) = 1 + N (left(i)) • N (right(i)), with N (x i ) = 1 for all x i ∈ L. With this notation, we then have N (T ) = N (r(T )). If T has n leaves, N (T ) ranges from n, when T is a degenerate line tree, to the exponential α n , when T is the full binary tree, where α 1.502 (e.g., http://oeis.org/A003095). See again Figure <ref type="figure" target="#fig_0">1</ref> (left) for a simple example. A ground-truth matrix Σ is an n × n and ±1-valued symmetric matrix Σ = [σ(x i , x j )] n×n i,j=1 encoding a pairwise similarity relation over L. Specifically, if σ(x i , x j ) = 1 we say that x i and x j are similar, while if σ(x i , x j ) = -1 we say they are dissimilar. Moreover, we always have σ(x i , x i ) = 1 for all x i ∈ L. Notice that Σ need not be consistent with a given clustering over L, i.e., the binary relation defined by Σ over L need not be transitive. Given T and its leaves L, an active learning algorithm A proceeds in a sequence of rounds. In a purely active setting, at round t, the algorithm queries a pair of items (x it , x jt ), and observes the associated label σ(x it , x jt ). In a selective sampling setting, at round t, the algorithm is presented with (x it , x jt ) drawn from some distribution over L × L, and has to decide whether or not to query the associated label σ(x it , x jt ). In both cases, the algorithm is stopped at some point, and is compelled to commit to a specific cut of T (inducing a flat clustering over L). Coarsely speaking, the goal of A is to come up with a good cut of T , by making as few queries as possible on the entries of Σ. Noise Models. The simplest possible setting, called noiseless realizable setting, is when Σ itself is consistent with a given clustering realized by T , i.e., when there exists a cut c * of T such that C(c * ) = {L(i 1 ), . . . , L(i K )}, for some nodes i 1 , . . . , i K ∈ V , that satisfies the following: For all r = 1, . . . , K, and for all pairs (x i , x j ) ∈ L(i r ) × L(i r ) we have σ(x i , x j ) = 1, while for all other pairs we have σ(x i , x j ) = -1. We call (persistent) noisy realizable setting one where Σ is generated as follows. Start off from the noiseless ground-truth matrix, and call it Σ * . Then, in order to obtain Σ from Σ * , consider the set of all n 2 pairs (x i , x j ) with i &lt; j, and pick uniformly at random a subset of size λ n 2 , for some λ ∈ [0, 1/2). Each such pair has flipped label in Σ: σ(x i , x j ) = 1 -σ * (x i , x j ). This is then combined with the symmetric σ(x i , x j ) = σ(x j , x i ), and the reflexive σ(x i , x i ) = 1 conditions. We call λ the noise level. Notice that this kind of noise is random but persistent, in that if we query the same pair (x i , x j ) twice we do obtain the same answer σ(x i , x j ). Clearly, the special case λ = 0 corresponds to the noiseless setting. Finally, in the general non-realizable (or agnostic) setting, Σ is an arbitrary matrix that need not be consistent with any clustering over L, in particular, with any clustering over L realized by T . Error Measure. If Σ is some ground-truth matrix over L, and c is the cut output by A, with induced clustering C = C( c), we let Σ C = [σ C (x i , x j )] n×n i,j=1 be the similarity matrix associated with C, i.e., σ C (x i , x j ) = 1 if x i and x j belong to the same cluster, and -1 otherwise. Then the Hamming distance d H (Σ, C) simply counts the number of pairs (x i , x j ) having inconsistent sign:</p><formula xml:id="formula_1">d H (Σ, C) = {(x i , x j ) ∈ L 2 : σ(x i , x j ) = σ C (x i , x j )} .</formula><p>The same definition applies in particular to the case when Σ itself represents a clustering over L. The quantity d H , sometimes called correlation clustering distance, is closely related to the Rand index <ref type="bibr" target="#b24">[25]</ref> -see, e.g., <ref type="bibr" target="#b21">[22]</ref>. Prior distribution. Recall cut c * defined in the noiseless realizable setting and its associated Σ * . Depending on the specific learning model we consider (see below), the algorithm may have access to a prior distribution P(•) over c * , parametrized as follows. For i ∈ V , let P(i) be the conditional probability that i is below c * given that all i's ancestors are above. If we denote by AB(c * ) ⊆ V the nodes of T which are above c * , and by LB(c * ) ⊆ V those on the lower boundary of c * , we can write</p><formula xml:id="formula_2">P(c * ) = i∈AB(c * ) (1 -P(i)) • j∈LB(c * ) P(j) ,<label>(1)</label></formula><p>where</p><formula xml:id="formula_3">P(i) = 1 if i ∈ L.</formula><p>In particular, setting P(i) = 1/N (i) ∀i yields the uniform prior P(c * ) = 1/N (T ) for all c * realized by T . See Figure <ref type="figure" target="#fig_0">1</ref> (right) for an illustration. A canonical example of a non-uniform prior is one that favors cuts close to the root, which are thereby inducing clusterings having few clusters. These can be obtained, e.g., by setting P(i) = α, for some constant α ∈ (0, 1). Learning models. We consider two learning settings. The first setting (Section 3) is an active learning setting under a noisy realizability assumption with prior information. Let C * = C(c * ) be the ground truth clustering induced by cut c * before noise is added. Here, for a given prior P(c * ), the goal of learning is to identify C * either exactly (when λ = 0) or approximately (when λ &gt; 0), while bounding the expected number of queries (x it , x jt ) made to the ground-truth matrix Σ, the expectation being over the noise, and possibly over P(c * ). In particular, if C is the clustering produced by the algorithm after it stops, we would like to prove upper bounds on E[d H (Σ * , C)], as related to the number of active learning rounds, as well as to the properties of the prior distribution. The second setting (Section 4) is a selective sampling setting where the pairs (x it , x jt ) are drawn i.i.d. according to an arbitrary and unknown distribution D over the n 2 entries of Σ, and the algorithm at every round can choose whether or not to query the label. After a given number of rounds the algorithm is stopped, and the goal is the typical goal of agnostic learning: no prior distribution over cuts is available anymore, and we would like to bound with high probability over the sample (x i1 , x j1 ), (x i2 , x j2 ), . . . the so-called excess risk of the clustering C produced by A, i.e., the difference</p><formula xml:id="formula_4">P (xi,xj )∼D σ(x i , x j ) = σ C (x i , x j ) -min c P (xi,xj )∼D σ(x i , x j ) = σ C(c) (x i , x j ) ,<label>(2)</label></formula><p>the minimum being over all possible cuts c realized by T . Notice that when D is uniform the excess risk reduces to 1</p><formula xml:id="formula_5">n 2 d H (Σ, C) -min c d H (Σ, C(c))</formula><p>. At the same time, we would like to bound with high probability the total number of labels the algorithm has queried.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Active learning in the realizable case</head><p>As a warm up, we start by considering the case where λ = 0 (no noise). The underlying cut c * can be conveniently described by assigning to each node i of T a binary value y(i) = 0 if i is above c * , and y(i) = 1 if i is below. Then we can think of an active learning algorithm as querying nodes, instead of querying pairs of leaves. A query to node i ∈ V can be implemented by querying any pair (x i , x ir ) ∈ L(left(i)) × L(right(i)). When doing so, we actually receive y(i), since for any</p><formula xml:id="formula_6">x 1 T 4 x 3 x 5 x 0 1 0 1 1 1 1 0 1 1 1 6 x 2 x 2 x 1 T x x x 1 n 1 1 1 1 0 0 0 1 n-1 7 x 1 i 2 i 5 i 6 i 4 i n-1 i 1 i 3 i 2 i</formula><p>Figure <ref type="figure">2</ref>: Left: The dotted green cut c * can be described by the set of values of {y(i), i ∈ V }, below each node. In this tree, in order to query, say, node i2, it suffices to query any of the four pairs (x1, x3), (x1, x4), (x2, x3), or (x2, x4). The baseline queries i1 through i6 in a breadth-first manner, and then stops having identified c * . Right: This graph has N (T ) = n. On the depicted cut, the baseline has to query all n -1 internal nodes. such (x i , x ir ), we clearly have y(i) = σ * (x i , x ir ). An obvious baseline is then to perform a kind of breadth-first search in the tree: We start by querying the root r, and observe y(r); if y(r) = 1 we stop and output clustering C = {L}; otherwise, we go down by querying both left(r) and right(r), and then proceed recursively. It is not hard to show that this simple algorithm will make at most 2K -1 queries, with an overall running time of O(K), where K is the number of clusters of C(c * ). See Figure <ref type="figure">2</ref> for an illustration. If we know beforehand that K is very small, then this baseline is a tough competitor. Yet, this is not the best we can do in general. Consider, for instance, the line graph in Figure <ref type="figure">2</ref> (right), where c * has K = n. Ideally, for a given prior P(•), we would like to obtain a query complexity of the form log(1/P(c * )), holding in the worst-case for all underlying c * . As we shall see momentarily, this is easily obtained when P(•) is uniform. We first describe a version space algorithm (One Third Splitting, OTS) that admits a fast implementation, and whose number of queries in the worst-case is O(log N (T )). This will in turn pave the way for our second algorithm, Weighted Dichotomic Path (WDP). WDP leverages P(•), but its theoretical guarantees only hold in expectation over P(c * ). WDP will then be extended to the persistent noisy setting through its variant Noisy Weighted Dichotomic Path (N-WDP). We need a few ancillary definitions. First of all note that, in the noiseless setting, we have a clear hierarchical structure on the labels y(i) of the internal nodes of T : Whenever a query reveals a label y(i) = 0, we know that all i's ancestors will have label 0. On the other hand, if we observe y(i) = 1 we know that all internal nodes of subtree T (i) have label 1. Hence, disclosing the label of some node indirectly entails disclosing the labels of either its ancestors or its descendants. Given T , a bottom-up path is any path connecting a node with one of its ancestors in T . In particular, we call a backbone path any bottom up path having maximal length. Given i ∈ V , we denote by S t (i) the version space at time t associated with T (i), i.e., the set of all cuts of T (i) that are consistent with the labels revealed so far. For any node j = i, S t (i) splits into S y(j)=0 t (i) and S y(j)=1 t (i), the subsets of S t (i) obtained by imposing a further constraint on y(j). OTS (One Third Splitting): For all i ∈ V , OTS maintains over time the value |S t (i)|, i.e., the size of S t (i), along with the forest F made up of all maximal subtrees T of T such that |V (T )| &gt; 1 and for which none of their node labels have been revealed so far. OTS initializes F to contain T only, and maintains F updated over time, by picking any backbone of any subtree T ∈ F , and visiting it in a bottom-up manner. See the details in Appendix B.1. The following theorem (proof in Appendix B.1) crucially relies on the fact that π is a backbone path of T , rather than an arbitrary path.</p><p>Theorem 1 On a tree T with n leaves, height h, and number of cuts N , OTS finds c * by making O(log N ) queries. Moreover, an ad hoc data-structure exists that makes the overall running time O(n + h log N ) and the space complexity O(n).</p><p>Hence, Theorem 1 ensures that, for all c * , a time-efficient active learning algorithm exists whose number of queries is of the form log(1/P(c * )), provided P(c * ) = 1/N (T ) for all c * . This query bound is fully in line with well-known results on splittable version spaces <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b22">23]</ref>, so we cannot make claims of originality. Yet, what is relevant here is that this splitting can be done very efficiently. We complement the above result with a lower bound holding in expectation over prior distributions on c * . This lower bound depends in a detailed way on the structure of T . Given tree T , with set of leaves L, and cut c * , recall the definitions of AB(c * ) and LB(c * ) we gave in Section 2. Let T c * be the subtree of T whose nodes are (AB(c * ) ∪ LB(c * )) \ L, and then let K(T, c * ) = |L(T c * )| be the number of its leaves. For instance, in Figure <ref type="figure">2</ref> (left), T c * is made up of the six nodes i 1 , . . . , i 6 , so that K(T, c * ) = 3, while in Figure <ref type="figure">2</ref> (right), T c * has nodes i 1 , . . . , i n-1 , hence K(T, c * ) = 1. Notice that we always have K(T, c * ) ≤ K, but for many trees T , K(T, c * ) may be much smaller than K. A striking example is again provided by the cut in Figure <ref type="figure">2</ref> (right), where K(T, c * ) = 1, but K = n. It is also helpful to introduce L s (T ), the set of all pairs of sibling leaves in T . For instance, in the tree of Figure <ref type="figure">2</ref>, we have |L s (T )| = 3. One can easily verify that, for all T we have</p><formula xml:id="formula_7">max c * K(T, c * ) = |L s (T )| ≤ log 2 N (T )</formula><p>. We now show that there always exist families of prior distributions P(•) such that the expected number of queries needed to find c * is Ω(E[ K(T, c * )]). The quantity E[ K(T, c * )] is our notion of average (query) complexity. Since the lower bound holds in expectation, it also holds in the worst case. The proof can be found in Appendix B.2.</p><p>Theorem 2 In the noiseless realizable setting, for any tree T , any positive integer B ≤ |L s (T )|, and any (possibly randomized) active learning algorithm A, there exists a prior distribution P(•) over c * such that the expected (over P(•) and A's internal randomization) number of queries A has to make in order to recover c * is lower bounded by B/2, while B ≤ E[ K(T, c * )] ≤ 2B, the latter expectation being over P(•).</p><p>Next, we describe an algorithm that, unlike OTS, is indeed able to take advantage of the prior distribution, but it does so at the price of bounding the number of queries only in expectation.</p><p>WDP (Weighted Dichotomic Path): Recall prior distibution <ref type="bibr" target="#b0">(1)</ref>, collectively encoded through the values {P(i), i ∈ V }. As for OTS, we denote by F the forest made up of all maximal subtrees T of T such that |V (T )| &gt; 1 and for which none of their node labels have so far been revealed. F is updated over time, and initially contains only T . We denote by π(u, v) a bottom-up path in T having as terminal nodes u and v (hence v is an ancestor of u in T ). For a given cut c * , and associated labels {y(i), i ∈ V }, any tree T ∈ F , and any node i ∈ V (T ), we define<ref type="foot" target="#foot_2">3</ref> </p><formula xml:id="formula_8">q(i) = P(y(i) = 1 ∧ y(par(i)) = 0) = P(i) • j∈π(par(i),r(T )) (1 -P(j)) .<label>(3)</label></formula><p>We then associate with any backbone path of the form π( , r(T )), where ∈ L(T ), an entropy H(π( , r(T ))) = -i∈π( ,r(T )) q(i) log 2 q(i). Notice that at the beginning we have i∈π( ,r(T )) q(i) = 1 for all ∈ L. This invariant will be maintained on all subtrees T . The prior probabilities P(i) will evolve during the algorithm's functioning into posterior probabilities based on the information revealed by the labels. Accordingly, also the related values q(i) w.r.t. which the entropy H(•) is calculated will change over time. Due to space limitations, WDP's pseudocode is given in Appendix B.3, but we have included an example of its execution in Figure <ref type="figure" target="#fig_1">3</ref>. At each round, WDP finds the path whose entropy is maximized over all bottom-up paths π( , r ), with ∈ L and r = r(T ), where T is the subtree in F containing . WDP performs a binary search on such π( , r ) to find the edge of T which is cut by c * , taking into account the current values of q(i) over that path. Once a binary search terminates, WDP updates F and the probabilities P(i) at all nodes i in the subtrees of F . See Figure <ref type="figure" target="#fig_1">3</ref> for an example. Notice that the P(i) on the selected path become either 0 (if above the edge cut by c * ) or 1 (if below). In turn, this causes updates on all probabilities q(i). WDP continues with the next binary search on the next path with maximum entropy at the current stage, discovering another edge cut by c * , and so on, until F becomes empty. Denote by P &gt;0 the set of all priors P(•) such that for all cuts c of T we have P(c) &gt; 0. The proof of the following theorem is given in Appendix B.3. Theorem 3 In the noiseless realizable setting, for any tree T of height h, any prior distribution P(•) over c * , such that P(•) ∈ P &gt;0 , the expected number of queries made by WDP to find c * is O E K(T, c * ) log h , the expectations being over P(•).</p><p>For instance, in the line graph of Figure <ref type="figure">2</ref> (right), the expected number of queries is O(log n) for any prior P(•), while if T is a complete binary tree with n leaves, and we know that C(c * ) has O(K) clusters, we can set P(i) in (1) as</p><formula xml:id="formula_9">P(i) = 1/ log K, which would guarantee E[ K(T, c * )] = O(K),</formula><p>and a bound on the expected number of queries of the form O(K log log n). By comparison, observe that the results in <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b25">26]</ref> would give a query complexity which is at best O(K log 2 n), while those in <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b22">23]</ref> yield at best O(K log n). In addition, we show below (Remark 1) that our algorithm has very compelling running time guarantees. It is often the case that a linkage function generating T also tags each internal node i with a coherence level α i of T (i), which is typically increasing as we move downwards from root to leaves. A common situation in hierarchical clustering is then to figure out the "right" level of granularity of the flat clustering we search for by defining parallel bands of nodes of similar coherence where c * is possibly The green node is a dummy super-root. The nodes in yellow are the roots of the subtrees currently included in forest F . The numbers in red within each node i indicate the probabilities P(i), while the q(i) values are in blue, and viewed here as associated with edges (par(i), i). The magenta numbers at each leaf give the entropy H(π( , r(T ))), where r(T ) is the root of the subtree in F that contains both and r(T ). Left: The input tree T at time t = 0. No labels are revealed, and no clusters of C(c * ) are found. Right: Tree T after a full binary search has been performed on the depicted light blue path. Before this binary search, that path connected a leaf of a subtree in F to its root (in this case, F contains only T ). The selected path is the one maximazing entropy within the forest/tree on the left. The dashed line indicates the edge of c * found by the binary search. The red, blue and magenta numbers are updated accordingly to the result of the binary search. The leaves enclosed in the grey ellipse are now known to form a cluster of C(c * ).</p><p>located. For such cases, a slightly more involved guarantee for WDP is contained in Theorem 6 in Appendix B.3, where the query complexity depends in a more detailed way on the interplay between T and the prior P(•). In the above example, if we have b-many edge-disjoint bands, Theorem 6 replaces factor log h of Theorem 3 by log b.</p><p>N-WDP (Noisy Weighted Dichotomic Path): This is a robust variant of WDP that copes with persistent noise. Whenever a label y(i) is requested, N-WDP determines its value by a majority vote over randomly selected pairs from L(left(i)) × L(right(i)). Due to space limitations, all details are contained in Appendix B.4. The next theorem quantifies N-WDP's performance in terms of a tradeoff between the expected number of queries and the distance to the noiseless ground-truth matrix Σ * . Theorem 4 In the noisy realizable setting, given any input tree T of height h, any cut c * ∼ P(•) ∈ P &gt;0 , and any δ ∈ (0, 1/2), N-WDP outputs with probability ≥ 1 -δ (over the noise in the labels) a</p><formula xml:id="formula_10">clustering C such that 1 n 2 d H (Σ * , C) = O 1 n (log(n/δ)) 3/2 (1-2λ) 3 by asking O log(n/δ) (1-2λ) 2 E K(T, c * ) log h queries in expectation (over P(•)).</formula><p>Remark 1 Compared to the query bound in Theorem 3, the one in Theorem 4 adds a factor due to noise. The very same extra factor is contained in the bound of <ref type="bibr" target="#b20">[21]</ref>. Regarding the running time of WDP , the version we have described can be naively implemented to run in O(n E K(T, c * )) expected time overall. A more time-efficient variant of WDP exists for which Theorem 3 and Theorem 6 still hold, that requires O(n + h E K(T, c * )) expected time. Likewise, an efficient variant of N-WDP exists for which Theorem 4 holds, that takes</p><formula xml:id="formula_11">O n + h + log 2 n (1-2λ) 2 E K(T, c * ) expected time.</formula><p>4 Selective sampling in the non-realizable case</p><p>In the non-realizable case, we adapt to our clustering scenario the importance-weighted algorithm in <ref type="bibr" target="#b5">[6]</ref>. The algorithm is a selective sampler that proceeds in a sequence of rounds t = 1, 2, . . .. In round t a pair (x it , x jt ) is drawn at random from distribution D over the entries of a given ground truth matrix Σ, and the algorithm produces in response a probability value</p><formula xml:id="formula_12">p t = p t (x it , x jt ). A Bernoulli variable Q t ∈ {0, 1} is then generated with P(Q t = 1) = p t , and if Q t = 1 the label σ t = σ(x it , x jt )</formula><p>is queried, and the algorithm updates its internal state; otherwise, we skip to the next round. The way p t is generated is described as follows. Given tree T , the algorithm maintains at each round t an importance-weighted empirical risk minimizer cut ĉt , defined as ĉt = argmin c err t-1 (C(c)) , where the "argmin" is over all cuts c realized by T , and</p><formula xml:id="formula_13">err t-1 (C) = 1 t-1 t-1 s=1</formula><p>Qs ps {σ C (x is , x js ) = σ s } , being {•} the indicator function of the predicate at argument. This is paired up with a perturbed empirical risk minimizer</p><formula xml:id="formula_14">ĉ t = argmin c : σ C(c) (xi t ,xj t ) =σ C(ĉ t ) (xi t ,xj t ) err t-1 (C(c))</formula><p>, the "argmin" being over all cuts c realized by T that disagree with ĉt on the current pair (x it , x jt ). The value of p t is a function of d t = err t-1 (C(ĉ t )) -err t-1 (C(ĉ t )), of the form</p><formula xml:id="formula_15">p t = min 1, O 1/d 2 t + 1/d t log((N (T )/δ) log t)/t ,<label>(4)</label></formula><p>where N (T ) is the total number of cuts realized by T (i.e., the size of our comparison class), and δ is the desired confidence parameter. Once stopped, say in round t 0 , the algorithm gives in output cut ĉt0+1 , and the associated clustering C(ĉ t0+1 ). Let us call the resulting algorithm NR (Non-Realizable).  <ref type="table">1</ref>: Statistics of the trees used in our experiments. These trees result from applying the linkage functions SING, COMP, and MED to the MNIST dataset (first 10000 samples). Each tree has the same set of n = 10000 leaves. "Avg depth" is the average depth of the leaves in the tree, "Std. dev" is its standard deviation. For reference, we report the performance of BEST (i.e., the minimizer of dH over all possible cuts realized by the trees), along with the associated number of clusters K.</p><p>Despite N (T ) can be exponential in n, there are very efficient ways of computing ĉt , ĉ t , and hence p t at each round. In particular, an ad hoc procedure exists that incrementally computes these quantities by leveraging the sequential nature of NR. For a given T , and constant K ≥ 1, consider the class C(T, K) of cuts inducing clusterings with at most</p><formula xml:id="formula_16">K clusters. Set R * = R * (T, D) = min c∈C(T,K) P (xi,xj )∼D σ(x i , x j ) = σ C(c) (x i , x j ) , and B δ (K, n) = K log n + log(1/δ).</formula><p>The following theorem is an adaptation of a result in <ref type="bibr" target="#b5">[6]</ref>. See Appendix C.1 for a proof.</p><p>Theorem 5 Let T have n leaves and height h. Given confidence parameter δ, for any t ≥ 1, with probability at least 1 -δ, the excess risk (2) achieved by the clustering C(ĉ t+1 ) computed by NR w.r.t.</p><formula xml:id="formula_17">the best cut in class C(T, K) is bounded by O B δ (K,n) log t t + B δ (K,n) log t t</formula><p>, while the (expected) number of labels</p><formula xml:id="formula_18">t s=1 p s is bounded by O θ R * t + t B δ (K, n) log t + B δ (K, n) log 3 t , where θ = θ(C(T, K), D) is the disagreement coefficient of C(T, K) w.r.t. distribution D.</formula><p>In particular, when D is uniform we have θ ≤ K. Moreover, there exists a fast implementation of NR whose expected running time per round is E (xi,xj )∼D [de(lca(x i , x j ))] ≤ h, where de(lca(x i , x j )) is the depth in T of the lowest common ancestor of x i and x j .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Preliminary experiments</head><p>The goal of these experiments was to contrast active learning methods originating from the persistent noisy setting (specifically, N-WDP) to those originating from the non-realizable setting (specifically, NR). The comparison is carried out on the hierarchies produced by standard HC methods operating on the first n = 10000 datapoints in the well-known MNIST dataset from http://yann.lecun. com/exdb/mnist/, yielding a sample space of 10 8 pairs. We used Euclidean distance combined with the single linkage (SING), median linkage (MED), and complete linkage (COMP) functions. The n × n ground-truth matrix Σ is provided by the 10 class labels of MNIST.</p><p>We compared N-WDP with uniform prior and NR to two baselines: passive learning based on empirical risk minimization (ERM), and the active learning baseline performing breadth-first search from the root (BF, Section 3) made robust to noise as in N-WDP. For reference, we also computed for each of the three hierarchies the performance of the best cut in hindsight (BEST) on the entire matrix Σ. That is essentially the best one can hope for in each of the three cases. All algorithms except ERM are randomized and have a single parameter to tune. We let such parameters vary across suitable ranges and, for each algorithm, picked the best performing value on a validation set of 500 labeled pairs.</p><p>In Table <ref type="table">1</ref>, we have collected relevant statistics about the three hierarchies. In particular, the single linkage tree turned out to be very deep, while the complete linkage one is quite balanced. We evaluated test set accuracy vs. number of queries after parameter tuning, excluding these 500 pairs. For N-WDP, once a target number of queries was reached, we computed as current output the maximum-a-posteriori cut. In order to reduce variance, we repeated each experiment 10 times.</p><p>The details of our empirical comparison are contained in Appendix C.3. Though our experiments are quite preliminary, some trends can be readily spotted: i. N-WDP significantly outperforms NR. E.g., in COMP at 250 queries, the test set accuracy of N-WDP is at 9.52%, while NR is at 10.1%. A similar performance gap at low number of queries one can observe in SING and MED. This trend was expected: NR is very conservative, as it has been designed to work under more general conditions than N-WDP. We conjecture that, whenever the specific task at hand allows one to make an aggressive noise-free algorithm (like WDP) robust to persistent noise (like N-WDP), this outcome is quite likely to occur. ii. BF is competitive only when BEST has few clusters. iii. N-WDP clearly outperforms ERM, while the comparison between NR and ERM yields mixed results. Ongoing activity. Beyond presenting new algorithms and analyses for pairwise similarity-based active learning, our goal was to put different approaches to active learning on the same footing for comparison on real data. Some initial trends are suggested by our experiments, but a more thorough investigation is underway. We are currently using other datasets, of different nature and size. Further HC methods are also under consideration, like those based on k-means.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Missing material from Section 1 A.1 Further related work</head><p>Further papers related to our work are those dealing with clustering with queries, e.g., <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b2">3]</ref>. In <ref type="bibr" target="#b12">[13]</ref> the authors show that O(Kn) similarity queries are both necessary and sufficient to achieve exact reconstruction of an arbitrary clustering with K clusters on n items. This is generalized by <ref type="bibr" target="#b20">[21]</ref> where persistent random noise is added. <ref type="bibr" target="#b1">[2]</ref> assume the feedback is center-based with a margin condition on top. Because we are constrained to a clustering produced by cutting a given tree, the results in <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b20">21]</ref> are incomparable to ours, due to the different assumptions. In <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b2">3]</ref>) the authors consider clusterings realized by a given comparison class (as we do here). Yet, the queries they are allowing are different from ours, hence their results are again incomparable to ours.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B Missing material from Section 3 B.1 One Third Splitting (OTS)</head><p>For all i ∈ V , OTS maintain over time the value |S t (i)|, i.e., the size of S t (i), along with the forest F made up of all maximal subtrees T of T such that |V (T )| &gt; 1 and for which none of their node labels have been revealed so far. Notice that we will not distinguish between labels y(i) revealed directly by a query or indirectly by the hierarchical structure. By maximal here we mean that it is not possible to extend any such subtrees by adding a node of V whose label has not already been revealed. OTS initializes F (when no labels are revealed) to contain T only, and maintains F updated over time. Let subtree T ∈ F be arbitrarily chosen, and π be any backbone path of T . At time t, OTS visits π in a bottom-up manner, and finds the lowest node i * t in this path satisfying S</p><formula xml:id="formula_19">y(i * t )=1 t (r) ≤ 2 S y(i * t )=0 t (r) , i.e., S y(i * t )=1 t (r) ≤ 2</formula><p>3 |S t (r)|, then query node i * t . We repeat the above procedure until |S t (r)| = 1, i.e., until we find c * .</p><p>The next lemma is key to showing the logarithmic number of queries made by OTS.</p><p>Lemma 1 With the notation introduced in Section 3, at each time t, the query y(i * t ) made by OTS splits the version space S t (r) in such a way that<ref type="foot" target="#foot_3">4</ref> min S</p><formula xml:id="formula_20">y(i * t )=0 t (r) , S y(i * t )=1 t (r) ≥ |S t (r)| 3 .</formula><p>Proof. At each time t, |S t (r)| is the product of the cardinality of S t ( r) over all roots r of the trees currently contained in F . Let π be a backbone of one such tree, say tree T , with root r . Since T is arbitrary, in order to prove the statement, it is sufficient to show that min S</p><formula xml:id="formula_21">y(i * t )=0 t (r ) , S y(i * t )=1 t (r ) ≥ |S t (r )| 3 .</formula><p>Let h(π) be the length of π, i.e., the number of its edges, and j 0 , j 1 , . . . , j h(π) be the sequence of its nodes, from bottom to top. For any k &lt; h(π), we denote by j s k the sibling of j k in T (hence, by this definition j s k does not belong to π). Now, observe that the number of possible labelings of π is equal to h(π) + 1, that is, each labeling of π corresponds to an integer z ∈ {0, 1, . . . , h(π)} such that y(j k ) = 1 for all k ≤ z and y(j k ) = 0 for all z &lt; k ≤ h(π). Then, given any labeling of the nodes of π (represented by the above z), we have</p><formula xml:id="formula_22">|S t (r )| = h(π)-1 k=z |S t (j s k )| if z &lt; h(π) , 1 if z = h(π) .</formula><p>In fact, the disclosure of all labels of the nodes in π when z &lt; h(π) would decompose T into (h(π)z)-many subtrees whose labelings are independent of one another. For all z ∈ {0, 1, . . . , h(π) -1}, let us denote for brevity Figure <ref type="figure">4</ref>: A backbone path π selected by OTS and the associated quantities needed to prove the main properties of the selected node i * t . Leaves are represented by squares, subtrees by triangles. For simplicity, in this picture π is starting from the leftmost leaf of T , but it can clearly be chosen to start from any of its deepest leaves. The sum of all terms on the right of each subtree equals |St(r )|. The cornerstone of the proof is that i * t (and hence z * ) corresponds to the lowest among the h(π) = 4 horizontal lines depicted in this figure for which the sum of all products below the chosen line is at least half the sum of all the products above the line. Furthermore, the fact that |St(j s 0 )| = 1 guarantees that S0 = S1. Combined with the fact that Sz ≥ Sz+1 for all z ∈ {0, . . . , h(π) -1}, this ensures that the abovementioned horizontal line always exists, and splits the sum of all h(π) + 1 terms into two parts such that the smaller one is at least 1  3 of the total.</p><p>h(π). With this notation, it is now important to note that i * t must be the parent of j s z * , for some z * ∈ {0, 1, . . . , h(π) -1}, and that S y(i * t )=0 t (r ) = S z * . Thus, taking into account all possible (h(π) + 1) labelings of π, the cardinality of S t (r ) can be written as follows:</p><formula xml:id="formula_23">|S t (r )| = h(π) z=0 S z .</formula><p>At this point, by definition, we have:</p><formula xml:id="formula_24">(i) S 0 = S 1 , as |S t (j s 0 )| = 1, which in turn implies max z S z ≤ |St(r )| 2</formula><p>, and (ii) S z ≥ S z+1 for all z ∈ {0, . . . , h(π) -1} .</p><p>See Figure <ref type="figure">4</ref> for a pictorial illustration.</p><p>The proof is now concluded by contradiction. If our statement is false, then there must exist a value z such that S z &gt; 2 3 |S t (r )| and S z +1 &lt; 1 3 |S t (r )|. However, because the sequence S 0 , S 1 , . . . S h(π) is monotonically decreasing and we have S 0 ≤ |St(r )| 2 , implying S 0 ≤ h(π) z=1 S z , such value z cannot exist. Thus, it must exist z such that</p><formula xml:id="formula_25">1 3 |S t (r )| ≤ S z ≤ 2 3 |S t (r )| .</formula><p>Let z * be the smallest z satisfying the above inequalities. Note that i * t is the parent of j s z * , because of the bottom-up search on π performed by OTS. Exploiting again the monotonicity of the sequence S 0 , S 1 , . . . S h(π) and recalling that</p><formula xml:id="formula_26">S z * = h(π)-1 k=z * |S t (j s k )|, we conclude that 1 3 |S t (r )| ≤ S y(i * t )=0 t (r ) ≤ 2 3 |S t (r )| . Since S y(i * t )=1 t (r ) + S y(i * t )=0 t (r ) = |S t (r )|, we must also have 1 3 |S t (r )| ≤ S y(i * t )=1 t (r ) ≤ 2 3 |S t (r )|,</formula><p>thereby concluding the proof.</p><p>From the above proof, one can see that it is indeed necessary that π is a backbone path, since the proof hinges on the fact that |S t (j s 0 )| = We now sketch an implementation of OTS which requires O(n + h log N ) time and O(n) space.</p><p>In a preliminary phase, we compute in a bottom-up fashion the values |S 0 (i)| for all nodes i ∈ V (T ). This requires O(n). Thereafter, we perform a breath-first search on T , and each time we visit a leaf of T , we insert a pointer to it in a an array A in a sequential way. Thus, the j-th record of A will contain a reference to the j-th leaf found during this visit, which entails that the leaves referred by the pointers of A are sorted in ascending order of depth.</p><p>We recall that in the noiseless setting, each time the label of a node is revealed and is equal to 1 (to 0), also the labels of its descendants (ancestors) are indirectly revealed, because they are known to be equal to 1 (to 0). The total time OTS takes for assigning all indirectly revealed labels is clearly O(n). Each time OTS needs to find a backbone of a tree in the current forest F , we look for the largest index j for which the record A[j] does not point to a leaf whose parent label has not been revealed yet. Observe that, at any time t, the deepest leaf ∈ L(T ) satisfying this property must be the terminal node of a backbone path of a tree in F . Furthermore, the highest node of such backbone is either r(T ) or the lowest ancestor of whose label has not been revealed yet, and can therefore be found in O(h) time.</p><p>In order to accomplish this leaf search operation, we simply maintain over time an index that scans A from A[n] to A <ref type="bibr" target="#b0">[1]</ref>, looking for a leaf satisfying the above property. The total time OTS uses for scanning A is again linear in n. Finally, for each query, OTS traverses bottom-up a backbone π, exploiting the information previously stored to find i * t , and updates it after y(i * t ) is revealed. Note that only the information of the nodes in π has to be updated. In fact, the disclosure of the label of any node i ∈ V (T ) cannot affect the values of S t (j) for all nodes j ∈ V (T ) that are not ancestors of i. Besides, we are free to disregard the descendants of i since they will simply be indirectly labeled (by 1).</p><p>Overall, the total time required by this implementation of OTS is the sum of O(n) and O(h) times the total number of queries the algorithm makes, which results in the claimed O(n + h log N ) upper bound. The claim on the memory requirement immediately follows from the above description.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.2 Proof of the lower bound in Theorem 2</head><p>Proof. Let T be the subtree of T constructed by visiting T from its root (for instance by a breadth-first or a depth-first visit), and such that |L(T )| = B. Note that the construction of T satisfying this constraint is always possible because the maximum cardinality of L(T ) is equal to |L s (T )| (which is also equal to max c * K(T, c * )). For each leaf ∈ L(T ), consider all cuts c * that can be generated by cutting either the edge connecting with its parent or the two edges connecting with its children. The total number of such cuts is 2 |L(T )| = 2 B . We set the prior P(•) to be uniform over these 2 B -many cuts. Hence, for each leaf ∈ L(T ), the probability (w.r.t. P(•)) that c * cuts the edge connecting with its parent is 1/2, and so is the probability that c * cuts the two edges connecting with its children. Now, observe that, by construction, we have B ≤ K(T, c * ) ≤ 2B for all such cuts c * and, as a consequence, B ≤ E[ K(T, c * )] ≤ 2B, the expectation being over P(•). Since for each leaf of T any (possibly randomized) active learning algorithm A has to make 1  2 mistake in expectation (over P(•) and its internal randomization), we conclude that B/2 queries are always necessary to find c * , as claimed.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.3 Weighted Dichotomic Path (WDP)</head><p>In Algorithm 1 we give the pseudocode of WDP. At each round, WDP finds the path whose entropy is maximized over all bottom-up paths π( , r ), with ∈ L and r = r(T ), where T is the subtree in F containing . Ties are broken arbitrarily. WDP performs a binary search on such π( , r ) to find the edge of T which is cut by c * , taking into account the current values of q(i) over that path. Specifically, let i 0 = , i 1 , . . . , i h-1 , i h = r be the sequence of nodes in π( , r ) in descending • for i ∈ V do q(i) ← P(i) • j∈π(par(i),r(T )) (1 -P(j)); /* --Path with maximum entropy --*/ while F = ∅ do Let L(F ) be the set of all leaves of T belonging to the subtrees in F . Let R(F ) be the set of all roots of the subtrees in F . π( , r ) ← arg max ∈L(F ),r ∈R(F ) H(π( , r ));</p><formula xml:id="formula_27">T = {T ∈ F : , r ∈ V (T )}; /* --Binary search on path π( , r ) --*/ u ← ; v ← r ; while u = v do Let i 0 = u, i 1 , . . . , i h-1 , i h = v be the sequence of nodes lying on π(u, v) in descending order of depth. Q ← k∈{0,1,...,h-1} q(i k ); k * = arg min k∈{0,1,...,h-1} Q 2 -j∈{i0,...,i k } q(j) ; i * ← par(i k * ); Query y(i * ); if y(i * ) = 0 then v ← i k * ; else u ← i * ;</formula><p>Set P(i) = y(i) = 1 for all descendants i of u; Set P(i) = y(i) = 0 for all ancestors i = u of u; q(u) ← 1; Set q(i) = 0 for all descendants and ancestors i = u of u; Update P(i) and q(i) for all descendants of all i ∈ V (π(par(u), r )) such that i = r ; C ← C ∪ {L(u)}; /* L(u) is a cluster of C * */ /* --Update F --*/ F ← F \ T ; /* Remove from F the subtree containing π( , r ) */ j ← par(u); /* Lowest node in π( , par(r )) with label known to be 0 */ while j ∈ V (π( , r )) do Let j c be the child of j that is not in π( , r ).</p><formula xml:id="formula_28">if j c ∈ L then C ← C ∪ {j c }; /* Add to C a singleton cluster */ else F ← F ∪ {T (j c )}; /* j c</formula><p>is the root of a subtree that will be processed later */ Update q(i) for all i ∈ V (T (j c )); j ← par(j); /* j is a node whose label is known to be 0 */ return C . order of depth. WDP finds an index k * that corresponds to the middle point in π( , r ), taking into account the current values of q(i) over that path. Let i * = par(i k * ). WDP queries the label of i * : If y(i * ) = 0, WDP continues the binary search on π ( , i k * ); if instead y(i * ) = 1, the binary search continues on π (i * , r ), and so on. During the binary search, whenever WDP finds a node u ∈ V (π( , r )) with queried labels y(u) = 0 and y(par(u)) = 1, then the edge of π( , r ) cut by c * has been found, and the binary search on this backbone path terminates. In the special case where y(r ) = 1, the binary search also ends, and we know that all nodes in L(r ) form a cluster of C(c * ). Once a binary search terminates, WDP updates F and the probabilities P(i) at all nodes i in the subtrees of F , so as to reflect the new knowledge gathered by the queried labels.</p><p>Below, we prove WDP's query complexity. The proofs are split into a series of lemmas.</p><p>Lemma 2 Given tree T with set of leaves L, any prior P(•) ∈ P &gt;0 over c * , and any c * ∼ P(•), let j 0 be a node of AB(c * ), having as children a leaf ∈ L and an internal node j of T (see Figure <ref type="figure" target="#fig_4">5</ref>, left). Then, during its execution, WDP will never select the bottom-up path starting from .</p><p>Proof. Let T 0 be the tree made up of all nodes of AB(c * ), and consider any given round with q(i) in (3) defined by the current posterior distribution maintained by the algorithm. We first show that, for all ancestors a of j 0 , path π( , a) cannot be selected by WDP, because its entropy<ref type="foot" target="#foot_4">5</ref> H(π( , a)) will always be strictly smaller than H(π( , a)) for all leaves ∈ L(j ). To this effect, we can write</p><formula xml:id="formula_29">H(π( , a)) -H(π( , a)) =   -q( ) log 2 q( ) - u∈π(j0,a) q(u) log 2 q(u)   -H(π( , j ) - u∈π(j0,a) q(u) log 2 q(u) = -q( ) log 2 q( ) + v∈π( ,j ) q(v) log 2 q(v) .<label>(5) Now, since u∈π( ,j ) q(u) + v∈π(j0,a) q(v) = u∈π( ,a) q(u) = u∈π( ,a) q(u) = q( ) + u∈π(j0,a) q(u) ,</label></formula><p>we have q( ) = v∈π( ,j ) q(v).</p><p>Consider the function f (x) = -x log 2 x, for x ∈ [0, 1]. For all x, x 1 , x 2 ∈ (0, 1) such that x 1 + x 2 = x, it is easy to verify that we have f (x) &lt; f (x 1 ) + f (x 2 ). More generally, for all x, x 1 , x 2 , . . . , x m ∈ (0, 1) with</p><formula xml:id="formula_30">m i=1 x i = x, one can show that f (x) &lt; m i=1 f (x i ).</formula><p>Since |V (π( , j ))| ≥ 2 (holding because j ∈ L implies = j ), the above inequality on f (•) allows us to write -q( ) log 2 q( ) &lt; -v∈π( ,j ) q(v) log 2 q(v) ,</p><p>i.e., (5) &lt; 0. Notice that the assumption P(•) ∈ P &gt;0 implies q(v) &gt; 0 at any stage of the execution of WDP where node v has an unrevealed label. This is because, after any binary search on a path selected by WDP, for all v belonging to any tree in F , in the update phase each value q(v) is multiplied by a strictly positive value. This ensures that we can use the above inequality about f (•), as its argument will always lie in the open interval (0, 1).</p><p>The inequality in <ref type="bibr" target="#b4">(5)</ref> implies that there always exists a leaf of T (j ) such that WDP selects the path connecting with the root of the tree containing in the current forest F . This selection entails the disclosure of either cut edge (j , j 0 ) (if j 0 ∈ L(T 0 )), or a cut edge in T (j ) (if j 0 ∈ L(T 0 )), which in turn implies that the labels of i 0 and all its ancestors will be disclosed to the algorithm to be equal to 0, thereby indirectly revealing also cut edge ( , i 0 ). Since F contains only trees whose height is larger than 1, after this cut edge disclosure the tree made up of leaf alone cannot be part of F , thus preventing WDP's selection of a path starting from .</p><p>Lemma 3 For any input tree T and any cut c * with P(•) ∈ P &gt;0 , the number of paths selected by WDP before stopping is K(T, c * ).</p><p>Proof. If c * has only one cluster the statement is clearly true, since the binary search performed by WDP on the first selected path reveals that y(r) = 1 (hence y(v) = 1 for all v ∈ V ). We then continute by assuming y(r) = 0, so that c * has least two clusters. Let T 0 be the subtree of T made up of all nodes in AB(c * ). The edges of c * can be partitioned into the five disjoint sets S 1 , . . . , S 5 (see Figure <ref type="figure" target="#fig_4">5</ref> for reference):</p><formula xml:id="formula_31">S 1 :</formula><p>The set of all pairs of edges connecting a leaf 0 of T 0 to two sibling leaves 1 and 2 of T (Figure <ref type="figure" target="#fig_4">5</ref>, below, 1); S 2 : The set of all pairs of edges connecting a leaf 0 of T 0 to two sibling internal nodes i 1 and i 2 of T (Figure <ref type="figure" target="#fig_4">5</ref>, below, 2); S 3 : The set of all pairs of edges connecting a leaf 0 of T 0 to a leaf ∈ L and an internal node i of T (Figure <ref type="figure" target="#fig_4">5</ref>, below, 3); S 4 : The set of all edges connecting an internal node i 0 of T 0 to an internal node i of T , so that the sibling node of i belongs to V (T 0 ) (Figure <ref type="figure" target="#fig_4">5</ref>, below, 4); S 5 : The set of all edges connecting an internal node i 0 of T 0 to a leaf of T , so that the sibling node of belongs to V (T 0 ) (Figure <ref type="figure" target="#fig_4">5</ref>, below, 5).</p><p>Recall that T c * is the subtree of T whose nodes are (AB(c * ) ∪ LB(c * )) \ L, and that K(T, c * ) is the number of its leaves. The leaves of T c * can be partitioned into the following four sets A, B, C, and D (see again Figure <ref type="figure" target="#fig_4">5</ref> for reference):</p><p>A: The set of all leaves of T c * that are also leaves of T 0 , i.e., that belong to AB(c * ); B: The set of all sibling leaves of T c * that are also (sibling) internal nodes of T ; C: The set of all leaves of T c * that are also internal nodes of T such that their sibling node is a leaf of T ; D: The set of all leaves of T c * that are also internal nodes of T such that their sibling node belongs to T 0 .</p><p>We will not show a one-to-one mapping between L(T c * ) and the cut edges of c * wdp covering all possible cases. S 2 ↔ B: For each pairs of cut edges in S 2 , WDP selects two paths, one per cut edge. Each of these two paths clearly contains one of these two cut edges, and corresponds to all leaves of T c * that are also leaves of T . Hence we are covering all leaves of set B. S 3 ↔ C: For the edges in S 3 , WDP selects only one path, starting from a leaf of T (i). This path clearly contains edge (i, 0 ), and covers all leaves of set C. Observe that, by Lemma 2, edge ( 0 , ) is always indirectly revealed and never contained in a path selected by WDP. S 4 ↔ D: For the edges in S 4 , whenever WDP selects a path starting from a leaf of T (i), all the nodes in V (T (i)) are indirectly labeled 1, and from that point on, they will not be included in a tree in F . This path clearly contains edge (i 0 , i), hence we are covering all leaves of set D. S 5 ↔ ∅: Finally, Lemma 2 ensures that all cut edges in S 5 are indirectly disclosed whenever WDP selects a path starting from a leaf belonging to T (i 0 ), where i 0 is the sibling node of . Hence this case is ruled out by Lemma 2, and does not correspond to any leaf.</p><p>From the above, we conclude that the number of paths selected by wdp is always equal to K(T, c * ), as claimed.</p><p>The next lemma provides an entropic bound on the (condionally) expected number of queries WDP makes on a given path. Notice that the posterior distribution maintained by WDP never changes during each binary search, but only between a binary search and the next. Consider then q(i) defined in (3) at the beginning of a given binary search in terms of the current posterior distribution, and let π be the selected path, after having observed the labels that generated the current posterior.</p><p>Lemma 4 Let π be any path selected by WDP during the course of its execution, and {q(i)} be the current distribution (3) at the time π is selected. Then the expected number of queries WDP makes on π, conditioned on past revealed labels, is O ( H(π) ) = O (log(|V (π)|)) . Here, both the conditional expectation and H(π) are defined i.t.o. {q(i)}.</p><p>Proof. Let π be the currently selected path, and denote by E par (π) the set made up of the edges in π along with the edge connecting the top node of π to its parent (recall that in the special case where r is a terminal node of π, we can view r as the child of a dummy "super-root"). The binary search performed on π guarantees that the number of queries Q(π, (u, v)) made by WDP to find a cut edge (u, v) lying on π can be quantified as follows:</p><formula xml:id="formula_32">log 2 (u ,v )∈Epar(π) P((u , v ) ∈ c * ) P((u, v) ∈ c * ) = log 2 1 P((u, v) ∈ c * )</formula><p>, where the probabilities above are defined w.r.t. the posterior distribution at the beginning of the binary search. The expected number of queries made on π, conditioned on past labels can thus be bounded as</p><formula xml:id="formula_33">(u ,v )∈Epar(π) P((u , v ) ∈ c * ) log 2 1 P((u , v ) ∈ c * ) = u∈V (π) q(i) log 2 1 q(i) = O ( H(π) ) = O (log(|V (π)|)) , as claimed.</formula><p>We are now ready to prove Theorem 3 and Theorem 6.</p><p>Proof.[Theorem 3] For given c * , let Π = Π(c * ) = π 1 , . . . , π |Π| be the sequence of paths selected by WDP, sorted in the temporal order of selection during WDP's run. Also, denote by Q(π j ) the number of queries made by WDP on π j ∈ Π. Notice that the sequence Π is fully determined by c * . Moreover, the paths in Π are orderer in such a way to guarantee that π j contains a unique edge (par(u j ), u j ) which c * cuts across. Then, if we denote by {q j (•)} the value of q(•) at the time path π j is selected, it is easy to see that cut c * can be alternatively generated by sequentially generating edge (par(u 1 ), u 1 ) according to distribution {q 1 (•)} over π 1 , then (par(u 2 ), u 2 ) according to (posterior) distrubution {q 2 (•)} over π 2 , then (par(u 3 ), u 3 ) according to (posterior) distrubution {q 3 (•)} over π 3 , and so on until |Π| cuts have been generated. From Lemma 3, we have |Π| = K(T, c * ).</p><p>Let us then denote by E[•] the expectation w.r.t. the prior distribution, and by E j [•] be the conditional expectation E[• | (par(u 1 ), u 1 ), (par(u 2 ), u 2 ), . . . , (par(u j-1 ), u j-1 )]. Notice that the sequence of random variables par(u 1 ), u 1 ), (par(u 2 ), u 2 ), . . . , (par(u j-1 ), u j-1 ) fully determines the posterior distribution {q j (•)} before the selection of the j-th path π j , and so, π j itself. This way of viewing c * makes K = K(T, c * ) a (finite) stopping time w.r.t. the sequence of random variables par(u 1 ), u 1 ), (par(u 2 ), u 2 ), . . . ,, in that { K ≥ j} is determined by (par(u 1 ), u 1 ), (par(u 2 ), u 2 ), . . . , (par(u j-1 ), u j-1 ). This allows us to write</p><formula xml:id="formula_34">E   K j=1 Q(π j )   = n i=1 i j=1 E Q(π j ){ K = i} = n j=1 E Q(π j ){ K ≥ j} = n j=1 E { K ≥ j}E j [Q(π j )]</formula><p>(since K is a stopping time) <ref type="bibr">Lemma 4</ref>, where H j (•) is w.r.t. {q j (•)})</p><formula xml:id="formula_35">= n j=1 n i=j E { K = i}E j [Q(π j )] = n i=1 i j=1 E { K = i}E j [Q(π j )] = n i=1 E   { K = i} K j=1 E j [Q(π j )]   = E   K j=1 E j [Q(π j )]   = O   E   K j=1 H j (π j )     (by</formula><p>= O E[ K] log h , as claimed A slightly more involved guarantee for WDP is given by the following theorem, where the query complexity depends in a more detailed way on interplay between T and the prior P(•). Given any bottom-up path π in T , we denote by H(π) the normalized entropy of π, defined as H(π) = -i∈V (π) q(i) log( q(i)) , where q(i) = q(i)/ i∈V (π) q(i), and q(i) is defined according to the prior distribution P(•), as in <ref type="bibr" target="#b2">(3)</ref>. Notice that we may have i∈V (π) q(i) &lt; 1. Further, denote by D the family of all sets Π of all vertex-disjoint bottom-up paths starting from T 's leaves such that the top terminal node of each path π ∈ Π is either the root r of T or a node of another path of Π. The upper bound in the following theorem is never worse than the upper bound in Theorem 3.</p><p>Theorem 6 In the noiseless realizable setting, for any tree T , any prior distribution P(•) over c * such that P(•) ∈ P &gt;0 , the expected number of queries made by WDP to find</p><formula xml:id="formula_37">c * is O max Π∈D m(Π) j=1 H(π ij )</formula><p>, where m(Π) = min E K(T, c * ) , |Π| , and paths π i1 , π i2 , . . . in Π ∈ D are sorted in non-increasing value of normalized entropy H(•). In the above, the expectations is again over P(•).</p><p>As an application of the above result, consider that oftentimes a linkage function generating T also tags each internal node i with a coherence level α i of T (i), which is typically increasing as we move downwards from root to leaves. A common situation in hierarchical clustering is then to figure out the "right" level of granularity of the flat clustering we are looking for through the definition of bands of nodes (i.e., bands of clusters) of similar coherence. This may be encoded through a prior P(•) that uniformly spreads (1 -)/b probability mass over b-many edge-disjoint cuts of T , for b h, and an arbitrarily small &gt; 0, and the remaining mass over all remaining cuts (this is needed to comply with the condition P(•) ∈ P &gt;0 ). As we said in the main body of the paper, Theorem 6 gives a bound of the form E K(T, c * ) log b as opposed to the bound E K(T, c * ) log h provided by Theorem 3.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof of Theorem 6</head><p>Proof. Given T and prior P(•), let D wdp be the set made up of all sets Π of bottom-up paths in T that WDP can potentially select during the course of its executions. Each set Π is uniquely determined by c * ∼ P(•). The family of sets D is clearly a superset of D wdp . We prove the theorem by showing that the expected number of queries made by WDP is upper bounded by</p><formula xml:id="formula_38">O   max Π∈D wdp m(Π) j=1 H(π ij )   ,<label>(7)</label></formula><p>where, for any given Π ∈ D wdp , π 1 , π 2 , . . . is the sequence of paths of Π in the order they are selected by WDP , while π i1 , π i2 , . . . is the same sequence rearranged in non-increasing order of H(•). Using the same notation as in the proof of Theorem 3, we observe that at the time when π j gets selected by WDP the distribution {q j (•)} sitting along path π j is precisely the normalized distribution { q(•)} such that</p><formula xml:id="formula_39">|V (πj )| i=1</formula><p>q(i) = 1, so that H j (π j ) = H(π j ). Then, Eq. ( <ref type="formula" target="#formula_36">6</ref>) combined with Lemma 4 allows us to write</p><formula xml:id="formula_40">E   K j=1 Q(π j )   = E   O   K j=1 H j (π j )     .</formula><p>In the sequel, we show how to upper bound the right-hand side of the last (in)equality by <ref type="bibr" target="#b6">(7)</ref>. Set for brevity E</p><formula xml:id="formula_41">[ K] = µ . We have K j=1 H j (π j ) = K j=1 { K &lt; µ} H j (π j ) + K j=1 { K ≥ µ} H j (π j ) ≤ µ j=1 H j (π ij ) + K µ K j=1 H j (π j ) ≤ max Π∈D wdp m(Π) j=1 H j (π ij ) + K µ max Π∈D wdp m(Π) j=1 H j (π ij ) = 1 + K µ max Π∈D wdp m(Π) j=1 H j (π ij ) ,</formula><p>so that, taking the expectation of both sides,</p><formula xml:id="formula_42">E   K j=1 H j (π j )   ≤ 2 max Π∈D wdp m(Π) j=1 H j (π ij ) .</formula><p>This concludes the proof.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B.4 N-WDP (Noisy Weighted Dichotomic Path)</head><p>N-WDP is a robust variant of WDP that copes with persistent noise. Given an internal node i ∈ V \ L, let L(i) be the set of all possible queries that can be made to determine y(i), i.e., the set ( , ) ∈ L(left(i)) × L(right(i)). Then, given confidence δ ∈ (0, 1], and noise level λ ∈ [0, 1/2), N-WDP:</p><p>1. Preprocesses T and prior P(•) by setting y(i) = 1 for all nodes i ∈ V \ L such that |L(i)| &lt; α log(n/δ) (1-2λ) 2 , for a suitable constant α &gt; 0. P(•) is also updated (all j ∈ T (i) have P (j) = 1). At the end of this phase, each node in V is either unlabeled or labeled with 1.</p><p>2. Let T λ be the subtree of T made up of all unlabeled nodes of T , together with all nodes whose label has been set to 1 that are children of unlabeled nodes. N-WDP operates on T λ as WDP, with the following difference: Whenever a label y(i) is requested, N-WDP determines its value by a majority vote over Θ log(n/δ) (1-2λ) 2 -many queries selected uniformly at random from L(i).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Proof sketch of Theorem 4</head><p>Proof. Let Λ be the set of pairs of leaves whose label has been corrupted by noise. A standard Chernoff bound implies that for any fixed subset of L × L containing at least α log(1/δ) (1-2λ) 2 pairs (for a suitable constant α &gt; 0), the probability that the majority of them belongs to Λ is at most δ. Let us set for brevity f (n, λ, δ) = α log(n/δ) (1-2λ) 2 . A union bound over the at most n -1 internal nodes of V guarantees that for all queries y(i) made by N-WDP operating on T λ the majority vote over f (n, λ, δ)-many queries on pairs of leaves of L(i) will produce the correct label (i.e., before noise) of that node with probability at least 1 -δ.</p><p>Moreover, since the cut c found by N-WDP on T λ can be obtained with probability at least 1 -δ from c * by merging zero or more clusters on T , it is immediate to see that K(T λ , c) ≤ K(T, c * ). It is also easy to verify that this inequality holds even in expectation over the prior distributions of cut c * on T and c on T λ , that is, E P λ K(T λ , c) ≤ E P K(T, c * ), where P λ denotes the modified prior on tree T λ produced after N-WDP's initial preprocessing (Step 1 in the main body of the paper).</p><p>Recall that, with probability ≥ 1 -δ, the behavior of n -wdp on T with prior P(•) is the same as that of wdp on T λ with the updated prior P λ (•). Then we can use Lemma 3 by replacing c * with c to claim that the number of paths selected by N-WDP before stopping is K(T λ , c), and then Lemma 4 to conclude that the expected (w.r.t. P(•)) number of queries made by N-WDP is upper bounded with probability 1 -δ (over the noise in the labels) by</p><formula xml:id="formula_43">O f (n, λ, δ) E P λ K(T λ , c) log(h(T λ )) = O log(n/δ) (1 -2λ) 2 E P K(T, c * ) log h .</formula><p>We conclude the proof by showing that with probability at least 1 -δ we have d H (Σ * , C) = O n(log(n/δ)) 3/2</p><p>(1-2λ) 3   . Since all labels requested by N-WDP are simultaneously correct with probability at least 1-δ, the distance d H (Σ * , C) is upper bounded with the same probability by i∈L(T λ ) |L(i)| 2 .</p><p>For each tree T λ constructed by N-WDP , and any i ∈ L(T λ ), we have</p><formula xml:id="formula_44">O(f (n, λ, δ)) = |L(i)| = Ω f (n, λ, δ) 1/2 .</formula><p>Hence, the maximum number of leaves of T λ is O n (f (n,λ,δ)) 1/2 , and the quantity i∈L(T</p><formula xml:id="formula_45">λ ) |L(i)| 2 , contributing to d H (Σ * , C) is upper bounded by O(n f (n, λ, δ)) 3/2 = O n(log(n/δ)) 3/2 (1 -2λ) 3 , as claimed.</formula><p>C Missing material from Section 4</p><p>C.1 Proof sketch of Theorem 5</p><p>Proof. The proof follows from Theorem 2 and 3 in <ref type="bibr" target="#b5">[6]</ref>, together with the following observations.</p><p>1. For any tree T with n leaves, we have</p><formula xml:id="formula_46">|C(T, K)| = O(n K ). 2. When D is uniform, the disagreement coefficient θ = θ(C(T, K), D) is O(K).</formula><p>To show this statement, consider the following. For any c * ∈ C(T, K) and r &gt; 0, let</p><formula xml:id="formula_47">DIS(c * , r) = (x 1 , x 2 ) ∈ L × L : ∃c ∈ C(T, K) : σ C(c ) (x 1 , x 2 ) = σ C(c * ) (x 1 , x 2 ) ∧ d H (Σ C(c ) , Σ C(c * ) ) ≤ r .</formula><p>Then in our case θ is defined as</p><formula xml:id="formula_48">θ = sup r&gt;0 |{(x 1 , x 2 ) ∈ DIS(c * , r)}| r n 2 .</formula><p>Now, for any budget r in DIS(c * , r), and any c * ∈ C(T, K), the number of times we can replicate the perturbation of c * so as to obtain c satisfying d H (Σ C(c ) , Σ C(c * ) ) ≤ r is at most K. This is because any such perturbation will involve a different cluster of C(c * ), and therefore disjoint sets of leaves. Moreover, each such perturbation covers rn 2 leaves. The worst case that makes θ = K is when T is a full binary tree, and C(c * ) has equally-sized clusters. In all other cases θ ≤ K.</p><p>3. Regarding the expected running time per round, we give the pseudocode (see Algorithm 2 in this appendix) of a sequential algorithm, which operates as follows. In a preliminary phase the input tree T is preprocessed in order to be able to find in constant time at any time t (i) the leftmost and rightmost descendent leaf of any internal node of T , and (ii) the lowest common ancestor of any two given leaves. <ref type="foot" target="#foot_6">6</ref> At each time t, it receives (x it , x jt ), σ t , w t , for some weight w t ≥ 0, and label σ t ∈ {-1, +1}, and outputs err t (C(ĉ t+1 )), based on the past computation of C(ĉ t ) and err t-1 (C(ĉ t )). This can be directly used to compute at each round err t-1 (C(ĉ t )) needed by the algorithm, but also the perturbed cut ĉ t and its associated empirical error err t-1 (C(ĉ t )), once we repeat the computation by perturbing the last item (x it , x jt ), σ t , w t in the training set as follows: σ t = -σ C(ĉt) (x it , x jt ), and w t = ∞. In turn, the above can be used to compute d t = err t-1 (C(ĉ t )) -err t-1 (C(ĉ t )) and probability p t . The cornerstone of this procedure is to maintain updated over time for each internal node v of T a record storing eight values:</p><p>• 1st, 2nd, 3rd and 4th values: positive and negative inter-cluster total weight of all leaves in L(left(v)) and L(right(v)); • 5th and 6th values: positive and negative inter-cluster sum of weights w(x i , x j ) for all</p><p>x i ∈ L(left(v)) and all x j ∈ L(left(v)), and • 7th and 8th values: total intra-cluster negative weight of all the clusters of leaves in L(left(v)) and L(right(v)).</p><p>When this procedure receives in input triplet (x it , x jt ), σ t , w t , it finds a t = lca(x it , x jt ).</p><p>Then the eight records associated with each node on the bottom-up path π(a t , r) are updated in a bottom-up fashion according to the input, whenever necessary. This requires a constant time per node in V (π(a t , r)). Finally, err t (C(ĉ t+1 )) is obtained by simply summing the total intra-cluster negative weight of all clusters of leaves in L(left(r)) and L(right(r)) to the total inter-cluster positive weight of all leaves in L(left(r)) and L(right(v)), plus the inter-cluster sum of positive weights of the pairs w(x i , x j ) for all x i ∈ L(left(r)) and x j ∈ L(left(r)). In the special case where the updated clustering is made up of a single cluster containing all leaves of T , the procedure outputs the sum of all negative values in the record associated with r. In any event, computing this sum requires constant time.</p><p>Hence the total time required for performing all operations required at any time t is simply O(|V (π(a t , r)|).</p><p>This concludes the proof.    standard deviation across 10 independent runs of each one of them. As a reference, consider that the performance of BEST (see Section 5 in the main body of the paper) on the three datasets is the following: SING: 8.26%, MED: 8,51%, COMP: 8.81%. Moreover, since in this dataset we have 10 class labels with approximately the same frequency, both a random clustering and a degenerate clustering having n = 10000 singletons would roughly give 10% error.</p><p>In light of the above, notice that on both SING and MED, the robust breadth-first strategy BF goes completely off trail, in that it tends to produce clusterings with very few clusters. This behavior is due to the presence in the two hierarchies of long paths starting from the root, which is in turn caused by the way the single and the median linkage functions deal with the outliers contained in the MNIST dataset.</p><p>Finally, one should take into account the fact that when training our active learning algorithms we have used the first 500 labels for parameter tuning. Hence, a fair comparison to ERM is one that contrasts the test error of N-WDP, NR, and BF at a given number of queries q to the test error of ERM at q + 500 queries. From Table <ref type="table" target="#tab_3">2</ref> one can see that, even with this more careful comparison, N-WDP outperforms ERM. On the other hand, NR looks similar to ERM on MED and COMP, and worse than ERM on SING.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Left: A binary tree corresponding to a hierarchical clustering of the set of items L = {x1, . . . , x8}. The cut depicted in dashed green has two nodes above and the rest below. This cut induces over L the flat clustering C1 = {{x1, x2, x3, x4, x5}, {x6}, {x7, x8}} corresponding to the leaves of the subtrees rooted at the 3 green-bordered nodes just below the cut (the lower boundary of the cut). Clustering C1 is therefore realized by T . On the contrary, clustering C2 = {{x1, x2, x3}, {x4, x5, x6}, {x7, x8}} is not. Close to each node i is also displayed the number N (i) of realized cuts by the subtree rooted at i. For instance, in this figure, 7 = 1 + 3 • 2, and 22 = 1 + 7 • 3, so that T admits overall N (T ) = 22 cuts. Right: The same figure, where below each node i are the probabilities P(i) encoding a uniform prior distribution over cuts. Notice that P(i) = 1/N (i) so that, like all other cuts, the depicted green cut has probability (1 -1/22) • (1 -1/3) • (1/7) • 1 • (1/2) = 1/22.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: An example of input tree T before (left) and after (right) the first binary search of WDP. The green node is a dummy super-root. The nodes in yellow are the roots of the subtrees currently included in forest F . The numbers in red within each node i indicate the probabilities P(i), while the q(i) values are in blue, and viewed here as associated with edges (par(i), i). The magenta numbers at each leaf give the entropy H(π( , r(T ))), where r(T ) is the root of the subtree in F that contains both and r(T ). Left: The input tree T at time t = 0. No labels are revealed, and no clusters of C(c * ) are found. Right: Tree T after a full binary search has been performed on the depicted light blue path. Before this binary search, that path connected a leaf of a subtree in F to its root (in this case, F contains only T ). The selected path is the one maximazing entropy within the forest/tree on the left. The dashed line indicates the edge of c * found by the binary search. The red, blue and magenta numbers are updated accordingly to the result of the binary search. The leaves enclosed in the grey ellipse are now known to form a cluster of C(c * ).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>3 B</head><label>3</label><figDesc>h(π)-1 k=z |S t (j s k )| by S z , and also denote for convenience |S y(r )=1 t (r )| by S h(π) Notice that, by definition, |S y(r )=1 t (r )| = 1, and corresponds to the special case z =</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Algorithm 1 :</head><label>1</label><figDesc>WDP (Weighted Dichotomic Path) INPUT : T , {P(i), i ∈ V }. OUTPUT : C = C * . Init: • C ← ∅; /* C contains all the clusters of C(c * ) found so far */ • F ← {T }; /* Forest of maximal subtrees T of T */ • y(par(r)) ← 0; /* Dummy node par(r) */</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Illustration of all possible cases of Lemma 2 and Lemma 3. Nodes belonging to T0 (see main text) are black, all remaining nodes are white. Leaves and subtrees of T are represented by squares and triangles, respectively. Each node of T c * is enclosed in a circle. Above: The two possible cases illustrating Lemma 2, that is, j ∈ V (T0) on the left, and j ∈ V (T0) on the right. Below: The five cases described in Lemma 3.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Finally, in order</head><label></label><figDesc>to compute the clustering at the end of the training phase, it suffices to perform a breadth-first visit of T to find all leaves of T c * . This requires a time linear in the number of clusters of the clustering found by the algorithm. Then the algorithm outputs the indices of the leftmost and rightmost descendant of each leaf of T c * , which requires Θ(1) time per cluster. The total time for giving in output the computed clustering is therefore linear in the number of its own clusters.C.2 Pseudocode of the NR algorithm in the non-realizable settingEach internal node of T is associated with a record containing eight values that are maintained updated over time. We start by providing the semantics of these eight values:• weight(v, left, -1) and weight(v, left, +1): negative and positive inter-cluster total weight of leaves in L(left(v)). • weight(v, middle, -1) and weight(v, middle, +1): negative and positive inter-cluster sum of weights w( l , r ), where l ∈ L(left(v)) and r ∈ L(right(v)), respectively. • weight(v, right, -1) and weight(v, right, +1): negative and positive inter-cluster total weight of leaves in L(right(v)). • cost(v, left) and cost(v, right): intra-cluster total negative weight of clusters of leaves in L(left(v)) and L(right(v)), respectively.Finally, for any internal node v of T , we denote by s(v) the following sum: s(v) def == weight(v, left, -1) + weight(v, left, +1) + weight(v, middle, -1) + weight(v, middle, +1) + weight(v, right, -1) + weight(v, right, +1</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>Proof. By Lemma 1, we immediately see that OTS finds c * through O(log N ) queries. This is because |S t+1 (r)| ≤ 2 3 |S t (r)| for all time steps t, implying by induction that the total number of queries is upper bounded by log 3/2 N = O(log N ).</figDesc><table /><note><p><p><p>1. In fact, if |S t (j s 0 )| is larger than 2 h(π) z=1 |S z |, that is larger than</p>2 3 |S t (r )| (which may happen if π is not a backbone path), we would not have max z S z ≤ |St(r )| 2 , hence S z would not be guaranteed to be at least 2 3 |S t (r )| for all z.</p>Proof of Theorem 1</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>) .</figDesc><table><row><cell></cell><cell>No. of queries</cell><cell>250</cell><cell>500</cell><cell>1000</cell><cell>2000</cell><cell>5000</cell><cell>10000</cell><cell>20000</cell></row><row><cell>Tree</cell><cell>Algorithm</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>SING</cell><cell>ERM</cell><cell>8.81</cell><cell>8,78</cell><cell>8.39</cell><cell>8.29</cell><cell>8.29</cell><cell>8.29</cell><cell>8.29</cell></row><row><cell></cell><cell>N-WDP</cell><cell cols="4">8.29±0.0 8.28±0.0 8.28±0.0 8.29±0.0</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell>NR</cell><cell cols="5">11.0±2.0 8.77±0.0 8.43±0.0 8.31±0.0 8.29±0.0</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell>BF</cell><cell cols="7">89.0±0.0 89.0±0.0 88.0±0.0 86.0±2.0 87.0±3.0 72.0±10.0 67.0±10.0</cell></row><row><cell>MED</cell><cell>ERM</cell><cell>10.30</cell><cell>10.16</cell><cell>9.36</cell><cell>8.91</cell><cell>8.91</cell><cell>8.69</cell><cell>8.65</cell></row><row><cell></cell><cell>N-WDP</cell><cell cols="4">9.41±0.1 9.07±0.1 8.88±0.1 8.92±0.1</cell><cell>8.8±0.1</cell><cell>8.8±0.1</cell><cell>8.7±0.1</cell></row><row><cell></cell><cell>NR</cell><cell cols="2">10.17±0.0 9.37±0.0</cell><cell cols="2">9.0±0.0 8.85±3.0</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell></cell><cell>BF</cell><cell cols="5">89.4±0.0 88.1±0.0 87.0±0.0 63.1±0.0 18.2±5.0</cell><cell>18.0±3.0</cell><cell>10.9±1.0</cell></row><row><cell>COMP</cell><cell>ERM</cell><cell>10.65</cell><cell>10.30</cell><cell>10.04</cell><cell>9.26</cell><cell>9.06</cell><cell>8.99</cell><cell>8.93</cell></row><row><cell></cell><cell>N-WDP</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 2 :</head><label>2</label><figDesc>Test error (in percentage) vs. number of queries for the various algorithms we tested on the hierarchies SING, MED, and COMP originating from the MNIST dataset (see main body of the paper). Standard deviations are also reported. Missing values on N-WDP are due to the fact that the algorithm stops before reaching the desired number of labels. Missing values on NR are instead due to the fact that we stopped the algorithm's execution once we obseved no further test error improvement.</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>In fact, the trees we can handle are more general than binary: we are making the binary assumption throughout for presentational convenience only.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>A strongly binary tree is a rooted binary tree for which the root is adjacent to either zero or two nodes, and all non-root nodes are adjacent to either one or three nodes.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>For definiteness, we set y(par(r)) = 0, that is, we are treating the parent of r(T ) as a "dummy super-root" with labeled 0 since time t = 0. Thus, according to this definition, q(r) = P(r).</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_3"><p>This bound is indeed tight for this strategy when the input is a full binary tree of height 3.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_4"><p>Here, we are defining the entropy of a path π as -v∈V (π) q(v) log 2 q(v), even for paths π for which v∈V (π) q(v) &lt; 1.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_5"><p>S 1 ↔ A: For each pairs of cut edges in S 1 ), WDP clearly selects a path starting from either 1 or 2 , which will indirectly disclose the cut edge incident to the sibling leaf ( 2 or 1 , respectively). S 1 is therefore about all leaves of set A.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_6"><p>Note that at can always be found in constant time after a Θ(n) time preprocessing phase of T -see<ref type="bibr" target="#b17">[18]</ref>.</p></note>
+		</body>
+		<back>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Algorithm 2: Sequential algorithm for the non-realizable case (NR).</p><p>INPUT : Sequence of pairs of labeled leaves of the form ( , ), σ( , ) OUTPUT : Clustering C with minimum cost over all clusterings realized by T . Init:</p><p>• for v ∈ V do if v ∈ L is_cluster(v) ← 1; else is_cluster(v) ← 0;</p><p>• current_tot_cost ← 0;</p><p>• Preprocess T in a bottom-up fashion and store for each internal node of T the leftmost and rightmost leaf descendant index. /* Necessary to output C in linear time */ • Preprocess T to find the lowest common ancestor of any pair of leaves in constant time.</p><p>Receive pair of leaves ( , ); w( , ) ← 0; /* initialize w( , ) */ a ← lowest common ancestor of and ; /* we assume = */ /* save all records for the rollback that will be done later */ S ← list of saved records (eight values per node) of the path π(a, r);</p><p>/* -----verify whether and are in the same cluster of the current optimal clustering -----*/ while a = r ∧ is_cluster(a) = 0 do a ← par(a); if is_cluster(a) = 1 then same_cluster( , ) ← 1; else same_cluster( , ) ← 0; /* -----compute optimal cost under constraint -----*/ if same_cluster( , ) = 1 then /* compute the optimal cost of the current clustering constrained by the assumption that and are in different clusters; -∞ is simulated using a very large negative number */ total_modified_cost ←add_weight( , , -∞); else /* compute the optimal cost of the current clustering constrained by the assumption that and are in the same cluster; +∞ is simulated using a very large positive number */ total_modified_cost ←add_weight( , , +∞); /* rollback of the clustering preceding the add of weight -/ + ∞ */ Restore all records of S; /* -----add weight w( , ) if necessary -----*/ Set:</p><p>• Difference d t ← 1 t-1 (total_modified_cost -current_tot_cost) ; • Probability p t as a function of d t as in Eq. ( <ref type="formula">4</ref>);</p><p>pt ; • With probability p t , current_tot_cost ←add_weight( , , w( , )); /* -----find the current optimal clustering/partition of L -----*/ Perform a breadth-first search on T , starting from its root r, to create the set V formed by all nodes v ∈ V such that is_cluster(v) = 1 and for all ancestors a of v we have is_cluster(a) = 0; </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C.3 Missing material from Section 5</head><p>In Table <ref type="table">2</ref> we report the results of our preliminary experiments. Notice that N-WDP, NR, and BF are randomized algorithms. Hence, for these three algorithms we give average results and</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Decision trees for geometric models</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Arkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Meijer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mitchell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rappaport</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Skiena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. Symposium on Computational Geometry</title>
+		<meeting>Symposium on Computational Geometry</meeting>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<biblScope unit="page" from="369" to="378" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Clustering with same-cluster queries</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Ashtiani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kushagra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ben-David</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 30th NIPS</title>
+		<meeting>30th NIPS</meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Local algorithms for interactive clustering</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Awasthi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Voevodski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Clustering with interactive feedback</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Balcan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Blum</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 19th International Conference on Algorithmic Learning Theory</title>
+		<meeting>of the 19th International Conference on Algorithmic Learning Theory</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="316" to="328" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Importance weighted active learning</title>
+		<author>
+			<persName><forename type="first">Alina</forename><surname>Beygelzimer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sanjoy</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Langford</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. ICML</title>
+		<meeting>ICML</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="49" to="56" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Agnostic active learning without constraints</title>
+		<author>
+			<persName><forename type="first">Alina</forename><surname>Beygelzimer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Hsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Langford</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 23rd International Conference on Neural Information Processing Systems, NIPS&apos; 10</title>
+		<meeting>23rd International Conference on Neural Information essing Systems, NIPS&apos; 10</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="199" to="207" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Sequential information maximization: When is greedy near-optimal?</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Hamed</forename><surname>Yuxin Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amin</forename><surname>Hassani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Karbasi</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Krause</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 28th Conference on Learning Theory</title>
+		<meeting>28th Conference on Learning Theory</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="page" from="338" to="363" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Near-optimal bayesian active learning with correlated and noisy tests</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">Hamed</forename><surname>Yuxin Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Hassani</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Krause</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 20th International Conference on Artificial Intelligence and Statistics</title>
+		<meeting>20th International Conference on Artificial Intelligence and Statistics</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Improving generalization with active learning</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cohn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Atlas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Ladner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="201" to="221" />
+			<date type="published" when="1994">1994</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Region-based active learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Cortes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Desalvo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gentile</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mohri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 22nd International Conference on Artificial Intelligence and Statistics</title>
+		<meeting>22nd International Conference on Artificial Intelligence and Statistics</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Hierarchical sampling for active learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Hsu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. of the 25th International Conference on Machine Learning</title>
+		<meeting>of the 25th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Coarse sample complexity bounds for active learning</title>
+		<author>
+			<persName><forename type="first">Sanjoy</forename><surname>Dasgupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in neural information processing systems</title>
+		<imprint>
+			<date type="published" when="2005">2005</date>
+			<biblScope unit="page" from="235" to="242" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Top-k and clustering with noisy comparisons</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Davidson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Khanna</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Milo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="1" to="35" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Adaptive submodularity: A new approach to active learning and stochastic optimization</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Golovin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andreas</forename><surname>Krause</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1003.3967</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Efficient active learning of halfspaces: An aggressive approach</title>
+		<author>
+			<persName><forename type="first">Alon</forename><surname>Gonen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sivan</forename><surname>Sabato</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shai</forename><surname>Shalev-Shwartz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="2583" to="2615" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">A bound on the label complexity of agnostic active learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hanneke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 24th International Conference on Machine Learning</title>
+		<meeting>24th International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<biblScope unit="page" from="353" to="360" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Theory of disagreement-based active learning</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hanneke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends in Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="131" to="309" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Fast algorithms for finding nearest common ancestors</title>
+		<author>
+			<persName><forename type="first">Dov</forename><surname>Harel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">E</forename><surname>Tarjan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM Journal on Computing</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="338" to="355" />
+			<date type="published" when="1984">1984</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">On an optimal split tree problem</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kosaraju</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Przytycka</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Borgstrom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 6th International Workshop on Algorithms and Data Structures</title>
+		<meeting>6th International Workshop on Algorithms and Data Structures</meeting>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="157" to="168" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Hierarchical label queries with data-dependent partitions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Kpotufe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Urner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ben-David</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 28th Conference on Learning Theory</title>
+		<meeting>28th Conference on Learning Theory</meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1176" to="1189" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<monogr>
+		<title level="m" type="main">Clustering with noisy queries</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Mazumdar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Saha</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.07510v1</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Local equivalences of distances between clusterings?a geometric perspective</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Meila</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Machine Learning</title>
+		<imprint>
+			<biblScope unit="volume">86</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="369" to="389" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Generalized binary search for split-neighborly problems</title>
+		<author>
+			<persName><forename type="first">Stephen</forename><surname>Mussmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Percy</forename><surname>Liang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. 21st International Conference on Artificial Intelligence and Statistics (AISTATS)</title>
+		<meeting>21st International Conference on Artificial Intelligence and Statistics (AISTATS)</meeting>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">The geometry of generalized binary search</title>
+		<author>
+			<persName><forename type="first">Robert</forename><forename type="middle">D</forename><surname>Nowak</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Information Theory</title>
+		<imprint>
+			<biblScope unit="volume">57</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="7893" to="7906" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Objective criteria for the evaluation of clustering methods</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">M</forename><surname>Rand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">66</biblScope>
+			<biblScope unit="page" from="846" to="850" />
+			<date type="published" when="1971">1971</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Diameter-based active learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tosh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dasgupta</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Thirty-fourth International Conference on Machine Learning (ICML)</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

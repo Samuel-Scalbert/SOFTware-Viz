@@ -1,0 +1,424 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Jumping Evaluation of Nested Regular Path Queries</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Joachim</forename><surname>Niehren</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Sylvain</forename><surname>Salvati</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Rustam</forename><surname>Azimov</surname></persName>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Inria Lille</orgName>
+								<orgName type="institution" key="instit2">Université de Lille</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Saint Petersburg State University</orgName>
+								<address>
+									<country key="RU">Russia</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Jumping Evaluation of Nested Regular Path Queries</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">32C45F239F144119FC457D4EE6F04631</idno>
+					<note type="submission">Submitted on 4 Aug 2022</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:50+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Graph databases</term>
+					<term>path queries</term>
+					<term>propositional dynamic logic</term>
+					<term>XPath</term>
+					<term>Datalog</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div><head>HAL is</head></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><p>q 0 (x) :-q 1 (x), q 2 (x). q 1 (x) :-start(y), edge a (y, x). q 2 (x) :-edge b (x, y), q 3 (y). q 3 (y) :-edge c (y, z). for a query answering algorithm with combined linear complexity with respect to the top-down needed subgraph, instead of the whole graph which we consider as too expensive.</p><p>For regular path queries (without filters) a canonical notion of the top-down needed subgraph seems quite intuitive, since a regular expression can be interpreted in a top-down manner as a navigation plan for traversing a graph. The top-down needed subgraph contains all the nodes and edges that are traversed when executing this navigation plan on the graph, while starting with the given set of start nodes. This notion of top-down needed nodes can then be lifted from to NRPQs, so that any filter of a NRPQ is tested only for those nodes where it is required when executing the query in a top-down manner.</p><p>For evaluating regular path queries (without filters) with the above complexity requirement, it is sufficient to execute it top-down navigation plan on the graph. We note that the presence of the Kleene star makes memoization mandatory, otherwise the algorithm may loop infinitely. What becomes more tedious is to find an evaluation algorithm for NRPQs that satisfies our complexity requirement. The existing proposals in <ref type="bibr" target="#b9">[9,</ref><ref type="bibr" target="#b1">2,</ref><ref type="bibr" target="#b4">5]</ref> achieve combined linear time complexity by pre-evaluating the filters all over the graph in a bottom-up manner and then running an evaluation algorithm for regular path queries. However, the bottom-up pre-computation of the filters over all the graph may visit nodes that are not needed for the top-down evaluation of NRPQs, so these algorithms do not satisfy the envisaged complexity bound.</p><p>As an example, we consider in Fig. <ref type="figure" target="#fig_0">1</ref> the graph G 0 with edge labels {a, b, c}, the NRPQ P 0 = edge a /[edge b /edge c ]?, and the set of start nodes S 0 = {0}. The query P 0 started at S 0 selects all those nodes of G 0 that are connected to the start node 0 by an a-edge, and have a path over a b-edge followed by a c-edge. The top-down algorithm with pre-evaluation of filters for P 0 will first compute the answer set of the filter [edge b /edge c ] on G 0 starting with S 0 , which is {1, 4, 5}. It will then compute the set of nodes that are reached from the start node 0 over an a-edge which is {1, 4, 6}. The answer set is the intersection quite differently to paths outside filters. The reason is that paths outside filter have to return the end node that is reached, while paths inside filters have to jump back from the end node to the start node. The binary relation between end nodes and start nodes, however, cannot be stored in any predicate of the datalog program, since this would require a binary intensional predicate that are ruled out by monadic datalog. What we exploit instead is that a monadic datalog program can perform multiple tests on the same node, as with the rule q 0 (x) :-q 1 (x), q 2 (x). In our example, q 1 (x) will bind x to some node reached over the path edge a from the set of start nodes S 0 , while q 2 (x) will test the filter [edge b /edge c ] there.</p><p>Our first contribution is an algorithm that answers NRPQs in the time O(|tdn G,S (P)||P|) where |tdn G,S (P)| is the size of the top-down needed subgraph of G for query P. For this, we present a novel linear time compilation scheme mapping path queries to datalog queries. We restrict ourselves to negation-free NRPQs in order to avoid the usage of stratified negation for the sake of simplicity. We prove that if the compiler transforms a query P and a start set S into a datalog query M, then the top-down needed subgraph tdn G,S (P) is the part of the graph's database that is visited by top-down evaluation of the datalog query M on the database. Furthermore, the datalog queries produced are monadic and restricted in such a way, that their top-down evaluation can be done in combined linear time depending on the size of the top-down visited subdatabase. It follows that the answer set of an NRPQ P on a graph G with start set S can indeed be computed in time O(|tdn G,S (P)||P|).</p><p>Our algorithm can be extended to a jumping algorithm for answering NRPQs on graphs with indexes. The indexes are binary relations defined by other NRPQs that allow the algorithm to jump in the graph. For instance, when given an index for the NRPQ I = edge * /a? on the input graph, the evaluation algorithm can always jump to all a-labeled nodes accessible from the current node, without visiting the intermediates. We consider that the indexes are given with the input, since they are usually pre-computed elsewhere. Therefore, the indexes can simply be integrated into the graph as new edges that are labeled by the index's name, which is I in our example. Furthermore, the NRPQ is then rewritten by substituting all occurrences of I as a subquery in the NRPQ by edge I , so that we can apply the previous machinery. An efficient implementation of our algorithm can be based on any efficient top-down datalog evaluator, since it is sufficient to evaluate the monadic datalog program produced by our compiler.</p><p>Our graph jumping algorithm permits to reformulate without specialized techniques a very efficient automata-based algorithm proposed by <ref type="bibr" target="#b6">[7]</ref> that evaluates NRPQs on datatrees with indexes based on jumping. More precisely, their algorithm covers forward navigational XPATH queries on XML documents. It is based on alternating tree automata with selection states (which can be seen as binary datalog programs while ours are monadic). Our generic approach overcomes the limitations of their algorithm: it is not bound to trees but applies to graphs; it is not limited to forward navigational XPath but can treat any NRPQs also with backward steps. it can be implemented efficiently without any dedicated techniques, by using any efficient datalog evaluator supporting top-down evaluation such as <software ContextAttributes="created">LogicBlox</software> <ref type="bibr" target="#b0">[1]</ref>. Outline. In Section 2, we recall the definition of NRPQs. In Section 3, we formally define top-down needed subgraphs. In Section 4, we recall preliminaries on datalog queries, while discussing the complexity of top-down evaluation in Section 5. In Section 6, we give our compiler from NRPQs to datalog queries with its complexity theorem. Proofs can be found in the appendix. Section 7 presents the jumping evaluation algorithm for NRPQs on graphs with indexes, and Section 8 preliminary experimental results.</p></div>
+<div><head n="2">Nested Regular Path Queries</head><p>Regular path queries on labeled graphs <ref type="bibr" target="#b5">[6]</ref> can be extended to NRPQs by adding filters with logical operators <ref type="bibr" target="#b7">[8]</ref>. <software ContextAttributes="used">CoreXPath</software> <ref type="bibr" target="#b4">[5]</ref> is a sublanguage of NRPQs with limited recursion where the interpretation [</p><formula xml:id="formula_0">P] G = {v | ∃v . (v, v ) ∈ P G } node G = V node a G = V a ¬F G = V \ F G F ∧ F G = F G ∩ F G F ∨ F G = F G ∪ F G F? G = {(v, v) | v ∈ F G } edge a G = E a edge -1 a G = E -1 a P/P G = P G • P G P + G = P + G P ∪ P G = P G ∪ P G goto(F) G = {(v, v ) | v ∈ F G } Figure 4: Semantics of NRPQs on a Σ-labeled digraph G = (V, (V a ) a∈Σ , (E a ) a∈Σ ).</formula><p>is restricted to an unranked tree. NRPQs were known even much earlier as the propositional dynamic logic (PDL) of <ref type="bibr" target="#b3">[4]</ref>.</p><p>We start from a finite set of labels Σ. A (finite) Σ-labeled digraph is a tuple G = (V, (V a ) a∈Σ , (E a ) a∈Σ ) where V is a finite set of nodes, V a ⊆ V a finite subset of a-labeled nodes, and E a ⊆ V ×V a finite set of a-labeled edges where a ∈ Σ. Note that nodes may have multiple labels or none, while each edge has a unique label. Between two nodes there may be multiple edges with different labels though. An example for a labeled graph G 0 with labels in Σ = {a, b, c} was given graphically in Fig. <ref type="figure" target="#fig_0">1</ref>. The set of nodes of the graph is V = {0, . . . , 7}. Here, the nodes are not labeled, so V a = V b = V c = / 0. Each of the edge has a unique label. There are 8 a-labeled edges in E a , 3 b-labeled edges in E b and one c-labeled edge in E c .</p><p>The syntax of NRPQs with labels in Σ is presented in Fig. <ref type="figure" target="#fig_2">3</ref>. It consists of a set of filters F Σ that select a set of graph nodes, and a set of paths P Σ that select a set of pairs of graph nodes. The filter node selects all the nodes, while the filter node a selects all a-labeled nodes. The set of nodes that are both a-labeled and b-labeled but not c-labeled is queried by filter node a ∧ node b ∧ ¬node c . Path edge a selects all a-labeled edges and path edge = df ∪ a∈Σ edge a the set of all edges. The path node? selects the identify on nodes {(v, v) | v ∈ V }. Path composition P/P , path union P ∪ P are supported as well as repeated path composition P + . The Kleene star on paths can be defined by P * = df P + ∪ node?. Backwards edges can be queried by edge -1  a , so that general backwards path P -1 can be defined, where (P 1 /P 2 ) -1 = P -1 2 /P -1 1 and F? -1 = F?. Finally, the path goto(F) permits to jump to any node of the graph satisfying filter F. In particular, if there is a label root ∈ Σ that distinguishes a set of roots, than path goto(node root )/P first jumps to some root node before executing path P. A little more complex example for an NRPQ with signature Σ = {a, b, c} is the path query P 2 = node a ?/(edge + /[edge b /edge c ]?) * . The evaluation of P 2 on a given graph from a start node tests whether the start node is a-labeled, and if so, it navigates from there repeatedly, over a sequence of edges to some node for which there exists an outgoing path over edges with labels b and then c. The set of all nodes reached this way is selected.</p><p>The semantics of paths P on labeled digraphs G is the binary relation P G ⊆ V ×V defined in Fig. <ref type="figure">4</ref> in mutual recursivion with the semantics of filters F G ⊆ V . Despite its binary semantics, we will use paths for defining sets of nodes by fixing a start set S for the navigation. So let G be a labeled graph and S a subset of the nodes of G. For any P ∈ P Σ , the set P G (S) = {v | ∃v ∈ S. (v , v) ∈ P G } contains all nodes that can be reached when starting at some node of the start set S and navigating over the path P. Similarly, the set F G (S) = F G ∩ S contains all nodes from S that satisfy the filter F.</p><formula xml:id="formula_1">tdn G,S (node) = {node(v) | v ∈ S} tdn G,S (node a ) = {node(v) | v ∈ S} ∪ {node a (v) | v ∈ V a ∩ S} tdn G,S (F?) = tdn G,S (F) tdn G,S (edge a ) = {node(v) | v ∈ S} ∪ {edge a (v, v ), node(v ) | v ∈ S, (v, v ) ∈ E a } tdn G,S (edge -1 a ) = {node(v) | v ∈ S} ∪ {edge a (v , v), node(v) | v ∈ S, (v, v ) ∈ E a } tdn G,S ([P]) = tdn G,S (P) tdn G,S (F ∧ F ) = tdn G,S (F) ∪ tdn G, F G (S) (F ) tdn G,S (F ∨ F ) = tdn G,S (F) ∪ tdn G,S (F )</formula><p>tdn G,S (P/P ) = tdn G,S (P) ∪ tdn G, P G (S) (P ) tdn G,S (P + ) = tdn G, P + G (S) (P) tdn G,S (P ∪ P ) = tdn G,S (P) ∪ tdn G,S (P ) tdn G,S (goto(F)) = tdn G (F) (see Fig. <ref type="figure" target="#fig_3">6</ref>)</p><p>Figure <ref type="figure">5</ref>: Facts of top-down needed subgraphs for negation-free paths and filters. </p><formula xml:id="formula_2">tdn G (node) = {node(v) | v ∈ V } tdn G (node a ) = {node a (v) | v ∈ V a } tdn G (F?) = tdn G (F) tdn G (edge a ) = {edge a (v, v ) | (v, v ) ∈ E a } tdn G (edge -1 a ) = {edge a (v , v) | (v, v ) ∈ E a } tdn G ([P]) = tdn G (P) tdn G (F ∧ F ) = tdn G (F) ∪ tdn G, F G (F ) tdn G (F ∨ F ) = tdn G (F) ∪ tdn G (F ) tdn G (P/P ) = tdn G (P) ∪ tdn G, P G (V ) (P ) tdn G (P + ) = tdn G, P + G (V ) (P) tdn G (P ∪ P ) = tdn G (P) ∪ tdn G (P ) tdn G (goto(F)) = tdn G (F)</formula></div>
+<div><head n="3">Top-Down Needed Subgraphs</head><p>We are interested in the top-down evaluation of path queries, starting with a set of start nodes, and navigating along the path to other sets of nodes. The top-down needed subgraph of a path query will be the subgraph visited by such a traversal. For the formal definition, we consider labeled graphs as extensional databases, i.e., as the sets of relational facts constructed from a relational signature and a set of constants. More concretely, we map any Σ-labeled graph G = (V, (V a ) a∈Σ , (E a ) a∈Σ ) to the following set of database facts:</p><formula xml:id="formula_3">db(G) = {node(v) | v ∈ V } ∪ {node a (v) | v ∈ V a , a ∈ Σ} ∪ {edge a (v, v ) | (v, v ) ∈ E a , a ∈ Σ}.</formula><p>The facts are build from the monadic predicates node and node a and the binary predicates edge a for all a ∈ Σ, and the graph nodes v ∈ V as constants. Conversely, consider a set of facts D with the following properties:</p><formula xml:id="formula_4">1. if node a (v) ∈ D then node(v) ∈ D and 2. if edge a (v, v ) ∈ D then node(v) ∈ D and node(v ) ∈ D.</formula><p>For any such set D there exists a unique graph G such that db(G) = D. We can therefore identify any graph G with the sets of facts D = db(G).</p><p>For any Σ-labeled digraph G and set of start nodes S we define in Fig. <ref type="figure">5</ref> the set of facts of top-down needed subgraph tdn G,S (P) and tdn G,S (F) for negation-free paths P and filters F in mutual recursion. In the case of goto expressions, Fig. <ref type="figure" target="#fig_3">6</ref> defines tdn G,S (goto(F)) = tdn G (F) for restarting the computation with all nodes satisfying F. The natural algorithm for computing the answer set of filter node a at start set S will filter for all nodes v ∈ S such that v ∈ V a . Therefore all nodes in S need to be visited, as well as the a-label of all nodes in V a ∩ S. The extensional database of the top-down needed subgraph tdn G,S (a) therefore contains the facts in {node(v) | v ∈ S} and {node a (v) | v ∈ V a ∩ S}. The definition of tdn G,S (F ∧ F ) is sequential from the left to the right. When the filter query F is failing for a node v then there is no need to check the filter query F so as to know that the filter query F ∧ F is not verified by v. In contrast, the definition of tdn G,S (F ∨ F ) is done a parallel manner, so that both subfilters need to be evaluated from the start nodes. The sequential alternative would lead to smaller top-down needed subgraphs, which might seem advantageous:</p><formula xml:id="formula_5">tdn seq G,S (F ∨ F , S) = tdn G,S (F) ∪ tdn G, ¬F G (S) (F ).</formula><p>However, obtaining an evaluator with this sequential behavior by compilation to datalog would require us to use stratified negation, that we prefer to avoid for the sake of presentation. For the same reason, we restrict the definition of top-down needed subgraphs to negation-free path queries.</p><p>The definition of tdn G,S (P + ) is made of every attempt to construct a path of P starting from the nodes of S or the nodes that can be reached from S with a path of P + . In the case of goto expressions, we have defined tdn G,S (goto(F)) = tdn G (F) for restarting the computation with all nodes satisfying F. We could set tdn G (F) to tdn G,V (F), but this would not be optimal since all nodes of V would be top-down needed even for most simple filter F = node a . A better definition where only the nodes of V a are top-down needed is given in Fig. <ref type="figure" target="#fig_3">6</ref>.</p><p>Example 1. Consider the query P 0 = edge a [edge b /edge c ] on the graph G 0 with signatue Σ 0 = {a, b, c} in Fig. <ref type="figure" target="#fig_0">1</ref> with the start set S 0 = {0}. The set of top-down needed facts tdn G 0 ,S 0 (P 0 ) is then {edge a (0, 1), edge a (0, 4), edge a (0, 6), edge b (1, 2), edge b (4, 2), edge c (2, 3)}. The top-down needed subgraph which is annotated in red in Fig. <ref type="figure" target="#fig_0">1</ref> </p><formula xml:id="formula_6">is thus graph(tdn G 0 ,{0} (P 0 )) = ({0, . . . , 6}, (V ) ∈Σ 0 } , (E ) ∈Σ 0 ) where V a = V b = V c = / 0, E a = {(0, 1), (0, 4), (0, 6)}, E b = {(1, 2), (4, 2)}, and E c = {(2, 3)}.</formula></div>
+<div><head n="4">Datalog Queries</head><p>We recall preliminaries on the syntax and semantics of datalog programs without negation and how to use them to define datalog queries on extensional databases. The syntax of datalog is parametrized by a finite set of predicates p, q, r ∈ P and a disjoint finite set of constants a, b, c ∈ C . The set of predicates is partitionned into a subset of extensional predicates P ext and a disjoint subset of intensional predicates P int , so P = P ext ∪ P int . Constants will serve as database elements and extensional predicates for naming database relations. An (extensional) database is a subsets of ground literals of the form p(a 1 , . . . , a n ) where p ∈ P ext has arity n ≥ 0 and a 1 , . . . , a n ∈ C .</p><p>We fix a set of variables V = {x, y, z, . . .} distinct from the constants and predicates. A term u, s,t ∈ T C = V C is either a variable or a constant. The set of (positive) literals L is a subset of terms of the form q(u 1 , . . . , u n ) where q ∈ P has arity n and u 1 , . . . , u n ∈ T C . A vector of terms is denoted by t ∈ T * C . The set of all literals with extensional predicates is denoted by L ext and those with intensional predicates by L int . A goal is a vector of literals ∈ L * that is to be understood as a conjunction. The set of free variables fv( t), fv( ) ⊆ V are defined as usual. Similarly for the sets of occuring constants cst( t), cst( ) ⊆ C . A clause is a pair of the form q( t) :-. where q( t) ∈ L int and ∈ L * . We call q( t) the head and the body of the clause. The clause q( t) :-. is safe if fv( t) ⊆ fv( ). We only work with safe clauses throughout this paper.</p><p>A (safe) datalog program is a finite subset M of safe clauses. A (safe) datalog query has the form ?-. M, where ∈ L * is a datalog goal and M a safe datalog program M. We now turn our attention to the semantics of datalog queries. Given a datalog query ?-. M and an extensional database D, we need to define the set of substitutions that answer the query. A substitution is a finite partial function σ</p><formula xml:id="formula_7">ε M,D = {[]} M,D = {Π fv( ) (σ σ ) | σ = unif ( , ), :-. in ren(M), σ ∈ σ ( ) M,D } if ∈ L int {Π fv( ) (σ ) | σ = unif ( , ), ∈ D} if ∈ L ext 1 . . . n M,D = {σ σ | σ ∈ 1 M,D , σ ∈ σ ( 2 . . . n ) M,D }</formula><p>where n ≥ 2 from V to T C . We write [] for the empty substitution. Any substitution can be lifted to a total function on all variables by defining σ (x) = x for all x ∈ dom(σ ). We lift substitutions further to total functions σ : T * C → T * C such that for all n ≥ 0, t 1 , . . . ,t n ∈ T C and a ∈ C :</p><formula xml:id="formula_8">σ (t 1 . . .t n ) = σ (t 1 ) . . . σ (t n ) and σ (a) = a</formula><p>Similarly, substitutions are lifted to functions σ : L * → L * such that for all t ∈ T * C and 1 , . . ., n ∈ L :</p><formula xml:id="formula_9">σ (q( t)) = q(σ ( t)), and σ ( 1 . . . n ) = σ ( 1 ) . . . σ ( n )</formula><p>The renaming closure of a program is the set of all clauses that can be obtained from the clauses of the program by renaming variables bijectively:</p><formula xml:id="formula_10">ren(M) = {σ ( ) :-σ ( ) | :-. in M, σ is one-to-one substitution, ran(σ ) ⊆ V }</formula><p>We define joins and projections on substitutions as for the relational algebra: for any two substitutions σ and σ and any finite subset of variables V ⊆ V :</p><formula xml:id="formula_11">σ σ = σ ∪ σ if σ ∪ σ is functional undefined otherwise Π V (σ ) = σ |V</formula><p>For any two literals , we define unif ( , ) as the most general unifier σ such that σ ( ) = σ ( ) if it exists, and leave it undefined otherwise.</p><p>We define the semantics M,D of a datalog query ?-. M on an extensional database D as the least fixpoint that satisfies the equations in Fig. <ref type="figure" target="#fig_4">7</ref>. Notice that whenever we use the operation σ σ then we have dom(σ ) ∩ dom(σ ) = / 0, so that σ σ = σ ∪ σ is a well-defined substitution. Each query answer σ ∈ M,D has domain fv( ) and always maps to constants since we work with safe datalog programs, so σ : fv( ) → C . The semantics that we have given mimics the top-down datalog evaluation, which starts with the goal in the query and generates subgoals by unfolding the clauses of the datalog program, while instantiating the variables, until it reaches some ground facts from the extensional database. In general, this process may enter into infinite loops if not controlled by memoization. The whole top-down evaluation can always be represented as a join tree as we illustrate by example in Fig. <ref type="figure">8</ref>. In the case of infinite loops, the join tree is infinite.</p></div>
+<div><head n="5">Complexity of Top-Down Evaluation of Datalog Queries</head><p>Known results on the complexity of top-down datalog evaluation give us the formal tools to prove for particular datalog queries, that the complexity of the top-down evaluation is in combined linear time but with respect to the top-down visited sub-database, rather than with respect to the full database. For any datalog query ?-. M and extensional database D we next define the part of D that is visited by the top-down evaluation of the datalog query. For this we assume that the set of extensional predicates of D contains a monadic predicate node ∈ P ext such that node D = C . We define the top-down visited subdatabase tdv M,D ( ) as the extensional database over P ext -following the semantics of datalog queriesas the least fixed point of equations in Fig. <ref type="figure">9</ref>. Definition 1. We call a datalog goal simply combined linear (SCL) if any proper prefix of is SCL and fv( ) is either guarded by a single extensional literal of or contains no more than one variable. We call a datalog query ?-. M SCL if the datalog goal is SCL and for each of the clauses :-. in the datalog program M, the datalog goal is SCL.</p><p>For example, let p, q ∈ P int be monadic and r ∈ P ext be binary. The goal p(x), r(x, y), q(y) is then SCL, since its prefix p(x) contains no more than one variable, and both of its variables x and y are guarded by the extensional literal r(x, y). The goal p(x), r(x, x), q(y) on the contrary is not SCL, as it contains two variables of which y is not guarded by any extensional literal. The goal p(x), q(x) is SCL since it contains no more than a single free variable.</p><p>Given an extensional database D, any SCL goal has a number of ground instances that is linear in the size of D. Even better the number of ground instances inspected by top-down evaluation of the datalog query ?-. M is linear in the size of the top-down visited database tdv M,D ( ). In the case where fv( ) contains at most one variable, this variable must be instantiated by some node of the top-down visited sub-database. Otherwise, the set of free variables fv( ) is guarded by a single extensional literal of , say p( t) ∈ L ext . In this case, any ground instance of visited by the top-down evaluation of M is determined by unif (p( t), p( v)) for some fact p( v) ∈ tdv M,D ( ). For proof we can show for any safe SCL datalog queries, that its top-down evaluation with memoization can be done in combined linear time with respect to the size of the top-down visited sub-database. For this, we can rely on the top-down evaluator in Figure <ref type="figure" target="#fig_0">1</ref> of <ref type="bibr" target="#b11">[11]</ref>. The needed arguments on safe SCL datalog programs were given above. We also note that the magic set transformation on datalog programs without negation can be used to reduce top-down evaluation with memoization to semi-naive bottom-up evaluation. As stated by Theorem 3 of Ullman <ref type="bibr" target="#b12">[12]</ref>, the bottom-up evaluator obtained is at least as time efficient as the top-down evaluator. The magic set transformation, however, may need exponential space. Tekle and Liu <ref type="bibr" target="#b11">[11]</ref> show that this problem can be solved by perfoming it on demand. They also proposed an on demand magic set transformation for stratified datalog programs <ref type="bibr" target="#b10">[10]</ref>.</p></div>
+<div><head n="6">Compiler to SCL Datalog Queries</head><p>We now contribute the compiler from negation-free path queries P and start set S to SCL datalog queries ?-. M, such that for any graph G with nodes subsuming S, the extensional database of the top-down needed subgraph tdn G,S (P) is equal to the top-down visited sub-database tdv M,db(G) ( ). The top-down evaluation of the datalog query ?-. M on the graph's database db(G) thus yields the expected upper complexity bound for the evaluation of path queries by Theorem 2.</p><p>For any set of start nodes S and monadic predicate i ∈ P int , we define a datalog program Start i (S) = {i(v) :-. | v ∈ S}. The compilation scheme for path queries follows the structure of paths and filters by mutual recursion. It is given by the datalog programs Acc i, f (P) in Fig. <ref type="figure" target="#fig_7">10</ref>, Filt c (F) in Fig. <ref type="figure" target="#fig_9">11</ref> and Ex c,r (P) in Fig. <ref type="figure" target="#fig_6">12</ref>. Path queries outside filters need to compute all accessible nodes by Acc i, f (P), while path queries within filters need to check the existence of accessible nodes by Ex c,r (P). The compiler introduces fresh monadic predicates for all subexpressions: initial predicates i, i , i ∈ P int , final predicates f , f , f ∈ P int final, checks. c, c , c ∈ P int , and continuations r, r , r ∈ P int .</p><p>Given a graph G and with a start set S ⊆ V of graph nodes, the answer set of the datalog query ?-f (x). Acc i, f (P) ∪ Start i (S) on the extensional database db(G) is {[x/v] | v ∈ P G (S)}, assigning the free variable x to some node v reachable from S over P in G. The initial predicate i captures the set of start nodes, and the final predicate f the answer set of the path query P started from there. The fresh monadic predicates make the datalog programs for the subexpressions able to communicate. For instance, we have Acc i, f (P /P ) = Acc i, f (P ) ∪ Acc f , f (P ). Here the final predicate f ∈ P int represents the answer set of path P started at node set i, but also the start set for the path P . This is since the start nodes of P in the query P /P are the nodes that are reached with the query P . For the recursive path queries P + we have Acc i, f (P + ) = Acc i, f (P) ∪ {i(x) :-f (x).}. Here the rule i(x) :-f (x). represents the fact that once a node is reached by the query P + it becomes a possible start node for the same query.</p><p>We next consider the datalog programs Filt c (F) defined in Fig. <ref type="figure" target="#fig_9">11</ref>. For any graph G the answer set of the datalog query ?-c(x). Filt c (F) on the extensional database db   Ex c,r (edge a ) = {c(x) :-edge a (x, y), r(y).} Ex c,r (edge -1 a ) = {c(x) :-edge a (y, x), r(y).} Ex c,r (P /P ) = Ex c, f (P ) ∪ Ex f ,r (P ) Ex c,r (P + ) = Ex c,r (P) ∪ {r(x) :-c(x).} Ex c,r (P ∪ P ) = Ex c,r (P ) ∪ Ex c,r (P ) Ex c,r (goto(F )) = Filt c (F ) ∪ {c(x) :-j(). j() :-c (y), r(y).} Ex c,r (F ?) = Filt c (F ) ∪ {c(x) :-c (x), r(x).} Figure <ref type="figure" target="#fig_6">12</ref>: The datalog program Ex c,r (P) for path P with monadic predicates c, r ∈ P int . the free variables x may be bound to any node seleced by the filter. Hence, for any start set S, the answer set of ?</p><formula xml:id="formula_12">(G) is {[x/v] | v ∈ F G }, so that Acc i, f (edge a ) = { f (x) :-i(y), edge a (y, x).} Acc i, f (edge -1 a ) = { f (x) :-i(y), edge a (x, y).} Acc i, f (P /P ) = Acc i, f (P ) ∪ Acc f , f (P ) Acc i, f (P + ) = Acc i, f (P) ∪ {i(x) :-f (x).} Acc i, f (P ∪ P ) = Acc i, f (P ) ∪ Acc i, f (P ) Acc i, f (goto(F )) = Filt f (F ) ∪ { f (x) :-j(), f (x). j() :-i(x).} Acc i, f (F ?) = Filt f (F ) ∪ { f (x) :-i(x), f (x).}</formula><formula xml:id="formula_13">c (a) = {c(x) :-node a (x).} Filt c (node) = {c(x) :-node(x).} Filt c (F ∨ F ) = Filt c (F ) ∪ Filt c (F ) ∪ {c(x) :-c (x). c(x) :-c (x).} Filt c (F ∧ F ) = Filt c (F ) ∪ Filt c (F ) ∪ {c(x) :-c (x), c (x).} Filt c ([P]) = Ex c,r (P) ∪ {r(x) :-node(x).}</formula><formula xml:id="formula_14">-i(x), c(x). Filt c (F) ∪ Start i (S) is {[x/v] | v ∈ F G (S)}.</formula><p>The filter for all nodes is compiled to Filt c (node) = {c(x) :-node(x)}. Thereby, the check c is called for all nodes of the graph. Note that node is an extensional predicate, so this clause is safe. A conjunction of filters Filt c (F ∧ F ) is compiled by adding the clause c(x) :-c (x), c (x) to the datalog programs Filt c (F ) and Filt c (F ). The added clause checks sequentially, whether a node x is filtered by F and if so whether it is also filtered by F . A disjunction of filters Filt c (F ∨ F ) is compiled by adding the two clause c(x) :-c (x). and c(x) :-c (x). to the datalog programs Filt c (F ) and Filt c (F ). The two added clauses check in parallel whether a node x is filtered by F or whether x is filtered by F .</p><p>In Fig. <ref type="figure" target="#fig_6">12</ref> we define the datalog programs Ex c,r (P) for evaluating paths P existentially as needed when paths are used in filters, that is Filt c ([P]) = Ex c,r (P) ∪ {r(x) :-node(x).}. The check predicate c denotes the set of source nodes, from which some target node can be reached over P, while r is the continuation to which the target node must belong. Given a graph G and a start set S, the answer set of the datalog query ?-c(x). Ex c,r (P) ∪ {r(x) :-node(x).} on the extensional database db</p><formula xml:id="formula_15">(G) is {[c/v] | (v, v ) ∈ P G }.</formula><p>The continuation predicate r is required to allow us to compile path concatenations in filters, i.e., in Ex c,r (P /P ) = Ex c, f (P ) ∪ Ex f ,r (P ). Note that the interplay of the predicate c and r is similar to the one between i and f in Acc i, f (P). Lemma 3. For any path P, filter F, graph G, start set S, and monadic predicates i, f , c, r ∈ P int , the programs Start i (S), Acc i, f (P), Filt c (F), Ex c,r (P) are safe and SLC.</p><p>The function reach M,r ( ) defined in Fig. <ref type="figure" target="#fig_2">13</ref> returns the set of all nodes v, such that r(v) is queried in the proccess of the top-down evaluation of the datalog query ?-. M. Now, we provide the Propositions 4 and 5 for dividing the correctness proof into two parts. First -about subpaths and subfilters of some filter. Concommittantly with Theorem 2 they will imply the main efficiency Theorem 6.</p><formula xml:id="formula_16">reach M,r (ε) = / 0 reach M,r (r(v), 1 ) = {v} ∪ reach M,r (σ ( 2 , 1 )) | σ = unif (r(v), ), :-2 . in ren(M)} reach M,r ( , 1 ) = reach M,r (σ ( 2 , 1 )) | σ = unif ( , ), :-2 . in ren(M)} if = r(v)</formula><p>Figure <ref type="figure" target="#fig_2">13</ref>: The reach M,r function for the datalog query ?-. M. Proposition 4. For any filter query F ∈ F Σ , path query P ∈ P Σ , label a ∈ Σ, labeled graph G, subset S ⊆ V of nodes of G, distinct monadic predicates i, c, r ∈ P int and x ∈ V .</p><p>1. if M = Filt c (F) ∪ Start i (S) and = i(x), c(x) then:</p><formula xml:id="formula_17">• M,db(G) = {[x/v] | v ∈ F G (S)} • tdv M,db(G) ( ) = tdn G,S (F)</formula><p>2. if M = Ex c,r (P) ∪ Start i (S) ∪ {r(x) :-node(x).} and = i(x), c(x) then:</p><formula xml:id="formula_18">• M,db(G) = {[x/v] | v ∈ S, P G ({v}) = / 0}</formula><p>• tdv M,db(G) ( ) = tdn G,S (P)</p><p>• reached M ( ) = P G (S) Proposition 5. For any path query P ∈ P Σ , labeled graph G, subset S of nodes of G, distinct intensional predicates i, f ∈ P int and x ∈ V , if M = Acc i, f (P) ∪ Start i (S) then: </p><formula xml:id="formula_19">• f (x) M,db(G) = {[x/v] | v ∈ P G (S)} • tdv M,db(G) ( f (x)) = tdn G,S<label>(</label></formula></div>
+<div><head n="7">Jumping in Graphs</head><p>Preprocessing is mandatory for sharing efforts when evaluating multiple queries on the same large graph. Most typically, one can pre-compute indexes that give efficient access to some particular relations of the graph. Here we consider indexes, which are binary relations defined by NRPQs themselves.</p><p>For instance, we might want to jump from a node of the graph to the next a-labeled node in some fixed total order. In this case, one would like to have a jumping algorithm that visits only the top-down needed subgraph, but taken with respect to the graph, that is enriched with extra edges labeled by the names of the indexes.</p><p>Let us next consider a little more complex example. For this we suppose that we have an index for the NRPQ acc a = edge * /a?. We can then extend the signature Σ with a new label acc a , the graph G with acc a -labeled edges for all pairs in acc a G , and rewrite the target path query by substituting all its subqueries acc a by edge acc a . This has the advantage that fewer nodes are top-down needed after the rewriting on the enriched graph. For instance, a top-down evaluator for the path query acc a without jumping needed to inspect all nodes of the graph accessible from S, since all of them needed to be tested for whether they satisfied the filter query a. After the rewriting to edge acc a , a top-down algorithm can jump directly from the start nodes in S to the accessible a-labeled nodes by using the index, so only accessible a-labeled nodes will be visited.</p><p>The general jumping algorithm starts with a set of indexes for NRPQs say for P 1 , . . . , P n . For answering a query P on a graph G with these indexes the jumping algorithm enriches the signature Σ by new labels P 1 , . . . , P n , the original graph G with new labeled edges E P j = P j G where 1 ≤ j ≤ n, and then substitutes in the target query P all occurrences of the subqueries P j by edge P j . The order of the substitution can be chosen arbitrarily, depending on the intended jumping strategy. In this way, the top-down needed subgraph of the enriched graph for the rewritten query is intuitively exactly the subgraph of the original graph that a top-down evaluation algorithm with jumping needs to visit. This jumping algorithm can be used to reformulate in simple terms a variant of the efficient automatabased algorithm from <ref type="bibr" target="#b6">[7]</ref> that evaluates navigational path queries. More precisely, their algorithm covers navigational forward XPATH queries on XML documents. It is based on alternating tree automata with selection states, which can be seen a binary datalog programs, while ours are monadic. XML documents are seen as labeled graphs, with two edge labels firstchild and nextsibling. Their algorithm can be based on the indexes for jumping to the a-labeled children, that is edge/a?, and for jumping to the top-most a-labeled descendants, i.e., top a = (edge/¬a?) * /edge/a?. An XPATH query such as descendant::a can the be rewritten as the NRPQ (top a ) + . The evaluation of the query (top a ) + can then take advantage of the index edge top a . The main difference between both approaches is that ours doesn't try to produce the answer set in document order, while theirs does so. Therefore, binary indexes are sufficient for our purpose, while they need to use a ternary index (for relating following a-labeled nodes x of y below z.). Moreover, our algorithm traverses the same part of the XML document as theirs and will thus be as efficient while being much simpler in terms of presentation. Our general graph approach overcomes the main limitations of Maneth and Nguyen's: it is not bound to trees and is not limited to forward navigational XPath but can treat any NRPQs also with backward steps. graph in 15 seconds and answer query Q05 in 1.6 milliseconds. So for answering the query Q05, Saxon showed 4 orders of magnitude more efficient than <software ContextAttributes="used">XSB</software>. We finally investigated the <software ContextAttributes="used">LogicBlox</software> system <ref type="bibr" target="#b0">[1]</ref>, a more recent deductive database system which implements the language LogiQL extending on Datalog. With version 4.38 of <software ContextAttributes="used">LogicBlox</software> we could read the graph of 100 MB in 19 seconds (rather then in more than 30 minutes as with <software ContextAttributes="used">XSB</software>). LogicQL is a typed language implying some minor syntactic differences to standard datalog. Finally, <software ContextAttributes="used">LogicBlox</software> has a transaction level, that permits to interact with graphs dynamically, so that it can be queried many times without being reloaded. The earlier versions of <software ContextAttributes="used">LogicBlox</software> supported bottom-up evaluation only. But since recently, top-down evaluation can be chosen by adding On-Demand annotations for all extensional predicates. When doing so, we could answer the query NRP.Q05.index in 97.4 milliseconds on the 100MB document. This is 2 orders of magnitudes better than with <software ContextAttributes="used">XSB</software>! Nevertheless it is still by a factor of 75 slower than with Saxon. Figure <ref type="figure">4</ref> of <ref type="bibr" target="#b6">[7]</ref> reports 65 milliseconds for Q05 with optimal jumping, but on a slightly larger 116MB document. So the question is how the efficiency of our implementation could be increased further: with better indexes, early completion during Datalog evaluation, or by using special features of XPATH queries?</p></div>
+<div><head n="9">Conclusion and Future Work</head><p>The definition of the top-down needed subgraph allows us to prove that our algorithm for answering negation-free NRPQs visits only the interesting part of the graph. We believe that the restriction to negation-freeness can be relieved by compiling to stratified datalog. The new notion of top-down needed subgraphs may also allow the design of algorithms that transform NRPQs into equivalent ones that have a smaller top-down needed subgraph, for instance by inverting the path, or starting with some filter. In particular, the goto instructions permit the algorithm to jump directly to nodes with rare properties in the graph first and then compute the queries more efficiently. Another line of improvement would be to stop the evaluation of a filter when it has been proven correct. This effect may only be obtained if we</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: The graph G 0 , the start set S 0 = {0}, and the topdown needed subgraph for P 0 = edge a /[edge b /edge c ]? in red.</figDesc><graphic coords="3,140.79,70.87,141.74,79.68" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: The Datalog program M 0 for the nested regular path query P 0 from Fig. 1.</figDesc></figure>
+<figure xml:id="fig_2"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: The syntax of NRPQs with labels a ∈ Σ.</figDesc></figure>
+<figure xml:id="fig_3"><head>Figure 6 :</head><label>6</label><figDesc>Figure 6: Top-down needed subgraphs without start sets as neeeded for goto expressions.</figDesc></figure>
+<figure xml:id="fig_4"><head>Figure 7 :</head><label>7</label><figDesc>Figure 7: Least fixed-point semantics of a datalog query ?-. M on a database D for , 1 , . . . n ∈ L .</figDesc></figure>
+<figure xml:id="fig_5"><head>Figure 8 :Figure 9 :</head><label>89</label><figDesc>Figure 8: Top-down evaluation of q 0 (x) M 0 ,db(G 0 )∪{start(0)} = {[x/1], [x/4]} where M 0 is the datalog program from Fig. 2 for P 0 = edge a [edge b /edge c ], and G 0 the graph from Fig. 1. tdv M,D (ε) = / 0 tdv M,D ( ) = {node(a) | a ∈ cst( )} ∪ { | unif ( , ) defined, in D} if ∈ L ext {node(a) | a ∈ cst( )} ∪ {tdv M,D (σ ( )) | σ = unif ( , ), :-. in ren(M)} if ∈ L int tdv M,D ( 1 . . . n ) = tdv M,D ( 1 ) ∪ {tdv M,D (σ ( 2 . . . n )) | σ ∈ 1 M,D }</figDesc><graphic coords="9,79.23,70.86,362.84,277.05" type="bitmap" /></figure>
+<figure xml:id="fig_6"><head>Theorem 2 .</head><label>2</label><figDesc>The answer set M,D of a safe SCL query ?-. M on an extensional database D can be computed in time O(|M||tdv M,D ( )|).</figDesc></figure>
+<figure xml:id="fig_7"><head>Figure 10 :</head><label>10</label><figDesc>Figure 10: The datalog program Acc i, f (P) for path P and monadic predicates i, f ∈ P int .</figDesc></figure>
+<figure xml:id="fig_8"><head>Filt</head><label /><figDesc /></figure>
+<figure xml:id="fig_9"><head>Figure 11 :</head><label>11</label><figDesc>Figure 11: The datalog program Filt c (F) for filter F and monadic predicate c ∈ P int .</figDesc></figure>
+<figure xml:id="fig_10"><head>P) Theorem 6 .</head><label>6</label><figDesc>For any graph G with subset of nodes S and any path query P ∈ P Σ the answer set P G (S) can be computed in time O(|P||tdn G,S (P)|).</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head /><label /><figDesc>Q01 /site/regions NRP. node document ?/edge f irst /(edge next ) * / Q01 node element ?/[edge name /node site ?]?/ edge f irst /(edge next ) * / node element ?/[edge name /node regions ?]? Figure 14: Two benchmark XPATH queries from [7], their translation to NRPQs, and the indexed NRPQ queries. Q05 //listitem//keyword NRP. node document ?/(edge f irst /(edge next ) * ) + / Q05 node element ?/[edge name /node listitem ?]?/ (edge f irst /(edge next ) * ) + / node element ?/[edge name /node keywords ?]? NRP. node document ?/(edge top listitem ) + / Q05. (edge top keyword ) +</figDesc><table><row><cell /><cell /><cell /><cell /><cell>index</cell><cell /><cell /><cell /></row><row><cell>27KB</cell><cell>Q01</cell><cell>Q05</cell><cell>Q05.index</cell><cell>100MB</cell><cell>Q01</cell><cell>Q05</cell><cell>Q05.index</cell></row><row><cell>Saxon</cell><cell cols="3">0.000206 indexing 0.000315</cell><cell>Saxon</cell><cell /><cell cols="2">indexing 0.0016</cell></row><row><cell>XSB</cell><cell>0.001</cell><cell>0.006</cell><cell>0.001</cell><cell>XSB</cell><cell /><cell>35.857</cell><cell>5.029</cell></row><row><cell>SWI</cell><cell>0.004</cell><cell>0.189</cell><cell>0.004</cell><cell>SWI</cell><cell>-</cell><cell>-</cell><cell>-</cell></row><row><cell cols="2">LogicBlox 0.0045</cell><cell>0.0054</cell><cell>0.0045</cell><cell cols="3">LogicBlox 0.0124 -</cell><cell>0.0974</cell></row><row><cell cols="4">Figure 15: Time in seconds for querying the 27KB</cell><cell cols="4">Figure 16: Time in seconds for querying the 100MB</cell></row><row><cell cols="3">XML-document with indexes.</cell><cell /><cell cols="3">XML-document with indexes.</cell><cell /></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head n="8">Preliminary Experiments</head><p>We implemented in <software>OCaml</software> our compiler from NRPQs to Datalog and also a compiler from navigational XPath queries to NRPQs on the graphs of XML documents. The edges of these gstring, and the edges by f irst, next, name, and attribute names.</p><p>We selected in in Fig. 14 two typical benchmark XPATH queries from [7] that can be applied to the scalable XML-documents from the XPathMark benchmark: query Q01 composes two child axis, and query Q05 two descendant axis //listitem//keyword. The translations for these XPath queries to the NRPQs NRP.Q01 and NRP.Q05 can also be found there.</p><p>Query NRP.Q01 is easier for top-down evaluation, since it does not contain vertically recursive axis, so that its top-down needed subgraph remains small on the benchmark documents. Q05 is more difficult since using descendant axis, so that the top-down needed subgraph NRP.Q05 is the whole graph if not using indexes. So we also computed the indexes top keyword and top listitem for the descendant axis of Q05 and added them as extra edges to the graphs. Furthermore, the optimized query NRP.Q05.index obtained from NRP.Q05 by using the index edges is given in Fig. 14 too.</p><p>The gold standard for the evaluation of XPath queries is obtained by using the Saxon XSLT evaluator. In order to measure the time we run the same XPath query 100 times in the same XSLT program with Saxon 10.5, substract the time needed to load and index the XML document and divide by 100. It turns out, that Saxon has the best performance in all our tests, confirming our conjecture that it performs jumping evaluation with indexing for descendant axis.</p><p>We then implemented and tested our jumping algorithm based on existing top-down Datalog evaluators. We started with <software>OCaml</software>'s Datalog 0.6, but had to notice that the top-down evaluator did not always produce the correct results. We then experimented with the <software ContextAttributes="used">Prolog</software> engines <software ContextAttributes="used">XSB</software> 4.0 and SWI 8.4.1.1. On a small XML-document of 27KB, both engines perform decently, even though not as quick as Saxon. On Q01, they are one order of magnitude slower. The same holds for Q05 but only when using indexing.</p><p>We then considered a much bigger XML-document of 100MB. With this size we had to give up with SWI. <software>XSB</software> in contrast could read the graph of the XML document, but needed more than 30 minutes. Once the graph was read, it could answer the query pdl.Q05 without indexing in 35 seconds. With indexing the time for answering pdl.Q05.index went down to 5 seconds. Saxon, in contrast, can load the</p></div>
+			</div>			<div type="annex">
+<div><p>Jumping Evaluation of Nested Regular Path Queries use a datalog top-down evaluator that follows the early completion strategy, i.e. stops whenever a ground predicate (such as filter queries in our case) is proven true.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Design and Implementation of the LogicBlox System</title>
+		<author>
+			<persName><forename type="first">Molham</forename><surname>Aref</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><forename type="middle">J</forename><surname>Balder Ten Cate</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Benny</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Emir</forename><surname>Olteanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Todd</forename><forename type="middle">L</forename><surname>Pasalic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Veldhuizen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Washburn</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2723372.2742796</idno>
+		<ptr target="https://doi.org/10.1145/2723372.2742796" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2015 ACM SIGMOD International Conference on Management of Data</title>
+		<meeting>the 2015 ACM SIGMOD International Conference on Management of Data</meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1371" to="1382" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Querying Semantic Web Data with SPARQL</title>
+		<author>
+			<persName><forename type="first">Marcelo</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Pérez</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1989284.1989312</idno>
+		<ptr target="https://doi.org/10.1145/1989284.1989312" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirtieth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, PODS '11</title>
+		<meeting>the Thirtieth ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, PODS '11<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="305" to="316" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A Linear-Time Model-Checking Algorithm for the Alternation-Free Modal Mu-Calculus</title>
+		<author>
+			<persName><forename type="first">Rance</forename><surname>Cleaveland</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bernhard</forename><surname>Steffen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/BF01383878</idno>
+		<ptr target="https://doi.org/10.1007/BF01383878" />
+	</analytic>
+	<monogr>
+		<title level="j">Form. Methods Syst. Des</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="121" to="147" />
+			<date type="published" when="1993">1993</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Propositional Dynamic Logic of Regular Programs</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">E</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ladner</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/0022-0000(79)90046-1</idno>
+		<ptr target="https://doi.org/10.1016/0022-0000(79)90046-1" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Comput. Syst. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="194" to="211" />
+			<date type="published" when="1979">1979</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The Complexity of XPath Query Evaluation</title>
+		<author>
+			<persName><forename type="first">Georg</forename><surname>Gottlob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christoph</forename><surname>Koch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Reinhard</forename><surname>Pichler</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/773153.773171</idno>
+		<ptr target="https://doi.org/10.1145/773153.773171" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Second ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, PODS '03</title>
+		<meeting>the Twenty-Second ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, PODS '03<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2003">2003</date>
+			<biblScope unit="page" from="179" to="190" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Querying Graph Databases with XPath</title>
+		<author>
+			<persName><forename type="first">Leonid</forename><surname>Libkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wim</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Domagoj</forename><surname>Vrgovc</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2448496.2448513</idno>
+		<ptr target="https://doi.org/10.1145/2448496.2448513" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th International Conference on Database Theory, ICDT '13</title>
+		<meeting>the 16th International Conference on Database Theory, ICDT '13<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="129" to="140" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">XPath Whole Query Optimization</title>
+		<author>
+			<persName><forename type="first">Sebastian</forename><surname>Maneth</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kim</forename><surname>Nguyen</surname></persName>
+		</author>
+		<idno type="DOI">10.14778/1920841.1920954</idno>
+		<ptr target="https://doi.org/10.14778/1920841.1920954" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page" from="882" to="893" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Evaluation and Enumeration Problems for Regular Path Queries</title>
+		<author>
+			<persName><forename type="first">Wim</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tina</forename><surname>Trautner</surname></persName>
+		</author>
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2018.19</idno>
+	</analytic>
+	<monogr>
+		<title level="m">21st International Conference on Database Theory (ICDT 2018), LIPIcs 98</title>
+		<editor>
+			<persName><forename type="first">Benny</forename><surname>Kimelfeld</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Yael</forename><surname>Amsterdamer</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Dagstuhl, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">19</biblScope>
+			<biblScope unit="page" from="1" to="19" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title />
+		<idno type="DOI">10.4230/LIPIcs.ICDT.2018.19</idno>
+		<ptr target="http://drops.dagstuhl.de/opus/volltexte/2018/8594" />
+		<imprint />
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">nSPARQL: A navigational language for RDF</title>
+		<author>
+			<persName><forename type="first">Jorge</forename><surname>Pérez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marcelo</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Claudio</forename><surname>Gutiérrez</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.websem.2010.01.002</idno>
+		<ptr target="https://doi.org/10.1016/j.websem.2010.01.002" />
+	</analytic>
+	<monogr>
+		<title level="j">J. Web Semant</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="255" to="270" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Extended Magic for Negation: Efficient Demand-Driven Evaluation of Stratified Datalog with Precise Complexity Guarantees</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tuncay Tekle &amp; Yanhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.4204/eptcs.306.28</idno>
+		<ptr target="https://doi.org/10.4204%2Feptcs.306.28" />
+	</analytic>
+	<monogr>
+		<title level="j">Electronic Proceedings in Theoretical Computer Science</title>
+		<imprint>
+			<biblScope unit="volume">306</biblScope>
+			<biblScope unit="page" from="241" to="254" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Precise complexity analysis for efficient Datalog queries</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Tuncay Tekle &amp; Yanhong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Liu</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1836089.1836094</idno>
+	</analytic>
+	<monogr>
+		<title level="m">PPDP'10 -Proceedings of the 2010 Symposium on Principles and Practice of Declarative Programming</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="35" to="44" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Bottom-up Beats Top-down for Datalog</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Ullman</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/73721.73736</idno>
+		<ptr target="https://doi.org/10.1145/73721.73736" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Eighth ACM SIGACT-SIGMOD-SIGART Symposium on Principles of Database Systems, PODS '89</title>
+		<meeting>the Eighth ACM SIGACT-SIGMOD-SIGART Symposium on Principles of Database Systems, PODS '89<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="1989">1989</date>
+			<biblScope unit="page" from="140" to="149" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

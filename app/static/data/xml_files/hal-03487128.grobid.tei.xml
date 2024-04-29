@@ -1,0 +1,1208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">PDF-Distil: including Prediction Disagreements in Feature-based Distillation for object detection</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+							<email>heng.zhang@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IUF</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+							<email>elisa.fromont@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">IUF</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="institution" key="instit1">CNRS</orgName>
+								<orgName type="institution" key="instit2">IRISA</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Sébastien</forename><surname>Lefevre</surname></persName>
+							<email>sebastien.lefevre@irisa.fr</email>
+							<affiliation key="aff2">
+								<orgName type="institution" key="instit1">University Bretagne Sud</orgName>
+								<orgName type="institution" key="instit2">IRISA Vannes</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+							<email>bavignon@atermes.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="institution">ATERMES company Paris area</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">PDF-Distil: including Prediction Disagreements in Feature-based Distillation for object detection</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">A6EDB8E5C6B2F9E06E50C2C27AE4C197</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Knowledge distillation aims at compressing deep models by transferring the learned knowledge from precise but cumbersome teacher models to compact student models. Due to the extreme imbalance between the foreground and the background of images, when traditional knowledge distillation methods are directly applied to the object detection task, there is a large performance gap between the teacher model and the student model. We tackle this imbalance problem from a sampling perspective, and we propose to include the teacher-student prediction disagreements into a feature-based detection distillation framework. This is done with PDF-Distil by dynamically generating a weighting mask applied to the knowledge distillation loss, based on the disagreements between the predictions of both models. Extensive experiments on PASCAL VOC and MS COCO datasets demonstrate that, compared to state-of-the-art methods, PDF-Distil is able to better reduce the performance gap between the teacher and student models.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Despite their outstanding performance on different computer vision tasks, deep learningbased techniques still suffer from practical limitations that make them difficult to deploy at a large scale, especially when dealing with real-time embedded applications such as automatic surveillance and autonomous driving. This is due to the fact that state-of-the-art trained deep learning models often have a huge number of parameters that make them both slow at inference and heavy to store. Therefore, model compression techniques such as network pruning <ref type="bibr" target="#b17">[18]</ref>, parameter quantification <ref type="bibr" target="#b6">[7]</ref> and knowledge distillation <ref type="bibr" target="#b8">[9]</ref> are suggested to reduce the computational complexity and the storage cost of deep models, while minimizing the performance degradation.  Fine-grained <ref type="bibr" target="#b28">[29]</ref>, (C) Decoupled <ref type="bibr" target="#b5">[6]</ref>, (D) Prime-aware <ref type="bibr" target="#b35">[36]</ref> and (E) our PDF-Distil method.</p><p>In this paper, we investigate how knowledge distillation (KD) can be used in the context of object detection. KD utilizes a teacher-student framework to transfer the learned knowledge from a complex model (teacher) to a compact one (student). The concept of KD was firstly introduced in <ref type="bibr" target="#b8">[9]</ref>, where the KL-divergence between the predicted probability distributions of the teacher model and the student model is treated as a term of the loss function to optimize the student model. The motivation behind this logits-based distillation is that, for a given input image, we expect the image classification prediction of the student model to be as similar as possible to that of the teacher model, so that the student model is able to maintain high compactness and high precision simultaneously.</p><p>The internal representations (i.e., the features maps) in deep neural networks carry rich semantic information, thereby providing better distillation guidance than the probability distributions. Leveraging this, recent studies have implemented feature-based distillation for image classification <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b30">31]</ref>. However, when directly applying feature-based distillation to object detection, the precision gap between the teacher model and the student model remains significant. As shown in Figure <ref type="figure" target="#fig_1">1</ref> column (A), in the object detection task, the target objects normally only occupy a small part of the images. Therefore, the supervision of the feature distillation is often dominated by the abundant, less informative background. This foreground-background imbalance greatly reduces the efficiency of the knowledge transfer in feature-based distillation for object detection.</p><p>We tackle the aforementioned imbalance problem from a sampling perspective, i.e., by adaptively assigning weights to each sampling location on the feature maps. Some previous works assigned weights according to the foreground-background distinction <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b28">29]</ref> or the feature-mimicking uncertainty <ref type="bibr" target="#b35">[36]</ref>, while discarding the initial motivation of KD, which is minimizing the prediction difference between the teacher and the student models. We thus propose to combine feature-based with logits-based distillation, where the former is guided by the latter to more important areas on the feature maps. Specifically, the distillation weight on each feature map location is assigned according to the disagreement degree between the corresponding object detection predictions from the teacher and the student. In this way, the distillation is optimized to focus on areas where the student model makes inaccurate predictions, thereby minimizing the precision performance gap between the two models. This paper is organized as follows: Section 2 reviews some representative works on object detection and knowledge distillation; Section 3 introduces the implementation details of our proposed method; Section 4 reports experimental results on different public datasets and compares our method with state-of-the-art methods; Section 5 concludes the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related work</head><p>Object detection. Object detection is one of the fundamental tasks in computer vision. Modern neural network-based object detection models consist of three sub-networks: the backbone, the neck and the head. Backbone networks are used to extract features from the input images. They are often taken from image classification networks, such as VGG <ref type="bibr" target="#b26">[27]</ref>, ResNet <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b29">30]</ref>, MobileNet <ref type="bibr" target="#b9">[10,</ref><ref type="bibr" target="#b10">11,</ref><ref type="bibr" target="#b25">26]</ref> and ShuffleNet <ref type="bibr" target="#b19">[20,</ref><ref type="bibr" target="#b33">34]</ref>. Neck networks realize multi-scale object detection by fusing features at different scales. FPN <ref type="bibr" target="#b13">[14]</ref> and PAFPN <ref type="bibr" target="#b15">[16]</ref> are, nowadays, the most commonly adopted neck networks. Head networks handle instance classification and bounding-box regression. They can be roughly divided into two types: two-stage and single-stage detectors. Two-stage detectors <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b20">21,</ref><ref type="bibr" target="#b22">23]</ref> firstly generate various regions of interest, then refine and classify each region candidate separately; Single-stage detectors <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b21">22]</ref> directly localize and classify all existing objects on the image. Another criterion divides head networks into anchor-based and anchor-free detectors. Anchor-based detectors <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b22">23]</ref> resort to numerous predefined anchor boxes to handle objects' scale and shape variations; Anchor-free detectors directly predict objects' key-points <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b37">38]</ref> or centers-points <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b38">39]</ref>, without the help of anchor boxes.</p><p>Knowledge distillation. KD is an effective means to compress deep models. A typical KD framework consists of three components: a teacher model, a student model and a knowledge transfer module. Although the teacher model allows high detection accuracy, it requires enormous parameters and calculations, which is impractical for real-time applications in embedded environments. In the setting of KD, a lighter student model is trained to inherit the knowledge learned by the teacher model. Logits-based and feature-based are two major KD strategies. Logits-based methods <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b34">35]</ref> assign the output probability from the teacher model as the (soft) target for the training of the student model, which is a straightforward fashion to make the student model learn the class distributions from the teacher model. Alternatively, feature-based methods <ref type="bibr" target="#b24">[25,</ref><ref type="bibr" target="#b30">31]</ref> transfer high-level semantic information by making the student model mimic the intermediate features of the teacher model.</p><p>Knowledge distillation for object detection. Feature-based methods are the most commonly adopted KD strategy for object detection <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b35">36]</ref>. However, due to the extreme In their implementation, sample weighting is biased towards "easy" samples, most of which are actually background. Different from the above methods, our proposed weighting mechanism relies on the disagreements between the teacher and student predictions. Our intuition is that regions where the two models make different object detection predictions are actually regions where the student model struggles the most. The column E of Figure <ref type="figure" target="#fig_1">1</ref> shows that our weighting mechanism is biased towards "hard" regions, such as unknown objects (first line), reflection in water (second line), object junctions (third line) and ambiguous objects (fourth line). Our experimental results demonstrate that enhancing distillation on these regions greatly reduces the performance gap between the teacher model and the student model.</p><p>3 Proposed approach</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Overview</head><p>We illustrate the two involved models for feature-based detection distillation in Figure <ref type="figure" target="#fig_2">2</ref>.</p><p>The student model (presented by the green blocks in the figure) employs a simpler network architecture than the teacher model (blue blocks), namely thinner or shallower backbone and neck networks in the context of object detection. Note that in Figure <ref type="figure" target="#fig_2">2</ref> the multi-scale detection architecture <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b15">16]</ref> is not presented for the sake of clarity. The yellow blocks in Figure <ref type="figure" target="#fig_2">2</ref> show that the training of the student model is supervised by the normal object detection loss (including the instance classification and the bounding-box localization losses) as well as the knowledge transfer loss, which is defined as the Mean Square Error (MSE)</p><p>between the intermediate feature maps of the teacher model and the projected feature maps of the student model. The projection is performed through a 1 × 1 convolution to map the student hidden layer to the teacher hidden layer.</p><p>The main contribution of the proposed approach consists in adding a prediction disagreement aware feedback branch (the red branch in Figure <ref type="figure" target="#fig_2">2</ref>), in a traditional feature-based detection distillation framework. This feedback branch leverages the prediction difference between the teacher model and the student model to generate a disagreement map, which is used as a weighting mask for the knowledge transfer loss.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Disagreement mapping</head><p>In order to obtain the aforementioned disagreement map, we compute the distance between the respective classification branches of the teacher model and the student model <ref type="foot" target="#foot_0">1</ref> . Formally, let P t and P s respectively represent the output probability distributions from the classification branches of the teacher and the student, and let N denotes the number of object categories. Assume that there are M classification predictions associated to a specific feature map location. To be more specific, for anchor-based methods, M equals to the number of anchors per location, e.g., M = 6 for SSD <ref type="bibr" target="#b16">[17]</ref> and M = 9 for RetinaNet <ref type="bibr" target="#b14">[15]</ref>; for anchor-free methods like FCOS <ref type="bibr" target="#b27">[28]</ref>, M equals to 1 since each feature map location only produces one boundingbox prediction. The prediction disagreement at each feature location (D h,w ) is defined as:</p><formula xml:id="formula_0">D h,w = ∑ M ∑ N F(P t h,w , P s h,w )<label>(1)</label></formula><p>where F is a given dissimilarity function (in Section 4, we compare KL-divergence, L1 and L2 distances). Let H, W and C denote the height, width and depth of the feature maps, the actual weighting value at each location on the disagreement map (W h,w ) is assigned as:</p><formula xml:id="formula_1">W h,w = H ×W × D h,w ∑ H ∑ W D h,w .<label>(2)</label></formula><p>Let X t denote the intermediate feature maps of the teacher model and X s the projected feature maps of the student model, the weighted knowledge transfer loss L kd is computed as:</p><formula xml:id="formula_2">L kd = ∑ H ∑ W (W h,w × ∑ C (X t -X s ) 2 ) H ×W ×C . (<label>3</label></formula><formula xml:id="formula_3">)</formula><p>For a better understanding of the proposed weighting strategy, we provide more visualization results in Figure <ref type="figure" target="#fig_3">3</ref>. Specifically, the column E corresponds to the presented disagreement map. As is shown, the key difference between the proposed weighting method with previous methods <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b28">29,</ref><ref type="bibr" target="#b35">36]</ref>, is that ours is capable to adaptively locate challenging areas for the student model to perform object detection, e.g., ambiguous objects (first line), shadow of objects (second line), defocused objects (third line) and human photos (fourth line). </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Experiments</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.1">Experimental setting</head><p>Datasets and evaluation metric. Extensive experiments are conducted on PASCAL VOC <ref type="bibr" target="#b3">[4]</ref> and MS COCO <ref type="bibr" target="#b12">[13]</ref> datasets, containing 20 and 80 object categories respectively. For PASCAL VOC dataset, models are trained on the union of the 2007 trainval set and the 2012 trainval set, and evaluated on the 2007 test set; For MS COCO dataset, we use the 2017 train set for training and the 2017 val set for evaluation. Following the common practice, we adopt the (COCO-style) mean Average Precision (denoted as mAP) as the evaluation metric, which is defined as the average of AP scores across 10 Intersection-over-Union (IoU) thresholds from 0.5 to 0.95. We report using (+. . . ) the absolute mAP improvement from KD for each distilled model. Moreover, the AP scores with the IoU threshold 0.5 and 0.75 (denoted as AP50 and AP75) are also listed for comparisons.</p><p>Network architectures. We evaluate our proposed method by implementing object detectors using different combinations of backbone, neck and head networks. To be more specific, in terms of the backbone network, a deeper or wider version of ResNet <ref type="bibr" target="#b7">[8]</ref> or ShuffleNetV2 <ref type="bibr" target="#b19">[20]</ref> is adopted for teacher models, and their shallower or thinner version is used for student models; For the neck network, teacher models are equipped with the more complex PAFPN <ref type="bibr" target="#b15">[16]</ref>, while student models employ the simpler FPN <ref type="bibr" target="#b13">[14]</ref>; As for the head network, we use RetinaNet <ref type="bibr" target="#b14">[15]</ref> as a representative for anchor-based methods and FCOS <ref type="bibr" target="#b27">[28]</ref> as a representative for anchor-free methods. Both detection heads are optimized by the Mutual Guidance label assignment strategy <ref type="bibr" target="#b31">[32]</ref>. To compare the computational cost of both teacher and student models, we summarize in Figure <ref type="figure">4</ref> the amount of Multiply-Accumulate operations (denoted as MACs) as well as the amount of learnable parameters (denoted as Params) for each network component. It can be observed that student models require much less computing resources than teacher models. Since we implement the same head network for each teacher and the corresponding student, the computational complexity and the number of parameters remain unchanged for this component.</p><p>Implementation details. For each detector, the backbone network is pre-trained on the ImageNet-1k dataset <ref type="bibr" target="#b1">[2]</ref>, while the neck and the head networks are randomly initialized. We adopt single-scale training and evaluation, where the input image resolution is fixed to 320 × 320 for all experiments. Several data augmentation strategies are applied, such as random image flipping, shifting, cropping, padding, noising and mixup <ref type="bibr" target="#b32">[33]</ref>. Note that the mentioned data augmentation strategies are applied to all the compared methods, including our competitors. We use the Stochastic Gradient Descent (SGD) optimizer with 32 images per mini-batch and with an initial learning rate of 1e-2. The warm-up strategy <ref type="bibr" target="#b4">[5]</ref> is applied to stabilize the training at the beginning, followed by the cosine annealing strategy <ref type="bibr" target="#b18">[19]</ref> for learning rate decay. Models are trained for 70 and 140 epochs for PASCAL VOC and MS COCO, respectively. We use Balanced L1 loss <ref type="bibr" target="#b20">[21]</ref> and Generalized IoU loss <ref type="bibr" target="#b23">[24]</ref> to optimize the localization branch of RetinaNet <ref type="bibr" target="#b14">[15]</ref> and FCOS <ref type="bibr" target="#b27">[28]</ref>, respectively. Focal loss <ref type="bibr" target="#b14">[15]</ref> is adopted for the training of the classification branch for both head networks.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.2">Ablation study</head><p>Ablation experiments are conducted on PASCAL VOC to explore the relationship between the teacher-student prediction disagreements and the knowledge transfer effects. In Table <ref type="table">1</ref>, we consider eight different feature sampling strategies for detection distillation: 1) the baseline setting where all samples are treated equally (equivalent to Fitnet <ref type="bibr" target="#b24">[25]</ref>); 2-5) hard sampling strategies where the distillation is only conducted on 25% or 50% of feature areas with the most similar or the most different teacher-student predictions; 6-8) the proposed adaptive sampling approach with respectively KL-divergence, L1 distance or L2 distance  <ref type="table">1</ref>: Ablation studies on PASCAL VOC. We compare eight different feature sampling strategies for detection distillation, and the proposed PDF-Distil with L2 distance as the dissimilarity function achieves the best result.</p><p>as the dissimilarity function in Equation <ref type="formula" target="#formula_0">1</ref>. The results are summarized in Table <ref type="table">1</ref>. When comparing the distillation results of the four hard sampling strategies (i.e., 2-5), we can conclude that feature samples with different teacher-student predictions are much more effective than those with similar predictions. This finding validates our initial hypothesis that the disagreements between the teacher-student object detection predictions can be regarded as an indicator of the importance for feature-based distillation. Moreover, regardless of the specific dissimilarity function, the adaptive sampling strategies <ref type="bibr" target="#b5">(6)</ref><ref type="bibr" target="#b6">(7)</ref><ref type="bibr" target="#b7">(8)</ref> outperform the hard sampling strategies <ref type="bibr" target="#b1">(2)</ref><ref type="bibr" target="#b2">(3)</ref><ref type="bibr" target="#b3">(4)</ref><ref type="bibr" target="#b4">(5)</ref>, indicating the effectiveness of the proposed dynamic weighting mechanism. As for the selection of the dissimilarity function, L2 distance (i.e., 8) demonstrates a constant advantage for all backbone-neck-head combinations. Therefore, we choose L2 distance as the dissimilarity function for the following experiments.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.3">Comparison with state-of-the-art</head><p>As shown in Tables <ref type="table" target="#tab_2">2</ref> and<ref type="table" target="#tab_3">3</ref>, we further compare our method with SOTA detection distillation methods on PASCAL VOC and MS COCO datasets. The results show that for either backbone-neck-head combinations and on both datasets, our method outperforms all existing KD methods. In particular, our method brings more than 3% (respectively 2%) of absolute precision improvements in comparison to student models without KD on PASCAL VOC (resp. MS COCO), and about 1% of absolute improvements to all previous detection distillation methods. Moreover, we report on the test set of each dataset the absolute difference between the detection predictions of the teacher model and the student model (denoted as D pred ), and we notice that our method effectively reduces the teacher-student prediction difference. Figure <ref type="figure" target="#fig_5">5</ref> illustrates the detection results on a few exemplar images treated by the teacher model, Fitnet <ref type="bibr" target="#b24">[25]</ref>, Fine-grained <ref type="bibr" target="#b28">[29]</ref>, Decoupled <ref type="bibr" target="#b5">[6]</ref>, Prime-aware <ref type="bibr" target="#b35">[36]</ref> and our method. As is shown, our method gives detection results more similar to the teacher model than the other SOTA methods that miss some objects (dog, bicycle, potted plant, chair in the four examples, respectively).  <ref type="bibr" target="#b24">[25]</ref> 41.4 (+2.0) 67.9 41.4 2.04E-3 w/ Fine-grained <ref type="bibr" target="#b28">[29]</ref> 42.4 (+3.0) 68.9 43.0 2.32E-3 w/ Decoupled <ref type="bibr" target="#b5">[6]</ref> 41.4 (+2.0) 67.5 41.4 2.04E-3 w/ Prime-aware <ref type="bibr" target="#b35">[36]</ref> 42.0 (+2.  </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Models</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Conclusion</head><p>We address the foreground-background imbalance problem which happens when distilling knowledge from a teacher model to a student model in the context of object detection. To do so, we leverage the teacher-student prediction disagreements (i.e. logits-level information) to guide the knowledge distillation in a feature-based distillation framework. Our experiments demonstrate that the proposed method helps to reduce the performance gap between the teacher and the student models compared to all related state-of-the-art methods. Future studies could investigate how to include predictions from localization branches into the disagreement mapping to further improve the distillation.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>(</head><label></label><figDesc>A) Input image (B) Fine-grained (C) Decoupled (D) Prime-aware (E) PDF-Distil</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Visualization of sampling strategies from different feature-based detection distillation methods. We plot from left to right: (A) input image with ground truth boxes, (B) Fine-grained [29], (C) Decoupled<ref type="bibr" target="#b5">[6]</ref>, (D) Prime-aware<ref type="bibr" target="#b35">[36]</ref> and (E) our PDF-Distil method.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Overview of the proposed PDF-distil. We have added a prediction disagreement aware feedback branch (in red) in a traditional feature-based distillation framework.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: More visualization of sampling strategies from different feature-based detection distillation methods.</figDesc><graphic coords="7,43.93,216.32,312.26,62.45" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>20 Figure 4 :</head><label>204</label><figDesc>Figure 4: Comparisons on computational complexity and number of parameters for each network component from teacher models (blue bars) and student models (green bars).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Figure 5 :</head><label>5</label><figDesc>Figure 5: Visualization of some detection results from teacher model and student models distilled by Fitnet, Fine-grained, Decoupled, Prime-aware and our PDF-Distil method.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head>Table 2 :</head><label>2</label><figDesc>Comparisons with SOTA detection distillation methods on PASCAL VOC.</figDesc><table><row><cell>6) 68.1</cell><cell>43.0</cell><cell>2.05E-3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>Table 3 :</head><label>3</label><figDesc>Comparisons with SOTA detection distillation methods on MS COCO.</figDesc><table><row><cell>Teacher</cell><cell>Fitnet</cell><cell>Fine-grained</cell><cell>Decoupled</cell><cell>Prime-aware</cell><cell>PDF-Distil</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>Since localization predictions on background areas are meaningless, we do not consider the prediction difference between the teacher model and the student model in the localization branches.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Cascade r-cnn: Delving into high quality object detection</title>
+		<author>
+			<persName><forename type="first">Zhaowei</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nuno</forename><surname>Vasconcelos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="6154" to="6162" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Imagenet: A large-scale hierarchical image database</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="248" to="255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Centernet: Keypoint triplets for object detection</title>
+		<author>
+			<persName><forename type="first">Kaiwen</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lingxi</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Honggang</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qingming</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qi</forename><surname>Tian</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="6569" to="6578" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">The pascal visual object classes (VOC) challenge</title>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Everingham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Luc</forename><surname>Van Gool</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">I</forename><surname>Christopher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Williams</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Winn</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">International Journal of Computer Vision</title>
+		<imprint>
+			<biblScope unit="volume">88</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="303" to="338" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Priya</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pieter</forename><surname>Noordhuis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lukasz</forename><surname>Wesolowski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aapo</forename><surname>Kyrola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Tulloch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yangqing</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1706.02677</idno>
+		<title level="m">Accurate, large minibatch sgd: Training imagenet in 1 hour</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<author>
+			<persName><forename type="first">Jianyuan</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yunhe</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Han</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinghao</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chunjing</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chang</forename><surname>Xu</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2103.14475</idno>
+		<title level="m">Distilling object detectors via decoupled features</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Deep compression: Compressing deep neural networks with pruning, trained quantization and huffman coding</title>
+		<author>
+			<persName><forename type="first">Song</forename><surname>Han</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huizi</forename><surname>Mao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">J</forename><surname>Dally</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1510.00149</idno>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoqing</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Distilling the knowledge in a neural network</title>
+		<author>
+			<persName><forename type="first">Geoffrey</forename><surname>Hinton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Oriol</forename><surname>Vinyals</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeffrey</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS Deep Learning and Representation Learning Workshop</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Searching for mobilenetv3</title>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Sandler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Grace</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang-Chieh</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mingxing</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijun</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yukun</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruoming</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vijay</forename><surname>Vasudevan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="1314" to="1324" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">Mobilenets: Efficient convolutional neural networks for mobile vision applications</title>
+		<author>
+			<persName><forename type="first">Menglong</forename><surname>Andrew G Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bo</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dmitry</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Weijun</forename><surname>Kalenichenko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tobias</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Weyand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hartwig</forename><surname>Andreetto</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Adam</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1704.04861</idno>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Cornernet: Detecting objects as paired keypoints</title>
+		<author>
+			<persName><forename type="first">Hei</forename><surname>Law</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="734" to="750" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Microsoft COCO: Common objects in context</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Michael</forename><surname>Maire</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Hays</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pietro</forename><surname>Perona</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Deva</forename><surname>Ramanan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lawrence</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zitnick</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="740" to="755" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Feature pyramid networks for object detection</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bharath</forename><surname>Hariharan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Serge</forename><surname>Belongie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2117" to="2125" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Focal loss for dense object detection</title>
+		<author>
+			<persName><forename type="first">Tsung-Yi</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Priya</forename><surname>Goyal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2980" to="2988" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Path aggregation network for instance segmentation</title>
+		<author>
+			<persName><forename type="first">Shu</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lu</forename><surname>Qi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haifang</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaya</forename><surname>Jia</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="8759" to="8768" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">SSD: Single shot multibox detector</title>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dragomir</forename><surname>Anguelov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dumitru</forename><surname>Erhan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Szegedy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Scott</forename><surname>Reed</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Cheng-Yang</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Alexander</forename><forename type="middle">C</forename><surname>Berg</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="21" to="37" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Learning efficient convolutional networks through network slimming</title>
+		<author>
+			<persName><forename type="first">Zhuang</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianguo</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gao</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shoumeng</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Changshui</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="2736" to="2744" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Loshchilov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Frank</forename><surname>Hutter</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1608.03983</idno>
+		<title level="m">Sgdr: Stochastic gradient descent with warm restarts</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Shufflenet v2: Practical guidelines for efficient cnn architecture design</title>
+		<author>
+			<persName><forename type="first">Ningning</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hai-Tao</forename><surname>Zheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="116" to="131" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Libra R-CNN: Towards balanced learning for object detection</title>
+		<author>
+			<persName><forename type="first">Jiangmiao</forename><surname>Pang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jianping</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huajun</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wanli</forename><surname>Ouyang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dahua</forename><surname>Lin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="821" to="830" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">You only look once: Unified, real-time object detection</title>
+		<author>
+			<persName><forename type="first">Joseph</forename><surname>Redmon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Santosh</forename><surname>Divvala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ali</forename><surname>Farhadi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="779" to="788" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Faster R-CNN: towards realtime object detection with region proposal networks</title>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>Shaoqing Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Transactions on Pattern Analysis and Machine Intelligence</title>
+		<imprint>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1137" to="1149" />
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Generalized intersection over union: A metric and a loss for bounding box regression</title>
+		<author>
+			<persName><forename type="first">Hamid</forename><surname>Rezatofighi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nathan</forename><surname>Tsoi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Junyoung</forename><surname>Gwak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Amir</forename><surname>Sadeghian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ian</forename><surname>Reid</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Silvio</forename><surname>Savarese</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="658" to="666" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Fitnets: Hints for thin deep nets</title>
+		<author>
+			<persName><forename type="first">Adriana</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samira</forename><forename type="middle">Ebrahimi</forename><surname>Kahou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Polytechnique</forename><surname>Montréal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Université</forename><surname>De Montréal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adriana</forename><surname>Romero</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicolas</forename><surname>Ballas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samira</forename><forename type="middle">Ebrahimi</forename><surname>Kahou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Antoine</forename><surname>Chassang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlo</forename><surname>Gatta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Mobilenetv2: Inverted residuals and linear bottlenecks</title>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Sandler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrew</forename><surname>Howard</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Menglong</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Zhmoginov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Liang-Chieh</forename><surname>Chen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4510" to="4520" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Very deep convolutional networks for large-scale image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Simonyan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Zisserman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">FCOS: Fully convolutional onestage object detection</title>
+		<author>
+			<persName><forename type="first">Chunhua</forename><surname>Zhi Tian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Shen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICCV</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Distilling object detectors with fine-grained feature imitation</title>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiaopeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiashi</forename><surname>Feng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="4933" to="4942" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Aggregated residual transformations for deep neural networks</title>
+		<author>
+			<persName><forename type="first">Saining</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ross</forename><surname>Girshick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Piotr</forename><surname>Dollár</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhuowen</forename><surname>Tu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kaiming</forename><surname>He</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1492" to="1500" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Paying more attention to attention: Improving the performance of convolutional neural networks via attention transfer</title>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Zagoruyko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nikos</forename><surname>Komodakis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Localize to classify and classify to localize: Mutual guidance in object detection</title>
+		<author>
+			<persName><forename type="first">Heng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Elisa</forename><surname>Fromont</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sébastien</forename><surname>Lefèvre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bruno</forename><surname>Avignon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Asian Conference on Computer Vision</title>
+		<meeting>the Asian Conference on Computer Vision</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">mixup: Beyond empirical risk minimization</title>
+		<author>
+			<persName><forename type="first">Hongyi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Moustapha</forename><surname>Cisse</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yann</forename><forename type="middle">N</forename><surname>Dauphin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Lopez-Paz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICLR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Shufflenet: An extremely efficient convolutional neural network for mobile devices</title>
+		<author>
+			<persName><forename type="first">Xiangyu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xinyu</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mengxiao</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="6848" to="6856" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Deep mutual learning</title>
+		<author>
+			<persName><forename type="first">Ying</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Xiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Timothy</forename><forename type="middle">M</forename><surname>Hospedales</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Huchuan</forename><surname>Lu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="4320" to="4328" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Prime-aware adaptive distillation</title>
+		<author>
+			<persName><forename type="first">Youcai</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhonghao</forename><surname>Lan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Dai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fangao</forename><surname>Zeng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Bai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yichen</forename><surname>Wei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECCV</title>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="658" to="674" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<monogr>
+		<author>
+			<persName><forename type="first">Xingyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dequan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Krähenbühl</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1904.07850</idno>
+		<title level="m">Objects as points</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Bottom-up object detection by grouping extreme and center points</title>
+		<author>
+			<persName><forename type="first">Xingyi</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiacheng</forename><surname>Zhuo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philipp</forename><surname>Krähenbühl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="850" to="859" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Feature selective anchor-free module for single-shot object detection</title>
+		<author>
+			<persName><forename type="first">Chenchen</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yihui</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marios</forename><surname>Savvides</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CVPR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="840" to="849" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

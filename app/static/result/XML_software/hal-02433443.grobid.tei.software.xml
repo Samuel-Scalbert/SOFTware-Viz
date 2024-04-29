@@ -1,0 +1,1638 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="fr">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">PRINCE: Provider-side Interpretability with Counterfactual Explanations in Recommender Systems</title>
+				<funder ref="#_xE9kAtk">
+					<orgName type="full">European Research Council</orgName>
+					<orgName type="abbreviated">ERC</orgName>
+				</funder>
+				<funder>
+					<orgName type="full">DFG Collaborative Research Center</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Azin</forename><surname>Ghazimatin</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Oana</forename><surname>Balalau</surname></persName>
+							<email>oana.balalau@inria.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Rishiraj</forename><surname>Saha</surname></persName>
+							<email>rishiraj@mpi-inf.mpg.de</email>
+						</author>
+						<author>
+							<persName><forename type="first">Gerhard</forename><surname>Weikum</surname></persName>
+							<email>weikum@mpi-inf.mpg.de</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="department">Max Planck Institute for Informatics</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Inria and École Polytechnique</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="department">Max Planck Institute for Informatics</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="department">Max Planck Institute for Informatics</orgName>
+								<address>
+									<country key="DE">Germany</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">PRINCE: Provider-side Interpretability with Counterfactual Explanations in Recommender Systems</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">8E677DC60A5F4EC2698FA9FBC0F6EB9F</idno>
+					<idno type="DOI">10.1145/nnnnnnn.nnnnnnn</idno>
+					<note type="submission">Submitted on 9 Jan 2020</note>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>des établissements d'enseignement et de recherche français ou étrangers, des laboratoires publics ou privés.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="fr">
+		<body>
+<div><head n="1">INTRODUCTION</head><p>Motivation. Providing user-comprehensible explanations for machine learning models has gained prominence in multiple communities <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b38">39,</ref><ref type="bibr" target="#b55">56,</ref><ref type="bibr" target="#b58">59]</ref>. Several studies have shown that explanations increase users' trust in systems that generate personalized recommendations or other rankings (in news, entertainment, etc.) <ref type="bibr" target="#b25">[26,</ref><ref type="bibr" target="#b26">27,</ref><ref type="bibr" target="#b37">38]</ref>. Recommenders have become very sophisticated, exploiting signals from a complex interplay of factors like users' activities, interests and social links <ref type="bibr" target="#b56">[57]</ref>. Hence the pressing need for explanations.</p><p>Explanations for recommenders can take several forms, depending on the generator (explanations by whom?) and the consumer (explanations for whom?). As generators, only service providers can produce true explanations for how systems compute the recommended items <ref type="bibr" target="#b5">[6,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b57">58]</ref>; third parties can merely discover relationships and create post-hoc rationalizations for black-box models that may look convincing to users <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b47">48]</ref>. On the consumer side, end-users can grasp tangible aspects like activities, likes/dislikes/ratings or demographic factors. Unlike system developers or accountability engineers, end-users would obtain hardly any insight from transparency of internal system workings. In this work, we deal with explanations by the provider and for the end-user.</p><p>Limitations of state-of-the-art. At the core of most recommender systems is some variant of matrix or tensor decomposition (e.g., <ref type="bibr" target="#b24">[25]</ref>) or spectral graph analysis (e.g., <ref type="bibr" target="#b20">[21]</ref>), with various forms of regularization and often involving gradient-descent methods for parameter learning. One of the recent and popular paradigms is based on heterogeneous information networks (HIN) <ref type="bibr" target="#b41">[42,</ref><ref type="bibr" target="#b51">[52]</ref><ref type="bibr" target="#b52">[53]</ref><ref type="bibr" target="#b53">[54]</ref>, a powerful model that represents relevant entities and actions as a directed and weighted graph with multiple node and edge types. Prior efforts towards explanations for HIN-based recommendations have mostly focused on paths that connect the user with the recommended item <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b17">18,</ref><ref type="bibr" target="#b42">43,</ref><ref type="bibr" target="#b45">46,</ref><ref type="bibr" target="#b48">[49]</ref><ref type="bibr" target="#b49">[50]</ref><ref type="bibr" target="#b50">[51]</ref>. An application of path-based explanations, for an online shop, would be of the form: User u received item rec because u follows user v, who bought item j, which has the same category as rec.</p><p>However, such methods come with critical privacy concerns arising from nodes in paths that disclose other users' actions or interests to user u, like the purchase of user v above. Even if user v's id was anonymized, user u would know whom she is following and could often guess who user v actually is, that bought item j, assuming that u has a relatively small set of followees <ref type="bibr" target="#b30">[31]</ref>. If entire paths containing other users are suppressed instead, then such explanations would no longer be faithful to the true cause. Another family of path-based methods <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b36">37,</ref><ref type="bibr" target="#b47">48]</ref> presents plausible connections between users and items as justifications. However, this is merely post-hoc rationalization, and not actual causality.</p><p>Approach. This paper presents Prince, a method for Provider-side Interpretability with Counterfactual Evidence, that overcomes the outlined limitations. Prince is a provider-side solution aimed at detecting the actual cause responsible for the recommendation, in a heterogeneous information network with users, items, reviews, and categories. Prince's explanations are grounded in the user's own actions, and thus preclude privacy concerns of path-based models. Fig. <ref type="figure" target="#fig_0">1</ref> shows an illustrative example. Here, Alice's actions like bought shoes, reviewed a camera, and rated a power bank are deemed as explanations for her backpack recommendation. One way of identifying a user's actions for an explanation would be to compute scores of actions with regard to the recommended item. However, this would be an unwieldy distribution over potentially hundreds of actions -hardly comprehensible to an end-user. Instead, we operate in a counterfactual setup <ref type="bibr" target="#b31">[32]</ref>. Prince identifies a small (and actually minimal) set of a user's actions such that removing these actions would result in replacing the recommended item with a different item. In Fig. <ref type="figure" target="#fig_0">1</ref>, the item rec = "Jack Wolfskin backpack" would be replaced, as the system's top recommendation, by i 3 ="iPad Air" (the i's represent candidate replacement items). Note that there may be multiple such minimal sets, but uniqueness is not a concern here.</p><p>Another perspective here is that the goal of an explanation is often to show users what they can do in order to receive more relevant recommendations. Under this claim, the end-user has no control on the network beyond her immediate neighborhood, i.e., the network beyond is not actionable (shaded zone in Fig. <ref type="figure" target="#fig_0">1</ref>), motivating Prince's choice of grounding explanations in users' own actions.</p><p>For true explanations, we need to commit ourselves to a specific family of recommender models. In this work, we choose a general framework based on Personalized PageRank (PPR), as used in the state-of-the-art <software ContextAttributes="created">RecWalk</software> system <ref type="bibr" target="#b34">[35]</ref>, and adapt it to the HIN setup. The heart of Prince is a polynomial-time algorithm for exploring the (potentially exponential) search space of subsets of user actions -the candidates for causing the recommendation. The algorithm efficiently computes PPR contributions for groups of actions with regard to an item, by adapting the reverse local push algorithm of <ref type="bibr" target="#b1">[2]</ref> to a dynamic graph setting <ref type="bibr" target="#b54">[55]</ref>. In summary, the desiderata for the explanations from Prince (in bold) connect to the technical approaches adopted (in italics) in the following ways. Our explanations are:</p><p>• Scrutable, as they are derived in a counterfactual setup;</p><p>• Actionable, as they are grounded in the user's own actions;</p><p>• Concise, as they are minimal sets changing a recommendation.</p><p>Extensive experiments with Amazon and <software ContextAttributes="used">Goodreads</software> datasets show that Prince's minimal explanations, achieving the desired item-replacement effect, cannot be easily obtained by heuristic methods based on contribution scores and shortest paths. A crowdsourced user study on Amazon Mechanical Turk (AMT) provides additional evidence that Prince's explanations are more useful than ones based on paths <ref type="bibr" target="#b50">[51]</ref>. Our <software ContextAttributes="used">code</software> is public at https://github.com/ azinmatin/prince/.</p><p>Contributions. Our salient contributions in this work are:</p><p>• Prince is the first work that explores counterfactual evidence for discovering causal explanations in a heterogeneous information network;</p><p>• Prince is the first work that defines explanations for recommenders in terms of users' own actions;</p><p>• We present an optimal algorithm that explores the search space of action subsets in polynomial time, for efficient computation of a minimal subset of user actions;</p><p>• Experiments with two large datasets and a user study show that Prince can effectively aid a service provider in generating usercomprehensible causal explanations for recommended items.</p></div>
+<div><head n="2">COMPUTATIONAL MODEL</head><p>Heterogeneous Information Networks (HIN). A heterogeneous graph G = (V , E, θ ) consists of a set of nodes V , a set of edges E ⊆ V × V , and a mapping θ from each node and each edge to their types, such that θ</p><formula xml:id="formula_0">V : V → T V and θ E : E → T E with |T V | + |T E | &gt; 2.</formula><p>In our work, a heterogenous graph contains at least two node types, users U ∈ T V and items I ∈ T V . For simplicity, we use the notations U and I to refer both to the type of a node and the set of all nodes of that type. A graph is weighted if there is a weight assigned to each edge, w : E → R, and a graph is directed if E is a set of ordered pairs of nodes. We denote with N out (v) and N in (v) the sets of out-neighbors and in-neighbors of node v, respectively. A directed and weighted heterogeneous graph where each node v ∈ V and each edge e ∈ E belong to exactly one type, is called a heterogenous information network (HIN) <ref type="bibr" target="#b41">[42]</ref>.</p><p>Personalized PageRank (PPR) for recommenders. We use Personalized PageRank (PPR) for recommendation in HINs <ref type="bibr" target="#b18">[19,</ref><ref type="bibr" target="#b34">35]</ref>. PPR is the stationary distribution of a random walk in G in which, at a given step, with probability α, a surfer teleports to a set of seed nodes {s}, and with probability 1 -α, continues the walk to a randomly chosen outgoing edge from the current node. More precisely, given G, teleportation probability α, a single seed s, the one-hot vector e s , and the transition matrix W , the Personalized PageRank vector PPR(s) is defined recursively as:</p><formula xml:id="formula_1">PPR(s, •) = αe s + (1 -α)PPR(s, •)W<label>(1)</label></formula><p>Let PPR(s, v) be the PPR score of node v personalized for s. We define the PPR recommendation for user u ∈ U , or the top-1 recommendation, as:</p><formula xml:id="formula_2">rec = arg max i ∈I \N out (u) PPR(u, i)<label>(2)</label></formula><p>Given a set of edges A ⊂ E, we use the notation PPR(u, i |A) to define the PPR of an item i personalized for a user u in the graph G = (V , E \ A, θ ). We refer to this graph as G \ A. To improve top-n recommendations, Nikolakopoulos et al. <ref type="bibr" target="#b34">[35]</ref> define a random walk in an HIN G as follows:</p><p>• With probability α, the surfer teleports to u • With probability 1 -α, the surfer continues the walk in the following manner: + With probability 1 -β, the random surfer moves to a node of the same type, using a similarity-based stochastic transition matrix + With probability β, the surfer chooses any outgoing edge at random. For each node type t in T V , there is an associated stochastic similarity matrix S t , which encodes the relationship between the nodes of type t. When nodes of the same type are not comparable, the similarity matrix is the identity matrix, i.e. S t = I . Otherwise, an entry (i, j) in S t corresponds to the similarity between node i and node j. The stochastic process described by this walk is a nearly uncoupled Markov chain <ref type="bibr" target="#b34">[35]</ref>. The stationary distribution of the random walk is the PPR with teleportation probability α in a graph G β (referred to as RecW alk in <ref type="bibr" target="#b34">[35]</ref>), where the transition probability matrix of G β is:</p><formula xml:id="formula_3">W β = βW + (1 -β)S<label>(3)</label></formula><p>The matrix W is the transition probability matrix of the original graph G.</p><formula xml:id="formula_4">Matrix S = Diaд(S 1 , S 2 , • • • , S |T V | ) is a diagonal matrix of order |V |.</formula><p>Counterfactual Explanations. A user u interacts with items via different types of actions A, such as clicks, purchases, ratings or reviews, which are captured as interaction edges in the graph G.</p><p>Our goal is to present user u with a set of interaction edges A * ⊆ {(u, n i )|(u, n i ) ∈ A} (where n i is a neighbor of u) responsible for an item recommendation rec; we refer to this as a counterfactual explanation. An explanation is counterfactual, if after removing the edges A * from the graph, the user receives a different top-ranked recommendation rec * . A counterfactual explanation A * is minimal if there is no smaller set A ′ ⊆ A such that |A ′ | &lt; |A * | and A ′ is also a counterfactual explanation for rec.</p><p>Formal problem statement. Given a heterogenous information network G = (V , E, θ ) and the top-ranked recommendation rec ∈ I for user u ∈ U , find a minimum counterfactual explanation for rec.</p></div>
+<div><head n="3">THE PRINCE ALGORITHM</head><p>In this section, we develop an algorithm for computing a minimum counterfactual explanation for user u receiving recommended item rec, given the PPR-based recommender framework RecW alk <ref type="bibr" target="#b34">[35]</ref>.</p><p>A naïve optimal algorithm enumerates all subsets of actions A * ⊆ A, and checks whether the removal of each of these subsets replaces rec with a different item as the top recommendation, and finally selects the subset with the minimum size. This approach is exponential in the number of actions of the user.</p><p>To devise a more efficient and practically viable algorithm, we express the PPR scores as follows <ref type="bibr" target="#b21">[22]</ref>, with PPR(u, rec) denoting the PPR of rec personalized for u (i.e., jumping back to u):</p><formula xml:id="formula_5">PPR(u, rec) = (1 -α) n i ∈N out (u) W (u, n i )PPR(n i , rec) + αδ u,r ec (4) Algorithm 1: Prince Input: G = (V , E, θ ), I ⊂ V , u ∈ V , r ec ∈ I Output: A * for (u, r ec) 1 A * ← A 2 r ec * ← r ec 3 foreach i ∈ I do 4 A i ← SwapOrder(G, u, r ec, i) // Actions A i swap orders of r ec and i 5 if |A i | &lt; |A * | then 6 A * ← A i 7 r ec * ← i 8 end 9 else if |A i | = |A * | and P P R(u, i |A i ) &gt; P P R(u, r ec * |A i ) then 10 A * ← A i 11 r ec * ← i 12 end</formula><p>13 end 14 return A * , r ec *</p><p>15 Function SwapOrder(G, u, r ec, r ec * ): </p><formula xml:id="formula_6">16 A ← {(u, n i ) |n i ∈ N out (u), n i u } 17 A * ← ∅ 18 H ← MaxHeap(ϕ) 19 sum ← 0 20 foreach (u, n i ) ∈ A do 21 dif f ← W (u, n i ) • (P P R(n i , r ec |A) -P P R(n i , r ec * |A)) 22 H .inser t (n i , dif f ) 23 sum ← sum + dif f</formula><formula xml:id="formula_7">(n i , dif f ) ← H .del et e_max () 27 sum ← sum -dif f 28 A * ← A * ∪ (u, n i ) 29 end 30 if sum &gt; 0 then A * ← A 31 return A * 32 end</formula><p>where α denotes the teleportation probability (probability of jumping back to u) and δ is the Kronecker delta function. The only required modification, with regard to RecW alk <ref type="bibr" target="#b34">[35]</ref>, is the transformation of the transition probability matrix from W to W β . For simplicity, we will refer to the adjusted probability matrix as W .</p><p>Eq. 4 shows that the PPR of rec personalized for user u, PPR(u, rec), is a function of the PPR values of rec personalized for the neighbors of u. Hence, in order to decrease PPR(u, rec), we can remove edges (u, n i ), n i ∈ N out (u). To replace the recommendation rec with a different item rec * , a simple heuristic would remove edges (u, n i ) in non-increasing order of their contributions W (u, n i ) • PPR(n i , rec). However, although this would reduce the PPR of rec, it also affects and possibly reduces the PPR of other items, too, due to the recursive nature of PPR, where all paths matter.</p><p>Let A be the set of outgoing edges of a user u and let A * be a subset of A, such that A * ⊆ A. The main intuition behind our algorithm is that we can express PPR(u, rec) after the removal of A * , denoted by PPR(u, rec |A * ), as a function of two components: PPR(u, u|A * ) and the values PPR(n i , rec |A), where  Based on these considerations, we present Algorithm 1, proving its correctness in Sec. 4. Algorithm 1 takes as input a graph G, a user u, a recommendation rec, and a set of items I . In lines 3-13, we iterate through the items I , and find the minimum counterfactual explanation A * . Here, A i refers to the actions whose removal swaps the orders of items rec and i. In addition, we ensure that after removing A * , we return the item with the highest PPR score as the replacement item (lines 9-11). Note that in the next section, we propose an equivalent formulation for the condition PPR(u, i |A i ) &gt; PPR(u, rec * |A i ), eliminating the need for recomputing scores in G \ A * .</p><formula xml:id="formula_8">n i ∈ {n i |(u, n i ) ∈ A \ A * } and</formula><formula xml:id="formula_9">P P R(n 1 , n 5 ) = 0.085 P P R(n 1 , n 4 ) &gt; P P R(n 1 , n 5 ) (b) A = {(n 1 , n 2 ), (n 1 , n 3 )} W (n 1 , n 2 )[P P R(n 2 , n 4 |A) -P P R(n 2 , n 5 |A)] = 0.095 W (n 1 , n 3 )[P P R(n 3 , n 4 |A) -P P R(n 3 , n 5 |A)] = -0.022 (c) A * = {(n 1 , n 2 )} P P R(n 1 , n 4 |A * ) = 0.078 P P R(n 1 , n 5 |A * ) = 0.110 P P R(n 1 , n 5 |A * ) &gt; P P R(n 1 , n 4 |A * )</formula><p>The core of our algorithm is the function SwapOrder, which receives as input two items, rec and rec * , and a user u. In lines 20-24, we sort the interaction edges (u, n i ) ∈ A in non-increasing order of their contributions W (u, n i ) • (PPR(n i , rec |A) -PPR(n i , rec * |A)). In lines 25-29, we remove at each step, the outgoing interaction edge with the highest contribution, and update S and A * correspondingly. The variable S is strictly positive if in the current graph configuration (G \ A * ), PPR(u, rec) &gt; PPR(u, rec * ). This constitutes the main building block of our approach. Fig. <ref type="figure" target="#fig_3">2</ref> illustrates the execution of Algorithm 1 on a toy example.</p><p>The time complexity of the algorithm is O(|I | × |A| ×log |A|), plus the cost of computing PPR for these nodes. The key to avoiding the exponential cost of considering all subsets of A is the insight that we need only to compute PPR values for alternative items with personalization based on a graph where all user actions A are removed. This is feasible because the action deletions affect only outgoing edges of the teleportation target u, as elaborated in Sec. <ref type="bibr" target="#b3">4</ref>.</p><p>The PPR computation could simply re-run a power-iteration algorithm for the entire graph, or compute the principal eigenvector for the underlying matrix. This could be cubic in the graph size (e.g., if we use full-fledged SVD), but it keeps us in the regime of polynomial runtimes. In our experiments, we use the much more efficient reverse local push algorithm <ref type="bibr" target="#b1">[2]</ref> for PPR calculations.</p></div>
+<div><head n="4">CORRECTNESS PROOF</head><p>We prove two main results:</p><p>(i) PPR(u, rec |A * ) can be computed as a product of two components where one depends on the modified graph with the edge set E \ A (i.e., removing all user actions) and the other depends on the choice of A * but not on the choice of rec.</p><p>(ii) To determine if some A * replaces the top node rec with a different node rec * which is not an out-neighbor of u, we need to compute only the first of the two components in (i).</p><p>Theorem 4.1. Given a graph G = (V , E), a node u with outgoing edges A such that (u, u) A, a set of edges A * ⊂ A, a node rec N out (u), the PPR of rec personalized for u in the modified graph G * = (V , E \ A * ) can be expressed as follows:</p><formula xml:id="formula_10">PPR(u, rec |A * ) = PPR(u, u|A * )•f PPR(n i , rec |A) (u, n i ) ∈ A\A *</formula><p>where f (•) is an aggregation function.</p><p>Proof. Assuming that each node has at least one outgoing edge, the PPR can be expressed as the sum over the probabilities of walks of length l starting at a node u <ref type="bibr" target="#b2">[3]</ref>:</p><formula xml:id="formula_11">PPR(u, •) = α ∞ l =0 (1 -α) l e u W l<label>(5)</label></formula><p>where e u is the one-hot vector for u. To analyze the effect of deleting A * , we split the walks from u to rec into two parts, (i) the part representing the sum over probabilities of walks that start at u and pass again by u, which is equivalent to α -1 PPR(u, u|A * ) (division by α is required as the walk does not stop at u), and (ii) the part representing the sum over probabilities of walks starting at node u and ending at rec without revisiting u again, denoted by p -u (u, rec |A * ).</p><p>Combining these constituent parts, PPR can be stated as follows:</p><formula xml:id="formula_12">PPR(u, rec |A * ) = α -1 PPR(u, u|A * ) • p -u (u, rec |A * )<label>(6)</label></formula><p>As stated previously, p -u (u, rec |A * ) represents the sum over the probabilities of the walks from u to rec without revisiting u. We can express these walks using the remaining neighbors of u after removing A * :</p><formula xml:id="formula_13">p -u (u, rec |A * ) = (1 -α) (u,n i )∈A\A * W (u, n i ) • p -u (n i , rec |A * ) (7)</formula><p>where p -u (n i , rec |A * ) refers to the walks starting at n i (n i u) and ending at rec that do not visit u. We replace p -u (n i , rec |A * ) with its equivalent formulation PPR(n i , rec |A). PPR(n i , rec) in graph G \ A is computed as the sum over the probabilities of walks that never pass by u. Eq. 6 can be rewritten as follows:</p><formula xml:id="formula_14">PPR(u, rec |A * ) = PPR(u, u|A * ) • α -1 (1 -α) (u,n i )∈A\A * W (u, n i |A * )PPR(n i , rec |A) (8)</formula><p>This equation directly implies:</p><formula xml:id="formula_15">PPR(u, rec |A * ) = PPR(u, u|A * )•f PPR(n i , rec |A) (u, n i ) ∈ A\A * (9) □ Theorem 4.2.</formula><p>The minimum counterfactual explanation for (u, rec) can be computed in polynomial time.</p><p>Proof. We show that there exists a polynomial-time algorithm for finding the minimum set A * ⊂ A such that PPR(u, rec |A * ) &lt; PPR(u, rec * |A * ), if such a set exists. Using Theorem 4.1, we show that one can compute if some rec * can replace the original rec as the top recommendation, solely based on PPR scores from a single graph where all user actions A are removed:</p><formula xml:id="formula_16">PPR(u, rec |A * ) &lt; PPR(u, rec * |A * ) ⇔ (u,n i )∈A\A * W (u, n i |A * ) PPR(n i , rec |A) -PPR(n i , rec * |A) &lt; 0 ⇔ (u,n i )∈A\A * W (u, n i ) PPR(n i , rec |A) -PPR(n i , rec * |A) &lt; 0 (10)</formula><p>The last equivalence is derived from:</p><formula xml:id="formula_17">W (u, n i |A * ) = W (u, n i ) 1 -(u,n j )∈A * W (u, n j )<label>(11)</label></formula><p>For a fixed choice of rec * , the summands in expression 10 do not depend on A * , and so they are constants for all possible choices of A * . Therefore, by sorting the summands in descending order, we can greedily expand A * from a single action to many actions until some rec * outranks rec. This approach is then guaranteed to arrive at a minimum subset. □</p></div>
+<div><head n="5">GRAPH EXPERIMENTS</head><p>We now describe experiments performed with graph-based recommenders built from real datasets to evaluate Prince.</p></div>
+<div><head n="5.1">Setup</head><p>Datasets. We used two real datasets: (i) The Amazon Customer Review dataset (released by Amazon: s3.amazonaws.com/amazon-reviews-pds/readme.html), and, (ii) The <software ContextAttributes="used">Goodreads</software> review dataset (crawled by the authors of <ref type="bibr" target="#b44">[45]</ref> Table <ref type="table">1</ref>: Properties of the Amazon and <software ContextAttributes="used">Goodreads</software> samples.</p><p>Each record in both datasets consists of a user, an item, its categories, a review, and a rating value (on a 1 -5 scale). In addition, a <software>Goodreads</software> data record has the book author(s) and the book description. We augmented the <software ContextAttributes="used">Goodreads</software> collection with social links (users following users) that we crawled from the <software ContextAttributes="used">Goodreads</software> website.</p><p>The high diversity of categories in the Amazon data, ranging from household equipment to food and toys, allows scope to examine the interplay of cross-category information within explanations.</p><p>The key reason for additionally choosing <software>Goodreads</software> is to include the effect of social connections (absent in the Amazon data). The datasets were converted to graphs with "users", "items", "categories", and "reviews" as nodes, and "rated" (user-item), "reviewed" (useritem), "has-review" (item-review), "belongs-to" (item-category) and "follows" (user-user) as edges. In <software ContextAttributes="used">Goodreads</software>, there is an additional node type "author" and an edge type "has-author" (item-author). All the edges, except the ones with type "follows", are bidirectional. Only ratings with value higher than three were considered, as lowrated items should not influence further recommendations.</p><p>Sampling. For our experiments, we sampled 500 seed users who had between 10 and 100 actions, from both Amazon and <software ContextAttributes="used">Goodreads</software> datasets. The filters served to prune out under-active and power users (potentially bots). Activity graphs were constructed for the sampled users by taking their four-hop neighborhood from the sampled data (Table <ref type="table">1</ref>). Four is a reasonably small radius to keep the items relevant and personalized to the seed users. On average, this resulted in having about 29k items and 16k items for each user in their HIN, for Amazon and <software ContextAttributes="used">Goodreads</software>, respectively.</p><p>The graphs were augmented with weighted edges for node similarity. For Amazon, we added review-review edges where weights were computed using the cosine similarity of the review embeddings, generated with Google's Universal Sentence Encoder <ref type="bibr" target="#b6">[7]</ref>, with a cut-off threshold τ = 0.85 to retain only confident pairs. This resulted in 194 review-review edges. For <software ContextAttributes="used">Goodreads</software>, we added three types of similarity edges: category-category, book-book and reviewreview, with the same similarity measure (24 category-category, 113 book-book, and 1003 review-review edges). Corresponding thresholds were 0.67, 0.85 and 0.95. We crawled category descriptions from the <software ContextAttributes="used">Goodreads</software>' website and used book descriptions and review texts from the raw data. Table <ref type="table">1</ref> gives some statistics about the sampled datasets.</p><p>Initialization. The replacement item for rec is always chosen from the original top-k recommendations generated by the system; we systematically investigate the effect of k on the size of explanations in our experiments (with a default k = 5). Prince does not need to be restricted to an explicitly specified candidate set, and can actually operate over the full space of items I . In practice, however, replacement items need to be guided by some measure of relevance to the user, or item-item similarity, so as not to produce degenerate or trivial explanations if rec is replaced by some arbitrary item from a pool of thousands.</p><p>We use the standard teleportation probability α = 0.15 <ref type="bibr">[? ]</ref>. The parameter β is set to 0.5. To compute PPR scores, we used the Table <ref type="table">3</ref>: Average runtime of Prince, when the scores are precomputed (<software ContextAttributes="used">Pre-comp</software>) and when the scores are dynamically computed using the reverse push algorithm <ref type="bibr" target="#b54">[55]</ref> (Dynamic).</p><p>reverse local push method <ref type="bibr" target="#b54">[55]</ref> with ϵ = 1.7e -08 for Amazon and ϵ = 2.7e -08 for <software ContextAttributes="used">Goodreads</software>. With these settings, Prince and the baselines were executed on all 500 user-specific HINs to compute an alternative recommendation (i.e., replacement item) rec* and a counterfactual explanation set A*.</p><p>Baselines. Since Prince is an optimal algorithm with correctness guarantees, it always finds minimal sets of actions that replace rec (if they exist). We wanted to investigate, to what extent other, more heuristic, methods approximate the same effects. To this end, we compared Prince against two natural baselines: (i) Highest Contributions (HC): This is analogous to counterfactual evidence in feature-based classifiers for structured data <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b33">34]</ref>.</p><p>It defines the contribution score of a user action (u, n i ) to the recommendation score PPR(u, rec) as PPR(n i , rec) (Eq. 4), and iteratively deletes edges with highest contributions until the highest-ranked rec changes to a different item.</p><p>(ii) Shortest Paths (SP): SP computes the shortest path from u to rec and deletes the first edge (u, n i ) on this path. This step is repeated on the modified graph, until the top-ranked rec changes to a different item.</p><p>Evaluation Metric. The metric for assessing the quality of an explanation is its size, that is, the number of actions in A * for Prince, and the number of edges deleted in HC and SP.</p><p>Method Explanation for "Baby stroller" with category "Baby" [Amazon] Prince Action 1: You rated highly "Badger Basket Storage Cubby" with category "Baby" Replacement Item: "Google Chromecast HDMI Streaming Media Player" with categories "Home Entertainment" HC Action 1: You rated highly "Men's hair paste" with category "Beauty" Action 2: You reviewed "Men's hair paste" with category "Beauty" with text "Good product. Great price. " Action 3: You rated highly "Badger Basket Storage Cubby" with category "Baby" Action 4: You rated highly "Straw bottle" with category "Baby" Action 5: You rated highly "3 Sprouts Storage Caddy" with category "Baby" Replacement Item: "Bathtub Waste And Overflow Plate" with categories "Home Improvement" SP Action 1: You rated highly "Men's hair paste" with category "Beauty" Action 2: You rated highly "Badger Basket Storage Cubby" with category "Baby" Action 3: You rated highly "Straw bottle" with category "Baby" Action 4: You rated highly "3 Sprouts Storage Caddy" with category "Baby" Replacement Item: "Google Chromecast HDMI Streaming Media Player" with categories "Home Entertainment"</p><p>Method Explanation for "The Multiversity" with categories "Comics, Historical-fiction, Biography, Mystery" [<software ContextAttributes="used">Goodreads</software>] Prince Action 1: You rated highly "Blackest Night" with categories "Comics, Fantasy, Mystery, Thriller" Action 2: You rated highly "Green Lantern" with categories "Comics, Fantasy, Children" Replacement item: "True Patriot: Heroes of the Great White North" with categories "Comics, Fiction" HC Action 1: You follow User ID x Action 2: You rated highly "Blackest Night" with categories "Comics, Fantasy, Mystery, Thriller" Action 3: You rated highly "Green Lantern" with categories "Comics, Fantasy, Children" Replacement item: "The Lovecraft Anthology: Volume 2" with categories "Comics, Crime, Fiction" SP Action 1: You follow User ID x Action 2: You rated highly "Fahrenheit 451" with categories "Fantasy, Young-adult, Fiction" Action 3: You rated highly "Darkly Dreaming Dexter (Dexter, #1)" with categories "Mystery, Crime, Fantasy" And 6 more actions Replacement item: "The Lovecraft Anthology: Volume 2" with categories "Comics, Crime, Fiction" Table <ref type="table">4</ref>: Anecdotal examples of explanations by Prince and the counterfactual baselines.</p></div>
+<div><head n="5.2">Results and Insights</head><p>We present our main results in Table <ref type="table" target="#tab_1">2</ref> and discuss insights below. These comparisons were performed for different values of the parameter k. Wherever applicable, statistical significance was tested under the 1-tailed paired t-test at p &lt; 0.05. Anecdotal examples of explanations by Prince and the baselines are given in Table <ref type="table">4</ref>. In the Amazon example, we observe that our method produces a topically coherent explanation, with both the recommendation and the explanation items in the same category. The SP and HC methods give larger explanations, but with poorer quality, as the first action in both methods seems unrelated to the recommendation. In the <software ContextAttributes="used">Goodreads</software> example, both HC and SP yield the same replacement item, which is different from that of Prince. Approximating Prince is difficult. Explanations generated by Prince are more concise and hence more user-comprehensible than those by the baselines. This advantage is quite pronounced; for example, in Amazon, all the baselines yield at least one more action in the explanation set on average. Note that this translates into unnecessary effort for users who want to act upon the explanations.</p><p>Explanations shrink with increasing k. The size of explanations shrinks as the top-k candidate set for choosing the replacement item is expanded. For example, the explanation size for Prince on Amazon drops from 5.09 at k = 3 to 1.80 at k = 20. This is due to the fact that with a growing candidate set, it becomes easier to find an item that can outrank rec.</p><p>Prince is efficient. To generate a counterfactual explanation, Prince only relies on the scores in the graph configuration G \ A (where all the outgoing edges of u are deleted). Pre-computing PPR(n i , rec |A) (for all n i ∈ N out (u)), Prince could find the explanation for each (user , rec) pair in about 1 millisecond on average (for k ≤ 20). Table <ref type="table">3</ref> shows runtimes of Prince for different parameters. As we can see, the runtime grows linearly with k in both datasets. This is justified by Line 3 in Algorithm 1. Computing PPR(n i , rec |A) on-the-fly slows down the algorithm. The second and the fourth columns in Table <ref type="table">3</ref> present the runtimes of Prince when the scores PPR(n i , rec |A) are computed using the reverse push algorithm for dynamic graphs <ref type="bibr" target="#b54">[55]</ref>. Increasing β makes the computation slower (experimented at k = 5). All experiments were performed on an Intel Xeon server with 8 cores @ 3.2 GHz CPU and 512 GB main memory.</p></div>
+<div><head n="6">USER STUDY</head><p>Qualitative survey on usefulness. To evaluate the usefulness of counterfactual (action-oriented) explanations, we conducted a survey with Amazon Mechanical Turk (AMT) Master workers (www. mturk.com/help#what_are_masters). In this survey, we showed 500 workers three recommendation items ("Series Camelot", "Pregnancy guide book", "Nike backpack") and two different explanations for each. One explanation was limited to only the user's own actions (action-oriented), and the other was a path connecting the user to the item (connection-oriented).</p><p>We asked the workers three questions: (i) Which method do you find more useful?, where 70% chose the action-oriented method; (ii) How do you feel about being exposed through explanations to others?, where ≃ 75% expressed a privacy concern either through complete disapproval or through a demand for anonymization; (iii) Personally, which type of explanation matters to you more: "Action-oriented" or "connection-oriented"?, where 61.2% of the workers chose the actionoriented explanations. We described action-oriented explanations as those allowing users to control their recommendation, while connection-oriented ones reveal connections between the user and item via other users and items.</p></div>
+<div><head>Method</head><p>Quantitative measurement of usefulness. In a separate study (conducted only on Amazon data for resource constraints), we compared Prince to a path-based explanation <ref type="bibr" target="#b50">[51]</ref> (later referred to as CredPaths). We used the credibility measure from <ref type="bibr" target="#b50">[51]</ref>, scoring paths in descending order of the product of their edge weights. We computed the best path for all 500 user-item pairs (Sec. 5.1). This resulted in paths of a maximum length of three edges (four nodes including user and rec). For a fair comparison in terms of cognitive load, we eliminated all data points where Prince computed larger counterfactual sets. This resulted in about 200 user-item pairs, from where we sampled exactly 200. As explanations generated by Prince and CredPaths have a different format of presentation (a list of actions vs. a path), we evaluated each method separately to avoid presentation bias. For the sake of readability, we broke the paths into edges and showed each edge on a new line. Having three AMT Masters for each task, we collected 600(200 × 3) annotations for Prince and the same number for CredPaths.</p><p>A typical data point looks like a row in Table <ref type="table">6</ref>, that shows representative examples (<software ContextAttributes="used">Goodreads</software> shown only for completeness). We divided the samples into ten HITs (Human Intelligence Tasks, a unit of job on AMT) with 20 data points in each HIT. For each data point, we showed a recommendation item and its explanation, and asked users about the usefulness of the explanation on a scale of 1 -3 ("Not useful at all", "Partially useful", and "Completely useful"). For this, workers had to imagine that they were a user of an e-commerce platform who received the recommendations as result of doing some actions on the platform. Only AMT Master workers were allowed to provide assessments.</p><p>To detect spammers, we planted one honeypot in each of the 10 HITs, that was a completely impertinent explanation. Subsequently, all annotations of detected spammers (workers who rated such irrelevant explanations as "completely useful") were removed ( 25% of all annotations).</p><p>Table <ref type="table" target="#tab_2">5</ref> shows the results of our user study. It gives average scores and standard deviations, and it indicates statistical significance of pairwise comparisons with an asterisk. Prince clearly obtains higher usefulness ratings from the AMT judges, on average. Krippendorff's alpha [? ] for Prince and CredPaths were found to Method Explanation for "Baby stroller" with category "Baby" [Amazon] Prince Action 1: You rated highly "Badger Basket Storage Cubby" with category "Baby" Replacement Item: "Google Chromecast HDMI Streaming Media Player" with category "Home Entertainment" CredPaths You rated highly "Men's hair paste" with category "Beauty" that was rated by "Some user" who also rated highly "Baby stroller" with category "Baby" Method Explanation for "The Multiversity" with categories "Comics, Historical-fiction, Biography, Mystery"</p><p>[<software>Goodreads</software>] Prince Action 1: You rated highly "Blackest Night" with categories "Comics, Fantasy, Mystery, Thriller" Action 2: You rated highly "Green Lantern" with categories "Comics, Fantasy, Children" Replacement Item: "True Patriot: Heroes of the Great White North" with categories "Comics, Fiction, Crime, Fiction" CredPaths You follow "Some user" who has rated highly "The Multiversity" with categories "Comics, Historical-fiction, Biography, Mystery"</p><p>Table <ref type="table">6</ref>: Explanations from Prince vis-à-vis CredPaths <ref type="bibr" target="#b50">[51]</ref>.</p></div>
+<div><head>Based on multiple actions explained simply and clearly. [Prince]</head><p>The recommendation is for a home plumbing item, but the action rated a glue.</p><p>[Prince]</p><p>The explanation is complete as it goes into full details of how to use the product, which is in alignment of my review and useful to me.</p><p>[CredPaths]</p><p>It's weird to be given recommendations based on other people.</p><p>[CredPaths]</p><p>Table <ref type="table">7</ref>: Turkers' comments on their score justifications.</p><p>be ≃ 0.5 and ≃ 0.3 respectively, showing moderate to fair interannotator agreement. The superiority of Prince also holds for slices of samples where Prince generated explanations of size 1, 2 and 3. We also asked Turkers to provide succinct justifications for their scores on each data point. Table <ref type="table">7</ref> shows some typical comments, where methods for generating explanations are in brackets.</p></div>
+<div><head n="7">RELATED WORK</head><p>Foundational work on explainability for collaborative-filteringbased recommenders was done by Herlocker et al. <ref type="bibr" target="#b19">[20]</ref>. Over time, generating explanations (like <ref type="bibr" target="#b50">[51]</ref>) has become tightly coupled with building systems that are geared for producing more transparent recommendations (like <ref type="bibr" target="#b5">[6]</ref>). For broad surveys, see <ref type="bibr" target="#b43">[44,</ref><ref type="bibr" target="#b56">57]</ref>. With methods using matrix or tensor factorization <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b46">47,</ref><ref type="bibr" target="#b57">58]</ref>, the goal has been to make latent factors more tangible. Recently, interpretable neural models have become popular, especially for text <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b11">12,</ref><ref type="bibr" target="#b39">40]</ref> and images <ref type="bibr" target="#b9">[10]</ref>, where the attention mechanism over words, reviews, items, or zones in images has been vital for interpretability. Efforts have also been made on generating readable explanations using models like LSTMs <ref type="bibr" target="#b27">[28]</ref> or GANs <ref type="bibr" target="#b28">[29]</ref>.</p><p>Representing users, items, categories and reviews as a knowledge graph or a heterogeneous information network (HIN) has become popular, where explanations take the form of paths between the user and an item. This paradigm comprises a variety of mechanisms: learning path embeddings <ref type="bibr" target="#b0">[1,</ref><ref type="bibr" target="#b46">47]</ref>, propagating user preferences <ref type="bibr" target="#b45">[46]</ref>, learning and reasoning with explainable rules <ref type="bibr" target="#b29">[30,</ref><ref type="bibr" target="#b49">50]</ref>, and ranking user-item connections <ref type="bibr" target="#b17">[18,</ref><ref type="bibr" target="#b50">51]</ref>. In this work, we choose the recent approach in <ref type="bibr" target="#b50">[51]</ref> as a representative for the family of pathbased recommenders to compare Prince with. Finally, post-hoc or model-agnostic rationalizations for black-box models have attracted interest. Approaches include association rule mining <ref type="bibr" target="#b36">[37]</ref>, supervised ranking of user-item relationships <ref type="bibr" target="#b17">[18]</ref>, and reinforcement learning <ref type="bibr" target="#b47">[48]</ref>.</p><p>Random walks over HIN's have been pursued by a suite of works, including <ref type="bibr" target="#b12">[13,</ref><ref type="bibr" target="#b13">14,</ref><ref type="bibr" target="#b15">16,</ref><ref type="bibr" target="#b16">17,</ref><ref type="bibr" target="#b22">23]</ref>. In a nutshell, the Personalized PageRank (PPR) of an item node in the HIN is used as a ranking criterion for recommendations. <ref type="bibr" target="#b34">[35]</ref> introduced the <software ContextAttributes="used">RecWalk</software> method, proposing a random walk with a nearly uncoupled Markov chain. Our work uses this framework. As far as we know, we are the first to study the problem of computing minimum subsets of edge removals (user actions) to change the top-ranked node in a counterfactual setup. Prior research on dynamic graphs, such as <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b23">24]</ref>, has addressed related issues, but not this very problem. A separate line of research focuses on the efficient computation of PPR. Approximate algorithms include power iteration <ref type="bibr" target="#b35">[36]</ref>, local push <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b2">3,</ref><ref type="bibr" target="#b54">55]</ref> and Monte Carlo methods <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b4">5]</ref>.</p></div>
+<div><head n="8">CONCLUSIONS AND FUTURE WORK</head><p>This work explored a new paradigm of action-based explanations in graph recommenders, with the goal of identifying minimum sets of user actions with the counterfactual property that their absence would change the top-ranked recommendation to a different item. In contrast to prior works on (largely path-based) recommender explanations, this approach offers two advantages: (i) explanations are concise, scrutable, and actionable, as they are minimal sets derived using a counterfactual setup over a user's own purchases, ratings and reviews; and (ii) explanations do not expose any information about other users, thus avoiding privacy breaches by design.</p><p>The proposed Prince method implements these principles using random walks for Personalized PageRank scores as a recommender model. We presented an efficient computation and correctness proof for computing counterfactual explanations, despite the potentially exponential search space of user-action subsets. Extensive experiments on large real-life data from Amazon and <software>Goodreads</software> showed that simpler heuristics fail to find the best explanations, whereas Prince can guarantee optimality. Studies with AMT Masters showed the superiority of Prince over baselines in terms of explanation usefulness.</p></div><figure xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: Prince generates explanations as a minimal set of actions using counterfactual evidence on user-specific HINs.</figDesc><graphic coords="2,317.96,222.42,240.24,199.83" type="bitmap" /></figure>
+<figure xml:id="fig_1"><head>24 end 25 while</head><label>2425</label><figDesc>sum &gt; 0 and |H | &gt; 0 do 26</figDesc></figure>
+<figure xml:id="fig_2"><head /><label /><figDesc>(a) P P R(n 1 , n 4 ) = 0.160</figDesc></figure>
+<figure xml:id="fig_3"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Toy Example. (a) A weighted and directed graph where the PPR scores are personalized for node n 1 . Node n 4 has higher PPR than n 5 . (b) Scores in a graph configuration where outgoing edges (n 1 , n 2 ), and (n 1 , n 3 ) are removed (marked in red). (c) Removing (n 1 , n 2 ) causes n 5 to outrank n 4 . n i u. The score PPR(u, u|A * ) does not depend on rec, and the score PPR(n i , rec |A) is independent of A * .Based on these considerations, we present Algorithm 1, proving its correctness in Sec. 4. Algorithm 1 takes as input a graph G, a user u, a recommendation rec, and a set of items I . In lines 3-13, we iterate through the items I , and find the minimum counterfactual explanation A * . Here, A i refers to the actions whose removal swaps the orders of items rec and i. In addition, we ensure that after removing A * , we return the item with the highest PPR score as the replacement item (lines 9-11). Note that in the next section, we propose an equivalent formulation for the condition PPR(u, i |A i ) &gt; PPR(u, rec * |A i ), eliminating the need for recomputing scores in G \ A * .The core of our algorithm is the function SwapOrder, which receives as input two items, rec and rec * , and a user u. In lines 20-24, we sort the interaction edges (u, n i ) ∈ A in non-increasing order of their contributions W (u, n i ) • (PPR(n i , rec |A) -PPR(n i , rec * |A)). In lines 25-29, we remove at each step, the outgoing interaction edge with the highest contribution, and update S and A * correspondingly. The variable S is strictly positive if in the current graph configuration (G \ A * ), PPR(u, rec) &gt; PPR(u, rec * ). This constitutes the main building block of our approach. Fig.2illustrates the execution of Algorithm 1 on a toy example.The time complexity of the algorithm is O(|I | × |A| ×log |A|), plus the cost of computing PPR for these nodes. The key to avoiding the exponential cost of considering all subsets of A is the insight that we need only to compute PPR values for alternative items with personalization based on a graph where all user actions A are removed. This is feasible because the action deletions affect only outgoing edges of the teleportation target u, as elaborated in Sec. 4.The PPR computation could simply re-run a power-iteration algorithm for the entire graph, or compute the principal eigenvector for the underlying matrix. This could be cubic in the graph size (e.g., if we use full-fledged SVD), but it keeps us in the regime of polynomial runtimes. In our experiments, we use the much more efficient reverse local push algorithm<ref type="bibr" target="#b1">[2]</ref> for PPR calculations.</figDesc><graphic coords="5,60.68,90.54,137.56,94.48" type="bitmap" /></figure>
+<figure type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Average sizes of counterfactual explanations. The best value per row in a dataset is in bold. An asterisk (*) indicates statistical significance of Prince over the closest baseline, under the 1-tailed paired t-test at p &lt; 0.05.</figDesc><table><row><cell /><cell cols="2">Amazon</cell><cell /><cell cols="2">Goodreads</cell></row><row><cell cols="3">k Prince HC</cell><cell cols="3">SP Prince HC</cell><cell>SP</cell></row><row><cell>3</cell><cell>5.09*</cell><cell cols="2">6.87 7.57</cell><cell>2.05*</cell><cell>2.86 5.38</cell></row><row><cell>5</cell><cell>3.41*</cell><cell cols="2">4.62 5.01</cell><cell>1.66*</cell><cell>2.19 4.37</cell></row><row><cell>10</cell><cell>2.66*</cell><cell cols="2">3.66 4.15</cell><cell>1.43</cell><cell>1.45 3.28</cell></row><row><cell>15</cell><cell>2.13*</cell><cell cols="2">3.00 3.68</cell><cell>1.11</cell><cell>1.12 2.90</cell></row><row><cell>20</cell><cell>1.80*</cell><cell cols="2">2.39 3.28</cell><cell>1.11</cell><cell>1.12 2.90</cell></row><row><cell /><cell /><cell cols="2">Amazon</cell><cell /><cell>Goodreads</cell></row><row><cell>Parameter</cell><cell /><cell /><cell /><cell /></row><row><cell /><cell cols="5">Pre-comp Dynamic Pre-comp Dynamic</cell></row><row><cell>k = 3</cell><cell cols="2">0.3ms</cell><cell>39.1s</cell><cell /><cell>0.3ms</cell><cell>24.1s</cell></row><row><cell>k = 5</cell><cell cols="2">0.6ms</cell><cell>60.4s</cell><cell /><cell>0.4ms</cell><cell>34.7s</cell></row><row><cell>k = 10</cell><cell cols="2">1.3ms</cell><cell>121.6s</cell><cell /><cell>0.9ms</cell><cell>60.7s</cell></row><row><cell>k = 15</cell><cell cols="2">2.0ms</cell><cell>169.3s</cell><cell /><cell>1.5ms</cell><cell>91.6s</cell></row><row><cell>k = 20</cell><cell cols="2">2.6ms</cell><cell>224.4s</cell><cell /><cell>2ms</cell><cell>118.8s</cell></row><row><cell>β = 0.01</cell><cell cols="2">0.4ms</cell><cell>1.1s</cell><cell /><cell>0.3ms</cell><cell>2.9s</cell></row><row><cell>β = 0.1</cell><cell cols="2">0.5ms</cell><cell>15.5s</cell><cell /><cell>0.3ms</cell><cell>8.9s</cell></row><row><cell>β = 0.3</cell><cell cols="2">0.5ms</cell><cell>17.0s</cell><cell /><cell>0.4ms</cell><cell>12.5s</cell></row><row><cell>β = 0.5</cell><cell cols="2">0.6ms</cell><cell>60.5s</cell><cell /><cell>0.4ms</cell><cell>34.7s</cell></row></table></figure>
+<figure type="table" xml:id="tab_2"><head>Table 5 :</head><label>5</label><figDesc>Results from the AMT measurement study on usefulness conducted on the Amazon data. An asterisk (*) indicates statistical significance of Prince over CredPaths (1tailed paired t-test at p &lt; 0.05).</figDesc><table><row><cell /><cell cols="3">Mean Std. Dev. #Samples</cell></row><row><cell>Prince</cell><cell>1.91*</cell><cell>0.66</cell><cell>200</cell></row><row><cell>CredPaths [51]</cell><cell>1.78</cell><cell>0.63</cell><cell>200</cell></row><row><cell>Prince (Size=1)</cell><cell>1.87</cell><cell>0.66</cell><cell>154</cell></row><row><cell cols="2">Prince (Size=2) 1.88*</cell><cell>0.70</cell><cell>28</cell></row><row><cell cols="2">Prince (Size=3) 2.21*</cell><cell>0.52</cell><cell>18</cell></row></table></figure>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>ACKNOWLEDGEMENTS</head><p>This work was partly supported by the <rs type="funder">ERC</rs> <rs type="grantName">Synergy Grant</rs> <rs type="grantNumber">610150</rs> (imPACT) and the <rs type="funder">DFG Collaborative Research Center</rs> 1223. We would like to thank <rs type="person">Simon Razniewski</rs> from the <rs type="affiliation">MPI for Informatics</rs> for his insightful comments on the manuscript.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_xE9kAtk">
+					<idno type="grant-number">610150</idno>
+					<orgName type="grant-name">Synergy Grant</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Learning heterogeneous knowledge base embeddings for explainable recommendation</title>
+		<author>
+			<persName><forename type="first">Qingyao</forename><surname>Ai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vahid</forename><surname>Azizi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Algorithms</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page">9</biblScope>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Local computation of PageRank contributions</title>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Andersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Borgs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Chayes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Hopcraft</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Vahab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shang-Hua</forename><surname>Mirrokni</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Teng</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WAW</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Local graph partitioning using Pagerank vectors</title>
+		<author>
+			<persName><forename type="first">Reid</forename><surname>Andersen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Chung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kevin</forename><surname>Lang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">FOCS</title>
+		<imprint>
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Monte Carlo methods in PageRank computation: When one iteration is sufficient</title>
+		<author>
+			<persName><forename type="first">Konstantin</forename><surname>Avrachenkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nelly</forename><surname>Litvak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Danil</forename><surname>Nemirovsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Natalia</forename><surname>Osipova</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIAM J. Numer. Anal</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="page">2</biblScope>
+			<date type="published" when="2007">2007. 2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Fast incremental and personalized PageRank</title>
+		<author>
+			<persName><forename type="first">Bahman</forename><surname>Bahmani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abdur</forename><surname>Chowdhury</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Goel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Transparent, Scrutable and Explainable User Models for Personalized Recommendation</title>
+		<author>
+			<persName><forename type="first">Krisztian</forename><surname>Balog</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Filip</forename><surname>Radlinski</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shushan</forename><surname>Arakelyan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Universal Sentence Encoder for English</title>
+		<author>
+			<persName><forename type="first">Daniel</forename><surname>Cer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinfei</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sheng-Yi</forename><surname>Kong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Hua</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nicole</forename><surname>Limtiaco</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rhomni</forename><surname>St</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Noah</forename><surname>John</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mario</forename><surname>Constant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Steve</forename><surname>Guajardo-Cespedes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brian</forename><surname>Tar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ray</forename><surname>Strope</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Kurzweil</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">EMNLP</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Neural attentional rating regression with review-level explanations</title>
+		<author>
+			<persName><forename type="first">Chong</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoping</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">WWW</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Enhancing transparency and control when drawing data-driven inferences about individuals</title>
+		<author>
+			<persName><forename type="first">Daizhuo</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Samuel</forename><forename type="middle">P</forename><surname>Fraiberger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Moakler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Foster</forename><surname>Provost</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Big data</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="page">3</biblScope>
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Personalized Fashion Recommendation with Visual Explanations based on Multimodal Attention Network: Towards Visually Explainable Recommendation</title>
+		<author>
+			<persName><forename type="first">Hanxiong</forename><surname>Xu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongteng</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Learning to Rank Features for Recommendation over Multiple Categories</title>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Xu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Sequential recommendation with user memory networks</title>
+		<author>
+			<persName><forename type="first">Hongteng</forename><surname>Xu Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiaxi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Tang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zheng</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongyuan</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Zha</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WSDM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<title level="m" type="main">Blockbusters and Wallflowers: Accurate, Diverse, and Scalable Recommendations with Random Walks</title>
+		<author>
+			<persName><forename type="first">Fabian</forename><surname>Christoffel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bibek</forename><surname>Paudel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Newell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Abraham</forename><surname>Bernstein</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note>In RecSys</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Random walks in recommender systems: Exact computation and simulations</title>
+		<author>
+			<persName><forename type="first">Colin</forename><surname>Cooper</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sang-Hyuk</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tomasz</forename><surname>Radzik</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiannis</forename><surname>Siantos</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">PageRank optimization by edge selection</title>
+		<author>
+			<persName><forename type="first">Csanád</forename><surname>Balázs</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Raphaël</forename><forename type="middle">M</forename><surname>Csáji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Vincent</forename><surname>Jungers</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Blondel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Discrete Applied Mathematics</title>
+		<imprint>
+			<biblScope unit="page">169</biblScope>
+			<date type="published" when="2014">2014. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">A Comprehensive Survey of Neighborhood-based Recommendation Methods</title>
+		<author>
+			<persName><forename type="first">Christian</forename><surname>Desrosiers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Karypis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Recommender Systems Handbook</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Pixie: A System for Recommending 3+ Billion Items to 200+ Million Users in Real-Time</title>
+		<author>
+			<persName><forename type="first">Chantat</forename><surname>Eksombatchai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pranav</forename><surname>Jindal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jerry</forename><forename type="middle">Zitao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yuchen</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rahul</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Sugnet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Mark</forename><surname>Ulrich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">WWW</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<monogr>
+		<title level="m" type="main">FAIRY: A Framework for Understanding Relationships between Users' Actions and their Social Feeds</title>
+		<author>
+			<persName><forename type="first">Azin</forename><surname>Ghazimatin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rishiraj</forename><surname>Saha Roy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerhard</forename><surname>Weikum</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>WSDM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Topic-sensitive Pagerank: A context-sensitive ranking algorithm for Web search</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Taher</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Haveliwala</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TKDE</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page">4</biblScope>
+			<date type="published" when="2003">2003. 2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Explaining Collaborative Filtering Recommendations</title>
+		<author>
+			<persName><forename type="first">Jonathan</forename><forename type="middle">L</forename><surname>Herlocker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Joseph</forename><forename type="middle">A</forename><surname>Konstan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><surname>Riedl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CSCW</title>
+		<imprint>
+			<date type="published" when="2000">2000</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">TrustWalker: A random walk model for combining trust-based and item-based recommendation</title>
+		<author>
+			<persName><forename type="first">Mohsen</forename><surname>Jamali</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Martin</forename><surname>Ester</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Scaling personalized Web search</title>
+		<author>
+			<persName><forename type="first">Glen</forename><surname>Jeh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jennifer</forename><surname>Widom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">WWW</title>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Recommendation in heterogeneous information networks based on generalized random walk model and Bayesian personalized ranking</title>
+		<author>
+			<persName><forename type="first">Zhengshen</forename><surname>Jiang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongzhi</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhonghai</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tao</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WSDM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">AURORA: Auditing PageRank on Large Graphs</title>
+		<author>
+			<persName><forename type="first">Jian</forename><surname>Kang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Meijia</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yinglong</forename><surname>Xia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hanghang</forename><surname>Tong</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Big Data</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Matrix factorization techniques for recommender systems</title>
+		<author>
+			<persName><forename type="first">Yehuda</forename><surname>Koren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Robert</forename><surname>Bell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chris</forename><surname>Volinsky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computer</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<date type="published" when="2009">2009. 2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Personalized explanations for hybrid recommender systems</title>
+		<author>
+			<persName><forename type="first">Pigi</forename><surname>Kouki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">James</forename><surname>Schaffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jay</forename><surname>Pujara</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">John</forename><forename type="middle">O</forename><surname>'donovan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lise</forename><surname>Getoor</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IUI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Let Me Explain: Impact of Personal and Impersonal Explanations on Trust in Recommender Systems</title>
+		<author>
+			<persName><forename type="first">Johannes</forename><surname>Kunkel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Donkers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lisa</forename><surname>Michael</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Catalin-Mihai</forename><surname>Barbu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jürgen</forename><surname>Ziegler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CHI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Neural rating regression with abstractive tips generation for recommendation</title>
+		<author>
+			<persName><forename type="first">Piji</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zihao</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhaochun</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lidong</forename><surname>Bing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wai</forename><surname>Lam</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Why I like it: Multi-task learning for recommendation and explanation</title>
+		<author>
+			<persName><forename type="first">Yichao</forename><surname>Lu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ruihai</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barry</forename><surname>Smyth</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RecSys</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Jointly Learning Explainable Rules for Recommendation with Knowledge Graph</title>
+		<author>
+			<persName><forename type="first">Weizhi</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Woojeong</forename><surname>Jin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chenyang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoping</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WWW</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">Personalized social recommendations: Accurate or private?</title>
+		<author>
+			<persName><forename type="first">Ashwin</forename><surname>Machanavajjhala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Aleksandra</forename><surname>Korolova</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Atish</forename><forename type="middle">Das</forename><surname>Sarma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Explaining Data-Driven Document Classifications</title>
+		<author>
+			<persName><forename type="first">David</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Foster</forename><surname>Provost</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">MIS Quarterly</title>
+		<imprint>
+			<biblScope unit="volume">38</biblScope>
+			<biblScope unit="page">1</biblScope>
+			<date type="published" when="2014">2014. 2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">Tim</forename><surname>Miller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rosina</forename><surname>Weber</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Aha</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daniele</forename><surname>Magazzeni</surname></persName>
+		</author>
+		<title level="m">IJCAI 2019 Workshop on Explainable AI (XAI)</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<title level="m" type="main">Explaining classification models built on high-dimensional sparse data</title>
+		<author>
+			<persName><forename type="first">Julie</forename><surname>Moeyersoms</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Foster</forename><surname>Brian D'alessandro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">David</forename><surname>Provost</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Martens</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1607.06280</idno>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Recwalk: Nearly uncoupled random walks for top-n recommendation</title>
+		<author>
+			<persName><forename type="first">Athanasios</forename><forename type="middle">N</forename><surname>Nikolakopoulos</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">George</forename><surname>Karypis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">WSDM</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<monogr>
+		<title level="m" type="main">The PageRank citation ranking: Bringing order to the Web</title>
+		<author>
+			<persName><forename type="first">Lawrence</forename><surname>Page</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sergey</forename><surname>Brin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rajeev</forename><surname>Motwani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Terry</forename><surname>Winograd</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+		<respStmt>
+			<orgName>Stanford InfoLab</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Technical Report</note>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Explanation mining: Post hoc interpretability of latent factor models for recommendation systems</title>
+		<author>
+			<persName><forename type="first">Georgina</forename><surname>Peake</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jun</forename><surname>Wang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Why should I trust you?: Explaining the predictions of any classifier</title>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Tulio Ribeiro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sameer</forename><surname>Singh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Carlos</forename><surname>Guestrin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">KDD Workshop on Explainable AI for Fairness, Accountability, and Transparency</title>
+		<author>
+			<persName><forename type="first">Joy</forename><surname>Rimchala</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jineet</forename><surname>Doshi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Diane</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nick</forename><surname>Hoh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Conrad</forename><forename type="middle">De</forename><surname>Peuter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shir</forename><forename type="middle">Meir</forename><surname>Lador</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sambarta</forename><surname>Dasgupta</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Interpretable convolutional neural networks with dual local and global attention for review rating prediction</title>
+		<author>
+			<persName><forename type="first">Sungyong</forename><surname>Seo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jing</forename><surname>Huang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hao</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yan</forename><surname>Liu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RecSys</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">A survey of heterogeneous information network analysis</title>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TKDE</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page">1</biblScope>
+			<date type="published" when="2016">2016. 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">A Survey of Heterogeneous Information Network Analysis</title>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yitong</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">TKDE</title>
+		<imprint>
+			<biblScope unit="volume">29</biblScope>
+			<biblScope unit="page">1</biblScope>
+			<date type="published" when="2017">2017. 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">Semantic path based personalized recommendation on weighted heterogeneous information networks</title>
+		<author>
+			<persName><forename type="first">Chuan</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhiqiang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ping</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Philip</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yading</forename><surname>Yue</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bin</forename><surname>Wu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">A survey of explanations in recommender systems</title>
+		<author>
+			<persName><forename type="first">Nava</forename><surname>Tintarev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Judith</forename><surname>Masthoff</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Workshop on Ambient Intelligence, Media and Sensing</title>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Item recommendation on monotonic behavior chains</title>
+		<author>
+			<persName><forename type="first">Mengting</forename><surname>Wan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Julian</forename><surname>Mcauley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RecSys</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Ripplenet: Propagating user preferences on the knowledge graph for recommender systems</title>
+		<author>
+			<persName><forename type="first">Hongwei</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fuzheng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Miao</forename><surname>Zhao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wenjie</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Minyi</forename><surname>Guo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Explainable recommendation via multi-task learning in opinionated text data</title>
+		<author>
+			<persName><forename type="first">Nan</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Hongning</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiling</forename><surname>Jia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yue</forename><surname>Yin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">A Reinforcement Learning Framework for Explainable Recommendation</title>
+		<author>
+			<persName><forename type="first">Xiting</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiru</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jie</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Le</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zhengtao</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xing</forename><surname>Xie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Explainable reasoning over knowledge graphs for recommendation</title>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dingxian</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Canran</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiangnan</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yixin</forename><surname>Cao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tat-Seng</forename><surname>Chua</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">Reinforcement Knowledge Graph Reasoning for Explainable Recommendation</title>
+		<author>
+			<persName><forename type="first">Yikun</forename><surname>Xian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zuohui</forename><surname>Fu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Muthukrishnan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Gerard</forename><surname>De Melo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Towards Interpretation of Recommender Systems with Sorted Explanation Paths</title>
+		<author>
+			<persName><forename type="first">Fan</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ninghao</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Suhang</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xia</forename><surname>Hu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDM</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<monogr>
+		<title level="m" type="main">Personalized entity recommendation: A heterogeneous information network approach</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Sturt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<publisher>WSDM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Recommendation in heterogeneous information networks with implicit user feedback</title>
+		<author>
+			<persName><forename type="first">Xiao</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xiang</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yizhou</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bradley</forename><surname>Sturt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Urvashi</forename><surname>Khandelwal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Quanquan</forename><surname>Gu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brandon</forename><surname>Norick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jiawei</forename><surname>Han</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">RecSys</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<monogr>
+		<title level="m" type="main">SHNE: Representation Learning for Semantic-Associated Heterogeneous Networks</title>
+		<author>
+			<persName><forename type="first">Chuxu</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ananthram</forename><surname>Swami</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nitesh</forename><surname>Chawla</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>WSDM</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">Approximate personalized pagerank on dynamic graphs</title>
+		<author>
+			<persName><forename type="first">Hongyang</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Peter</forename><surname>Lofgren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ashish</forename><surname>Goel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KDD</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<monogr>
+		<author>
+			<persName><forename type="first">Quanshi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lixin</forename><surname>Fan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Bolei</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sinisa</forename><surname>Todorovic</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Tianfu</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ying</forename><forename type="middle">Nian</forename><surname>Wu</surname></persName>
+		</author>
+		<title level="m">CVPR-19 Workshop on Explainable AI</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<monogr>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Xu</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:1804.11192</idno>
+		<title level="m">Explainable recommendation: A survey and new perspectives</title>
+		<imprint>
+			<date type="published" when="2018">2018. 2018</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Explicit factor models for explainable recommendation based on phrase-level sentiment analysis</title>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Guokun</forename><surname>Lai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yiqun</forename><surname>Liu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Shaoping</forename><surname>Ma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">EARS 2019: The 2nd International Workshop on ExplainAble Recommendation and Search</title>
+		<author>
+			<persName><forename type="first">Yongfeng</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Yi</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Min</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Chirag</forename><surname>Shah</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGIR</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

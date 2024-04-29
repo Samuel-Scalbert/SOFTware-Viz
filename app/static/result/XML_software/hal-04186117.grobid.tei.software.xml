@@ -1,0 +1,362 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Dexteris: Data Exploration and Transformation with a Guided Query Builder Approach</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Sébastien</forename><surname>Ferré</surname></persName>
+							<email>ferre@irisa.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution" key="instit1">Univ Rennes</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+								<orgName type="institution" key="instit4">IRISA</orgName>
+								<address>
+									<postCode>F-35000</postCode>
+									<settlement>Rennes</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Dexteris: Data Exploration and Transformation with a Guided Query Builder Approach</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">77F1E4919447C309F3AE8402942BB097</idno>
+					<idno type="DOI">10.1007/978-3-031-39847-6_29</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:54+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Data exploration and transformation remain a challenging prerequisite to the application of data analysis methods. The desired transformations are often ad-hoc so that existing end-user tools may not suffice, and plain programming may be necessary. We propose a guided query builder approach to reconcile expressivity and usability, i.e. to support the exploration of data, and the design of ad-hoc transformations, through data-user interaction only. This approach is available online as a client-side web application, named <software>Dexteris</software>. Its strengths and weaknesses are evaluated on a representative use case, and compared to plain programming and <software ContextAttributes="used">ChatGPT</software>-assisted programming.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>In recent years, data has become ubiquitous and it is increasingly important for stakeholders to derive value from them. To achieve this objective, data analysis methods have been developed to help stakeholders gain insight into their data. However, it is almost always necessary to explore and transform data before applying data analysis methods. Data exploration is crucial to help data analysts understanding the data, and choosing the transformations to apply. Data transformation refers to the process of converting data from one format, structure, or type to another to meet the requirements of a particular use case or analysis. Examples of data transformation operations include filtering, aggregating, sorting, merging, pivoting, and applying mathematical or statistical functions to the data. In this paper, we focus on fine-grained data transformations, like converting between ad-hoc CSV and JSON files, and extracting or aggregating information from such files.</p><p>When choosing a tool for data exploration and transformation, data stakeholders are left with a trade-off between their expressive power and their usability. Expressive power is the range of questions and transformations that can be applied to the data. Usability is the degree of technical skills required to use it, as well as the level of guidance provided by the tool. At one end of the spectrum there is full-fledged programming, e.g. programming in the rich environment of Python. This obviously offers the highest expressive power but this requires advanced programming skills and offers little guidance. At the other end of the spectrum there are end-user intuitive applications with a GUI (Graphical User Interface). For instance, spreadsheets are obviously more usable, as testified by their widespread usage. However, they are limited to tabular data, and computations are mostly cell-wise. In between there are ETL tools (Extract, Transform, Load), e.g. Talend, Pentaho. They offer high-level features for common data formats and common data transformations, e.g. merging data, removing duplicate data. However, in many cases, they require to write SQL queries to extract data from relational data tables, or JSON paths to extract data from JSON files, or other kinds of code. They thus require advanced technical skills, although to a lesser degree than full-fledged programming skills.</p><p>The N&lt;A&gt;F design pattern <ref type="bibr" target="#b3">[4]</ref> has been shown to help reconciling expresivity and usability. It does so by relying on a formal language, and by bridging the gap between the end-user and the formal language with a guided query builder approach. Complex queries are incrementally and interactively built with data feedback and guidance at every building step. The design pattern has already been applied to the querying of SPARQL endpoints <ref type="bibr" target="#b4">[5]</ref>, the authoring of RDF descriptions and OWL ontologies <ref type="bibr" target="#b3">[4]</ref>, and data analytics on RDF graphs <ref type="bibr" target="#b5">[6]</ref>.</p><p>In this paper, we present the application of the N&lt;A&gt;F design pattern to the task of data exploration and transformation. We choose JSONiq <ref type="bibr" target="#b6">[7]</ref> -the JSON query language -as the target formal language because it combines several advantages. It is a high-level declarative query language and yet a Turing-complete programming language; it lies on W3C standards; and although it uses JSON as a pivot data format, it is interoperable with other data formats such as text, CSV or XML. JSONiq is to JSON data what <software ContextAttributes="used">XQuery</software> is to XML, and what SQL is to relational data. As a declarative and expressive language, it is a good fit for data exploration, data extraction, data transformation, and even data generation. The contributions of this work are:</p><p>1. a guided query builder approach to data exploration and transformation, based on the N&lt;A&gt;F design pattern, where arbitrary computations can be achieved, and only primitive inputs are required from end-users; 2. an online prototype called <software ContextAttributes="used">Dexteris</software><ref type="foot" target="#foot_1">1</ref> , running as a client-side web application.</p><p>The paper is organized as follows. Section 2 motivates our approach with a concrete example. Section 3 discusses related work, and describes the N&lt;A&gt;F design pattern. Sections 4, 5, and 6 defines the three parts of N&lt;A&gt;F for data exploration and transformation: the intermediate language, the machine side, and the user interface. Section 7 evaluates the strengths and weaknesses of our approach, comparing it with plain programming and <software ContextAttributes="used">ChatGPT</software>-assisted programming. Supplementary materials are available online<ref type="foot" target="#foot_2">2</ref> for the motivating example and evaluation use case (input and output files, Python <software ContextAttributes="used">programs</software> and JSONiq queries, chat logs, and a <software ContextAttributes="used">Dexteris</software> screencast).</p></div>
+<div><head n="2">Motivating Example</head><p>As a motivating example, let us consider a scenario where the available input file is a CSV file describing projects by their ID, name, and members.</p><p>project id,project name,members P1,Alpha,"Alice, Charlie" P2,"Beta 2","Bob, Charlie"</p><p>The objective is to obtain a JSON file organized as a list of unique project members, describing each member by the list of projects she takes part in, and the number of such projects.</p><p>[ {"member": "Alice", "projects": [{"id": "P1", "name": "Alpha"}], "project number": 1}, {"member": "Charlie", "projects": [{"id": "P1", "name": "Alpha"}, {"id": "P2", "name": "Beta 2"}], "project number": 2}, {"member": "Bob", "projects": [{"id": "P2", "name": "Beta 2"}], "project number": 1} ] Any system that works on tabular data only will have a hard time generating the expected output data because the latter has a nested structure. Indeed, it is a list of objects that have a field ("projects") whose values are again lists of objects. The transformation from the available input to the expected output requires at least the following processing steps, in informal terms:</p><p>reading the tabular data structure (CSV) in the input file; iterating over projects, i.e. over rows; splitting the lists of members, in the third column; grouping all (project, member) pairs by member; collecting all projects of each member; counting the number of projects per member; generating a JSON object for each member; collecting them and writing the whole in JSON format.</p><p>A concise Python <software ContextAttributes="used">program</software> that performs the transformation is about 30 lines. Using JSONiq, we can make the transformation shorter (12 lines) and higherlevel, in particular without assignments to mutable variables, hence without having to reason about computation states <ref type="bibr" target="#b9">[10]</ref>. It relies on a JSON view of a CSV file, where each row is represented as a JSON object with CSV columns as fields.</p><p>for $row in collection("input.csv") let $project := { "id" : $row."project id" "name" : $row."project name" } for $member in split($row."members", ", ") group by $member // $project is now a sequence of objects return { "member" : $member, "projects" : [ $project ], "project number" : count($project) }</p><p>Using the <software>Dexteris</software> tool that implements our approach, it is possible to build the above JSONiq program by starting from the input file, and then by applying suggested elementary transformations one after another. The only required inputs are elementary values: field names, new variable names, and the splitting separator. The number of required steps is 25, which includes 25 selections and 8 short inputs. Any part of a built transformation can be edited a posteriori. For instance, if one wants the JSON output to be in alphabetical order of members, only 2 additional steps are needed.</p></div>
+<div><head n="3">Related Work and Background</head><p>To cope with the difficulty to write data transformations in general-purpose programming languages, high-level data-oriented languages have been defined and even standardized. Notable examples are <software ContextAttributes="used">XQuery</software> for XML data [14], JSONiq for JSON data <ref type="bibr" target="#b6">[7]</ref> -which was strongly inspired by <software ContextAttributes="used">XQuery</software> -, and formula languages that back graphical tools, such as the M language in Power BI <ref type="bibr" target="#b1">[2]</ref>. Graphical tools like Power BI ambition to make all transformations doable in a graphical way but they recognize that "there are some transformations that can't be done in the best way by using the graphical editor." <ref type="bibr" target="#b8">[9]</ref> The latter is also limited to tabular data, although it can cope with varied formats. The closest work to ours is probably the educative platform <software ContextAttributes="used">Scratch</software> by MIT <ref type="bibr" target="#b10">[12]</ref>, which enables users to build arbitrarily complex programs in a purely graphical way, by assembling blocks with syntax-based shapes. However, its programming language is not appropriate for data transformations. Another related domain is program synthesis <ref type="bibr" target="#b7">[8]</ref>, which ambitions to generate programs solely by providing examples of input-output pairs. For instance, given strings like "Dr. Helen Smith (1999)", it can learn to output strings like "Smith H." from a few examples. It is however yet too limited in the size of the examples and in the complexity of generated programs to be largely applicable to data transformations. Moreover, some transformations are one-off and therefore producing an example implies producing the expected output. It is also sometimes simpler to specify the transformation in an intentional way rather than by providing examples.</p><p>The purpose of the N&lt;A&gt;F design pattern <ref type="bibr" target="#b3">[4]</ref> is to bridge the gap between an end user speaking a natural language (NL) and a machine understanding a formal language (FL), as summarized in Figure <ref type="figure" target="#fig_0">1</ref>. The design pattern has for instance been instantiated to the task of semantic search with SPARQL as the formal language <ref type="bibr" target="#b4">[5]</ref>. The central element of the bridge is made of the Abstract Syntax Trees (AST) of an Intermediate Language (IL), which is designed to make translations from ASTs to both NL (verbalization) and FL (formalization) as simple as possible. IL may not have any proper concrete syntax, NL and FL playing this role respectively for the user and for the machine.</p><p>N&lt;A&gt;F follows the query builder approach, where the structure that is incrementally built is precisely an AST. Unlike other query builders, the generated query (FL) and the displayed query (NL) may strongly differ in their structure thanks to the mediation of IL. The AST is initially the simplest query, and is incrementally built by applying transformations (not to be confused with the data transformations this paper is about). A transformation may insert or delete a query element at the focus. The focus is a distinguished node of the AST that the user can freely move to control which parts of the query should be modified. Results come from the evaluation of the formalized query, and are viewed by the user. Transformations are suggested by the machine based on the formalized query and actual data, and controlled by the user. Both results and transformations are verbalized in NL for display to the user. At each step, the user interface shows: (a) the verbalization of the current query with the focus highlighted, (b) the query results, and (c) the suggested transformations.</p></div>
+<div><head n="4">Intermediate Language and Transformations</head><p>Given that the target formal language (FL) JSONiq is already high-level and declarative, we also use it as the Intermediate Language (IL). As shown in the next section, this does not make the formalization step from IL to FL void, and it therefore still makes sense to distinguish between IL and FL. Indeed, a key feature of IL is the notion of focus that impacts both the results and the suggested query transformations. In particular, the position of the focus modifies the semantics of the query in order to show the internals of the computations performed by the query at the focus point.</p><p>In this section, we first define the FL/IL as a large subset of JSONiq plus a few extensions of our own. We then introduce the list of elementary query transformations such that all queries can be built through finite sequences of such transformations. </p></div>
+<div><head n="4.1">A Language based on JSONiq</head><p>Table <ref type="table" target="#tab_0">1</ref> lists the constructs of JSONiq that are used in our IL (symbol ← represents a carriage return). They are presented in concrete syntax for readability and for consistency with the standard JSONiq syntax. However, they are used under abstract syntax only for IL, and verbalized in a slightly different way to make them more intuitive to end users (see <ref type="bibr">Section 6)</ref>.</p><p>The table gives the semantics of each construct in an informal way. An original aspect of JSONiq is that values are sequences of items, where items are JSON values. For recall, JSON values are one of: strings delimited by double quotes, numbers, Boolean values (true and false), arrays delimited by square brackets, objects with named fields and delimited by curly braces, and the null value. Array members and object field values can be arbitrarily nested JSON values. Another original aspect of JSONiq expressions is the FLWOR clauses (pronounce "flower") that help working with sequences in a declarative way. They are inherited from <software ContextAttributes="used">XQuery</software> [14], and they are analogous to clauses found in SQL and SPARQL. FLWOR is an acronym for the constructs: for, let, where, order by, and return. The combination of for and where clauses can express joins like in relational databases. The combination of for, group by, and aggrega-tion functions -i.e. functions from sequences to items -can express analytical queries, similar to OLAP cubes <ref type="bibr" target="#b2">[3]</ref>.</p><p>An important ingredient of the semantics and evaluation of JSONiq expressions is the environment. It defines for each sub-expression the set of variables that are in scope. Variables are added to the environment by the FLWOR clauses let, for, and count, and are in the scope of the FLWOR clauses coming after, until the expression after return. An environment maps each variable in scope to its value, a sequence of JSON values.</p><p>Our language has a few differences with JSONiq. First, it currently misses a few constructs, left for future work, namely: anonymous functions and partial function application, switch and try-catch expressions, and type-related expressions (e.g., instance-of). Second, it adds two convenient FLWOR clauses to explode JSON objects in as many variable bindings are there are object fields:</p><p>let * := expr assumes that the expression returns an object, and is then equivalent to have a let-binding for each object field, making them directly available as local variables; for * in expr is equivalent to for $$ in expr ← let * := $$, thus combining iteration on objects, and exploding them into let-bindings.</p><p>Here is the query that defines the expected data transformation in the motivating example (Section 2), in our JSONiq-based language.</p><p><software>printJSON</software>( for * in parseCSV(file &lt;example_input.csv&gt;) let $project := { "id" : $(project id), "name" : $(project name) } for $member in split($members, ", ") group by $member return { "member" : $member, "projects" : [ $project ], "project number" : count($project) })</p><p>The expression file &lt;example_input.csv&gt; evaluates to the raw contents of the input file, a string. A query can use any number of files. Function parseCSV turns this raw string into a JSON representation of the tabular data, i.e. a sequence of JSON objects, each object representing a CSV row with column headers as object fields. The for * clause iterates over the CSV rows, and bind each column as a variable (e.g., $(project id)). After grouping by member, variable $project maps to a sequence of projects, all projects related to the current member. This can be seen as a default aggregation, from which any other aggregation can be computed. For instance, [ $project ] aggregates the sequence of projects as a JSON array, and count($project) counts the number of projects. Finally, function <software>printJSON</software> turns the JSON result, a sequence of JSON objects, into a raw string in JSON format, ready for writing into a file.</p></div>
+<div><head n="4.2">Query Focus and Query Transformations</head><p>A query focus splits a query into the sub-expression at focus, and the context of that sub-expression. For instance, in the expression split($row.members, ", "), if the focus is on the sub-expression $row.members then the context is [split(•, ", ")], where • (called hole) locates the focus position. If the focus is on $row then the context is [split(•.members, ", ")], which can be seen as the nesting of two elementary contexts: [•.members] and [split(•, ", ")].</p><p>A query transformation modifies the expression around the focus or moves the focus. The empty sequence () serves as the initial query, and also to fill in new sub-expressions introduced along with constructs. A transformation belongs to one of the following kinds, beside focus moves.</p><p>-An elementary expression that replaces the sub-expression at focus: a scalar value (e.g. "id"), a variable (e.g. $member), etc. -An elementary context that is inserted between the sub-expression at focus and its context: e.g., [•,</p><formula xml:id="formula_0">()], [(), •], [for * in •].</formula><p>The hole is located at one sub-expression, and other sub-expressions are initialized to (). -The addition of an element other than a sub-expression, for which there is no focus: e.g., adding a field to an object, adding a variable to a group by clause, adding a parameter to a defined function. -The deletion of the sub-expression at focus, i.e. its replacement by (), or the deletion of the elementary context at focus. Some transformations have editable parts, which have to be filled in by the user. This is the case for scalar values, for field names, and for the name of new variables introduced by binding constructs. The query in the above section can be built through the following sequence of transformations (25 steps separated by /, up is for moving the focus up in the AST).</p><p>file &lt;example_input.csv&gt; / parseCSV(•) / for * in • / {"id": ()} / $(project id) / "name": () / $(project name) / up / let $project := • / $members / split(•, ()) / ", " / up / for $member in • / group by $member / {"member": ()} / $member / "projects": () / $project / [ • ] / "project number": () / $project / count(•) / up 6 / <software>printJSON</software>(•)</p><p>It can be proved by induction that all expressions can be built in a finite number of steps, proportional to the syntactic size of the expression. The next section explains how the user receives data feedback and guidance at every step, so that what here seems like a purely syntactic process is actually a data-centered and guided incremental process.</p></div>
+<div><head n="5">Formalization and Suggestions (Machine Side)</head><p>The formalization process determines the evaluation to be actually performed, and hence the results to be displayed to the user. An important point is that it depends on the focus position. To motivate and illustrate this dependency, suppose we have the following expression for $i in 1 to 3 return 1 to $i</p><p>where the operator a to b evaluates to the sequence a, a + 1, . . ., b. The result of the whole expression is the sequence of integers 1, 1, 2, 1, 2, 3. Now, suppose that the focus is on the sub-expression after return, then the expected result is the value of that sub-expression 1 to $i. However, this value depends on variable $i, which is introduced in the focus context. Therefore, a useful result is a mapping from each value of $i to the value at focus, bound to an implicit variable $focus.</p><formula xml:id="formula_1">$i $focus 1 1 2 1, 2 3 1, 2, 3</formula><p>Each row of such a table is actually an environment, i.e. a mapping from variables in the focus scope to their values.</p></div>
+<div><head n="5.1">Formalization by Expression Rewriting</head><p>Formalization is performed by rewriting the query expression and focus position into a new expression whose evaluation results in a sequence of environments. Let the query be the expression e = C(f ) = c k (. . . c 1 (f ) . . .), where f is the sub-expression at focus, C is the context of the focus. The context C can be decomposed into a series of elementary contexts c i that need to be applied to the sub-expression f bottom-up in order to get the whole expression e. where variable $focus is bound to the sub-expression at focus, and the environment is returned through a special variable $env. Then each elementary context is processed bottom up, from c 1 to c k .</p><p>-FLWOR clauses are applied unmodified, so that iterations, bindings, filtering, grouping and ordering are kept in the focus-dependent evaluation. They determine the rows of the The rewritten expression is therefore a chain of FLWOR clauses (and conditionals) ending with the return of an environment. The evaluation result is therefore a sequence of environments. Given that the environments bind the same set of variables, the result can be presented as tabular data, with one row for each environment -each iteration step -, and a column for each variable. The last column is the $focus variable, which plays a central role for computing the suggested query transformations. Note that although the view on results is tabular, the data can be arbitrarily nested JSON data. The table of results contains JSON values, and its shape automatically adapts to the current query and focus.</p></div>
+<div><head n="5.2">Computation of Suggestions</head><p>In the N&lt;A&gt;F design pattern, the set of suggestions is the subset of query transformations that are well-defined and relevant given the current query, the current focus, and the results of the query formalization. First, a static analysis of the current query and focus is performed in order to identify variables and functions in scope and to derive type constraints. The considered types are the JSON types: numbers, strings, booleans, arrays, and objects. For instance, the focus context [• . e 2 ] calls for JSON objects, while the focus context [e 1 . •] calls for strings (field name). Also, if the focus sub-expression is a comparison, then its type is boolean, which suggests to insert contexts such as [if • then () else ()] (conditional expression) or [where •] (filtering).</p><p>Second, a dynamic analysis of the results is performed in order to identify which data types are available at focus. For instance, the presence of numbers suggests to apply arithmetic operators; and the presence of arrays suggests to apply a lookup-by-index operator, for instance. We also collect the fields defined in objects, in order to suggest the lookup-by-field operator with pre-defined field names. The dynamic analysis also looks at the number of rows, and at the sequence lengths of focus values. The former conditions the insertion of FLWOR clauses, which are only relevant when there are multiple rows, i.e. in the scope of a for clause. The latter conditions the insertion of iterations and aggregations, which are only relevant with non-singleton sequences.</p><p>For the sake of efficiency, dynamic analysis is only performed on a sample evaluation of the results, bounding the number of rows, and bounding the number of computed items per sequence. This relies on a lazy evaluation of expressions.</p></div>
+<div><head n="6">Verbalization and Control (User Interface)</head><p>Verbalization of the query and results, and control of the suggested transformations characterize the user interface, and hence the user experience. Figure <ref type="figure" target="#fig_2">2</ref> shows a screenshot of the <software ContextAttributes="used">Dexteris</software> tool. The query and focus can be seen at the top left. The results can be seen in the table at the bottom. The suggested transformations can be seen in the three lists at the top right: functions and </p></div>
+<div><head>operators (left), variables and JSON value constructors and accessors (middle), FLWOR clauses (right).</head><p>The verbalization remains close to the original concrete syntax of JSONiq, as given in Table <ref type="table" target="#tab_0">1</ref>, and hence it is less natural than in previous N&lt;A&gt;F applications. To justify this, note that verbalizing the expression e 1 [[ e 2 ]] as "the e 2 -th member of e 1 ", or the expression { "id" : $(project id), "name" : $(project name) } as "an object whose id is the project id, and whose name is the project name", is closer to natural language but it does not make it easier to read. By the way, JSONiq already uses explicit keywords like where or if, and most special characters correspond to JSON notations (e.g., square brackets and curly braces). We apply the following changes to the concrete syntax of JSONiq in order to lift its more unnatural aspects.</p><p>-The dollar sign in front of variables and the double quotes surrounding strings are removed. Colors are used to distinguish numbers (dark blue), strings (dark green), booleans (green/red), variables (dark red), and function names (purple). In particular, this avoids the need for escaping characters in strings. -The implicit $$ variable in syntactic sugar is renamed as this.</p><p>-A mixfix syntax is used for some functions, which includes the usual infix notation for arithmetic and logical functions: e.g., [e 1 + e 2 ], [not e 1 ], [split e 1 by e 2 ]. This makes the role of the different function arguments more explicit and readable. -The semi-colon ; is used as the sequence separator to avoid confusion with other usages of the comma (arrays, objects, function arguments).</p><p>Moreover, as queries are built by applying query transformations rather than edited as text, there is no issue with operator priorities and other ambiguities [ { "id": "9ace9041", "question": "What is the fourth book in the Twilight series?", "translations": {"fr": "Quel est le quatrième livre de la série Twilight ?", ...} "questionEntity": [ { "name": "Q44523", "entityType": "entity", "label": "Twilight", ...}, ...], "answer": { "answerType": "entity", "answer": [ { "name": "Q53945", "label": "Breaking Dawn" } ], "mention": "Breaking Dawn" }, "category": "books", "complexityType": "ordinal" }, ... ] ID,Type,Question,Entities,Answer 9ace9041,ordinal,What is the fourth book in the Twilight series?,Q44523: Twilight,Q53945: Breaking Dawn ... so that grouping brackets become useless. Those groupings are made visible by indentation and through focus moves because the sub-expression at focus is highlighted (in light green, see Figure <ref type="figure" target="#fig_2">2</ref>).</p><p>Suggestions are controlled simply by clicking them. When a suggestion has input widgets, they may be filled beforehand. Those inputs are for primitive values in the middle list, and for variable/function names in the right column. The focus can be moved up with one of the suggestions, and in all directions with key strokes (Ctrl+arrows). Any focus can also be selected directly by clicking on it in the query area. For advanced users, the text input below the query provides a command line interface for quickly inserting data values, and applying query transformations. When a suggestion is clicked, its command is displayed in the text input as hint in order to help the user learning them.</p></div>
+<div><head n="7">Evaluation</head><p>Because data transformation tasks are often ad-hoc and incompletely specified, it is difficult to conduct a systematic evaluation similar to what is done for fully automated approaches, e.g. supervised classification tasks. Moreover, we do not know of tools comparable to <software ContextAttributes="used">Dexteris</software>, tools that would support the design of almost arbitrarily complex transformations without requiring the user to write some code at some point. We therefore choose to report on a representative use case that was encountered in a real setting. It involves two file formats (JSON and CSV), and many features of the JSONiq language. It is relatively simple to informally describe while being non-trivial to implement. We compare the user experience and result with plain programming and using <software ContextAttributes="used">ChatGPT</software> <ref type="bibr">[11]</ref>, which is known for its capability to generate code from textual prompts in a versatile and multi-turn way.</p><p>Task. The objective is to transform the JSON files of the Mintaka dataset <ref type="bibr" target="#b11">[13]</ref> by extracting some information and formatting it into CSV files. The end goal was to prepare a training set for question answering <ref type="bibr" target="#b0">[1]</ref>. A JSON file is a list of questions, where each question is described by an ID, the question in English and other languages, Wikidata entities, answers, and the complexity type of the question (e.g., ordinal, count). Figure <ref type="figure" target="#fig_3">3</ref> shows an excerpt of a JSON file. It has up to 5 levels of nested lists and objects. It also features some heterogeneity in the representation of entities and answers, depending on their type (e.g., Wikidata entities, numbers). The output CSV file should have 5 columns: ID, Type, Question, Entities, and Answer. The three first columns directly correspond to fields of the question objects. However, the last two columns are string aggregations of respectively the list of entities, and the list of answers. Moreover, Wikidata entities should be formatted so as to combine their name and their label, while only the name should be used for literal values. Finally, the rows should be sorted by question type. The task therefore involves nested iterations -on questions, on question's entities, and on question's answers, navigation in JSON objects, string building and aggregation, conditional expressions, and ordering. Plain programming. We described the task to four experienced Python programmers (students in our lab), provided two example questions, and asked them to write a program for the desired transformation. Two of them overlooked missing fields in some questions so that their program failed on the whole input file. However, they could quickly fix their program for those exceptional cases. The total time they needed to complete the task was consistent, between 30 and 45 minutes. Their programs were between 36 and 68 lines of code. They declared that they would need about 15min to rewrite their program from scratch.</p><p>Programming with <software ContextAttributes="used">ChatGPT</software>. On a first attempt<ref type="foot" target="#foot_3">3</ref> , we gave it a representative excerpt of the JSON file (2 questions of different types), and the expected output, then we asked it to generate a Python <software ContextAttributes="used">program</software> to do the translation. After 15min and 3 turns, we stopped because it had a very shallow understanding of the task, and when prompted to look better at the data, it started to hallucinate code irrelevant to the task. On a second attempt, we precisely described in text the structure of the input file, and the structure and contents of the output file. On each turn, we tested the generated Python <software ContextAttributes="used">program</software>, sometimes correcting it for obvious small errors (e.g., field names). After 40min and 8 turns of rather constructive chat, we obtained an almost correct program but then it started to diverge on the last remaining bug related to the missing fields. It should be noted that our successive prompts were strongly based on reading the generated code because that code could not be run, and so errors could not be reported in terms of errors in the generated data.</p><p>Using <software>Dexteris</software>. After opening the input file and parsing it as JSON data, the results in <software ContextAttributes="used">Dexteris</software> shows a sequence of JSON objects. An obvious step is therefore to iterate over them, the suggestion for * is selected in order to expose each object field as a result column. From there, a JSON object is created to define a CSV row, with one field for each expected column. The three first fields (columns) are simply defined by picking the right variable among the exposed object fields (e.g. $id). For entities, the user starts from the value of field questionEntity, iterates over them as this is a list, then builds a string by concatenating two fields of each entity, with a colon in between. The aggregation concat_with_separator can then be applied to the sequence of formatted entities in order to have one string value for the CSV column "Entities". A similar process is applied to the answers, this time using the mapping construct !, and a conditional depending on the answer type. Finally, the ordering construct is inserted, and the function printCSV is applied to the whole in order to convert the generated JSON objects into CSV rows. A screencast of the whole building sequence is available on the supplementary material page.</p><p>The whole query can be built in 49 steps, including focus changes. When the need for the transformation arose, it took us less than 30min to build the query and output the transformed data, including the exploration of data, and thinking about what to generate exactly in the output file. Indeed, in real situation, the task is often incompletely specified, and gets refined when exposed to the actual data and unexpected cases. Building again the query in a straight way, knowing exactly what to do, takes 5 minutes, hence a building speed of about 10 steps/min. For recall, the Python programmers declared that they would need 15min to recode their program from scratch.</p></div>
+<div><head>Strengths and weaknesses.</head><p>Comparing the user experience between <software>Dexteris</software>, plain programming, and <software ContextAttributes="used">ChatGPT</software> reveals the strengths and weaknesses of our approach. The main strengths of our approach are:</p><p>safeness: the program (the JSONiq query) is valid at all time, there are no issues with syntax errors or runtime errors; program introspection: every part of the program can be introspected (and modified) by moving the focus around, like consulting values extracted from the inputs, verifying some sub-computation, or unfolding an iteration; data-centric view: no need to go forth and back between the data and the program, no need to switch between the programming language and textual prompts, the data are right there and determine what program constructions can be inserted, e.g. a JSON list suggests to insert an iteration, only the variables that are in scope and of the right type are suggested; robustness: peculiar cases in the input data are smoothly handled whereas they trigger runtime errors in Python <software>programs</software>, human-or machinegenerated, e.g. an empty sequence is generated in case of a missing field.</p><p>On the weakness side, our approach is not immediately usable, unlike <software>ChatGPT</software>, although it provides more control and does not expose the user to a general programming language. It is also less versatile and scalable than plain programming.</p><p>Efficiency. <software>Dexteris</software> is a prototype, and it runs entirely in the browser as a clientside application. Its efficiency and scalability are therefore limited. However, the Mintaka use case demonstrates that it is efficient enough to cope with many practical use cases that data stakeholders encounter. The smallest Mintaka file is 3.8M, and the 280kB output is generated in about 1.5s in <software ContextAttributes="used">Firefox</software> 88.0.1 on Fedora 32 with an Intel Core i7x12 and 16GB RAM. The largest file is 26.7MB and the 1.9MB output (a CSV with 14k rows) is generated in about 15s.</p></div>
+<div><head n="8">Conclusion and Perspectives</head><p>We have defined and implemented <software>Dexteris</software>, a tool for data exploration and transformation based on the N&lt;A&gt;F design pattern. It allows the end-user to define complex data transformations in a data-centric way, without having to write any piece of code. Compared to plain programming, or <software ContextAttributes="created">ChatGPT</software>-assisted programming, it features a safer and more robust process. In the future, <software ContextAttributes="created">Dexteris</software> will be improved by covering the missing JSONiq constructs, and extending the set of functions and supported data formats.</p></div><figure xml:id="fig_0"><head>Fig. 1 .</head><label>1</label><figDesc>Fig. 1. Principle of the N&lt;A&gt;F design pattern</figDesc></figure>
+<figure xml:id="fig_1"><head /><label /><figDesc>In the above example, f = [1 to $i], k = 2, c 1 = [return •], and c 2 = [for $i in 1 to 3 ← •].The rewriting process starts by initializing the rewritten expression e as e := let $focus := f ← return $env</figDesc></figure>
+<figure xml:id="fig_2"><head>Fig. 2 .</head><label>2</label><figDesc>Fig. 2. Screenshot of Dexteris in the course of building the example query.</figDesc><graphic coords="12,134.77,115.83,345.83,184.16" type="bitmap" /></figure>
+<figure xml:id="fig_3"><head>Fig. 3 .</head><label>3</label><figDesc>Fig. 3. Excerpt of the input file (top), a JSON list of Mintaka question descriptions and of the expected output file (bottom), a CSV file with one row per question.</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 .</head><label>1</label><figDesc>JSONiq constructs: expressions, FLWOR clauses, and syntactic sugar. asc | desc ] , . . . ordering an iteration group by var , . . . grouping and concatenating count var variable for the position in iteration Syntactic sugar expr 1 ! expr 2 = for $$ in expr 1 ← return expr 2 expr 1 [ expr 2 ] = for $$ in expr 1 ← where expr 2 ← return $$</figDesc><table><row><cell>Expression constructs (expr )</cell><cell>Semantics</cell></row><row><cell>var</cell><cell>variable (prefixed by $)</cell></row><row><cell>json</cell><cell>JSON value</cell></row><row><cell>{ expr : expr , . . . }</cell><cell>object construction</cell></row><row><cell>{| expr |}</cell><cell>object sequence to object (merge)</cell></row><row><cell>[ expr ]</cell><cell>sequence to array</cell></row><row><cell>expr []</cell><cell>array to sequence</cell></row><row><cell>func ( expr , . . . )</cell><cell>function calls and operators</cell></row><row><cell>()</cell><cell>the empty sequence</cell></row><row><cell>expr , expr</cell><cell>sequence concatenation</cell></row><row><cell>expr . expr</cell><cell>object lookup by field</cell></row><row><cell>expr [[ expr ]]</cell><cell>array lookup by index</cell></row><row><cell>if expr then expr else expr</cell><cell>conditional expression</cell></row><row><cell>flwor ← . . . return expr</cell><cell>expression nested in FLWOR clauses</cell></row><row><cell>FLWOR clauses (flwor )</cell><cell>Semantics</cell></row><row><cell>let var := expr</cell><cell>binding a new variable</cell></row><row><cell>def func (var , . . . ) = expr</cell><cell>defining a new function</cell></row><row><cell>for var in expr</cell><cell>iterating on a sequence</cell></row><row><cell>where expr</cell><cell>filtering an iteration</cell></row><row><cell>order by expr [</cell><cell /></row></table></figure>
+<figure type="table" xml:id="tab_1"><head /><label /><figDesc>table of results. -Conditional expressions with the hole in one of the branches are simplified by replacing the other branch by the empty sequence. For instance, context [if e 1 then • else e 3 ] applied to the rewritten expression leads to e := if e 1 then e else (). -All other contexts are ignored, and hence excluded from the rewritten expression. For instance, ignoring context func(e 1 ,•) enables to focus on the second argument of the function, temporarily ignoring the first argument and the function application.</figDesc><table /></figure>
+			<note place="foot" xml:id="foot_0"><p>This research is supported by the CominLabs project MiKroloG.</p></note>
+			<note place="foot" n="1" xml:id="foot_1"><p>Freely available at http://www.irisa.fr/LIS/ferre/dexteris/</p></note>
+			<note place="foot" n="2" xml:id="foot_2"><p>http://www.irisa.fr/LIS/ferre/pub/dexa2023/</p></note>
+			<note place="foot" n="3" xml:id="foot_3"><p>The chat logs can be found at http://www.irisa.fr/LIS/ferre/pub/dexa2023/.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">A comparative survey of recent natural language interfaces for databases</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Affolter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Stockinger</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bernstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The VLDB Journal</title>
+		<imprint>
+			<biblScope unit="volume">28</biblScope>
+			<biblScope unit="page" from="793" to="819" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Microsoft power bi: extending excel to manipulate, analyze, and visualize diverse data</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">T</forename><surname>Becker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Gould</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Serials Review</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="184" to="188" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">Providing OLAP (On-line Analytical Processing) to User-Analysts: An IT Mandate</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Codd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Codd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Salley</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<publisher>Codd &amp; Date, Inc</publisher>
+			<pubPlace>San Jose</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Bridging the gap between formal languages and natural languages with zippers</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Extended Semantic Web Conf. (ESWC)</title>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Sack</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="269" to="284" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Sparklis: An expressive query builder for SPARQL endpoints with guidance in natural language</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+		<ptr target="http://www.irisa.fr/LIS/ferre/sparklis/" />
+	</analytic>
+	<monogr>
+		<title level="j">Semantic Web: Interoperability, Usability, Applicability</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="405" to="418" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Analytical queries on vanilla RDF graphs with a guided query builder approach</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ferré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Flexible Query Answering Systems</title>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Andreasen</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">12871</biblScope>
+			<biblScope unit="page" from="41" to="53" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">JSONiq: The history of a query language</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Florescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fourny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE internet computing</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="86" to="90" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Automating string processing in spreadsheets using input-output examples</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Gulwani</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Symp. Principles of Programming Languages</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="317" to="330" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<ptr target="https://learn.microsoft.com/en-us/power-query/" />
+		<title level="m">PowerQuery</title>
+		<imprint />
+		<respStmt>
+			<orgName>Microsoft</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Out of the tar pit</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Moseley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marks</surname></persName>
+		</author>
+		<ptr target="http://chat.openai.com" />
+	</analytic>
+	<monogr>
+		<title level="j">Software Practice Advancement</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<date type="published" when="2006">2006</date>
+			<publisher>ChatGPT</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Scratch: programming for all</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Resnick</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Maloney</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Monroy-Hernández</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Rusk</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Eastmond</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Brennan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Millner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rosenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Silver</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Silverman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Communications of the ACM</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="60" to="67" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Mintaka: A complex, natural, and multilingual dataset for end-to-end question answering</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Sen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">F</forename><surname>Aji</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saffari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Committee Computational Linguistics</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page">14</biblScope>
+		</imprint>
+	</monogr>
+	<note>Int. Conf. Computational Linguistics</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<monogr>
+		<ptr target="http://www.w3.org/TR/xquery-30/,W3CProposedRecommendation" />
+		<title level="m">XQuery 3.0: An XML query language</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

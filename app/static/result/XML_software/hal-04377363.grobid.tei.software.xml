@@ -1,0 +1,1718 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xml:space="preserve" xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">The Shapley Value in Database Management</title>
+				<funder ref="#_CbppyzF">
+					<orgName type="full">Israel Science Foundation</orgName>
+					<orgName type="abbreviated">ISF</orgName>
+				</funder>
+				<funder ref="#_7BRcnH8">
+					<orgName type="full">German Research Foundation (DFG)</orgName>
+				</funder>
+				<funder ref="#_CVtdRyM">
+					<orgName type="full">unknown</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher />
+				<availability status="unknown"><licence /></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Leopoldo</forename><surname>Bertossi</surname></persName>
+							<email>leopoldo.bertossi@skema.edu</email>
+						</author>
+						<author>
+							<persName><forename type="first">Benny</forename><surname>Kimelfeld</surname></persName>
+							<email>bennyk@technion.ac.il</email>
+						</author>
+						<author>
+							<persName><forename type="first">Ester</forename><surname>Livshits</surname></persName>
+							<email>ester.livshits@ed.ac.uk</email>
+						</author>
+						<author>
+							<persName><forename type="first">Mikaël</forename><surname>Monet</surname></persName>
+							<email>mikael.monet@inria.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<orgName type="institution">SKEMA Business School</orgName>
+								<address>
+									<settlement>Montreal</settlement>
+									<country key="CA">Canada</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Technion -Israel Institute of Technology Haifa</orgName>
+								<address>
+									<country key="IL">Israel</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">University of Edinburgh</orgName>
+								<address>
+									<settlement>Edinburgh</settlement>
+									<country key="GB">UK</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff3">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Université de Lille</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">Inria</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff4">
+								<orgName type="institution">CRIStAL</orgName>
+								<address>
+									<postCode>F-59000</postCode>
+									<settlement>Lille Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">The Shapley Value in Database Management</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date />
+						</imprint>
+					</monogr>
+					<idno type="MD5">0055539B98A385302470DE5F113E437B</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:54+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid" />
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div><p>Attribution scores can be applied in data management to quantify the contribution of individual items to conclusions from the data, as part of the explanation of what led to these conclusions. In Artificial Intelligence, Machine Learning, and Data Management, some of the common scores are deployments of the Shapley value, a formula for profit sharing in cooperative game theory. Since its invention in the 1950s, the Shapley value has been used for contribution measurement in many fields, from economics to law, with its latest researched applications in modern machine learning. Recent studies investigated the application of the Shapley value to database management. This article gives an overview of recent results on the computational complexity of the Shapley value for measuring the contribution of tuples to query answers and to the extent of inconsistency with respect to integrity constraints. More specifically, the article highlights lower and upper bounds on the complexity of calculating the Shapley value, either exactly or approximately, as well as solutions for realizing the calculation in practice.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div><head n="1">Introduction</head><p>Explanations have been investigated in Artificial Intelligence (AI) and Machine Learning (ML) for some decades, and also, for a much longer time, in other fields such as Philosophy, Logic, Physics, and Statistics. Actually, the explicit study of explanations can be traced back to the ancient Greeks, who were already concerned with causes and effects. A whole new area of research has emerged around explanations in AI (Explainable AI or XAI <ref type="bibr" target="#b54">[54]</ref>) and Data Science. The basic need is fundamental: a human applies AI to make important decisions, and the human is accountable for these decisions as well as for the very choice to involve the specific AI al-gorithms in deployment. Hence, adopting the algorithm's decision may necessitate some level of human understanding of what led to the decision.</p><p>In light of that, a decision or classification model, typically obtained through machine learning, should be able to attach an explanation to its outcome. Stakeholders, such as an applicant for a loan from the bank, may desire a reason for the decision, especially if the request is declined. In a similar vein, a database may contain massive volumes of data or be built according to an intricate schema. Query answers could be difficult to explain or quantify in terms of the relevance of specific data in the database. This is also true for other database phenomena, such as the violation of integrity constraints.</p><p>In this article, we will concentrate mostly on explanations in data management, and more specifically, in relational databases (which we refer to simply as databases in the remainder of the manuscript). Different data-related phenomena may open a quest for explanations. Typically, one desires to understand why an answer is returned when applying the query to the database. One may also want to understand why a particular potential answer is not returned. In another scenario, they may wish to understand why an aggregate query result is a number that is unexpectedly high or low. It is also of interest to understand why an integrity constraint is not satisfied by the database. Even more, given a set of integrity constraints and a numerical measure of their violation by the database, we may want to know the extent to which a data item is responsible for the database's inconsistency <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b45">45,</ref><ref type="bibr" target="#b48">48]</ref>.</p><p>We consider explanations that point to data items that contribute to the outcome that we wish to explain. As many items might take part in the outcome one way or another, we need to be able to quantify this contribution. To that aim, one of the fundamental concepts adopted is the Shapley value <ref type="bibr" target="#b63">[63]</ref>, which is a formula for wealth distribution in a cooperative game. The Shapley value has a plethora of applications, including profit sharing between Internet providers <ref type="bibr" target="#b51">[51]</ref>, influence measurement in social networks <ref type="bibr" target="#b57">[57]</ref>, the importance of genes for specific body functions <ref type="bibr" target="#b56">[56]</ref>, and keyplayer identification in terrorist networks <ref type="bibr" target="#b67">[67]</ref>, to name a few. In the context of explanations, the idea is straightforward: data items are the players who play the game of establishing the outcome.</p><p>It is relevant to emphasize that the Shapley value corresponds to a principled approach to quantify the contribution of a player to a wealth function that is shared by a set of players. Its inception started by stating some desired general properties of such a contribution score. It was next proved that there is only one such score that satisfies those properties, namely the Shapley value <ref type="bibr" target="#b60">[60]</ref>.</p><p>An inherent challenge in the application of the Shapley value for explanations (and other tasks) is its computational complexity-the Shapley value is often intractable to calculate, and particularly, the execution cost might grow exponentially with the number of players. Hence, past research investigated islands of tractability and approximation techniques for the Shapley value.</p><p>In the remainder of the introduction, we delve into some background on explanations in AI and their development into explanations in databases.</p></div>
+<div><head>Background on Explanations</head><p>Explanations may come in different forms, and different kinds of them have been proposed and investigated in the context of Computer Science. These include the area of model-based diagnosis, whose most prominent kinds are consistency-based diagnosis and abductive diagnosis <ref type="bibr" target="#b64">[64]</ref>. Causality <ref type="bibr" target="#b58">[58]</ref>, and particularly actual causality <ref type="bibr" target="#b33">[34]</ref>, deem causes as explanations for observed effects and phenomena. In all these kinds of diagnosis, an explanation comes in the form of a set of basic propositions, which are expressed in the language of the model that describes the situation related to the observations <ref type="bibr" target="#b9">[10]</ref>. In the case of causality, they can be values of observed variables or features.</p><p>Actual causality <ref type="bibr" target="#b32">[33,</ref><ref type="bibr" target="#b33">34]</ref> provides counterfactual explanations to observations. These explanations are obtained by hypothetically intervening in (i.e., changing some components of) the system under observation, to detect whether the intervention leads to changes in the observed behavior. In general terms, counterfactuals are basic propositions about components of a system that may be a cause for the observed behavior.</p><p>Importantly, in actual causality, we distinguish between endogenous and exogenous variables <ref type="bibr" target="#b33">[34,</ref><ref type="bibr" target="#b34">35]</ref>. Only the former are subject to interventions and may become actual causes. The latter are variables that we do not question, or have no control upon. The separation between endogenous and exogenous variables is application dependent.</p><p>Counterfactual causes are actual causes that directly explain the observation: changing them leads to a change in the observation. Actual causes that are non-counterfactual ones are weaker causes, in that they require the company of other components to explain the observation. This idea is formalized in quantitative terms by means of the responsibility score <ref type="bibr" target="#b16">[17]</ref> that captures the causal strength of an explanation. In this way, the score takes into account the amount of company that a potential explanation requires in order to become a counterfactual cause. Accordingly, a counterfactual explanation may come with a responsibility score that represents its causal strength in relation to the observation. A numerical score like this is usually called an attribution score (of the explanation for the observation).</p><p>Attribution scores in the explanation of causes are widely investigated in ML. They are provided, most typically and frequently, for outcomes of MLbased decision and classification systems. Next, we discuss a few prominent examples. (For a thorough description, c.f. some recent surveys <ref type="bibr" target="#b14">[15,</ref><ref type="bibr" target="#b31">32,</ref><ref type="bibr" target="#b53">53,</ref><ref type="bibr" target="#b54">54]</ref>.)</p><p>The Resp score <ref type="bibr" target="#b10">[11]</ref> applies the general responsibility score to the outcomes of classification systems. Specifically, it quantifies the relevance of feature values in an input entity to an ML-based system for the obtained classification label. To this aim, Resp generalizes the responsibility score to deal with non-binary variables. The relevance of feature values is also quantified by the highly popular SHAP attribution score <ref type="bibr" target="#b49">[49,</ref><ref type="bibr" target="#b50">50]</ref>. SHAP is a particular application of the Shapley value. More precisely, SHAP is the Shapley value for a particular cooperative game played by a set of players that correspond to the features. The tractability and approximability of SHAP for certain classes of classifiers has been recently investigated <ref type="bibr" target="#b2">[3,</ref><ref type="bibr" target="#b3">4,</ref><ref type="bibr" target="#b68">68]</ref>. The Resp and SHAP scores have also been experimentally compared <ref type="bibr" target="#b10">[11]</ref>.</p><p>Finally, in a different direction, the Shapley value was used to quantify the relevance of particular formulas to the inconsistency of a knowledge base <ref type="bibr" target="#b37">[38]</ref>.</p></div>
+<div><head>Explanations in Databases</head><p>In database management, explanations usually come as database tuples or cells that play a role in the observed phenomenon, such as the received query answers. Actual causality and responsibility scores for query answers have been introduced and investigated <ref type="bibr" target="#b8">[9,</ref><ref type="bibr" target="#b12">13,</ref><ref type="bibr" target="#b52">52]</ref>. In this context, connections between actual causality and model-based diagnosis have been established <ref type="bibr" target="#b11">[12,</ref><ref type="bibr" target="#b12">13]</ref>. The counterfactual interventions are tuple updates: insertions or deletions of tuples, or changes of attribute values in them. These interventions are expected to change the outcome, for instance, to eliminate the query answer that we wish to explain. The identified tuples, as actual causes, are supplemented with responsibility scores, as additional quantitative information, that reflects their explanatory strength. As in AI, we can partition the database into sets of endogenous tuples and exogenous tuples, and interventions are applied only to the former.</p><p>One can also formulate the causal approach to query-answer explanations in databases via causal networks <ref type="bibr" target="#b58">[58]</ref>. For this purpose the lineage of the query <ref type="bibr" target="#b65">[65]</ref> can be treated as a causal network. Actually, this has been the approach to define and compute another causality-based score for query answers, the causal effect, which has its roots in causality for observational studies <ref type="bibr" target="#b38">[39]</ref>. The causal effect has been offered as an alternative to actual causality and responsibility in databases <ref type="bibr" target="#b43">[43,</ref><ref type="bibr" target="#b61">61]</ref>. The causal effect of a tuple τ ∈ D in relation to a Boolean query q, is the expected difference E(q|τ ∈ D) -E(q|τ / ∈ D), where the database is viewed a probabilistic database <ref type="bibr" target="#b65">[65]</ref> (where every tuple can be eliminated randomly and independently) and q is treated as a random variable taking values 0 or 1.</p><p>Close to the lineage of a query <ref type="bibr" target="#b5">[6]</ref>, we find the notion of provenance of a query <ref type="bibr" target="#b13">[14,</ref><ref type="bibr" target="#b30">31]</ref>, which can be used to explain a query answer by tracing back its origins to the underlying data source.</p><p>More recently, Livshits et al. <ref type="bibr" target="#b43">[43]</ref> investigated the application of Shapley value to define explanations in databases. In this manuscript, we give a survey of this and other applications of the Shapley value as an explanation mechanism in databases. The first application we discuss assigns to (endogenous) database tuples scores that reflect their importance for an obtained query answer. So, similarly to the application of the Shapley value in explainable machine learning, one has to define an appropriate coalitional game that depends on the query and reflects this importance. (See Section 3.)</p><p>The Shapley value has also been applied to quantify the contribution of database tuples to the inconsistency of the database in relation to integrity constraints, similarly to its application in knowledgebase inconsistency <ref type="bibr" target="#b37">[38]</ref>. This has been done for different measures of inconsistency <ref type="bibr" target="#b45">[45]</ref>. (See Section 4.) In the same spirit, an attribution score for inconsistency that is directly based on database repairs <ref type="bibr" target="#b6">[7]</ref> has been introduced and investigated <ref type="bibr" target="#b7">[8]</ref>.</p></div>
+<div><head>Organization</head><p>The remainder of the manuscript is organized as follows. We give preliminary teminology and concepts in Section 2. In Section 3, we discuss the application of the Shapley value in the explanation of query answers, and in Section 4 we do so for database inconsistency. Finally, we conclude in Section 5.</p></div>
+<div><head n="2">Basic Concepts</head><p>We first present the basic concepts and main notation that we use throughout the article.</p></div>
+<div><head>Databases.</head><p>A database schema S is a finite collection of relation symbols R, each with an associated signature (A 1 , . . . , A ℓ ) of distinct attributes A i . A database D over a schema S is a finite collection of facts of the form R(c 1 , . . . , c k ) where R is a relation symbol of S with the signature (A 1 , . . . , A k ), and each c i is a value that is in the domain of the attribute A i . For our complexity analysis, we assume that all database values come from a fixed infinite (recursively enumerable) domain Val; in particular, we assume that the domain of every attribute is simply Val. A fact with the relation symbol R is also called an R-fact.</p><p>Queries. Let S be a schema. A query q (over S) is associated with an arity k ≥ 0 and it maps every database D over S into a finite k-ary relation of values (that is, a finite subset of Val k ). A query q with arity zero is called a Boolean query, and then q(D) is either true (i.e., consists of the empty tuple) or false (i.e., is empty).</p><p>A special case of a query is a Conjunctive Query (CQ) that captures the select-project-join queries of SQL and has the logical form</p><formula xml:id="formula_0">{x | ∃y[φ 1 (x, y) ∧ • • • ∧ φ m (x, y)]}</formula><p>where x and y are disjoint sequences of distinct variables and each φ i (x, y) is an atomic formula over S, that is, a formula of the form R(t 1 , . . . , t k ) where R ∈ S is a k-ary relation symbol and each t i is either a value (constant) or a variable from x or from y. The variables of x and y are called the free and the existential variables, respectively. For convenient notation, we denote a CQ q by q(x) :-φ 1 (x, y), . . . , φ m (x, y) as in the following example that finds all manageremployee pairs such that the manager manages the department of the employee:</p><formula xml:id="formula_1">Manages(x, z) :-EmpDept(z, y), DeptMgr(y, x)</formula><p>We call q(x) the head of q and φ 1 (x, y), . . . , φ m (x, y) the body of q. Each φ i (x, y) is an atom of q. A selfjoin of q is a pair of atoms that use the same relation symbol. For example, the above Manages CQ is self-join-free since each relation symbol is used only once. Lastly, we recall that a union of conjunctive queries (UCQ) is a logical disjunction of CQs with the same arity.</p><p>Integrity constraints. Let S be a schema. An integrity constraint is simply a Boolean query. A database D satisfies a set ∆ of integrity constraints, denoted</p><formula xml:id="formula_2">D |= ∆, if D satisfies every constraint in ∆, that is, D |= γ for all γ ∈ ∆. When ∆ is clear from the context, we say that D is consistent if D |= ∆,</formula><p>and otherwise that it is inconsistent. Two sets of integrity constraints are equivalent if every database that satisfies one also satisfies the other.</p><p>A special case of an integrity constraint is a Functional Dependency (FD) R : X → Y where R is a relation symbol of S and X and Y are sets of attributes of R. A database D satisfies R : X → Y if every two R-facts that agree on (i.e., have the same value for every attribute of) X also agree on Y . When R is clear from the context, we may write just X → Y .</p></div>
+<div><head>Shapley value.</head><p>As explained in the introduction, the Shapley value is a function for wealth distribution in cooperative games. The precise definition is as follows. Let L be a finite set of players. A cooperative game is a function G : P(L) → R, where P(L) is the power set of L. For M ⊆ L, the value G(M ) represents a value, such as wealth, jointly obtained by M when the players of M cooperate. The Shapley value for the player a in the game G is, intuitively, the following quantity. Suppose that we form a random cooperating team by selecting players, one by one, uniformly and without replacement; what is the expected change of utility when a is selected? The exact definition is:</p><formula xml:id="formula_3">Shapley(L, G, a) := (1) 1 |L|! π∈Π L (G(π a ∪ {a}) -G(π a ))</formula><p>Here, Π L is the set of all possible permutations over the players in L, and for each permutation π we denote by π a the set of players that appear before a in the permutation.</p><p>Complexity concepts. Throughout the paper, we refer to the standard classes PTime, NP and coNP of decision problems. We will also consider the function classes FP, #P and FP #P . Recall that FP is the class of functions that can be computed in polynomial time, #P is the class of functions can be described as counting the accepting paths of a nondeterministic Turing machine on the given input, and FP #P is the class of functions that can be computed in polynomial time with an oracle to some function in #P.</p><p>We assume that integer numbers are represented in the usual binary way, and that non-integers are rational numbers represented using their numerator and denominator, where (n, d) stands for n/d.</p><p>Suppose that f is a numerical function that maps its input x to a number f (x). A Fully Polynomialtime Randomized Approximation Scheme (FPRAS) for f is a randomized algorithm A that takes as input an instance x of f and an error ϵ &gt; 0, and returns an ϵ-approximation of f (x) with probability at least 3/4 (which is arbitrary and can be amplified to be arbitrarily close to 1 using standard techniques). More precisely, we distinguish between an additive FPRAS :</p><formula xml:id="formula_4">Pr f (x) -ϵ ≤ A(x) ≤ f (x) + ϵ &gt; 3 4</formula><p>and a multiplicative FPRAS :</p><formula xml:id="formula_5">Pr f (x) 1 + ϵ ≤ A(x) ≤ (1 + ϵ)f (x) &gt; 3 4</formula><p>3 Contribution to Database Queries</p><p>In this section, we survey the use of the Shapley value in the context of explaining query answers. We will focus on Boolean queries, to keep the presentation short, but the framework easily extends to queries with free variables, or to aggregate queries returning numerical values (e.g., as explained by Livshits et al. <ref type="bibr" target="#b43">[43]</ref>). We first define the notions and then review recent work.</p><p>As mentioned in the introduction, a database D consists of a set D x of exogenous facts, and a set D n of endogenous facts. For a Boolean query q and endogenous fact f ∈ D n of a database D = D n ∪ D x , the goal is to measure the contribution of f to the result q(D). To this end, we view a Boolean query as a numerical query that answers 1 if it is satisfied by the database and 0 otherwise. We then apply the Shapley value, where the players are the endogenous facts and the game function is the function G q,Dx,Dn : P(D n ) → {0, 1} mapping every subset E ⊆ D n to the value q(E ∪ D x ) -q(D x ). (The subtraction is applied to satisfy the requirement that the wealth function is zero on the empty set of players.) Applying Equation (1), the Shapley value of f (in D for q), denoted Shapley Q (q, D n , D x , f ), is defined as follows:</p><formula xml:id="formula_6">Shapley Q (q, D n , D x , f ) := Shapley(D n , G q,Dx,Dn , f ) = 1 |D n |! π∈Π Dn q(D x ∪ π f ∪ {f }) -q(D x ∪ π f ) .</formula><p>Intuitively, this value represents the contribution of f to the result of the query: the higher this value is, the more f contributes to satisfying q. Note that this value could be negative, in the case where q is not monotone. Moreover, the properties of the Shapley value imply that we always have q(D) = q(D x ) + f ∈Dn Shapley Q (q, D n , D x , f ). In words, the contributions of all endogenous facts sum up to q(D) -q(D x ); hence, the Shapley value states how the score q(D) on the whole database is to be shared among the endogenous facts.</p></div>
+<div><head n="3.1">Exact Computation</head><p>In database theory, the computational complexity of a problem is often measured with what is called the data complexity <ref type="bibr" target="#b69">[69]</ref>, which is the complexity of the problem when a particular query q is fixed (there is, thus, one computational problem for each distinct query). Accordingly, past work <ref type="bibr" target="#b23">[24,</ref><ref type="bibr" target="#b43">43,</ref><ref type="bibr" target="#b59">59]</ref> has studied the data complexity of exactly computing the Shapley value of a fact, as defined above, depending on the particular query q at hand. Formally, for an arbitrary Boolean query q and slightly abusing the notation, the computational problem Shapley Q (q) is defined as follows:</p><formula xml:id="formula_7">Problem: Shapley Q (q) Param: Boolean query q Input: Database D x ∪ D n , fact f ∈ D n Goal: Compute Shapley Q (q, D n , D x , f )</formula><p>We aim for dichotomies in complexity, for classes of queries (e.g., CQs), that chart the boundary between polynomial-time cases and intractable cases.</p><p>We report on such results in this section.</p></div>
+<div><head n="3.1.1">Reduction to Probabilistic Databases</head><p>Deutch et al. <ref type="bibr" target="#b23">[24]</ref> showed that the calculation of the Shapley value can be reduced to query answering in probabilistic databases. Hence, this reduction yields a class of tractable queries. To explain that, we need some definitions.</p><p>A Tuple-Independent Database (TID for short) is a pair (D, π) consisting of a database D and a function π that maps each fact f ∈ D to a probability π(f ) ∈ [0, 1]. The TID (D, π) defines a probability distribution Pr D,π on P(D), where each</p><formula xml:id="formula_8">D ′ ⊆ D has the probability Pr D,π (D ′ ) =: f ∈D ′ π(f ) × f ∈D\D ′ (1 -π(f ))</formula><p>. We evaluate a Boolean query q by calculating the probability that q is satisfied by the TID: Pr(q, (D, π))</p><formula xml:id="formula_9">= D ′ ⊆D Pr D,π (D ′ ) • q(D ′ ).</formula><p>The problem of Probabilistic Query Evaluation for q, or PQE(q) for short, is the following:</p><formula xml:id="formula_10">Problem: PQE(q)</formula><p>Param: Boolean query q Input: TID (D, π) Goal: Compute Pr(q, (D, π))</p><p>We can now state the result of Deutch et al. <ref type="bibr" target="#b23">[24]</ref>:</p><p>Theorem 1. For every Boolean query q, the problem Shapley Q (q) reduces in polynomial time to the problem PQE(q).</p><p>Notice that this result is quite general, in that q can be an arbitrary Boolean query: a CQ, an FO query, an MSO, Datalog or RPQ query-it does not matter: if PQE(q) is tractable then Shapley Q (q) is tractable as well. As it turns, a celebrated result by Dalvi and Suciu <ref type="bibr" target="#b18">[19]</ref> provides a dichotomy on unions of conjunctive queries for PQE: either q is safe and PQE(q) is solvable in polynomial time (FP), or q is not safe and PQE(q) is FP #P -hard. Therefore, a direct corollary of Theorem 1 is that Shapley Q (q) is in FP for all safe UCQs.</p></div>
+<div><head n="3.1.2">Calculation via Knowledge Compilation</head><p>Deutch et al. <ref type="bibr" target="#b23">[24]</ref> also provide another route for solving this problem in practice, through knowledge compilation. We only sketch this approach here and refer to their work for more details. The idea is to first compute, for the query q and database D, the lineage (also called provenance) of q on D, which is a Boolean circuit that intuitively captures the dependence of the query answer on individual facts of D. This lineage is then transformed, using a knowledge compiler tool, into an equivalent Boolean circuit in restricted classes from knowledge compilation (namely, so-called deterministic and decomposable Boolean circuits), over which the authors of <ref type="bibr" target="#b23">[24]</ref> design a polynomial-time algorithm to compute the Shapley values.</p><p>The queries that can be solved in FP with this method are a subset 1 of those that are captured with Theorem 1, so in terms of theoretical results nothing is gained here (apart from a polynomial of slightly lower degree). Nevertheless, this method allows them to use existing tools to solve the problem in practice instead of implementing everything from scratch. They used in particular <software ContextAttributes="created">ProvSQL</software> <ref type="bibr" target="#b62">[62]</ref>, a tool integrated into <software ContextAttributes="created">PostgreSQL</software> that can perform lineage computation in various semirings, and the knowledge compiler c2d <ref type="bibr" target="#b20">[21]</ref>.</p></div>
+<div><head n="3.1.3">Hardness and Dichotomy</head><p>As we have discussed, Theorem 1 allows to capture a large class of tractable queries for the problem Shapley Q . It is, however, still unknown whether this actually captures all tractable cases. In particular, it is unknown whether there also exists a general reduction in the other direction:</p><p>Open Problem 1. Does PQE(q) reduce in polynomial time to Shapley Q (q) for all queries q?</p><p>Combined with known results on the complexity of probabilistic databases, a positive answer to this question would then yield a complete dichotomy of Shapley Q for the class of all UCQs and, in fact, even for the more general class of queries closed under homomorphism <ref type="bibr" target="#b0">[1]</ref>.</p><p>For the class of CQs without self-joins, Livshits et al. <ref type="bibr" target="#b43">[43]</ref> obtained a dichotomy. The tractability condition is that q is hierarchical : for all variables y and y ′ it holds that A y ⊆ A y ′ , or A y ′ ⊆ A y , or A y ∩ A y ′ = ∅, where A x is the set of atoms of q that use the variable x <ref type="bibr" target="#b19">[20]</ref>.</p><p>Theorem 2. Let q be a self-join-free CQ. If q is hierarchical, then Shapley Q (q) is in FP, otherwise it is FP #P -hard.</p><p>We conclude this part with some comments on Theorem 2. First, the positive part is already captured by Theorem 1, as it is known that hierarchical CQs are safe for PQE on TIDs <ref type="bibr" target="#b18">[19]</ref>. In contrast, the lower bound requires a reduction that is specifically crafted for the problem. In particular, it is not clear whether and how this reduction can be generalized to solve Open Problem 1, and there is no generalization of Theorem 2 for CQs with self-joins and UCQs. Second, the reduction for the lower bound of Theorem 2 requires the usage of both endogenous and exogenous facts, and it is still open whether the lower bound holds if we assume that all facts are endogenous. Finally, Reshef et al. <ref type="bibr" target="#b59">[59]</ref> studied the complexity of Shapley Q for CQs with negated atoms (but still no self-joins), and established analogous dichotomy results under the restrictions that certain relations can contain only exogenous facts.</p></div>
+<div><head n="3.2">Approximation</head><p>As we have seen, computing the exact Shapley values of facts is not always tractable in theory. This naturally brings the question of which queries allow for approximate computation of these values with desired guarantees on the data complexity and the approximation ratio. We review in this section what is known on the approximability of the problems Shapley Q (q), in terms of FPRAS.</p><p>As pointed out in <ref type="bibr" target="#b43">[43]</ref>, by using the Chernoff-Hoeffding bound one can easily obtain an additive FPRAS for computing Shapley Q (q, D n , D x , f ): this can be done for instance by sampling O(log(1/δ)/ϵ 2 ) permutations π of D n and computing the average value of q(D x ∪π f ∪{f })-q(D x ∪π f ), assuming that q itself is answerable in polynomial time. Note that this assumption is true for the most common query classes such as UCQs, Datalog, etc. Formally: Proposition 1. If q can be answered in polynomial time, then Shapley Q (q) has an additive FPRAS.</p><p>An additive FPRAS might be insufficient when the values to approximate are very small. Nevertheless, for a large class of queries, the Shapley values cannot in fact be too small <ref type="bibr" target="#b43">[43]</ref>. Specifically, a (Boolean) query q is said to have the gap property if the Shapley value of any fact is either zero or is "not too small," that is, at least the reciprocal of a polynomial. Then, for a query with polynomial-time evaluation and the gap property, the additive FPRAS from Proposition 1 can be easily transformed into a multiplicative FPRAS. As it turns out, all UCQs have the gap property [43, Proposition 4.12].</p><p>Proposition 2. If q has polynomial-time evaluation and the gap property, then Shapley Q (q) admits a multiplicative FPRAS. This holds for all UCQs. Not all queries satisfy the gap property. For instance, some CQs with negated atoms (that we denote by CQ ¬ ) may lack this property. In fact, by establishing a connection between the existence of a multiplicative FPRAS for Shapley Q (q) and what is called the relevance problem for q, Reshef et al. <ref type="bibr" target="#b59">[59]</ref> were able to exhibit a CQ ¬ that does not admit any multiplicative FPRAS (unless P = RP, which is widely believed to be false). So far, however, no dichotomy is known on the existence of a multiplicative FPRAS for CQ ¬ s (or even self-join-free CQ ¬ s). In fact, we do not know any example of a CQ ¬ that does not have the gap property but nevertheless admits a multiplicative FPRAS.</p></div>
+<div><head n="3.3">Remarks</head><p>We conclude with several remarks on the Shapley value for database queries. Interestingly, the state of affairs for approximate Shapley computation contrasts with what happens with the SHAP score in machine learning. Arenas et al. <ref type="bibr" target="#b3">[4]</ref> have recently shown that the SHAP score does not admit a multiplicative FPRAS (under conventional assumptions in complexity theory), even for very simple monotone Boolean models (namely, monotone 2-DNFs) <ref type="bibr" target="#b3">[4,</ref><ref type="bibr">Theorem 9]</ref>.</p><p>A possible alternative to the computation of the Shapley value is to rank the endogenous facts according to their Shapley value, while possibly avoiding the actual computation of these values. Indeed, as far as we know, there could exist queries q such that Shapley Q (q) is hard to approximate while the ranking problem is tractable, or vice-versa. Deutch et al. <ref type="bibr" target="#b23">[24]</ref> proposed a fast heuristic to solve this problem, and this heuristic seems to work well empirically. Arad et al. <ref type="bibr" target="#b1">[2]</ref> employed machine learning to learn this ranking. Yet, as of today, a formal study of the complexity of the ranking problem is lacking. For instance, we do not know whether there are queries with intractable Shapley but tractable ranking. Again, this contrasts with what is known on the SHAP-score from machine learning, as it has been shown that the ranking problem for this score is unlikely to be in BPP even for simple monotone Boolean models; see <ref type="bibr" target="#b3">[4,</ref><ref type="bibr">Theorem 16]</ref>.</p><p>Finally, Khalil and Kimelfeld <ref type="bibr" target="#b39">[40]</ref> have recently studied the complexity of the Shapley value in the context of graphs with labeled edges. Their problem is similar to what we discussed in this section, except that the players are the (endogenous) edges and/or vertices of the graph, and the queries are Regular Path Queries (RPQs) and Conjunctions of RPQs (CRPQs). An RPQ is associated with a regular expression γ, and a pair (u, v) of vertices is an answer if any path from u to v conforms to γ. They established dichotomies for exact and approximate calculation of the Shapley value. For example, under conventional complexity assumptions, an RPQ has a multiplicative FPRAS if and only if the regular expression recognizes a finite language.</p></div>
+<div><head n="4">Contribution to Database Inconsistency</head><p>It is often wrong to assume that the database is clean of errors and conforms to our integrity constraints. Data might be the result of integrating unreliable sources (e.g., social media) that contain mistakes and conflicting information. Moreover, the content of the database may be produced by errorprone procedures (e.g., natural-language or image processing). Given this nature of data, measures of database inconsistency quantify the extent to which the database violates a given set of integrity constraints <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b45">45,</ref><ref type="bibr" target="#b48">48]</ref>. Inconsistency measures can be used, for example, to estimate the reliability of new datasets <ref type="bibr" target="#b17">[18]</ref> or to build progress indicators for datacleaning systems <ref type="bibr" target="#b48">[48]</ref>. Moreover, such measures can be used to attribute to database facts a level of responsibility to inconsistency, and so to prioritize facts in the explanation, inspection, or resolution of database inconsistency; this task is what we discuss in this part.</p><p>The attribution of responsibility to the inconsistency of the database relies on two main components: (1) an inconsistency measure and (2) a responsibility-sharing mechanism. For the former, we discuss several alternatives in the next section. For the latter, we use the Shapley value.</p></div>
+<div><head n="4.1">Inconsistency Measures</head><p>The measurement of the inconsistency of information has been extensively studied by the Knowledge Representation (KR) and Logic communities <ref type="bibr" target="#b26">[27,</ref><ref type="bibr" target="#b35">36,</ref><ref type="bibr" target="#b37">38,</ref><ref type="bibr" target="#b41">42,</ref><ref type="bibr" target="#b66">66]</ref>, where several different measures have been introduced. Some of these have been adapted to the database setting <ref type="bibr" target="#b45">[45]</ref>.</p><p>In general, an inconsistency measure I is a function that maps pairs (D, ∆) of a database D and a set ∆ of integrity constraints (ICs) to numbers I(D, ∆) ∈ [0, ∞). Intuitively, the higher I(D, ∆) is, the stronger D violates ∆. We make only the (reasonable) assumption that I(D, ∆) is zero whenever D is empty. Here again, we use the Shapley value framework, where this time the set of players is the whole database, and the utility is the function G D,∆,I : P(D) → {0, 1} that maps every subset D ′ ⊆ D to the value I(D ′ , ∆). Hence, applying Equation (1), the Shapley value of a fact f of D w.r.t. ∆, denoted Shapley I (D, ∆, I, f ), is defined as</p><formula xml:id="formula_11">Shapley I (D, ∆, I, f ) := Shapley(D, G D,∆,I , f ) = 1 |D|! π∈Π D (I(π f ∪ {f }, ∆) -I(π f , ∆)) .</formula><p>Following Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref>, here we do not distinguish between exogenous and endogenous facts-all facts are considered endogenous (and all definitions naturally extend to account for exogenous facts).</p><p>Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref> studied the Shapley value for several inconsistency measures that were previously explored in the context of databases and knowledge bases. (See <ref type="bibr" target="#b48">[48]</ref> for a study of the behavior of these measures from both a practical and a theoretical perspective.) In the following definitions, D denotes a database and ∆ a set of ICs.</p><p>1. I d , called the drastic measure <ref type="bibr" target="#b66">[66]</ref> takes the value 1 if the database is inconsistent and the value 0 otherwise.</p><p>2. I MI counts the minimal inconsistent subsets of the database <ref type="bibr" target="#b36">[37,</ref><ref type="bibr" target="#b37">38]</ref>. In notation, I MI (D, ∆) := |MI(D, ∆)| where MI(D, ∆) is the set of all inconsistent subsets E ⊆ D such that E ′ |= ∆ for all E ′ ⊂ E.</p><p>3. I P counts the problematic facts, where a fact is problematic if it belongs to a minimal inconsistent subset <ref type="bibr" target="#b27">[28]</ref>. In notation, I P (D, ∆) := | E∈MI(D,∆) E|.</p><p>4. I R is the minimal number of facts that should be deleted from the database in order to satisfy ∆ <ref type="bibr" target="#b7">[8,</ref><ref type="bibr" target="#b25">26,</ref><ref type="bibr" target="#b28">29]</ref>. In notation, I R (D, ∆) := min E⊆D,D\E|=∆ (|E|).</p><p>5. I MC counts the maximal consistent subsets <ref type="bibr" target="#b27">[28,</ref><ref type="bibr" target="#b29">30]</ref> (also called subset repairs <ref type="bibr" target="#b4">[5]</ref>). In notation,</p><formula xml:id="formula_12">I MC (D, ∆) := |MC(D, ∆)| where MC(D, ∆) is the set of all consistent subsets E ⊆ D such that E ′ ̸ |= ∆ whenever E ⊂ E ′ .</formula><p>Intuitively, the measure I d is simply an indicator of inconsistency. The measure I MI counts the violations (i.e., the minimal sets of facts that jointly violate the constraints) and the measure I P counts the facts involved in such violations (and a fact is counted once even if it occurs in multiple violations). For both measures, the higher the number is, the more the constraints are violated; hence, the more inconsistent the database is. The measure I R quantifies the distance of the database from a consistent one-the more facts we have to remove to obtain consistency, the higher the measure is. Finally, the measure I MC counts the subset repairs; that is, all the different ways to obtain a consistent database by deleting a minimal set of facts-the more repairs there are, the more inconsistent the database is.</p></div>
+<div><head n="4.2">Complexity of Exact Computation</head><p>We proceed to discuss the complexity of computing the value Shapley I (D, ∆, I, f ) for each one of the aforementioned inconsistency measures I, as studied by Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref>. Their study considered the case where ∆ is a set of FDs. We consider again the data complexity of computing the Shapley value; this time, the schema, set of FDs, and inconsistency measure are considered fixed, and the input consists of a database D and a fact f . Accordingly, and again slightly abusing notation, we denote Shapley I (∆, I) the corresponding computational problems. It turns our that each of the inconsistency measures entails quite a unique picture of complexity.</p><p>The measure I d . While the drastic measure is the simplest one conceptually, it might be intractable to compute the Shapley value of a fact w.r.t. I d even for simple FD sets. Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref> established a dichotomy in data complexity for this measure, based on the definition of left-hand-side chain <ref type="bibr" target="#b44">[44]</ref>. An FD set ∆ has a left-hand-side chain (lhs chain, for short) if for every two FDs X → Y and</p><formula xml:id="formula_13">X ′ → Y ′ in ∆, either X ⊆ X ′ or X ′ ⊆ X.</formula><p>Theorem 3. Let ∆ be a set of FDs. If ∆ is equivalent to an FD set with an lhs chain, then Shapley I (∆, I d ) is in FP. Otherwise, the problem is FP #P -complete.</p><p>Theorem 3 implies, for example, that the Shapley value can be computed efficiently for the set {A → B, AC → D}, but not for {A → B, B → A}. As a proof technique, they show hardness directly only for {A → B, B → A}. For any other intractable FD set, hardness is established via the so called fact-wise reductions <ref type="bibr" target="#b40">[41]</ref>. Such reductions essentially map databases over one schema and set of ICs to databases over another schema and set of ICs while preserving (in)consistency. The positive side of Theorem 3 is established via dynamic programming.</p><p>We note that the tractability criterion of Theorem 3 is the same as the tractability criterion for the problem of counting subset repairs (or, equivalently, maximal consistent subsets), and is decidable in polynomial time <ref type="bibr" target="#b44">[44]</ref>.</p><p>The measure I MI . For a set ∆ of FDs, it is easy to see that I MI simply counts the pairs of facts of the database that jointly violate the FDs. Hence, for a fact f and some permutation π, we have that I MI (π f ∪{f }, ∆)-I MI (π f , ∆) is precisely the number of facts in π f that are in conflict with f . This simple observation implies the tractability of I MI . The measure I P . For this measure, we have that I P (π f ∪ {f }, ∆) -I P (π f , ∆) is the number of facts in π f that: (1) are in conflict with f , and (2) are PTime ? ; FPRAS NP-hard <ref type="bibr" target="#b46">[46]</ref> ; no FPRAS I MC PTime FP #P -complete <ref type="bibr" target="#b44">[44]</ref> ; ?</p><p>not in conflict with any other fact of π f (as, otherwise, they are considered "problematic" already before adding the fact f to the picture). Based on this observation, we conclude the following.</p><p>Theorem 5.</p><p>[45] Shapley I (∆, I P ) is in FP for every set ∆ of FDs.</p><p>The measure I R . The measure I R is the only one for which we lack the full complexity picture; however, it is known that there are substantial sets of FDs for which this measure is tractable and others for which it is intractable. The hard cases follow from a prior work on the related problem of computing the cost of a cardinality repair (i.e., the minimal number of facts to remove to obtain consistency), as we explain next.</p><p>Livshits et al. <ref type="bibr" target="#b46">[46]</ref> established a dichotomy for finding a cardinality repair, where the tractability criterion is based on a polynomial-time algorithm, Simplify, that simplifies the FD set in an iterative manner until no further simplification can be applied. If the result of Simplify(∆) is an empty FD set, then the problem is solvable in polynomial time; otherwise, it is NP-hard. Now, one of the basic properties of the Shapley value is "efficiency"-the sum of the Shapley values over all the players equals the total wealth <ref type="bibr" target="#b63">[63]</ref>. This property implies that for an inconsistency measure I, it holds that</p><formula xml:id="formula_14">f ∈D Shapley I (D, ∆, I, f ) = I(D, ∆) .</formula><p>Thus, whenever the measure itself is hard to compute, so is the Shapley value of facts. This leads to the following result. Theorem 6. Let ∆ be a set of FDs. If the procedure Simplify(∆) of Livshits et al. <ref type="bibr" target="#b46">[46]</ref> returns a nonempty set, then Shapley I (∆, I R ) is NP-hard.</p><p>As in the case of the drastic measure, it can be shown, via a dynamic programming algorithm, that for an FD set with an lhs chain, the measure I R is tractable. The measure I MC . As we explained for the previous measure, the efficiency property of the Shapley value allows us to conclude that the problem Shapley I (∆, I MC ) is hard whenever it is hard to calculate I MC (D, ∆). Livshits et al. <ref type="bibr" target="#b47">[47]</ref> have shown that the subset repairs (i.e., maximal consistent subsets) can be counted in polynomial time for FD sets with an lhs chain (up to equivalence), and is #Pcomplete for any other FD set. Hence, an lhs chain is a necessary condition for tractability. As in the case of the measures I d and I R , it can be shown that this is also a sufficient condition using a dynamic programming algorithm. Hence, the following holds. Theorem 8. <ref type="bibr" target="#b45">[45]</ref> Let ∆ be a set of FDs. If ∆ is equivalent to an FD set with an lhs chain, then Shapley I (∆, I MC ) is in FP. Otherwise, the problem is FP #P -complete.</p><p>The complexity results of this section are summarized in Table <ref type="table" target="#tab_0">1</ref>. (The results on approximation are discussed in the next section.)</p></div>
+<div><head n="4.3">Complexity of Approximation</head><p>We have seen that, as far as exact computation is concerned, I MI and I P are tractable for every set of FDs, but the measures I d , I R , and I MC can be intractable even for simple sets of FDs. Therefore, we now discuss the approximate computation of Shapley I . Again, the complexity results are of Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref>.</p><p>As in the case of Shapley Q , using the Chernoff-Hoeffding bound and a Monte-Carlo approach, one can easily obtain an additive FPRAS for computing Shapley I (D, ∆, I, f ), assuming that I(D, ∆) can be computed in polynomial time, given D. A multiplicative FPRAS can be obtained using the same procedure if a corresponding "gap" property holds, meaning that when the Shapley value is not zero, it is guaranteed to be "large enough".</p><p>For instance, in the case of the drastic measure, it can be shown that for all databases D and facts f , Shapley I (D, ∆, I d , f ) is either zero or at least Regarding I R , when it can be computed in polynomial time (i.e., when Simplify(∆) = ∅), we can similarly show that Shapley I (∆, I R ) has both an additive and a multiplicative FPRAS. The gap property holds here as well:</p><formula xml:id="formula_15">Shapley I (D, ∆, I R , f ) = 0 or Shapley I (D, ∆, I R , f ) ≥ 1 |D|•(|D|-1)</formula><p>. In contrast, when I R is intractable, it is not only NP-hard, but also APX-complete. Consequently, there exists a polynomial-time constant-ratio approximation for I R (D, ∆), but for some ϵ &gt; 1 there is no (randomized) ϵ-approximation or else NP = RP. Then, the fact that Shapley I (D, ∆, I R , f ) ≥ 0 implies that the existence of a multiplicative FPRAS for the value Shapley I (D, ∆, I R , f ) would imply the existence of a multiplicative FPRAS for I R (D, ∆) via the efficiency property of the Shapley value. Therefore, the following holds. Interestingly, it is still unknown whether there is any polynomial-time constant-ratio multiplicative approximation for Shapley I (D, ∆, I R , f ) for any FD set in the intractable side of Theorem 9.</p><p>Open Problem 3. For any set ∆ of FDs such that Simplify(∆) is nonempty, is there a polynomialtime constant-ratio multiplicative approximation for Shapley I (D, ∆, I R , f )?</p><p>Finally, the complexity picture for the approximate computation of the Shapley value w.r.t. I MC is rather incomplete. This is because counting the maximal consistent subsets w.r.t. {A → B, B → A} over R(A, B) is the same as counting the maximal matchings of a bipartite graph. As the values Shapley I (D, ∆, I MC , f ) are nonnegative and sum up to the number of maximal consistent subset (via the efficiency property), we conclude that an FPRAS for Shapley I (D, ∆, I MC , f ) implies an FPRAS for the number of maximal matchings. To the best of our knowledge, existence of the latter is an open problem. The same holds for any FD set ∆ ′ that is not equivalent to an FD set with an lhs chain, since there is a fact-wise reduction from ∆ to such ∆ ′ <ref type="bibr" target="#b44">[44]</ref>. Hence, the following remains unknown.</p><p>Open Problem 4. For any FD set ∆ that has no lhs chain, is there a multiplicative FPRAS for Shapley I (∆, I MC )?</p><p>Actually, Open Problem 1 is solved in one special case. It has been recently shown that the problem of counting the maximal consistent subsets for the FD set {A → B, C → D} over R(A, B, C, D) does not admit an FPRAS, unless NP = RP <ref type="bibr" target="#b15">[16]</ref>. Therefore, we conclude that the same holds for the problem of computing Shapley I (D, {A → B, C → D}, I MC , f ).</p><p>As said earlier, Table <ref type="table" target="#tab_0">1</ref> summarizes the complexity results for both the exact and approximate variants of the problems we studied here.</p></div>
+<div><head n="4.4">Contribution to Cleaning Actions</head><p>We presented the theoretical results of Livshits and Kimelfeld <ref type="bibr" target="#b45">[45]</ref> on the contribution of facts to inconsistency. The application of the Shapley value to machinery for data repairing has been proposed and studied by Deutch et al. <ref type="bibr" target="#b22">[23]</ref> from a different angle and a practical treatment. They aimed for explaining the individual actions of a data-repairing system, and particularly its decision to change a given entry in the database. They used the Shapley value to quantify the contribution of relation cells and the ICs to the decision to change a value. Hence, cells and ICs are the players in the coalitional game of causing the repairing algorithm to change a given cell. While their solutions do not have theoretical guarantees, they give heuristics that apply for a general setting: ICs can be any set of denial constraints (that widely generalize FDs) and repairing can be done by an arbitrary black-box algorithm.</p></div>
+<div><head n="5">Concluding Remarks</head><p>We presented recent work on the application of the Shapley value to database tasks. Our focus has been on the theoretical analysis of the complexity of the underlying computational problems, and we discussed mainly two of them: computing the contribution of a fact to a query answer, and computing its contribution to inconsistency. While there has been considerable research effort on the practical realization of the first challenge <ref type="bibr" target="#b1">[2,</ref><ref type="bibr" target="#b21">22,</ref><ref type="bibr" target="#b23">24,</ref><ref type="bibr" target="#b24">25]</ref>, the practical aspects of the contribution to inconsistency are yet to be explored (with the exception of Deutch et al. <ref type="bibr" target="#b22">[23]</ref> that, as we explained, studied a problem that is related but different). Hence, many problems remain for future research, both on the theoretical side (e.g., the open problems we listed throughout the manuscript) and the practical one.</p><p>Notably, the framework for applying the Shapley value to measuring contribution to query answers <ref type="bibr" target="#b43">[43]</ref> has been applied for proposing new bibliometric metrics <ref type="bibr" target="#b24">[25]</ref>. The authors did not use the algorithms proposed by Deutch et al. <ref type="bibr" target="#b23">[24]</ref> (which are the most efficient to date, to the best of our knowledge), but instead computed the values directly from the definition. In this context, we believe that it is important to facilitate the use of existing algorithms by incorporating them into <software ContextAttributes="created">Postgres</software> extensions such as <software ContextAttributes="created">ProvSQL</software> <ref type="bibr" target="#b62">[62]</ref>.</p></div><figure xml:id="fig_0"><head>Problem:</head><label /><figDesc>Shapley I (∆, I) Param: Set ∆ of ICs, inconsistency m. I Input: Database D and fact f ∈ D Goal: Compute Shapley I (D, ∆, I, f )</figDesc></figure>
+<figure xml:id="fig_1"><head>Theorem 4 . [ 45 ]</head><label>445</label><figDesc>Shapley I (∆, I MI ) is in FP for every set ∆ of FDs.</figDesc></figure>
+<figure xml:id="fig_2"><head>Theorem 7 .</head><label>7</label><figDesc>Let ∆ be a set of FDs. If ∆ is equivalent to an FD set with an lhs chain, then Shapley I (∆, I R ) is in FP. It remains unknown what is the complexity of the problem for FD sets that fall outside the two cases covered by Theorems 6 and 7. Open Problem 2. What is the data complexity of Shapley I (∆, I R ) for any set ∆ of FDs such that ∆ has no lhs chain (up to equivalence) and Simplify(∆) returns an empty set? In particular, the problem is open for the FD set {A → B, B → A} over the relation symbol R(A, B).</figDesc></figure>
+<figure xml:id="fig_3"><head>1</head><label /><figDesc>|D|•(|D|-1). Since I d (D, ∆) can be computed in polynomial time for every ∆, we conclude that: Proposition 3. Shapley I (∆, I d ) has an additive and a multiplicative FPRAS for every set ∆ of FDs.</figDesc></figure>
+<figure xml:id="fig_4"><head>Theorem 9 .</head><label>9</label><figDesc>Let ∆ be a set of FDs. 1. If Simplify(∆) = ∅, then Shapley I (∆, I R ) has both an additive and a multiplicative FPRAS. 2. Otherwise, Shapley I (∆, I R ) has neither a multiplicative nor an additive FPRAS, assuming RP ̸ = NP.</figDesc></figure>
+<figure type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>The complexity of the (exact ; approximate) Shapley value of different inconsistency measures. lhs chain no lhs chain, PTime cardinality repair other</figDesc><table><row><cell>I d</cell><cell>PTime</cell><cell>FP #P -complete ; FPRAS</cell></row><row><cell>I MI</cell><cell /><cell>PTime</cell></row><row><cell>I P</cell><cell /><cell>PTime</cell></row><row><cell>I R</cell><cell /><cell /></row></table></figure>
+			<note place="foot" n="1" xml:id="foot_0"><p>And it is unknown if this is a strict subset or not, see, e.g.,<ref type="bibr" target="#b55">[55]</ref>.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><p>Acknowledgements. Much of the work that we described in this survey was supported by the <rs type="funder">Israel Science Foundation (ISF)</rs>, Grant <rs type="grantNumber">768/19</rs>, and the <rs type="funder">German Research Foundation (DFG)</rs> Project <rs type="grantNumber">412400621</rs> (<rs type="programName">DIP program</rs>). <rs type="person">L. Bertossi</rs> has been funded by <rs type="programName">ANID -Millennium Science Initiative Program</rs>-Code <rs type="grantNumber">ICN17002</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funding" xml:id="_CbppyzF">
+					<idno type="grant-number">768/19</idno>
+				</org>
+				<org type="funding" xml:id="_7BRcnH8">
+					<idno type="grant-number">412400621</idno>
+					<orgName type="program" subtype="full">DIP program</orgName>
+				</org>
+				<org type="funding" xml:id="_CVtdRyM">
+					<idno type="grant-number">ICN17002</idno>
+					<orgName type="program" subtype="full">ANID -Millennium Science Initiative Program</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Uniform reliability for unbounded homomorphism-closed graph queries</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Amarilli</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDT</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">255</biblScope>
+			<biblScope unit="page" from="1" to="14" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">LearnShapley: Learning to predict rankings of facts contribution based on query logs</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Arad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Frost</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="4788" to="4792" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">The tractability of SHAP-score-based explanations for classification over deterministic and decomposable boolean circuits</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barceló</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAAI</title>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="6670" to="6678" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">On the complexity of SHAP-score-based explanations: Tractability via knowledge compilation and non-approximability results</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barceló</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Machine Learning Research</title>
+		<imprint>
+			<biblScope unit="volume">24</biblScope>
+			<biblScope unit="issue">63</biblScope>
+			<biblScope unit="page" from="1" to="58" />
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Consistent query answers in inconsistent databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<publisher>ACM Press</publisher>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="68" to="79" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Databases with uncertainty and lineage</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Benjelloun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">D</forename><surname>Sarma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">Y</forename><surname>Halevy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Theobald</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Widom</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">VLDB J</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="243" to="264" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Database repairs and consistent query answering: Origins and further developments</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<editor>D. Suciu, S. Skritek, and C. Koch</editor>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<publisher>ACM</publisher>
+			<biblScope unit="page" from="48" to="58" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Repair-based degrees of database inconsistency</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">LPNMR</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="volume">11481</biblScope>
+			<biblScope unit="page" from="195" to="209" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Specifying and computing causes for query answers in databases via database repairs and repair-programs</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Knowl. Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">63</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="199" to="231" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Attribution-scores and causal counterfactuals as explanations in artificial intelligence</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Reasoning Web. Causality, Explanations and Declarative Knowledge</title>
+		<title level="s">Springer LNCS</title>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</editor>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+			<biblScope unit="volume">13759</biblScope>
+			<biblScope unit="page" from="1" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Causality-based explanation of classification outcomes</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schleich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Vagena</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">DEEM@SIGMOD</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="page" from="1" to="6" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Causes for query answers from databases: Datalog abduction, view-updates, and integrity constraints</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Salimi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reason</title>
+		<imprint>
+			<biblScope unit="volume">90</biblScope>
+			<biblScope unit="page" from="226" to="252" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">From causes for database queries to repairs and model-based diagnosis and back</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Salimi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Theory Comput. Syst</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="191" to="232" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Data provenance: What next?</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Buneman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Tan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGMOD Rec</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="5" to="16" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A survey on the explainability of supervised machine learning</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Burkart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">F</forename><surname>Huber</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">70</biblScope>
+			<biblScope unit="page" from="245" to="317" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Counting database repairs entailing a query: The case of functional dependencies</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Calautti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Pieris</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schneider</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="403" to="412" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Responsibility and blame: A structural-model approach</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chockler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Halpern</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="page" from="93" to="115" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Towards consistency-based reliability assessment</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Cholvy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Perrussel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Raynaut</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J.-M</forename><surname>Thévenin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">AAMAS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="1643" to="1644" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">The dichotomy of probabilistic inference for unions of conjunctive queries</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Dalvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the ACM (JACM)</title>
+		<imprint>
+			<biblScope unit="volume">59</biblScope>
+			<biblScope unit="issue">6</biblScope>
+			<biblScope unit="page" from="1" to="87" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Probabilistic databases: Diamonds in the dirt</title>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">N</forename><surname>Dalvi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">52</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="86" to="94" />
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">New advances in compiling CNF to decomposable negation normal form</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of ECAI</title>
+		<meeting>ECAI</meeting>
+		<imprint>
+			<publisher>Citeseer</publisher>
+			<date type="published" when="2004">2004</date>
+			<biblScope unit="page" from="328" to="332" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">ShapGraph: An holistic view of explanations through provenance graphs and Shapley values</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">B</forename><surname>Davidson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Frost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Koren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD Conference</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="2373" to="2376" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Explanations for data repair through Shapley values</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Frost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gilad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Sheffer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CIKM</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="362" to="371" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Computing the Shapley value of facts in query answering</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Deutch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Frost</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="1570" to="1583" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Credit distribution in relational scientific databases</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dosso</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">B</forename><surname>Davidson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Silvello</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Information Systems</title>
+		<imprint>
+			<biblScope unit="volume">109</biblScope>
+			<biblScope unit="page">102060</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Property testing and its connection to learning and approximation</title>
+		<author>
+			<persName><forename type="first">O</forename><surname>Goldreich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Goldwasser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ron</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="653" to="750" />
+			<date type="published" when="1998">1998</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Measuring inconsistency in knowledgebases</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Intell. Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="159" to="184" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Measuring consistency gain and information loss in stepwise inconsistency resolution</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECSQARU</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">6717</biblScope>
+			<biblScope unit="page" from="362" to="373" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Distance-based measures of inconsistency</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ECSQARU</title>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">7958</biblScope>
+			<biblScope unit="page" from="230" to="241" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Analysing inconsistent information using distance-based measures</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Grant</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Int. J. Approx. Reasoning</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="page" from="3" to="26" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title level="m" type="main">The semiring framework for database provenance</title>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">J</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Tannen</surname></persName>
+		</author>
+		<editor>E. Sallinger, J. V. den Bussche, and F. Geerts</editor>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<publisher>ACM</publisher>
+			<biblScope unit="page" from="93" to="99" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">A survey of methods for explaining black box models</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Guidotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Monreale</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ruggieri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Turini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Giannotti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Pedreschi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Comput. Surv</title>
+		<imprint>
+			<biblScope unit="volume">51</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="1" to="93" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Halpern</surname></persName>
+		</author>
+		<title level="m">Actual Causality</title>
+		<imprint>
+			<publisher>MIT Press</publisher>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Causes and explanations: A structural-model approach. part i: Causes</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Halpern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">British Journal for the Philosophy of Science</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="843" to="887" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Causes and explanations: A structural-model approach. part ii: Explanations</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">Y</forename><surname>Halpern</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">British Journal for the Philosophy of Science</title>
+		<imprint>
+			<biblScope unit="volume">56</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="889" to="911" />
+			<date type="published" when="2005">2005</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Shapley inconsistency values</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Konieczny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KR</title>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2006">2006</date>
+			<biblScope unit="page" from="249" to="259" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Measuring inconsistency through minimal inconsistent sets</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Konieczny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">KR</title>
+		<imprint>
+			<publisher>AAAI Press</publisher>
+			<date type="published" when="2008">2008</date>
+			<biblScope unit="page" from="358" to="366" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">On the measure of conflicts: Shapley inconsistency values</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hunter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Konieczny</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artif. Intell</title>
+		<imprint>
+			<biblScope unit="volume">174</biblScope>
+			<biblScope unit="issue">14</biblScope>
+			<biblScope unit="page" from="1007" to="1026" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">Causal Inference for Statistics, Social, and Biomedical Sciences: An Introduction</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Imbens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">B</forename><surname>Rubin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<author>
+			<persName><forename type="first">M</forename><surname>Khalil</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<idno type="arXiv">arXiv:2212.07720</idno>
+		<title level="m">The complexity of the Shapley value for regular path queries</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">arXiv preprint</note>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Maximizing conjunctive views in deletion propagation</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Vondrák</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Williams</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="187" to="198" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Quantifying information and contradiction in propositional logic through test actions</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Konieczny</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Marquis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IJCAI</title>
+		<imprint>
+			<biblScope unit="page" from="106" to="111" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<monogr>
+		<title />
+		<author>
+			<persName><forename type="first">Morgan</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2003">2003</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">The Shapley value of tuples in query answering</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sebag</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Log. Methods Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Counting and enumerating (preferred) database repairs</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="289" to="301" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">The Shapley value of inconsistency measures for functional dependencies</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Log. Methods Comput. Sci</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Computing optimal repairs for functional dependencies</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">ACM Trans. Database Syst</title>
+		<imprint>
+			<biblScope unit="volume">45</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="4" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Counting subset repairs with functional dependencies</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wijsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Comput. Syst. Sci</title>
+		<imprint>
+			<biblScope unit="volume">117</biblScope>
+			<biblScope unit="page" from="154" to="164" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Properties of inconsistency measures for databases</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kochirgan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Tsur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Roy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="page" from="1182" to="1194" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">From local explanations to global understanding with explainable AI for trees</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">G</forename><surname>Erion</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Degrave</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Prutkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Katz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Himmelfarb</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Bansal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Nat. Mach. Intell</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="56" to="67" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">A unified approach to interpreting model predictions</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">M</forename><surname>Lundberg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Lee</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">NIPS</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="4765" to="4774" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">Internet economics: The use of Shapley value for ISP settlement</title>
+		<author>
+			<persName><forename type="first">R</forename><forename type="middle">T B</forename><surname>Ma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Chiu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Lui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Misra</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Rubenstein</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE/ACM Trans. Netw</title>
+		<imprint>
+			<biblScope unit="volume">18</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="775" to="787" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">The complexity of causality and responsibility for query answers and non-answers</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Meliou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gatterbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">F</forename><surname>Moore</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="34" to="45" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Explainable artificial intelligence: a comprehensive review</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Minh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Nguyen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Artificial Intelligence Review</title>
+		<imprint>
+			<biblScope unit="volume">55</biblScope>
+			<biblScope unit="page">11</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<monogr>
+		<author>
+			<persName><forename type="first">C</forename><surname>Molnar</surname></persName>
+		</author>
+		<ptr target="https://christophm.github.io/interpretable-ml-book/" />
+		<title level="m">Interpretable Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Solving a special case of the intensional vs extensional conjecture in probabilistic databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Monet</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of PODS</title>
+		<meeting>PODS</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="149" to="163" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">The class of microarray games and the relevance index for genes</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Moretti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Patrone</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bonassi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Top</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="256" to="280" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">A Shapley value-based approach to discover influential nodes in social networks</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Narayanam</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Narahari</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans Autom. Sci. Eng</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="130" to="147" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<monogr>
+		<title level="m" type="main">Causality: Models, Reasoning and Inference</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>Cambridge University Press</publisher>
+		</imprint>
+	</monogr>
+	<note>2nd edition</note>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">The impact of negation on the complexity of the Shapley value in conjunctive queries</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Reshef</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">PODS</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="285" to="297" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Roth</surname></persName>
+		</author>
+		<title level="m">The Shapley value : essays in honor of Lloyd S. Shapley</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Quantifying causal effects on query answering in databases</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Salimi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">V</forename><surname>Broeck</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">TaPP. USENIX Association</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b62">
+	<analytic>
+		<title level="a" type="main">ProvSQL: Provenance and probability management in PostgreSQL</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Senellart</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Jachiet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Maniu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Ramusat</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2034" to="2037" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b63">
+	<analytic>
+		<title level="a" type="main">A value for n-person games</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">S</forename><surname>Shapley</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Contributions to the Theory of Games II</title>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">W</forename><surname>Kuhn</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><forename type="middle">W</forename><surname>Tucker</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Princeton</addrLine></address></meeting>
+		<imprint>
+			<publisher>Princeton University Press</publisher>
+			<date type="published" when="1953">1953</date>
+			<biblScope unit="page" from="307" to="317" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b64">
+	<analytic>
+		<title level="a" type="main">Model-based problem solving</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Struss</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of Knowledge Representation</title>
+		<imprint>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b65">
+	<analytic>
+		<title level="a" type="main">Probabilistic Databases</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Olteanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Koch</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Synthesis Lectures on Data Management</title>
+		<imprint>
+			<publisher>Morgan &amp; Claypool Publishers</publisher>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b66">
+	<analytic>
+		<title level="a" type="main">On the compliance of rationality postulates for inconsistency measures: A more or less complete picture</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Thimm</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">KI</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="31" to="39" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b67">
+	<analytic>
+		<title level="a" type="main">A new approximation method for the Shapley value applied to the WTC 9/11 terrorist attack</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Van Campen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Hamers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Husslage</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Lindelauf</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Soc. Netw. Anal. Min</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="3" />
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b68">
+	<analytic>
+		<title level="a" type="main">On the tractability of SHAP explanations</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Van Den Broeck</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lykov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Schleich</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Suciu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Artif. Intell. Res</title>
+		<imprint>
+			<biblScope unit="volume">74</biblScope>
+			<biblScope unit="page" from="851" to="886" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b69">
+	<analytic>
+		<title level="a" type="main">The complexity of relational query languages</title>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Vardi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">STOC</title>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="1982">1982</date>
+			<biblScope unit="page" from="137" to="146" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">A Tale of Two Laws of Semantic Change: Predicting Synonym Changes with Distributional Semantic Models</title>
+				<funder>
+					<orgName type="full">Inria Exploratory Action COMANCHE</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Bastien</forename><surname>Liétard</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">Centrale Lille</orgName>
+								<address>
+									<addrLine>-CRIStAL</addrLine>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Mikaela</forename><surname>Keller</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">Centrale Lille</orgName>
+								<address>
+									<addrLine>-CRIStAL</addrLine>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pascal</forename><surname>Denis</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="laboratory">UMR 9189</orgName>
+								<orgName type="institution" key="instit1">Univ. Lille</orgName>
+								<orgName type="institution" key="instit2">Inria</orgName>
+								<orgName type="institution" key="instit3">CNRS</orgName>
+								<orgName type="institution" key="instit4">Centrale Lille</orgName>
+								<address>
+									<addrLine>-CRIStAL</addrLine>
+									<postCode>F-59000</postCode>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">A Tale of Two Laws of Semantic Change: Predicting Synonym Changes with Distributional Semantic Models</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">D63C0055C4DE73395450DBBE25E83194</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:44+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Lexical Semantic Change is the study of how the meaning of words evolves through time. Another related question is whether and how lexical relations over pairs of words, such as synonymy, change over time. There are currently two competing, apparently opposite hypotheses in the historical linguistic literature regarding how synonymous words evolve: the Law of Differentiation (LD) argues that synonyms tend to take on different meanings over time, whereas the Law of Parallel Change (LPC) claims that synonyms tend to undergo the same semantic change and therefore remain synonyms. So far, there has been little research using distributional models to assess to what extent these laws apply on historical corpora. In this work, we take a first step toward detecting whether LD or LPC operates for given word pairs. After recasting the problem into a more tractable task, we combine two linguistic resources to propose the first complete evaluation framework on this problem and provide empirical evidence in favor of a dominance of LD. We then propose various computational approaches to the problem using Distributional Semantic Models and grounded in recent literature on Lexical Semantic Change detection. Our best approaches achieve a balanced accuracy above 0.6 on our dataset. We discuss challenges still faced by these approaches, such as polysemy or the potential confusion between synonymy and hypernymy.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Recent years have seen a surge to model lexical semantic change (LSC) with computational approaches based on Distributional Semantic Models (DSMs) <ref type="bibr" target="#b17">(Tahmasebi et al., 2021)</ref>. While most research in this area has concentrated on developing approaches for automatically detecting LSC for individual words, as in the dedicated SemEval 2020 shared task <ref type="bibr" target="#b15">(Schlechtweg et al., 2020)</ref>, there has also been some work on validating or even proposing laws of semantic changes through new DSM-based approaches <ref type="bibr" target="#b2">(Dubossarsky et al., 2015;</ref><ref type="bibr" target="#b7">Hamilton et al., 2016;</ref><ref type="bibr" target="#b3">Dubossarsky et al., 2017)</ref>. Ultimately, this line of work is very promising as it can provide direct contributions to the field of historical linguistics.</p><p>In this paper, we consider two laws of semantic change that are very prominent in historical linguistics, but that have to date given rise to very little computational modeling studies. Specifically, the Law of Differentiation (LD), originally due to Bréal (1897, chapter 2), posits that synonymous words tend to take on different meanings over time; or one of them will simply disappear. <ref type="foot" target="#foot_0">1</ref> The same idea is also discussed in more recent work, such as <ref type="bibr" target="#b1">Clark (1993)</ref>. As an example, the verbs spread and broadcast used to be synonyms (especially in farming), but now the latter is only used in the sense of transmit, by means of radio, television or internet. The verbs plead and beseech are synonyms, but beseech is no longer used nowadays compared to plead. By contrast, the Law of Parallel Change (LPC),<ref type="foot" target="#foot_1">2</ref> inspired from the work of <ref type="bibr" target="#b16">Stern (1921)</ref>, claims that two synonyms tend to undergo the same semantic change and therefore remain synonyms. As an illustration, <ref type="bibr">Stern (1921, chapter 3 and 4)</ref> describes the change of swiftly and its synonyms from the sense of rapidly to the stronger sense of immediately. <ref type="bibr" target="#b9">Lehrer (1985)</ref> also observes a parallel change affecting animal terms which acquire a metaphorical sense.</p><p>These two laws are interesting under several aspects. Firstly, these laws go beyond the problem of detecting semantic change in individual words, as they concern the question of whether a lexical relationship between words, in this case synonymy, is preserved or not through time. Secondly, these laws make very strong, seemingly opposite, predictions on how synonyms evolve: either their meanings diverge (under LD) or they remain close (under LPC). It is likely that both of these laws might be at work, but they possibly apply to different word classes, correspond to different linguistic or extra-linguistic factors, or operate at different time scales. A largescale study, fueled by computational methods over large quantities of texts, would be amenable to statistical analyses addressing these questions. In this work, we focus on predicting the persistence (or disappearance) of synonymy through time, as a first step toward more complete analyses.</p><p>Prima facie, DSMs appear to provide a natural resource for constructing a computational approach for assessing the importance of these laws, as they inherently -through the distributional hypothesiscapture a notion of semantic proximity, which can be used as a proxy for synonymy. Following this idea, <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> propose the first DSM-based method for predicting how synonymous word pairs of English evolve over time <ref type="bibr">(specifically, from 1890 to 1990)</ref>. This research decisively concludes that there is "evidence against the Law of Differentiation and in favor of the Law of Parallel Change" for adjectives, nouns and verbs alike (i.e., the three considered POS). However, this pioneering work suffers from some limitations that cast some doubts on this conclusion. First off, the predictions made by their approach are not checked against a ground truth, thus lacks a proper evaluation. Second, the approach is strongly biased against LD, as only pairs in which both words have changed are considered, excluding pairs in which differentiation may occur (e.g. in spread/broadcast, only the latter word changed in meaning). This paper addresses these shortcomings by introducing a more rigorous evaluation framework for testing these two laws and evaluating computational approaches. We build a dataset of English synonyms that was obtained by combining lexical resources for two time stamps (1890 and 1990) that records, for a given list of synonym pairs at time 1890, whether these pairs are still synonymous or not in 1990. The analysis of this dataset reveals that, contra <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> and though using the same initial synonym set, synonymous words show a strong tendency to differentiate in meaning over time. With some variation across POS, we found that between 55 and 80% of synonyms in 1890 are no longer synonyms in 1990.</p><p>Moreover, we propose several new computa-tional approaches<ref type="foot" target="#foot_2">3</ref> , grounded in more recent DSMs, for automatically predicting whether synonymous words diverge or remain close in meaning over time, which we recast as a binary classification problem. Inspired by <ref type="bibr" target="#b20">Xu &amp; Kemp (2015)</ref>, our first approach is unsupervised and tracks pairwise synchronic distances over time, computed over SGNSbased vector representations. Our second approach is supervised and integrates additional variables into a logistic regression model. This latter model achieves a balanced accuracy above 0.6 over the proposed dataset.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Related Work</head><p>Data-driven methods to detect LSC have gained popularity in the recent years <ref type="bibr" target="#b17">(Tahmasebi et al., 2021)</ref>, using increasingly powerful and expressive word representations, ranging from the simple cooccurrence word vectors <ref type="bibr" target="#b13">(Sagi et al., 2012)</ref> to static word embeddings <ref type="bibr" target="#b14">(Schlechtweg et al., 2019)</ref> and transformer-based contextualized word representations <ref type="bibr" target="#b8">(Kutuzov et al., 2022;</ref><ref type="bibr" target="#b6">Fourrier and Montariol, 2022)</ref>. This line of research lead to the development of shared tasks <ref type="bibr" target="#b21">(Zamora-Reina et al., 2022;</ref><ref type="bibr" target="#b15">Schlechtweg et al., 2020;</ref><ref type="bibr" target="#b12">Rodina and Kutuzov, 2020)</ref>. Most often, these tasks concern the evolution of individual words, in effect focusing on absolute semantic change (of words individually). In this paper, we take a different stand, considering the problem of relative change in meaning among pairs of words, specifically focusing on synonym pairs.</p><p>Previous work on word pairs are rare in the current LSC research landscape. A first exception is <ref type="bibr" target="#b19">(Turney and Mohammad, 2019)</ref>, who also study the evolution of synonyms. They propose a dataset to track how usage frequency of words evolve over time within a sets of synonyms, as well as a new task: namely, to predict whether the dominant (most frequent) word of a synonyms set will change or not. This task is actually complementary to the one we address in this work. While Turney and Mohammad (2019) assume the stability of most synonym pairs between 1800 and 2000, and rather investigate the dynamic inside sets of synonymous words across time, we question this alleged stability and attempt to track whether these words remain synonymous at all in this time period.</p><p>Another distinctive motivation of our work is in the empirical, large-scale evaluation of two proposed laws of semantic change, originating from historical linguistics. Previous work investigating laws of semantic change with DSMs include <ref type="bibr" target="#b2">Dubossarsky et al. (2015)</ref> and <ref type="bibr" target="#b7">Hamilton et al. (2016)</ref>, who measured semantic change of words between 1800 and 2000 and attempted to draw statistical laws of semantic change from their observations. Later, <ref type="bibr" target="#b3">Dubossarsky et al. (2017)</ref> contrasted these observations and showed that even if these effects may be real, it may be to a lesser extent.</p><p>The closest work to the current research is the study of <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>, as they already focus on the two laws of Differentiation (LD) and Parallel Change (LPC). Their main motivation was to automatically measure, using DSMs, which of the two laws was predominant between 1890 and 1999. To study which of the two laws actually operates, they focus on word pairs that (i) are synonyms in the 1890s and (ii) where both words changed significantly in meaning between 1890 and the 1990s. First, they represent words as probability distributions of direct contexts, using normalized cooccurrence count vectors. Then, they measure the (synchronic) semantic proximity of words by computing the Jensen-Shannon Divergence between the corresponding distributions. Semantic change in a word is quantified by comparing its semantic space neighborhoods in the 1890s and in the 1990s. Finally, for every selected synonymous pair, they pick a control word pair that has a smaller divergence in the 1890s than the associated synonyms. At a later time in the 1990s, if the divergence for the synonyms is larger than that for the control pair, they decide these synonyms have undergone LD, otherwise they predict LPC. Ultimately, they found that most pairs (around 60%) have undergone LPC, which would be the dominant law.</p><p>The pioneering work of <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> faces a number of shortcomings. First, their restriction to synonymous pairs in which both words changed mechanically excludes certain cases of LD (i.e., where one one word has changed), thus introducing an artificial bias against LD. Moreover, they often select near-synonyms as controls (e.g. instructive and interesting) because they constrain control pairs to be closer in divergence in the 1890s than the associated synonym pairs. Furthermore, and more importantly, <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> did not compare their predictions to any ground-truth and there is no evaluation of the reliability of their method. Finally, their choice of word representations is not among the State-of-the-Art for static methods.</p><p>In this paper, we consider all synonymous pairs, thus avoiding the bias against LD. We propose different approaches that we compare to <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>'s control pairs, and we provide results obtained with more recent distributional semantic models. Most importantly, we propose a complete evaluation framework to benchmark the different methods, something missing in this prior work.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Problem Statement</head><p>Our overarching goal is to develop new computational approaches that are able to automatically predict which pairs of synonymous words underwent LD or LPC. These predictions could be used as a first step towards providing a more refined and statistically meaningful analysis of the two laws. An important milestone towards developing such an approach is to compare it to some ground truth. Otherwise, there is no way to assess whether statistics obtained for LD or LPC are indeed reliable, a problem faced by <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>.</p><p>Unfortunately, there is no existing large-scale resource that records instances of LD/LPC, beyond a handful of examples found in research papers and textbooks in historical linguistics. What exists however are historical lists of synonyms, which we can compare to obtain some form of ground truth. This forces us to consider a slightly different methodological framework, focusing on a more constrained prediction task, namely to detect pairs of synonyms at time T 1 that have remained synonymous or that are no longer synonymous at time T 2(&gt; T 1).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Formalization</head><p>Let us denote W (T ) the set of words (or vocabulary) for a given language (say English) at time T . As language evolves through time, vocabularies at two times T 1 and T 2 need not have the exact same extensions: e.g., a word w in W (T 1) might not be in W (T 2) (i.e., w has disappeared). Making a simplistic, idealized assumption, let C be a mostly atemporal and exhaustive discrete set of concepts, and denote M (T ) w ⊂ C the meaning of word w at time T . The definition of M (T ) w as a set allows homonymy and/or polysemy to be accounted for.</p><p>Given these notations, we have that u ∈ W (T )   and v ∈ W (T ) are synonyms at a time T if</p><formula xml:id="formula_0">M (T ) u ∩ M (T ) v ̸ = ∅.</formula><p>We understand that the study of LD / LPC implies to track (i) the change of</p><formula xml:id="formula_1">M (T ) u and M (T ) v over time, (ii) the evolution of M (T ) u ∩ M (T ) v</formula><p>and (iii) the very persistence of both words in vocabularies W (T ) between T 1 and T 2. Discussion about formalizing LD and LPC under those conditions can be found in appendix A.1.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Task Formulation: Tracking Synonyms Change</head><p>The presented formulation, though very idealized, should make it clear that the development of a computational system that attempts to directly predict LD and LPC, and even the construction of an evaluation benchmark for evaluating such a system, are very challenging tasks. First, the initial synonym set selection presupposes, not only that one has access to a list of synonyms at T 1 and T 2, but also that one can reliably predict LSC in one of the two words from T 1 to T 2; unfortunately, LSC is still an open problem for current NLP models. Second, one typically does not have meaning inventories or automatic systems (e.g. WSD systems) for mapping words to their meanings at different time stamps. Finally, even tracking the disappearance of words through time is not trivial, as it ideally requires full dictionaries at different time stamps. Given these limitations, we suggest to narrow down our target problem to the task of predicting, for a given pair of synonymous words (u, v) at T 1, whether (u, v) are still synonymous or not at T 2. Stated a little more formally, we are concerned with the following binary classification problem:</p><formula xml:id="formula_2">f :S (T 1) → {"Syn", "Diff"} (u, v) → f ((u, v)) = "Syn" if (u, v) ∈ S (T 2) "Diff" otherwise</formula><p>where S (T ) is a set of synonymous word pairs at time T , "Syn" indicates that words (u, v) that were synonymous at T 1 remain synonymous at T 2, while "Diff" signals that they are no longer synonymous at T 2. This simpler problem leads to a more operational evaluation procedure, which does not require access to M</p><formula xml:id="formula_3">(T * ) u and M (T * ) v</formula><p>, but only to lists of synonyms S (T 1) and S (T 2) . See Section 4 for presentation of such procedure. It should be clear that predicting which synonym pairs remain ("Syn") or cease to be synymoms ("Diff"), will provide some information about LPC and LD, although the mapping between the two problems is not one-to-one. Even if "Diff" covers pretty well LD, a pair that is still synonymous at T 2 could either be a case of LPC (their shared meaning changed the same way for both words) or a pair of words that simply have not changed in meaning at all (or at least that their shared meaning is unchanged). Now turning to designing a computational system that detects "Syn" vs. "Diff", a natural question that emerges is whether current DSMs, commonly used for detecting LSC in individual words, are able to capture synonym changes. More specifically, our main hypothesis will be that one can reliably track the evolution of synonymous pairs through their word vector representations at T 1 and T 2. This approach will be instantiated into different unsupervised and supervised models in Section 5.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Evaluation Dataset</head><p>This section presents a dataset designed to track the evolution of English synonymous word pairs between two time stamps T 1 and T 2, with T 2 &gt; T 1. Specifically, the two time periods considered are the 1890's decade (T 1) and the 1990's decade (T 2). For extracting synonymous pairs in the 1890's (noted S (T 1) ), we use Fernald's English Synonyms and Antonyms (Fernald, 1896) as <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> did. Pairs were selected based on a set of specific target words (see appendix A.7). As shown in Table <ref type="table">1</ref>, we obtain 1, 507 adjective pairs, 2, 689 noun pairs and 1, 489 verb pairs. To assess whether these word pairs are still synonyms in the 1990's, we use WordNet <ref type="bibr">(Fellbaum and Princeton, 2010)</ref>, as this lexical database was originally constructed in 1990's. Thus, WordNet provides us with S (T 2) . Specifically, we considered that a pair of words/lemmas (u, v) ∈ S (T 1) are still synonymous if they point to at least one common synset in WordNet.</p><p>The construction of this dataset relies on two crucial hypotheses, which seem reasonable to make. First, both lexical resources rely on the same definition of synonymy. Second, S (T 2) meets some exhaustivity criterion, in the sense that (u, v) ∈ S (T 1) not appearing in S (T 2) should indicate that u and v are no longer synonymous at T 2, and not be due to a lack of coverage of the resource (i.e., a false negative). WordNet is assumed to be exhaustive enough, as we checked that every word involved in at least one synonymous pair has its own entry in WordNet's database.</p><p>Table <ref type="table">1</ref> provides some detailed statistics on the evolution of synynomous pairs between decades 1890's and 1990's, overall and for different parts of speech. A first observation on these datasets is that the proportion of pairs that are still synonyms at T 2 ("Syn") is globally 15.1%. This implies that most synonymous pairs underwent differentiation. While it does not provide information about how change happened between T 1 and T 2 for the remaining 84.9%, it's a clue that the Law of Differentiation should be a dominant phenomenon among synonyms.</p><p>We exploit the structure of the WordNet database to analyze the different cases of "Diff ". Word-Net includes lexical relations of hyper-/hypo-nymy (e.g., seat/bench) as well as holo-/mero-nymy (e.g., bike/wheel) and antonymy (e.g., small/large) defined over synsets 4 . Note that the hyper-/hyponymy relation does not exist in WordNet among adjectives. Among nouns and verbs, we observe that around 30% of pairs that were synonyms at T 1 are in an hyper-/hypo-nymy relation at T 2 and two third of them are direct hypernyms in WordNet (their synsets are direct parent/child) indicating the preservation of a very close semantic link. For a further depiction of the dataset in terms of distance in WordNet's graph, see Figure <ref type="figure">3</ref> in appendix A.4.</p><p>One cannot entirely exclude that S (T 1) includes some hyper-/hypo-nyms as synonyms. However, even if we extend the notion of synonymy at T 2 to include these cases, we would have only around 45% of all pairs still considered synonyms among 4 As we did for synonyms, we assume that two words w1 and w2 are instances of one of these relations R if R holds for one of their corresponding synset pair. nouns and verbs. This indicates that "Diff" largely remains the most common phenomenon with an estimated proportion between 55% and 80%. This finding contradicts the experimental results reported by <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> with their computational approach (only 40% of differentiation).</p><p>In lack of additional indication that some of these hyper-/hypo-nym cases at T 2 are indeed synonyms, or that they may also have been hyper-/hypo-nym at T 1, we decided to still consider them as instances of "Diff". Another argument for this decision is precisely that there are well-known reported cases of lexical semantic changes in which the meaning of a particular word in effect "widens" to denote a larger subset (i.e., becomes an hypernym): this is the case of dog in English that used to denote a specific breed of dogs <ref type="bibr" target="#b18">(Traugott and Dasher, 2001)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Approaches</head><p>This section presents two classes of computational approaches, unsupervised and supervised, for predicting whether pairs of synonyms at T 1 remain synonyms ("Syn") or cease to be so ("Diff") at a later time T 2. Common to all of these approaches is that they are based on two time-aware DSMs, one for each time stamp.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.1">Time-aware DSMs</head><p>Inspired by work on LSC, we rely on separate DSMs for each time stamp T 1 and T 2, respectively yielding vector spaces V (T 1) and V (T 2) encoding the (possibly changing) word meanings at T 1 and T 2. Thus, for each synonym pair (u, v), we have two pairs of vectors : (u (T 1) , v (T 1) ) ∈ V (T 1) × V (T 1) and (u</p><formula xml:id="formula_4">(T 2) , v (T 2) ) ∈ V (T 2) × V (T 2) .</formula><p>Specifically, we use pre-computed SGNS <ref type="bibr" target="#b10">(Mikolov et al., 2013)</ref> from <ref type="bibr" target="#b7">Hamilton et al. (2016)</ref> trained on the English part of the GoogleBooks Ngrams dataset<ref type="foot" target="#foot_3">5</ref> for every decade between 1800 and 2000 and extract V (T 1) (1890) and V (T 2) (1990). For any word w ∈ W and any time period T , w (T ) ∈ V (T ) is a single 300 dimensional vector. We ensure synonymy is accurately reflected by checking that synonym pairs have a smaller cosine distance than non-synonymous pairs for both time periods, as in Figure <ref type="figure">4</ref> of appendix A.5.</p><p>Traditional DSM-based approaches for detecting LSC are based on self-similarities over time for a given word. For instance, for a given time interval (T 1, T 2), they compute for each word w an individual Diachronic Distance, noted here DD (T 1,T 2) (w). Cosine distance is often used (recall in appendix A.2).</p><p>There is no obvious distance for comparing pairs of word vectors, but one can instead rely on comparing the pairwise word vector distance at each time stamp T ; we call this Synchronic Distance (denoted SD). The two types of distances for two time stamps T 1 and T 2 are described in Figure <ref type="figure">1</ref>. Our unsupervised method, proposed in Sec. 5.2 directly exploit the idea of tracking different types of SD through time, while Sec. 5.3 presents a supervised approach that combines both SD and DD.</p><formula xml:id="formula_5">T 1 T 2 • v • v • u • u DD (T 1,T 2) (u) SD (T 1) (u, v) DD (T 1,T 2) (v) SD (T 2) (u, v)</formula><p>Figure <ref type="figure">1</ref>: Pairs of word embeddings at 2 time periods and associated diachronic and synchronic distances.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.2">Unsupervised Methods</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>While we don't have access to M (T )</head><p>u and M (T ) v , we can represent the meaning of u and v using DSM and compare them at a given time to estimate how close they are in meaning. Indeed, if</p><formula xml:id="formula_6">M (T ) u ∩ M (T ) v</formula><p>changes, this should be reflected in difference of the use contexts of u and those of v, and so reflected in the distance between u (T ) and v (T ) . Let SD (T ) : W (T ) × W (T ) → R + be a measure of synchronic distance between vectors representing two words. By construction of V (T ) , SD (T ) (u, v) is smaller for words (u, v) that appear in similar contexts than for unrelated words. We assume that there exists a value δ T such that</p><formula xml:id="formula_7">∀(u, v) ∈ S (T ) , SD (T ) (u, v) ≤ δ T .</formula><p>This entails that for a given pair (u, v):</p><formula xml:id="formula_8">SD (T ) (u, v) &gt; δ T ⇒ (u, v) are not synonyms.</formula><p>In this setting, one can compare the synchronic distances within V (T 1) and with V (T 2) and decide if the pair differentiated or stayed synonymous.</p><p>Let (u, v) be a pair of synonyms at T 1, as such we have that SD (T 1) (u, v) ≤ δ T 1 . If (u, v) are not synonyms at time T 2 then SD (T 2) (u, v) &gt; δ T 2 .</p><p>Combining these two inequalities, we would say that a pair of synonyms at T 1 has differentiated at T 2 if:</p><formula xml:id="formula_9">SD (T 2) (u, v) -SD (T 1) (u, v) = ∆(u, v) &gt; δ T 2 -δ T 1 .</formula><p>Ideally one could imagine that the distance threshold δ T at which, words cease to be synonyms should be independent of the time period T . Empirically however, because word embeddings are not necessarily build with an enforced scale, there might be a dilation or shrinking in the overall synchronic distances between T 1 and T 2. Let us assume that</p><formula xml:id="formula_10">δ T 2 = δ T 1 + τ, τ ∈ R.</formula><p>Our decision rule could then be rewritten as:</p><formula xml:id="formula_11">f (u, v) = "Diff" if ∆(u, v) ≥ τ "Syns" otherwise. (<label>1</label></formula><formula xml:id="formula_12">)</formula><p>This approach is shortly denoted "∆" in section 6. It diverges from the prior work of <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> that chooses to rely on control pairs instead of a threshold. For the sake of comparison, we implemented their method presented as "XK controls". It is not the full protocol presented by <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>, as (i) the experimental setting is not identical, they filtered out some synonym pairs and we didn't (ii) we use SGNS word representations and cosine distance instead of normalized co-occurrence counts and Jensen-Shannon Divergence. <ref type="bibr" target="#b14">Schlechtweg et al. (2019)</ref> provided a longer comparison between word representations.</p><p>We propose a statistically-grounded criterion to set the value for the threshold τ . Since the meaning of most words is expected to remain stable<ref type="foot" target="#foot_4">6</ref> , we argue that most pairwise distances should remain stable as well. We can then estimate the dilation between the representations in the two time periods by the average gap between the synchronic distances of words.</p><formula xml:id="formula_13">τ = 1 |W | 2 (w 1 ,w 2 )∈W ×W ∆(w 1 , w 2 ) (2)</formula><p>In practice, we experiment with two different types of synchronic distances between words. The first is the cosine distance (see A.2). That is:</p><formula xml:id="formula_14">SD (T ) (u, v) = cos-dist(u (T ) , v (T ) ).</formula><p>We shortly denote it "SD(cd)". Another measure of semantic proximity is based on the shared word neighborhood between the two vectors u and v:</p><formula xml:id="formula_15">SD (T ) (u, v) = jaccard-dist(N (T ) k (u) , N (T ) k (v)),</formula><p>with N (T ) k (w) being the set of the k-nearest neighbors of the point representing w in the vector space at time T , and jaccard-dist being the Jaccard distance (see appendix A.2). This measure is ranged between 0 and 1, and we denote it "SD(nk)".</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5.3">Supervised Methods</head><p>Approaches described so far use the labels in the dataset ("Syn" and "Diff") only for evaluation purposes. But one can also use part of the available data to learn a supervised classifier to predicts these labels. Concretely, for most of these models, we trained Logistic Regression (LR) models 7 Synchronic Distances Combination In our unsupervised approach, we compute SD (T 1) and SD (T 2) and their difference, denoted ∆. This quantity is then compared to a fixed threshold τ . We propose to investigate two supervised approaches stemming from this: (i) simply tune τ and (ii) use a LR model to learn the optimal weighting in the linear combination of the two distances. This latter model is called "LR SD".</p><p>Accounting for Individual Change Most works about computational approaches to LSC focus on detecting the change of a single word <ref type="bibr" target="#b17">(Tahmasebi et al., 2021)</ref>, using a diachronic distance, which we noted DD (T 1,T 2) (w), across time periods T 1 and T 2 for individual words w.</p><p>In addition to synchronic distances, we input diachronic distances as features for a LR model. The resulting classifier (LR SD+DD) uses the 4 distances represented in Figure <ref type="figure">1</ref> as variables: selfsimilarities across time periods (DDs), and a distance measure within pairs for each of both time stamps (SDs). Similarly to synchronic distances defined in Sec. 5.2, we try two definitions of DD. First, we compare sets of neighbors at T 1 and T 2:</p><formula xml:id="formula_16">DD(w) = jaccard-dist(N (T 1) k (w) , N (T 2) k (w)).</formula><p>7 Implemented with the scikit-learn library for Python 8 .</p><p>We also compute the cosine distance between w (T 1) and w (T 2) after aligning the vector space V (T 2) to V (T 1) using Orthogonal Procrustes <ref type="bibr" target="#b7">(Hamilton et al., 2016;</ref><ref type="bibr" target="#b14">Schlechtweg et al., 2019</ref><ref type="bibr" target="#b15">Schlechtweg et al., , 2020))</ref>. Denoting w (T 2) align the vector w (T 2) after alignement with Orthogonal Procrustes, we have:</p><formula xml:id="formula_17">DD(w) = cos-dist(w (T 1) , w (T 2) align ).</formula><p>Using Distances and Frequencies A final step of this process is to add word frequencies for both words at both time periods, as there exist links between usage frequency and semantic change Zipf <ref type="bibr">(1945)</ref>. We could observe whether adding explicit frequency information helps retrieving discriminatory clues that could be missed by using only distributional representations.</p><p>Word frequencies were estimated from the Corpus of Historical American English (COHA) list,<ref type="foot" target="#foot_5">9</ref> which has the advantage to be genre-balanced. As variables for both words and both periods to feed our model, we try to add either raw occurrences counts (indicated by "+FR"), either grouped frequency counts ("+FG"). The procedure to create such groups is described in appendix A.6.</p><p>All Features For the sake of comparison to previous models, we evaluate LR models that take as input an implementation of each of these features (SD + DD + frequency); and an even larger model (called "LR multi.") that reunites all described implementations of SD, DD and frequencies.</p><p>Non-linear Models As a further step increasing the model's complexity, we try to combine this full set of available variables in a non-linear fashion. We compare previous models to polynomial features (degree 2) preprocessing<ref type="foot" target="#foot_6">10</ref> and a SVM classifier with a Gaussian kernel. Dataset Splits For every POS tag, we have a set of word pairs that are synonymous at T 1. We call ALL the dataset that comprises all pairs indistinctly of their POS. These datasets (ADJ,NN,VERB or ALL) are individually shuffled and 33% of their samples (pairs) are set aside for testing. For each dataset, a model is trained on the 66% remaining pairs and evaluated on the test part. Presented results are averaged over 20 random train/test splits.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Experiments</head><p>Hyperparameters We train models with combinations of the different definitions of distances and frequency variables. Choice of synchronic distances was between SD(cd) and SD(nk) with k in {5, 10, 15, 20, 40, 100}. For DD, we tried neighborhoods with fixed size 100, like <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>, and Orthogonal Procrustes with cosine distances. For frequency, the choice is between raw counts and groups. The selected models are detailed in Appendix A.9. The ideal value for the SVM's regularization parameter is found using 5fold cross-validation over the training set.</p><p>Evaluation Metrics We use two standard evaluation metrics: F 1 score and Balanced Accuracy (BA). F 1 scores were computed for both classes, denoting it "F 1 (Syn)" for Syns and "F 1 (Diff)" for Diff. BA is defined as the average of recalls for both classes, and provide a notion of accuracy robust to class imbalance. We also display the percentage of predicted Diff ("%D").</p><p>Baselines The first two baselines are constant output classifiers, always predicting "Syn" or "Diff " respectively. They are expected to have a balanced accuracy of 50%, as they would be fully accurate for one class and always wrong for the other. The third baseline (LR Frequency) is a Logistic Regression model trained only with frequency variables, without any knowledge on the semantic aspect of the pair (neither SD or DD).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.2">Results</head><p>Performances over the test parts of the different datasets are displayed Table <ref type="table" target="#tab_1">2</ref>. The first observation is that, in line with the dataset's proportions, all models predict a majority of "Diff", even unsupervised ones (including our reimplementation of Xu &amp; Kemp's control pair selection method). While our task does not directly address the question of the opposition between LD and LPC, this is an empirical clue in favor of LD, contradicting <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>. However, predicting the right amount of "Diff" does not guarantee the quality of predictions. Indeed, obtained balanced accuracies range between 0.49 and 0.65.</p><p>Considering our unsupervised methods and the ∆ (tuned τ ), we find no real improvement over baselines. In particular, they fail to outperform the frequency-based baseline model which performs surprisingly well. On the other hand, Logistic Regression and SVM models substantially improve The gap between baselines and models is larger for nouns and lesser for verbs. Despite these POSspecific differences, best models are consistently the ones using both SD and frequencies, while DD brings little to no improvement. This can be expected as individual changes of words seem less important on the problem of Syn/Diff. However, this factor could be used in future work to distinguish pairs of synonyms (among the Syn class) that did not change and pairs that went under LPC.</p><p>We observe that there is a substantial difference in F 1 scores between the two classes, F 1 (Syn) being lower than F 1 (Diff) across all models. Moreover, models with higher F 1 (Syn) are often found to be the ones with higher balanced accuracy, even when F 1 (Diff) is lower. This is likely linked to the fact that the datasets are highly imbalanced as presented in Table <ref type="table">1</ref>: the ground truth proportion of Syn never exceeds 21%. We also remark that <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> decision rule based on control pairs also predicts a majority of Diff, contrarily to the results they showed. It may be because the protocol is not fully identical.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6.3">Confounding Factors</head><p>Using WordNet, we discuss two aspects that may be sources of errors when detecting a change in synonymy: polysemy and hypernymy. We study predictions of our best performing LR model on the noun dataset.</p><p>Polysemy WordNet provides us with different set of synonyms for every entry, corresponding to different senses or usages, and therefore we can measure the polysemy of a word at T 2. We found that pairs misclassified as "Syn" tend to be those whose second term has fewer senses (6 senses on average as compared with well classified "Diff" which have 8 senses on average). Indeed, as we use static embeddings and no Word Sense Disambiguation (WSD) method, our model is subject to the complexity brought by polysemy. In a recent shared task about Lexical Semantic Change measures, best performing models are the one using WSD methods <ref type="bibr" target="#b21">(Zamora-Reina et al., 2022)</ref>. This finding highlights the importance of handling polysemy as a potential confounding factor.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Distances in WordNet</head><p>In Figure <ref type="figure" target="#fig_0">2</ref> we display the percentage of prediction with respect to shortest distance between the two words of noun pairs in WordNet's graph. The distance d is the minimum number of nodes separating the two words. We remark that, as expected, the model predicts more and more Diff as d increases. What is more interesting is that for d = 1 (direct hypernymy), there is still an important proportions of predicted Syn. This highlights that our model has difficulties to handle hypernymy and confuses it with synonymy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>In this work, we considered two contradicting laws about the semantic change of synonyms. We discussed the necessary adaptations of the problem statement for this particular type of LSC and elaborated a framework to evaluate models for this new classification problem. The use of linguistic resources from two different time periods allowed us to improve model analysis with respect to prior work on the matter. Then we proposed unsupervised and supervised approaches relying on measures of semantic change extracted or inspired by existing literature on LSC, and also leveraged the usefulness of explicit word usage frequency information. We compared these approaches in our evaluation framework, finding that distances in vector spaces from different time periods should not be considered equally. We also observed that explicit frequency information actually help distributional methods to capture the change of synonymy. Finally we discussed challenges that DSM approaches still face and opened a discussion about the interplay between hypernymy and synonymy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Limitations</head><p>As mentioned already, the problem Syn/Diff does not reflect the initial question of LD/LPC. In particular, the Syn class of pairs that remained synonyms contains pairs that underwent LPC and pairs which shared meaning remained unchanged. The latter does not play a role in the LD/LPC dichotomy and should be discarded for deeper study of the two apparently opposite laws. Also, we restrain the study to some target words that are chosen to occur at both time periods, thus preventing us to fully measure the importance of LD. Indeed, recall that Bréal's Law of Differentiation predicts that some synonyms may disappear in the process. Thus, our Diff class could be considered incomplete. However, including such disappeared words would prevent the use of time-aware DSMs.</p><p>Section 3 presented synonymy as a symmetrical relation between words. However, a thesaurus like Fernald (1896) displays asymmetrical synonymy: for an entry u we have a set of synonyms v 1 , v 2 , ... from which we extract pairs (u, v). We observe that v itself is rarely an entry of the thesaurus, and when it does, u may not appear in the list of synonyms of v. This is contradictory to WordNet's definition of synonymy that consider this relationship to be symmetrical. However, up to our knowledge, there is no lexical database (like WordNet) being also historical and that could help us ensure the notion of synonymy at both time periods is strictly the same. In the absence of such a resource, we leave potential disagreements in definition between the two linguistic resources to future investigations.</p><p>In section 4, we discussed that hyper/hypo-nymy could be misleading. We made the assumption that Fernald (1896) and Wordnet <ref type="bibr">(Fellbaum and Princeton, 2010)</ref> used similar-enough notions of synonymy such that our labels Syn/Diff are relevant. However, thesaurus like Fernald (1896) are created as a tool for writers and authors to avoid redundancy, thus including wide lists of synonyms that include hypernyms (instead of repeating the bench, you could say the seat). In section 6.3 we showed that direct hypernymy is misleading for our model. Yet, we still miss guidelines/insights about the possibility to include some cases of hypernymy among synonyms at T 2. Another approach would be to remove hypernyms from the source material at T 1, which implies to automatically detect them or manually review thousands of pairs.</p><p>There are remaining factors that presented ap-proaches do not take in account and that one could think relevant. In particular, further work could investigate the influence of pressure of words on a concept, for instance many words sharing (at least partially) a similar meaning. However, this would require access to list of senses for each word at time T 1, which we do not have in Fernald (1896).</p><p>To this extent, contextualized language models finetuned for the different time periods could be helpful.</p><p>Finally, because we used pre-computed SGNS embeddings on historical data binned in decade, we have no guarantee that this is the optimal setting for studying Lexical Semantic Change. Maybe different kind of changes could be observed using larger or smaller time periods, and conducting the study over a larger or a smaller time span instead of just a century.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A Appendix</head><p>A.1 Formalizing LD and LPC</p><p>In this work, we reduced the problem from finding pairs in which LD or LPC operates to a binary classification problem between pairs that remained synonymous and those who did not. To understand the need for a reduction, let us introduce some notation and definitions.</p><p>First, let us denote by W (T ) the set of words (or vocabulary) for a given language (say English) at time T . As language evolves through time, vocabularies at two times T 1 and T 2 (with T 2 &gt; T 1) need not have the exact same extensions: e.g., a word w in W (T 1) might not be in W (T 2) (i.e., w has disappeared) or vice versa (i.e., w is a new word). Assuming a simple, idealized denotational semantics, we will further define C (T ) as the set of discrete concepts available at time T ,<ref type="foot" target="#foot_7">11</ref> and M (T ) w ⊂ C the meaning of word w at time T . It is defined as a set to model cases of homonymy and/or polysemy. From these definitions, we can now define synonymy at time T between words u ∈ W (T ) and v ∈ W (T ) as M ; that is, w has different sets of meanings at T 1 and T 2.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Proportions of predictions of the models w.r.t. the actual distance d in WordNet of noun pairs. Pairs with d = 0 are synonymous pairs in WordNet.</figDesc><graphic coords="10,93.83,70.87,172.34,172.34" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head≯</head><label></label><figDesc>= ∅; that is, u and v do share a common meaning. Furthermore, we can define the semantic change from T 1 to T 2 in a word w as follows:M (T 1) w ̸ = M (T 2) w</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Performances of the different approaches. Results are averaged over 20 random splits.</figDesc><table><row><cell>6.1 Experimental Settings</cell></row><row><cell>Target Words Selection We use a unique vocab-</cell></row><row><cell>ulary W composed of 6, 453 adjectives, 16, 135</cell></row><row><cell>nouns and 10, 073 verbs. The process to select</cell></row><row><cell>words is described in appendix A.7.</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>To cite<ref type="bibr" target="#b0">Bréal (1897)</ref>: "[S]ynonyms do not exist for long: either they differ, or one of the two terms disappears."</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>Name coined by<ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_2"><p>The code used to run experiments in this paper can be found at https://github.com/blietard/ synonyms-semchange</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://storage.googleapis.com/books/ngrams/ books/datasetsv3.html</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_4"><p>Intuitively, someone in 2023 can still understand writings published in the 1890s in their original text, like books from Charles Dickens or Arthur Conan Doyle.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="9" xml:id="foot_5"><p>https://www.ngrams.info/download_coha.asp</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="10" xml:id="foot_6"><p>We also try degrees higher than 2, finding no consistent improvement.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="11" xml:id="foot_7"><p>We take C (T ) to be mostly stable over time, but new concepts might of course appear or disappear (e.g., due to techonological or cultural evolution).</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>We would like to thank the three anonymous reviewers for their helpful comments on this paper. We would also thank <rs type="person">Anne Carlier</rs> for the thoughtful discussion about this work. This research was funded by <rs type="funder">Inria Exploratory Action COMANCHE</rs>.</p></div>
+			</div>
+			<listOrg type="funding">
+			</listOrg>
+			<div type="annex">
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>Equipped with these definitions, we are now ready to formalize the two laws LD and LPC, starting with what their common scope.</p><p>First, both laws concern synonyms: they are restricted to a set of synonyms at some initial time T 1, defined by S (T 1) = {(u, v) :</p><p>Second, both LD and LPC assume some individual semantic change, from T 1 to T 2 (with T 2 &gt; T 1), in at least one of two synonymous words: that is, M</p><p>. Given these preconditions, the application of LD implies that either:</p><p>• one of the two words has disappeared:</p><p>u ∈ W (T 1) ∧ u ̸ ∈ W (T 2)  or (exclusive) v ∈ W (T 1) ∧ v ̸ ∈ W (T 2) ,</p><p>• u and v are no longer synonymous at T 2:</p><p>By contrast, LPC implies that words u and v remain synonymous from T 1 to T 2. While this could be simply stated as:</p><p>we feel that this misses an important aspect of the law, namely that M (M</p><p>• or inversely by losing the same sense(s):</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.2 Useful definitions</head><p>Recall the definition of cosine distance between two vectors x and y:</p><p>We also recall the definition of Jaccard distance between two sets A and B:</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.3 Xu &amp; Kemp's control pairs</head><p>In Table <ref type="table">3</ref> we display samples of word pairs selected as control pairs following <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref>'s procedure. As we can observe, for every Part-Of-Speech, a significant number of these pairs are themselves synonymous. After manually reviewing a hundred pairs for each POS tag, we estimate that the proportion of synonyms in the selected control pairs is between 20 and 40%. Synonym pairs shouldn't be used to control other synonym pairs, which may explain why our reproduction of <ref type="bibr" target="#b20">Xu and Kemp (2015)</ref> decision rule does not perform well according to Table <ref type="table">2</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.4 Distances in WordNet</head><p>In Figure <ref type="figure">3</ref> are displayed the distributions of distances in WordNet. The distance in WordNet between two words (u, v) is the number of nodes of the shortest path between a synset of u and a synset of v. inf means that there is no path between the two words in WN. A distance of 0 means that they are actually synonyms, while a distance of 1 implies there is direct hypernymy.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.5 Synonymy in our DSMs</head><p>In Figure <ref type="figure">4</ref> are displayed the distributions of cosine distance between word pairs at both periods. In blue are synonyms at this time (from Fernald (1896) at T 1, and from WordNet at T 2). In black are all possible word pairs. We observe that synonymy is indeed captured by our DSM as synonyms are significantly closer in cosine distance than other word pairs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.6 Frequency groups</head><p>The procedure to create a fixed number M of frequency group is the following. At a time T , the list of target words is sorted by increasing frequency, we label as group '0' the first 50% of the list. In the remaining 50%, The first half is labeled as group '1', and so on until group M -2 is created. The still unlabeled words are labeled group M -1, for a total of M groups. Group labels are therefore positively correlated with occurrences counts.   </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>POS</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.8 Unsupervised models</head><p>In Figure <ref type="figure">5</ref>, we observe that the quantity ∆ does not reflect a clear separation between Syn pairs and Diff pairs. This explains why the unsupervised methods proposed in Sec. 5.2 fail to significantly outperform baselines. In Figure <ref type="figure">6</ref> we show the influence of k in SD (neighbors) for the unsupervised ∆ method. We see that while there is close to no change in balance accuracy, F 1 scores for both classes are more and more unbalanced as k increases, indicating a more unfair model for high values of k. This is explained by the fact that the unsupervised model predicts more Diff (dominant class) with higher k. A.9 Components of selected models Depending on the POS tag, the implementation strategies of SD, DD and frequency variables were different. Recall that these strategies were chosen given the average performances over 20 random train/test splits.</p><p>On adjectives, neighborhood based DD as well as raw frequency counts was found to be better than alternatives. For SD, cosine distance provides slightly higher performances than neighborhoodbased measures, except when tuning the threshold for ∆: in this case, SD(nk) with k = 15 was best. Generally, for every method implying a neighbordhood based SD (∆(nk), LR multi., as well as the two non-linear models), a small/mid ranged k was preferable (between 10 and 20).</p><p>For nouns, SD(cosine distance) was also the best choice except for ∆ with tuned threshold: here, SD(nk) was preferred. Overall, the best range for the value of k for neighbors-based SD was smaller (5 to 15). Frequency groups worked better than raw frequencies, while there was no difference in performance between the two definitions of DD.</p><p>Yet, for verbs, SD(nk) with k = 40 actually outperforms cosine distance (except for unsupervised ∆), and DD using Orthogonal Procrustes alignment and cosine distance <ref type="bibr" target="#b7">(Hamilton et al., 2016)</ref> was actually better than the definition relying on comparisons local neighborhoods. Both types of frequency variables (raw counts and groups) worked equally well.</p><p>Finally, on the ALL dataset reuniting pairs accross POS tags, raw frequencies provide better results than groups. Cosine distance is better than neighborhoods for synchronic distances, and both techniques of diachronic distances performed simi-larly. For models forced to use SD(nk) in addition to SD(cd), the choice of k did not really change the results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A.10 Predictive variables in our model</head><p>In this supplementary section, we conduct a study about the role of some predictive variables in our best-performing Logistic Regression model, as potential sources of errors. The studied model uses SD with cosine-distance, both implementations of DD and raw frequency counts. . <ref type="bibr">64 .83 .62 .84 .83 .64 DD(u)</ref> . <ref type="bibr">46 .46 .45 .47 .46 .47 DD(v)</ref> .50 .54 .48 .54 .54 .50</p><p>1.9 1.4 2.1 1.5 1.4 1.8 For a selected number of variables, we look for significant differences between well-classified pairs and pairs with wrong prediction, in both classes separately. For a given variable, we estimate if a difference is significant between the well-classified and the misclassified samples of this class using a t-test for Gaussian distributed variables, or a Mann-Whitney U test for other variables. A difference is significant if the p-value of the test is below 5%. Results are reported in table <ref type="table">4</ref>.</p><p>We observe significant differences of SD in pairs that are predicted as Syn and those predicted as Diff by our model, the first having a smaller SD at T 1 than the latter. Because our model relies mostly on these SD to separate both classes, we wrongly classify Syn pairs whose SD (T T 1) is close to that of Diff, and conversely Diff pairs whose SD (T T 1) is close to that of Syn are misclassified. This indicates that our model still misses some subtleties that are now reflected by SD.</p><p>A similar non-separability of the distribution of "Syns" and "Diff" appears on DD and Frequency variable for the second word pair of the pair. While it seems logical for our model to behave so regarding to the definition of LD, it is a clue that our input variables reflect noisy information that is confusing to the model. In the same idea, <ref type="bibr" target="#b8">Kutuzov et al. (2022)</ref> remarked that recent LSC detection models tend to raise False Positive, drawing attention to the limit of current models for LSC.</p></div>			</div>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<monogr>
+		<title level="m" type="main">Essai de Sémantique</title>
+		<author>
+			<persName><forename type="first">Michel</forename><surname>Bréal</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1897">1897</date>
+			<publisher>Hachette</publisher>
+			<pubPlace>Paris</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<monogr>
+		<title level="m" type="main">Conventionality and contrast, Cambridge Studies in Linguistics</title>
+		<author>
+			<persName><forename type="first">Eve</forename><forename type="middle">V</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/CBO9780511554377.005</idno>
+		<imprint>
+			<date type="published" when="1993">1993</date>
+			<publisher>Cambridge University Press</publisher>
+			<biblScope unit="page" from="67" to="83" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">A bottom up approach to category mapping and meaning change</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Haim Dubossarsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Tsvetkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eitan</forename><surname>Dyer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Grossman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">CEUR Workshop Proceedings</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="volume">1347</biblScope>
+			<biblScope unit="page" from="66" to="70" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Outta control: Laws of semantic change and inherent biases in word representation models</title>
+		<author>
+			<persName><forename type="first">Haim</forename><surname>Dubossarsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Daphna</forename><surname>Weinshall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Eitan</forename><surname>Grossman</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/D17-1118</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing</title>
+		<meeting>the 2017 Conference on Empirical Methods in Natural Language Processing<address><addrLine>Copenhagen, Denmark</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="1136" to="1145" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<author>
+			<persName><forename type="first">Christiane</forename><surname>Fellbaum</surname></persName>
+		</author>
+		<title level="m">About WordNet</title>
+		<imprint>
+			<publisher>Wordnet</publisher>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Princeton ; Princeton University</orgName>
+		</respStmt>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">English Synonyms and Antonyms</title>
+		<author>
+			<persName><forename type="first">James</forename><surname>Champlin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Fernald</forename></persName>
+		</author>
+		<imprint>
+			<date type="published" when="1896">1896</date>
+			<publisher>Funk &amp; Wagnalls Company</publisher>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Caveats of measuring semantic change of cognates and borrowings using multilingual word embeddings</title>
+		<author>
+			<persName><forename type="first">Clémentine</forename><surname>Fourrier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Syrielle</forename><surname>Montariol</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.lchange-1.10</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd Workshop on Computational Approaches to Historical Language Change</title>
+		<meeting>the 3rd Workshop on Computational Approaches to Historical Language Change<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="97" to="112" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Diachronic word embeddings reveal statistical laws of semantic change</title>
+		<author>
+			<persName><forename type="first">William</forename><forename type="middle">L</forename><surname>Hamilton</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jure</forename><surname>Leskovec</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dan</forename><surname>Jurafsky</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P16-1141</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 54th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="1489" to="1501" />
+		</imprint>
+	</monogr>
+	<note>: Long Papers)</note>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Contextualized embeddings for semantic change detection: Lessons learned</title>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Kutuzov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Erik</forename><surname>Velldal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lilja</forename><surname>Øvrelid</surname></persName>
+		</author>
+		<idno>ArXiv, abs/2209.00154</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">The influence of semantic fields on semantic change</title>
+		<author>
+			<persName><forename type="first">Adrienne</forename><surname>Lehrer</surname></persName>
+		</author>
+		<idno type="DOI">10.1515/9783110850178.283</idno>
+		<imprint>
+			<date type="published" when="1985">1985</date>
+			<publisher>De Gruyter Mouton</publisher>
+			<biblScope unit="page" from="283" to="296" />
+			<pubPlace>Berlin, New York</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Distributed representations of words and phrases and their compositionality</title>
+		<author>
+			<persName><forename type="first">Tomas</forename><surname>Mikolov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ilya</forename><surname>Sutskever</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Greg</forename><forename type="middle">S</forename><surname>Corrado</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jeff</forename><surname>Dean</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">26</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<monogr>
+		<title/>
+		<author>
+			<persName><forename type="first">Curran</forename><surname>Associates</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Inc</forename></persName>
+		</author>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">RuSemShift: a dataset of historical lexical semantic change in Russian</title>
+		<author>
+			<persName><forename type="first">Julia</forename><surname>Rodina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Andrey</forename><surname>Kutuzov</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.coling-main.90</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th International Conference on Computational Linguistics</title>
+		<meeting>the 28th International Conference on Computational Linguistics<address><addrLine>Barcelona, Spain (Online</addrLine></address></meeting>
+		<imprint>
+			<publisher>International Committee on Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1037" to="1047" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<monogr>
+		<title level="m" type="main">Tracing semantic change with Latent Semantic Analysis</title>
+		<author>
+			<persName><forename type="first">Eyal</forename><surname>Sagi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Stefan</forename><surname>Kaufmann</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Brady</forename><surname>Clark</surname></persName>
+		</author>
+		<idno type="DOI">10.1515/9783110252903.161</idno>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>De Gruyter Mouton</publisher>
+			<biblScope unit="page" from="161" to="183" />
+			<pubPlace>Berlin, Boston</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">A wind of change: Detecting and evaluating lexical semantic change across times and domains</title>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Schlechtweg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Anna</forename><surname>Hätty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Marco</forename><surname>Del Tredici</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Sabine</forename><surname>Schulte Im Walde</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/P19-1072</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</title>
+		<meeting>the 57th Annual Meeting of the Association for Computational Linguistics<address><addrLine>Florence, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="732" to="746" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">SemEval-2020 task 1: Unsupervised lexical semantic change detection</title>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Schlechtweg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Barbara</forename><surname>Mcgillivray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Simon</forename><surname>Hengchen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Haim</forename><surname>Dubossarsky</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Nina</forename><surname>Tahmasebi</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2020.semeval-1.1</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Fourteenth Workshop on Semantic Evaluation</title>
+		<meeting>the Fourteenth Workshop on Semantic Evaluation<address><addrLine>Barcelona (online</addrLine></address></meeting>
+		<imprint>
+			<publisher>International Committee for Computational Linguistics</publisher>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="1" to="23" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Swift, swiftly, and their synonyms: A contribution to semantic analysis and theory</title>
+		<author>
+			<persName><forename type="first">Gustaf</forename><surname>Stern</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Wettergren &amp; Kerber</title>
+		<imprint>
+			<date type="published" when="1921">1921</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Survey of computational approaches to lexical semantic change detection</title>
+		<author>
+			<persName><forename type="first">Nina</forename><surname>Tahmasebi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Lars</forename><surname>Borina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Adam</forename><surname>Jatowtb</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Computational approaches to semantic change</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Prior and current work on semantic change</title>
+		<author>
+			<persName><forename type="first">Elizabeth</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Closs</forename><surname>Traugott</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><forename type="middle">B</forename><surname>Dasher</surname></persName>
+		</author>
+		<idno type="DOI">10.1017/CBO9780511486500.004</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Cambridge Studies in Linguistics</title>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2001">2001</date>
+			<biblScope unit="page" from="51" to="104" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">The natural selection of words: Finding the features of fitness</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Peter</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Saif</forename><forename type="middle">M</forename><surname>Turney</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Mohammad</surname></persName>
+		</author>
+		<idno type="DOI">10.1371/journal.pone.0211512</idno>
+	</analytic>
+	<monogr>
+		<title level="j">PLoS ONE</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">A computational evaluation of two laws of semantic change</title>
+		<author>
+			<persName><forename type="first">Yang</forename><surname>Xu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Charles</forename><surname>Kemp</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 37th Annual Meeting of the Cognitive Science Society, CogSci 2015</title>
+		<meeting>the 37th Annual Meeting of the Cognitive Science Society, CogSci 2015<address><addrLine>Pasadena, California, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Cognitive Science Society</publisher>
+			<date type="published" when="2015-07-22">2015. July 22-25, 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">LSCDiscovery: A shared task on semantic change discovery and detection in Spanish</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Frank</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Felipe</forename><surname>Zamora-Reina</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Dominik</forename><surname>Bravo-Marquez</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Schlechtweg</surname></persName>
+		</author>
+		<idno type="DOI">10.18653/v1/2022.lchange-1.16</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 3rd Workshop on Computational Approaches to Historical Language Change</title>
+		<meeting>the 3rd Workshop on Computational Approaches to Historical Language Change<address><addrLine>Dublin, Ireland</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computational Linguistics</publisher>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="page" from="149" to="164" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">The repetition of words, time-perspective, and semantic balance</title>
+		<author>
+			<persName><forename type="first">George</forename><surname>Kingsley</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Zipf</forename></persName>
+		</author>
+		<idno type="DOI">10.1080/00221309.1945.10544486</idno>
+	</analytic>
+	<monogr>
+		<title level="j">The Journal of General Psychology</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="127" to="148" />
+			<date type="published" when="1945">1945</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

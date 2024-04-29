@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Making a guitar rack plugin -WebAudio Modules 2.0</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Quentin</forename><surname>Beauchet</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Pierre</forename><surname>Kouyoumdjian</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michael</forename><surname>Marynowicz</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Yann</forename><surname>Forner</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Michel</forename><surname>Buffa</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">Université Côte d&apos;Azur</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Making a guitar rack plugin -WebAudio Modules 2.0</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9A125B7B3E1CD891F8C71ED54D0AF3BE</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:48+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>WebAudio Modules 2.0 (aka WAM) is a standard for developing interoperable host and plugins. that can be written using different development approaches (JavaScript, build systems, TypeScript, FAUST, Csound, front-end frameworks, etc.). In addition, the WAM standard includes the notion of group of plugins, in order for example to send MIDI events to a group of plugins or to unify their parameters in a single set. The demo we propose is about a plugin that acts as a host, that exploits the WAM group feature of the WAM SDK and manages a set of plugins. This plugin regroups guitar pedal effects and tube amp simulators plugins to propose a large set of sound presets organized in banks. It can be loaded by any WAM compatible 1 https://github.com</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1.">Introduction</head><p>In 2015 Jari Kleimola and Oliver Larkin created Web Audio Modules (WAM) <ref type="bibr" target="#b2">[3]</ref>, a standard for creating reusable and interoperable plugins implemented as WebComponents, the core of which was written in C/C++. This initiative was aimed primarily at developers of native plugins (i.e. VST plugins). Since then, this standard has evolved in a new "Web Audio Modules 2.0" (WAM2) version <ref type="bibr" target="#b0">[1]</ref>, taking into account feedback from developers of the first version and the evolution of web Ssandards (with WebAssembly, WebComponents, WebMidi etc.). The WAM distribution is open source and distributed as four GitHub repositories and as npm modules (MIT License) 1 . One of these repository, the wamexample github repository, contains different plugins and hosts, that cover different programming languages and approaches. One of these examples is a proof of concept of a guitar pedalboard plugin written using the React front-end framework. This example is incomplete and the use of React adds an extra layer of complexity. WAM2 creators asked us to develop a simpler (pure JavaScript) example that can show some remarkable features of the standard, in particular the use of WAM groups and in particular, how to achieve parameter automation of a group of plugins that can be added/removed on the fly. Furthermore, as a large amount of our plugins are AudioWorklet / WebAssembly based, showing how the WAM standard could perform while automating a large amount of parameters without leaving the audio thread (with a host also written as an AudioWorklet) was something we wanted to experiment with.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2.">Related works</head><p>Several people tried to develop guitar effects and amplifier simulations with WebAudio. However, the vast majority of these projects does not use reusable, interoperable plugins, or used proprietary formats just usable with their own host. Among the oldest open source projects are pedalboard.js<ref type="foot" target="#foot_0">2</ref> and the Guitar Pedal Board <ref type="bibr" target="#b3">[4]</ref>. JS-Rocks<ref type="foot" target="#foot_1">3</ref> proposed in 2018 a set of guitar pedal effects and amplifiers (using Angular for the GUI). Other projects have been recently presented at different JavaScript developer conferences <ref type="foot" target="#foot_2">4</ref> , but most of them use "rather" simple effects coded using high level WebAudio nodes, and do support more complex approaches involving Web Assembly, Domain Specific Languages (DSL) or ports of VST/C++ cross compiled code, like our version does, that open the doors to sample accuracy audio processing. We are also using a large set of WASM/AW based plugins in our pedalboard. The most advanced examples you can find are in commercial online DAWS (bandlab.com, soundtrap.com or ampedstudio.com -this last example uses WAMs that some authors of this paper have developed). In 2018 a pedalboard project used interoperable plugins <ref type="bibr" target="#b1">[2]</ref> and has been presented at the WebAudio Conference in Berlin. It was built with an older version of the WAM standard. The demo we proposes, while having less GUI features, proposes more advanced capabilities. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.">The WAM pedalboard plugin</head><p>The WAM pedalboard plugin can be tried online <ref type="foot" target="#foot_3">5</ref> with an embedded audio player or using a real guitar and a sound card. It acts as a host and can handle a large set of plugins. According to the WAM specification, each WAM plugin is identified by a URI. From this URI it is possible to fetch metadata about the plugin (name, version, category, author, description, but also an image thumbnail). It is also possible to fetch the plugin code and to instantiate it using a single JavaScript dynamic import. Each plugin is a WebComponent. The WAM pedalboard uses a JSON configuration file that contains an array of URIs, each corresponding to the different WAM providers. Plugin providers can have an absolute URI (remote third party server ) or a relative URI (in this case the plugins are located under the base URI of the pedalboard itself). Along the pedalboard we provide a local set of plugins, but we also set up a remote server with another set of plugins (source code also available in the wam-example GitHub repository<ref type="foot" target="#foot_4">6</ref> ). When instantiated, the pedalboard queries all these WAM providers and builds an internal description of the available plugins. Thumbnails of these plugins are displayed on the top row, and can be sorted by categories using a drop down menu.</p><p>By clicking on thumbnails plugins are downloaded and instantiated and a plugin chain can be assembled (Fig 1 .). Plugins in the chain can be dragged and dropped to change the order, or deleted. All controls are usable (knobs, switches etc.). When plugins are added or removed, the internal set of parameters of the pedalboard are updated and events are fired, that can be caught by the host (for updating the parameter automation menu, for example). Each plugin can be controlled using any MIDI control device (knobs, sliders, switches are all made with the webaudiocontrols library 7 that proposes a set of web components with midi learn features).</p><p>The pedalboard plugin also comes with a bank/preset manager. In the WAM specification, each plugin has a state (i.e the current value of its exposed parameters, that often is also the position of each know/slider/switch in its GUI). The state of the pedalboard is a composite set of all its internal plugin states, plus a description of its presets and banks. The order of each plugin chain in each preset is also part of the state of the pedalboard.</p><p>Like this, a DAW that would use one or more pedalboard plugin(s), will be able to save/restore its/their full state(s) with a song project, for example. At the time of writing we have about twenty audio effect plugins and three tube guitar amplifier simulators, but we are currently porting a much larger set of plugins we developed with a previous version of the plugin standard <ref type="bibr" target="#b4">[5]</ref>. For the demo we plan to have more than seventy plugins available. Our proposed demonstration is a good test bench to assess the current limitations of Web Audio in terms of latency (driver, audio buffer size, sample rate frequency, etc.), audio effect sound quality, etc.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4.">Settings for the demo</head><p>Our pedalboard can be played real-time with a real guitar. As of today, we recommend for the best experience to use MacOS and a low latency sound card. By using a real guitar, we propose to show that WebAudio plugins for guitarists are a reality and could be included in full-scale DAWs with a quality comparable to what we find in the native application world.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 1 :</head><label>1</label><figDesc>Figure 1: A composite plugin that acts as a host</figDesc><graphic coords="1,72.50,181.47,466.52,253.95" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Figure 2 :</head><label>2</label><figDesc>Figure 2: Typical setup</figDesc><graphic coords="2,54.00,455.20,240.10,169.75" type="bitmap" /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_0"><p>https://dashersw.github.io/pedalboard.js/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="3" xml:id="foot_1"><p>https://github.com/vitaliy-bobrov/js-rocks</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="4" xml:id="foot_2"><p>For example https://github.com/trys/pedalboard</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="5" xml:id="foot_3"><p>https://wam-bank.herokuapp.com/</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="6" xml:id="foot_4"><p>https://github.com/webaudiomodules/wam-examples</p></note>
+		</body>
+		<back>
+
+			
+			<div type="acknowledgement">
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>5.</head></div>
+			</div>
+
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Web Audio Modules 2.0, an open Web Audio plugin standard</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Campbell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Burns</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Companion Proceedings (Developer&apos;s track) of the The Web Conference 2022</title>
+		<meeting><address><addrLine>Lyon, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022-04">April 2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Guitarists will be happy: guitar tube amp simulators and FX pedals in a virtual pedal board, and more!</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lebrun</surname></persName>
+		</author>
+		<idno>⟨hal- 01893681</idno>
+	</analytic>
+	<monogr>
+		<title level="m">Web Audio Conf</title>
+		<meeting><address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018-09">2018. Sep 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kleimola</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Larkin</surname></persName>
+		</author>
+		<title level="m">Web audio modules. 12th Sound and Music Computing Conference (SMC15)</title>
+		<meeting><address><addrLine>Maynooth, Ireland</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Guitar pedal board using WebAudio</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Buffa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Demetrio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Azria</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Web Audio Conference (WAC 2016</title>
+		<meeting><address><addrLine>Atlanta, USA</addrLine></address></meeting>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">FAUST online IDE: dynamically compile and publish FAUST code as WebAudio Plugins</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Letz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Orlarey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Michon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fober</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">5th Web Audio Conference</title>
+		<meeting><address><addrLine>WAC; Trondheim, Norway</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

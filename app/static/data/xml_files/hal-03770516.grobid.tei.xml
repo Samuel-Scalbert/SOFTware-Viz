@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Querying Inconsistent Prioritized Data with ORBITS: Algorithms, Implementation, and Experiments</title>
+				<funder ref="#_5tFeUNc">
+					<orgName type="full">Agence Nationale de la Recherche</orgName>
+					<orgName type="abbreviated">ANR</orgName>
+				</funder>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Meghyn</forename><surname>Bienvenu</surname></persName>
+							<email>meghyn.bienvenu@labri.fr</email>
+							<affiliation key="aff0">
+								<orgName type="institution">CNRS &amp; University of Bordeaux</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Camille</forename><surname>Bourgaux</surname></persName>
+							<email>camille.bourgaux@ens.fr</email>
+							<affiliation key="aff1">
+								<orgName type="laboratory">DI ENS</orgName>
+								<orgName type="institution" key="instit1">ENS</orgName>
+								<orgName type="institution" key="instit2">CNRS</orgName>
+								<orgName type="institution" key="instit3">PSL University &amp; Inria</orgName>
+								<address>
+									<settlement>Paris</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Querying Inconsistent Prioritized Data with ORBITS: Algorithms, Implementation, and Experiments</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">32784BA7623126B9B53435645904070A</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:49+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>We investigate practical algorithms for inconsistency-tolerant query answering over prioritized knowledge bases, which consist of a logical theory, a set of facts, and a priority relation between conflicting facts. We consider three wellknown semantics (AR, IAR and brave) based upon two notions of optimal repairs (Pareto and completion). Deciding whether a query answer holds under these semantics is (co)NP-complete in data complexity for a large class of logical theories, and SAT-based procedures have been devised for repair-based semantics when there is no priority relation, or the relation has a special structure. The present paper introduces the first SAT encodings for Pareto-and completionoptimal repairs w.r.t. general priority relations and proposes several ways of employing existing and new encodings to compute answers under (optimal) repair-based semantics, by exploiting different reasoning modes of SAT solvers. The comprehensive experimental evaluation of our implementation compares both (i) the impact of adopting semantics based on different kinds of repairs, and (ii) the relative performances of alternative procedures for the same semantics.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>The question of how to handle data that is inconsistent w.r.t. expressed constraints, be they given by database dependencies or ontologies, has great practical relevance. Data cleaning addresses this problem by modifying datasets so that they satisfy the constraints, often using heuristics to decide how to resolve contradictions, which may result in wrong facts being kept, or true facts removed (as discussed e.g. in <ref type="bibr" target="#b14">(Fan 2015)</ref>). An alternative, more principled, approach is to adopt inconsistency-tolerant semantics in order to extract meaningful information from the contradictory data.</p><p>In the database setting, such an approach goes by the name of consistent query answering (CQA) and has been extensively studied since the seminal work of <ref type="bibr" target="#b0">Arenas, Bertossi, and Chomicki (1999)</ref>, see e.g. the recent survey by <ref type="bibr" target="#b23">Wijsen (2019)</ref>. A central notion is that of a (subset) repair, defined as a maximal subset of the dataset that satisfies the constraints. Intuitively, repairs represent all different ways of minimally modifying the data to satisfy the constraints. As we do not know which repair corresponds to the true part of the data, the CQA semantics stipulates that a tuple is a query answer if it is an answer w.r.t. every repair (in line with how skeptical inference is defined in many KR settings).</p><p>Inconsistency-tolerant semantics have also drawn considerable interest in the setting of ontology-mediated query answering (OMQA) <ref type="bibr" target="#b19">(Poggi et al. 2008;</ref><ref type="bibr" target="#b6">Bienvenu and Ortiz 2015;</ref><ref type="bibr" target="#b24">Xiao et al. 2018)</ref>, where the ontology not only specifies constraints on the data but also captures other forms of domain knowledge, which can be exploited at query time. In addition to the AR semantics (the OMQA analog of the CQA semantics), several other inconsistency-tolerant semantics have been proposed (see <ref type="bibr" target="#b3">(Bienvenu and Bourgaux 2016;</ref><ref type="bibr" target="#b10">Bienvenu 2020</ref>) for surveys and references), among which: the brave semantics <ref type="bibr" target="#b7">(Bienvenu and Rosati 2013)</ref>, which only requires a tuple to be an answer w.r.t. some repair, provides a natural notion of possible answer, and the IAR semantics <ref type="bibr" target="#b16">(Lembo et al. 2010)</ref>, which answers queries over the intersection of the repairs, identifies the most reliable answers.</p><p>The basic notion of repair can be refined by exploiting preference information. A prominent approach, introduced by <ref type="bibr" target="#b22">Staworko, Chomicki, and Marcinkowski (2012)</ref> in the database setting and recently explored in the OMQA setting <ref type="bibr" target="#b4">(Bienvenu and Bourgaux 2020)</ref>, assumes that preferences are given by a binary priority relation between conflicting facts. Three notions of 'best' repairs w.r.t. a priority relation were proposed, namely, Pareto-optimal, globallyoptimal, and completion-optimal repairs, and can be used in place of subset repairs in any repair-based semantics.</p><p>The complexity of answering queries under (optimal) repair-based semantics has been extensively studied in the database and OMQA settings, refer to <ref type="bibr" target="#b23">(Wijsen 2019;</ref><ref type="bibr" target="#b3">Bienvenu and Bourgaux 2016)</ref> for an overview and references. We can briefly summarize these (many!) complexity results as follows: query answering under the AR (or CQA) semantics is coNP-hard in data complexity even in the simplest of settings (e.g. key constraints, class disjointness), and adopting optimal repairs in place of subset repairs leads to (co)NP-hardness for the brave and IAR semantics as well. Membership in (co)NP holds for AR, brave, and IAR semantics w.r.t. subset, Pareto-optimal, and completion-optimal repairs in the most commonly considered settings i.e. for database constraints given by primary keys or more generally, functional dependencies (FDs), and for ontologies formulated in data-tractable description logics such as those of the DL-Lite family <ref type="bibr" target="#b12">(Calvanese et al. 2007)</ref>.</p><p>The preceding (co)NP complexity results naturally suggest the interest of employing SAT solvers. Two recent sys-tems, CQAPri and CAvSAT, have begun to explore such an approach. CQAPri <ref type="bibr" target="#b8">(Bienvenu, Bourgaux, and Goasdoué 2014;</ref><ref type="bibr" target="#b23">2019)</ref> uses tractable approximations together with calls to SAT solvers to answer queries over inconsistent DL-Lite knowledge bases, under the AR, brave, and IAR semantics, w.r.t. subset repairs as well as optimal repairs for the restricted class of score-structured priority relations. CAvSAT <ref type="bibr" target="#b13">(Dixit and Kolaitis 2019)</ref> targets relational databases equipped with denial constraints (which include FDs as a special case) and computes query answers under the AR semantics w.r.t. subset repairs. While geared to different forms of constraints, the two systems solve essentially the same problem, yet they employ SAT solvers in different ways. CQAPri makes a single SAT call for each candidate query answer, whereas CAvSAT treats all candidate answers at the same time via calls to a weighted MaxSAT solver.</p><p>This paper presents a comprehensive study of the use of SAT-based approaches for inconsistency-tolerant query answering, which abstracts from the particular setting and provides a solid foundation for the future development of such systems. Our contributions can be summarized as follows.</p><p>In Section 3, we provide propositional encodings of the AR, brave, and IAR semantics, including the first encodings for Pareto-and completion-optimal repairs. Our encodings are generic and are built in a modular manner from a core set of basic formulas. Based upon these encodings, we develop in Section 4 several SAT-based algorithms, which utilize different functionalities of modern SAT solvers: weighted MaxSAT, MUS enumeration, iterative SAT calls with assumptions. In Section 5, we present our implemented system, ORBITS, which computes query answers under the chosen semantics using the selected encoding and algorithm. Section 6 presents the result of our extensive experimental evaluation, using existing OMQA and database benchmarks, aimed at comparing the different semantics, and understanding the relative performances of different encodings and/or algorithms for the same semantics. Proofs, pseudo-code for algorithms, and details on the experimental evaluation are provided in the appendix of <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Querying Inconsistent Knowledge Bases</head><p>We introduce notation and terminology for talking about knowledge bases and then recall different inconsistencytolerant semantics. We shall assume throughout the paper that readers are familiar with propositional and first-order logic. Key notions are illustrated in Example 1.</p><p>Knowledge bases By knowledge base (KB), we mean a pair K = (D, T ) consisting of a dataset D and a logical theory T . The dataset D is a finite set of ground facts, i.e. atoms P (c 1 , . . . , c n ) where P is an n-ary predicate and each c i is a constant. The theory T is a finite set of first-order logic (FOL) sentences. An L KB is a KB whose theory is formulated in the L fragment of FOL. Typically, T will be either an ontology (with L a description logic or decidable class of existential rules) or a set of database constraints, for instance, letting L be the class of denial constraints, which take the form ∀ x¬(α 1 ∧ . . . ∧ α n ), where each α i is a relational or inequality atom whose variables are among x. De-nial constraints generalize the more well-known functional dependencies (FDs) and (primary) key constraints.</p><p>A KB K = (D, T ) is consistent, and its dataset D is called T -consistent, if D ∪ T has at least one model. Otherwise, K is inconsistent, denoted K |= ⊥. To identify the reasons for a KB K = (D, T ) being inconsistent, we use the notion of a conflict of K, defined as an inclusionminimal subset D ⊆ D such that (D , T ) |= ⊥. We use Conf (K), or Conf (D, T ), to refer to the set of all conflicts of K = (D, T ). Note that Conf (D, T ) ⊆ Conf (D , T ) whenever D ⊆ D . In particular, this means that adding more facts cannot render an inconsistent KB consistent.</p><p>We will be interested in answering queries over KBs. In this paper, when we speak of queries, we mean conjunctive queries, which take the form of conjunctions of relational atoms P (t 1 , . . . , t n ) (with each t i a constant or variable), where some variables may be existentially quantified. Given a query q( x), with free variables x = (x 1 , . . . , x k ), and a tuple of constants a = (a 1 , . . . , a k ), we denote by q( a) the first-order sentence obtained by replacing each variable in x by the corresponding constant in a. A (certain) answer to q( x) over K = (D, T ) is a tuple of constants a from D such that q( a) holds in every model of K. We use K |= q( a) to indicate that a is a certain answer to q( x) over K.</p><p>Certain answers are preserved under the addition of facts: if (D, T ) |= q( a) and D ⊆ D , then (D , T ) |= q( a). It thus makes sense to consider the minimal subsets of the data responsible for an answer. We call a T -consistent subset C ⊆ D a cause for q( a) w.r.t. K = (D, T ) if (C, T ) |= q( a) and (C , T ) |= q( a) for every C C; the set of causes for q( a) w.r.t. K is denoted by Causes(q( a), K).</p><p>Observe that if K is inconsistent, then K |= q( a) for every candidate answer a, which is uninformative and motivates the need for alternative inconsistency-tolerant semantics.</p><p>Repairs In order to extract meaningful information from an inconsistent KB, it is useful to consider the parts of the data that are consistent with the theory. This can be formalized using the notion of repair: Definition 1. A (subset) repair of a KB K = (D, T ) is an inclusion-maximal subset R ⊆ D such that (R, T ) |= ⊥. We use SRep(K) to denote the set of repairs of KB K.</p><p>Subset repairs treats all facts equally. However, preferences between conflicting facts should be taken into account when they are available. Following <ref type="bibr" target="#b22">(Staworko, Chomicki, and Marcinkowski 2012;</ref><ref type="bibr" target="#b4">Bienvenu and Bourgaux 2020)</ref>, we assume such preferences are given as a priority relation: Definition 2. A priority relation for a KB K = (D, T ) is an acyclic binary relation over the facts of D such that if α β, then there exists C ∈ Conf (K) such that {α, β} ⊆ C. We say that is total if for every pair α = β such that {α, β} ⊆ C for some C ∈ Conf (K), either α β or β α. A completion of is a total priority relation ⊇ . Definition 3. A prioritized KB K consists of a KB K = (D, T ) and a priority relation for K.</p><p>We recall two 1 natural ways of refining the notion of re-pair to exploit priority relations <ref type="bibr" target="#b22">(Staworko, Chomicki, and Marcinkowski 2012;</ref><ref type="bibr" target="#b4">Bienvenu and Bourgaux 2020</ref>): Definition 4. Consider a prioritized KB K with K = (D, T ), and let R ∈ SRep(K).</p><formula xml:id="formula_0">• A Pareto improvement of R is a T -consistent B ⊆ D such that there is β ∈ B \ R with β α for every α ∈ R \ B. The repair R is a: • Pareto-optimal repair of K if there is no Pareto improve- ment of R. • completion-optimal repair of K if R is a Pareto-optimal</formula><p>repair of K , for some completion of . We denote by PRep(K ) and CRep(K ) the sets of Paretoand completion-optimal repairs.</p><p>It is known that CRep(K ) ⊆ PRep(K ) ⊆ SRep(K), with each of the inclusions potentially strict. Interestingly, however, if is induced by assigning scores to facts, then Pareto-and completion-optimal repairs coincide: Definition 5. A priority relation for K = (D, T ) is scorestructured if there exists a scoring function s : D → N such that for every pair of facts α and β that appear together in a conflict of K, we have α β iff s(α) &gt; s(β). Theorem 1. <ref type="bibr" target="#b17">(Livshits and Kimelfeld 2017;</ref><ref type="bibr" target="#b11">Bourgaux 2016)</ref> Let K be a prioritized KB such that is score-structured. Then CRep(K ) = PRep(K ).</p><p>Bourgaux ( <ref type="formula">2016</ref>) further shows that for score-structured priorities, Pareto-and completion-optimal repairs also coincide with the ⊆ P -repairs from <ref type="bibr" target="#b8">(Bienvenu, Bourgaux, and Goasdoué 2014)</ref> based upon lexicographic set inclusion.</p><p>Repair-based semantics We next recall three prominent inconsistency-tolerant semantics (brave, AR, and IAR), which we parameterize by the considered type of repair: Definition 6. Fix X ∈ {S, P, C} and consider a prioritized KB K with K = (D, T ), query q( x), and tuple of constants a from D with | x| = | a|. Then a is an answer to q over K • under X-brave semantics, denoted</p><formula xml:id="formula_1">K |= X brave q( a), if (R, T ) |= q( a) for some R ∈ XRep(K ) • under X-AR semantics, denoted K |= X AR q( a), if (R, T ) |= q( a) for every R ∈ XRep(K ) • under X-IAR semantics, denoted K |= X IAR q( a), if (B, T ) |= q( a) where B = R∈XRep(K ) R</formula><p>The AR semantics is arguably the most natural way of defining plausible query answers, and it is the semantics used for consistent query answering in databases <ref type="bibr" target="#b2">(Bertossi 2011)</ref>. The brave semantics captures the notion of possible answers, while the IAR semantics identifies the answers that can be obtained using only the most reliable facts. Observe that <ref type="figure">d,</ref><ref type="figure">c</ref>), and δ = S(d, b), and T contains FDs ∀x, y, z¬(R(x, y) ∧ R(x, z) ∧ y = z), ∀x, y, z¬(S(x, y) ∧ S(x, z) ∧ y = z) and the denial constraint ∀x, y, z¬(R(y, x) ∧ S(z, x)).</p><formula xml:id="formula_2">K |= X IAR q ⇒ K |= X AR q ⇒ K |= X brave q. Example 1. Let K = (D, T ) where D contains four facts α = R(a, b), β = R(a, c), γ = S(</formula><p>The conflicts of K are {α, β}, {γ, δ}, {α, δ} and {β, γ}, hence SRep(K) = {{α, γ}, {β, δ}}. If we define by α β and γ δ, we obtain PRep(K ) = SRep(K) but CRep(K ) = {{α, γ}}. Indeed, any completion of is such that α δ or γ β by acyclicity. If q(x) = ∃yR(x, y), Causes(q(a), K) = {{α}, {β}}.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Hence, K |= C</head><p>IAR q(a), K |= P AR q(a) but K |= P IAR q(a). We briefly recall what is known about the complexity of query answering under (optimal) repair-based semantics. Note that when we speak of complexity, we mean data complexity, measured solely in terms of the size of the dataset.</p><p>Theorems 2 and 3 summarize upper and lower bounds from the database and ontology settings. All of them are known <ref type="bibr" target="#b22">(Staworko, Chomicki, and Marcinkowski 2012;</ref><ref type="bibr" target="#b4">Bienvenu and Bourgaux 2020;</ref><ref type="bibr" target="#b21">Rosati 2011)</ref>, except the lower bounds for X-brave and X-IAR semantics in the case of FDs, proven in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>. We say that a logic L enjoys PTIME consistency checking (resp. query entailment) if the problem of deciding whether K |= ⊥ (resp. K |= q( a)) for an input L KB is in PTIME.</p><p>Theorem 2. Let L be any FOL fragment that enjoys PTIME consistency checking and query entailment, and let X ∈ {S, P, C}. Then query entailment for L KBs is</p><p>• in NP under X-brave semantics, and • in coNP under X-AR and X-IAR semantics.</p><formula xml:id="formula_3">Theorem 3. Query entailment for L KBs is • NP-hard under X-brave semantics (X ∈ {P, C}) • coNP-hard under X-AR semantics (X ∈ {S, P, C}) • coNP-hard under X-IAR semantics (X ∈ {P, C})</formula><p>for any L that extends DL-Lite core , EL ⊥ , or FDs. Remark 1. Query entailment under S-brave and S-IAR is tractable both for DL-Lite ontologies and denial constraints <ref type="bibr" target="#b7">(Bienvenu and Rosati 2013)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">SAT Encodings</head><p>The (co)NP complexity results from the previous section suggest a SAT-based approach to query entailment under (optimal) repair-based semantics. While our work is not the first to explore SAT encodings for inconsistency-tolerant semantics, our contribution is a uniform approach that covers a wide range of semantics and settings, and provides the first encodings for Pareto-and completion-optimal repairs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Overview</head><p>Our propositional encodings are built from:</p><formula xml:id="formula_4">• the set Conf (K) of conflicts of the considered KB K,</formula><p>• a set PotAns of potential answers, and for each a ∈ PotAns, the (non-empty<ref type="foot" target="#foot_1">2</ref> ) set Causes(q( a), K),</p><p>• the priority relation of K, and are of polynomial size w.r.t. to these inputs. Note that for DL-Lite ontologies and denial constraints, the sets of conflicts, candidate answers, and their causes, can be computed in PTIME via database query evaluation, so our encodings will yield procedures of the expected co(NP) complexity.</p><p>To simplify the treatment, we shall assume that every conflict contains at most two facts, a property that is satisfied by the most common DL-Lite dialects and for FDs. (The extension to non-binary conflicts is discussed later in the section.) By restricting our attention to binary conflicts, we can use a convenient notation α⊥β in place of {α, β} ∈ Conf (K), and define a graph representation of conflicts and priorities. The directed conflict graph G K has facts from Conf (K) as nodes and an edge from α to β iff α⊥β and α β.</p><p>Our encodings will use variables of the form x α to indicate whether fact α appears in a (partial) repair. Including one such variable for each fact in D would yield prohibitively large encodings, which is why we use G K to focus on relevant facts: given any F ⊆ D, we let R(F ) be the set of all facts that are reachable in G K from some α ∈ F .</p><p>Before proceeding to the details, let us give a high-level overview of our encodings. All of the encodings try to construct a set of facts that is consistent with the theory (i.e. does not contain any conflicts) and that can be extended to an optimal repair. For the X-AR semantics, we are trying to build an optimal repair that does not entail the considered query answer(s), which can be done by including facts that contradict each of the answer(s) causes. For the X-brave semantics, we must ensure that the repair entails the considered query answer(s), achieved by requiring the presence of some cause in the chosen subset. Finally, for the X-IAR semantics, we ensure the existence of optimal repairs that omit a given cause or fact appearing in a cause by including facts that contradict the considered cause or fact.</p><p>In the next section, we will present SAT-based algorithms that consider each potential answer in turn, as well as algorithms that treat all potential answers conjointly. For that reason, in what follows, we will present encodings both for a single answer and for several answers at a time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Basic Building Blocks</head><p>Our various encodings rely upon some common ingredients, which are presented next.</p><p>Absence or presence of causes To contradict a specific cause C, we use ϕ ¬C , with two alternative definitions inspired respectively by the CQAPri and CAvSAT encodings:</p><formula xml:id="formula_5">ϕ ¬C = α∈C α⊥β,α β x β (neg 1 ) ϕ ¬C = α∈C ¬x α ∧ α∈C (x α ∨ α⊥β,α β x β ) (neg 2 )</formula><p>For encodings with multiple answers, we use a variant ϕ ¬C (y) obtained by adding ¬y as a disjunct of the (first) clause of ϕ ¬C , so it is only 'active' when the given variable y is true. To block all causes of the BCQ q( a), we can use</p><formula xml:id="formula_6">ϕ ¬q( a) = C∈Causes(q( a),K) ϕ ¬C</formula><p>or, in the case of encodings for several answers, a variant ϕ ¬q( a) obtained by replacing ϕ ¬C by ϕ ¬C (x a ).</p><p>If instead we want to force that cause C holds, we use:</p><formula xml:id="formula_7">ϕ C = α∈C x α</formula><p>and to ensure some cause for BCQ q( a) is present, we use:</p><formula xml:id="formula_8">ϕ q( a) =( C∈Causes(q( a),K) x C ) ∧ C∈Causes(q( a),K) α∈C ¬x C ∨ x α</formula><p>or, for multi-answer encodings, a variant ϕ q( a) obtained from ϕ q( a) by adding ¬x a as a disjunct of the first clause.</p><p>Consistency We use ϕ cons (F ) to ensure that the valuation of {x α | α ∈ F } corresponds to a T -consistent set of facts:</p><formula xml:id="formula_9">ϕ cons (F ) = α,β∈F,α⊥β ¬x α ∨ ¬x β .</formula><p>Extension to optimal repair The most intricate part of the encoding is ensuring that the selected set of facts can be extended to a repair of the desired type. To this end, we introduce formulas of the form ϕ X-max (F ), where F provides the facts that may appear, and X is the type of repair.</p><p>• Subset repairs: we can simply set ϕ S-max (F ) = , as every consistent set of facts extends to some S-repair. • Pareto-optimal repairs: we prove that the following encoding of maximality for ⊆ P -repairs (w.r.t. scorestructured ) from <ref type="bibr" target="#b8">Bienvenu et al. (2014)</ref> in fact also works for Pareto-optimal repairs and arbitrary :</p><formula xml:id="formula_10">ϕ P1-max (F ) = α∈R(F ) (x α ∨ α⊥β,α β x β )</formula><p>Essentially, it states that a relevant fact can only be omitted if we include a non-dominated contradicting fact. We also propose an alternative encoding with fewer variables:</p><formula xml:id="formula_11">ϕ P2-max (F ) = α∈R -(F ) β α (¬x α ∨ β⊥γ,β γ x γ ) where R -(F ) = ∞ i=1 R i with R 0 = F and R i+1 = R i ∪ {γ | ∃α ∈ R i , β α, β⊥γ, β γ}.</formula><p>Intuitively, to include α ∈ F , we must contradict every more preferred fact that conflicts with α, then do the same for selected contradicting facts.</p><p>• Completion-optimal repairs (w.r.t. arbitrary ): we use</p><formula xml:id="formula_12">ϕ C-max (F ) =ϕ pref ∧ ϕ compl ∧ ϕ acyc</formula><p>where the subformulas ϕ pref , ϕ compl , and ϕ acyc are defined in Figure <ref type="figure">1</ref>. The formula ϕ pref states that if x α is omitted, then we must include a contradicting fact β that is preferred to α according to . We use ϕ compl to ensure that compares all contradicting facts and extends , while the acyclicity of is ensured by ϕ acyc , which uses variables t α,β to compute the transitive closure of .</p><p>Non-binary conflicts We briefly discuss how to modify the preceding formulas to handle non-binary conflicts. The most essential difference is that instead of choosing a single contradicting fact, we may need to choose a conjunction of facts, and use additional variables to refer to them. We must also redefine G K as a directed hypergraph, and use hypergraph reachability to define R(F ). Details of the required modifications are provided in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>.</p><formula xml:id="formula_13">ϕ pref = α∈R(F ) x α ∨ β∈R(F ),α⊥β x β→α ∧ α,β∈R(F ),α⊥β (¬x β→α ∨ x β ) ∧ (¬x β→α ∨ x β α ) ϕ compl = α,β∈R(F ),α⊥β x α β ∨ x β α ∧ α,β∈R(F ),α⊥β ¬x α β ∨ ¬x β α ∧ α,β∈R(F ),α β x α β ϕ acyc = α,β∈R(F ),α⊥β ¬x α β ∨ t α,β ∧ α,β∈R(F ),α⊥β ¬x α β ∨ ¬t β,α ∧ α,β,γ∈R(F ),β⊥γ ¬t α,β ∨ ¬x β γ ∨ t α,γ</formula><p>Figure <ref type="figure">1</ref>: Subformulas of ϕ C-max (F ), which is used to ensure it is possible to extend the selected subset of F to a completion-optimal repair.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Propositional Encodings</head><p>We now present our encodings, built from the preceding components following the intuitions given in Section 3.1.</p><p>Note that the following results hold no matter which variant of ϕ ¬C we use and with ϕ P-max instantiated as either ϕ P1-max or ϕ P2-max . The notation facts(ϕ) will be used for the set of facts α such that the variable x α occurs in ϕ.</p><p>X-AR semantics Formula Φ X-AR (q( a)) in Figure <ref type="figure">2</ref> is used to test whether a particular tuple a holds. Roughly speaking, it selects a way to contradict every clause, checking that the resulting set of facts is contained in a X-optimal repair. The second formula Ψ X-AR (PotAns) simultaneously handles all tuples in PotAns. Clauses of the form x a can be added to activate ϕ ¬q( a) .</p><p>The correctness of our encodings is given in the next result, which applies to all X ∈ {S, P, C} and a ∈ PotAns: Theorem 4. The following are equivalent : (i) K |= X AR q( a), (ii) Φ X-AR (q( a)) is unsatisfiable, and (iii) x a is false in every satisfying assignment of Ψ X-AR (PotAns).</p><p>X-brave semantics Figure <ref type="figure">2</ref> presents our encodings for the X-brave semantics. Formula Φ X-brave (q( a)) checks a particular tuple a and is essentially the same as Φ X-AR (q( a)), but with ϕ q( a) in place of ϕ ¬q( a) . A variant Φ X-brave (C) can be used to check whether a particular cause C holds in some X-optimal repair. For a multi-answer encodings, we use the formula Ψ X-brave (PotAns), again adding clauses of the form x a to activate ϕ q( a) . We obtain an analogous correctness result: Theorem 5. The following are equivalent: (i) K |= X brave q( a), (ii) Φ X-brave (q( a)) is satisfiable, (iii) Φ X-brave (C) is satisfiable for some C ∈ Causes(q( a), K), and (iv) x a is true in some satisfying assignment of Ψ X-brave (PotAns).</p><p>X-IAR semantics Formula Φ X-IAR (C) from Figure <ref type="figure">2</ref> can be used to test whether there exists a X-optimal repair that excludes cause C. To check a potential answer a, we use Φ X-IAR (q( a)), which is essentially the conjunction of Φ X-IAR (C) for every cause C of q( a), but where the conjuncts for different causes use distinct variables (x C α in place of x α ). A multi-answer encoding Ψ X-IAR (PotAns) can be obtained by taking the conjunction of Φ X-IAR (q( a)) for all a ∈ PotAns, but with ϕ C ¬C replaced by ϕ C ¬C (x a ) (see the appendix of (Bienvenu and Bourgaux 2022) for details). We obtain the following: Theorem 6. The following are equivalent: (i) K |= X IAR q( a), (ii) Φ X-IAR (q( a)) is unsatisfiable, (iii) Φ X-IAR (C) is unsatisfiable for some C ∈ Causes(q( a), K), and (iv) x a is false in every satisfying assignment of Ψ X-IAR (PotAns).</p><p>We shall also require encodings for individual facts, using</p><formula xml:id="formula_14">Φ X-IAR (α) = Φ X-IAR ({α})</formula><p>to test if α holds in all X-optimal repairs. We also consider a multi-fact version Ψ X-IAR (Rel ), parameterized by a set of facts Rel , and to which we add clause y α to activate ϕ ¬{α} (y α ).</p><p>Theorem 7. For every α ∈ D, the following are equivalent:</p><formula xml:id="formula_15">(i) K |= X IAR α, (ii) Φ X-IAR (α) is unsatisfiable, and (iii) if α ∈ Rel then y α is false in every satisfying assignment of Ψ X-IAR (Rel ).</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Algorithms</head><p>Inspired by the different use of SAT solvers made by CQAPri and CAvSAT, we propose several algorithms based on the encodings of Section 3. The pseudo code of all algorithms is available in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>.</p><p>Before describing the algorithms, note that we can show that the encodings of Section 3 are still valid if Causes(q( a), K) is actually a superset of the causes such that every superfluous B in it either (1) includes a real cause of q( a) or (2) contains two distinct facts that form a conflict. Since checking consistency and minimality to obtain the real causes can be costly in practice, our algorithms accept such 'sets of causes'. They actually even accept the presence of self-inconsistent facts in the 'causes' (which would make the encodings for X-AR and X-IAR not applicable) and handle them in a preprocessing step.</p><p>Our high-level algorithm takes as input a semantics Sem ∈ {brave, AR, IAR}, a repair notion X ∈ {S, P, C}, a directed conflict graph G K , and a set of potential answers PotAns with their causes, and outputs the set of tuples from P otAns that are answers under the X-Sem semantics.</p><p>An initial preprocessing step serves to (1) check whether G K contains some self-inconsistent facts, remove them from G K , discard all causes that contain such facts, then all answers that do not have any cause left, and (2) find some answers that trivially hold under X-Sem. To do so, it removes from the causes all facts that do not have any outgoing edge in the directed conflict graph, and thus trivially belong to all</p><formula xml:id="formula_16">Φ X-AR (q( a)) = ϕ ¬q( a) ∧ ϕ X-max (F 1 ) ∧ ϕ cons (F 2 ) F 1 = facts(ϕ ¬q( a) ), F 2 = F 1 ∪ facts(ϕ X-max (F 1 )) Ψ X-AR (PotAns) = a∈PotAns ϕ ¬q( a) ∧ ϕ X-max (F 1 ) ∧ ϕ cons (F 2 ) F 1 = facts( a∈PotAns ϕ ¬q( a) ), F 2 = F 1 ∪ facts(ϕ X-max (F 1 )) Φ X-brave (q( a)) = ϕ q( a) ∧ ϕ X-max (G 1 ) ∧ ϕ cons (G 2 ) G 1 = facts(ϕ q( a) ), G 2 = G 1 ∪ facts(ϕ X-max (G 1 )) Φ X-brave (C) = ϕ C ∧ ϕ X-max (G * 1 ) ∧ ϕ cons (G * 2 ) G * 1 = facts(ϕ C ), G * 2 = G * 1 ∪ facts(ϕ X-max (G * 1 )) Ψ X-brave (PotAns) = a∈PotAns ϕ q( a) ∧ ϕ X-max (G 1 ) ∧ ϕ cons (G 2 ) G 1 = facts( a∈PotAns ϕ q( a) ), G 2 = G 1 ∪ facts(ϕ X-max (G 1 )) Φ X-IAR (C) = ϕ ¬C ∧ ϕ X-max (H 1 ) ∧ ϕ cons (H 2 ) H 1 = facts(ϕ ¬C ), H 2 = H 1 ∪ facts(ϕ X-max (H 1 )) Φ X-IAR (q( a)) = C∈Causes(q( a),K) ϕ C ¬C ∧ ϕ C X-max (H C 1 ) ∧ ϕ C cons (H C 2 ) H C 1 = facts(ϕ C ¬C ), H C 2 = H C 1 ∪ facts(ϕ C X-max (H C 1 ))</formula><p>Figure <ref type="figure">2</ref>: Single-and multi-answer encodings for X-AR (top) and X-brave (middle) semantics, single-answer encodings for X-IAR (bottom).</p><p>optimal repairs. The trivial answers that have some cause that contains only such facts hold under X-Sem semantics and are filtered during this step.</p><p>It then remains to filter the remaining potential answers. The four first algorithms we propose to do so are generic in the sense that they can be used for all semantics.</p><p>• Simple is similar to the algorithm used by CQAPri. For each answer to filter a, it checks whether Φ X-Sem (q( a)) is satisfiable, which decides whether K |= X Sem q( a). • All-MaxSAT is similar to the CAvSAT algorithm. It constructs a weighted MaxSAT instance Ψ X-Sem (PotAns) ∧ a∈PotAns x a , where the x a are soft clauses, and all other clauses are hard. It then relies on the solver to maximize the number of soft clauses satisfied, which filters the corresponding answers. After each iteration, the ¬x a corresponding to the satisfied soft clauses are added to the set of assumed literals for the next iteration.</p><p>• All-MUSes is based on the observation that if x a is false in every satisfying assignment of Ψ X-Sem (PotAns), then {x a } is a minimal unsatisfiable subset (MUS) of a∈PotAns x a w.r.t. Ψ X-Sem (PotAns). All-MUSes relies on the solver to compute all MUSes, and decides whether K |= X Sem q( a) by looking at those of size one. • Assumptions iteratively evaluates Ψ X-Sem (PotAns), treating the variables x a , with a ∈ PotAns as assumptions. If Ψ X-Sem (PotAns)[x a ] is satisfiable, there exists a satisfying assignment of Ψ X-Sem (PotAns) in which x a is true, which decides whether K |= X Sem q( a). While we may need to consider all causes to decide whether an answer holds under X-AR semantics, in the X-brave or X-IAR case it is sufficient to find a single cause that belongs to some or all optimal repairs. Moreover, the encoding Φ X-IAR (q( a)) is a conjunction of independent subproblems built on distinct variables for each cause, which does not seem very fit for a SAT solver. We hence propose algorithms specific to these cases.</p><p>• Cause-by-cause can be used for X-brave and X-IAR. For each answer to filter a, it checks whether there is a cause C of q( a) such that Φ X-Sem (C) is (un)satisfiable: if Sem = brave and Φ X-Sem (C) is satisfiable, or Sem = IAR and</p><formula xml:id="formula_17">Φ X-Sem (C) is unsatisfiable, then K |= X Sem q( a); if no cause witnesses K |= X</formula><p>Sem q( a), then K |= X Sem q( a). • IAR-causes is specific to X-IAR. It considers the answers in turn while maintaining two sets of facts: the X-IAR facts that belong to the intersection of the optimal repairs and the non-X-IAR facts. For each cause C of q( a) that does not contain any known non X-IAR fact, it removes the known X-IAR facts from C. If C becomes empty, then K |= X IAR q( a). Otherwise, for each remaining α ∈ C, it checks whether K |= X IAR α using Φ X-IAR (α) and adds α to the corresponding set of facts. If every α ∈ C is such that K |= X IAR α, then K |= X IAR q( a). • IAR-facts is also specific to X-IAR and considers the answers in turn while maintaining the two sets of X-IAR and non X-IAR facts. The difference is that for each answer, it uses Ψ X-IAR (Rel ) ∧ α∈Rel y α and a weighted MaxSAT solver to decide which facts hold under X-IAR among the set Rel of facts that belong to some cause and have not already been assigned to one of the two sets. Then it checks whether there is a cause that only contains X-IAR facts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="5">Implementation &amp; Experimental Setting</head><p>We implemented the algorithms presented in Section 4 in java 11. Our system ORBITS (Optimal Repair-Based Inconsistency-Tolerant Semantics) takes as input two JSON files containing the directed conflict graph G K , and the potential answers PotAns of the query associated with their causes. The user specifies a semantics (AR, IAR, or brave), a value X (among S, P 1 , P 2 , or C) to use in ϕ X-max (F ), the desired encoding for ϕ ¬C (neg 1 or neg 2 ), and the algorithm to use to compute the answers w.r.t. the chosen semantics.</p><p>The set of answers is output as a JSON file. ORBITS relies on the Sat4j java library (version 2.3.4) to solve the SAT, weighted MaxSAT, and MUS enumeration problems <ref type="bibr" target="#b1">(Berre and Parrain 2010)</ref>. In principle, a standalone solver could be used, but we found that the time needed to print out the encoding to pass it to an external solver tends to be prohibitive compared to using Sat4j.</p><p>The source code of ORBITS is available at https://github. com/bourgaux/orbits, the inputs files we used in the experiments at https://zenodo.org/record/5946827, and details on the experimental setting in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>.</p><p>Experimental Environment All experiments were run with 16GB of RAM in a cluster node running CentOS 7.9 with linux kernel 3.10.0, with processor 2x Cascade Lake Intel Xeon 5218 16 cores, 2.4GHz. Reported times are averaged over 5 runs, with a 30 minutes time-out. Since we aim at comparing our different algorithms and encodings, in what follows, we focus on the time needed to filter the candidate answers, excluding the time needed to load the inputs from the JSON files or serialize the output. This input loading time is generally below 1 second and never exceeds a few seconds. However, in real-world applications, we would not use ORBITS as a standalone tool, but rather make it a library to be integrated in a full query answering system.</p><p>Test KBs We evaluate ORBITS on three (sets of) KBs. The first is the CQAPri benchmark <ref type="bibr" target="#b11">(Bourgaux 2016)</ref>, a synthetic benchmark crafted to evaluate inconsistency-tolerant query answering over DL-Lite KBs, adapted from the LUBM ∃ 20 benchmark <ref type="bibr" target="#b18">(Lutz et al. 2013</ref>). The two others, called Food Inspection and Physicians, are real-world datasets built from public open data, which have already been used to evaluate data cleaning and consistent query answering systems <ref type="bibr" target="#b20">(Rekatsinas et al. 2017;</ref><ref type="bibr" target="#b13">Dixit and Kolaitis 2019)</ref>. They consist of relational databases built from the original csv files, on which typical integrity constraints have been added. We briefly summarize their main characteristics below.</p><p>We use the DL-Lite ontology (which includes 875 disjointness axioms) and 20 queries of the CQAPri benchmark, together with the 18 datasets named uXcY with X ∈ {1, 5, 20} and Y ∈ {1, 5, 10, 20, 30, 50}. Parameters X and Y are related to the size and the proportion of facts involved in some conflicts respectively (the higher the bigger), and the datasets are such that uXcY ⊆ uXcY for Y ≤ Y and uXcY ⊆ uX cY for X ≤ X . Their sizes range from 75K to 2M facts and their proportions of facts involved in some conflict from 3% to 46%. The induced conflict graphs contain from 2K to 946K facts and from 2K to 3M conflicts.</p><p>The Food Inspection dataset contains data about inspection of restaurants in New York and Chicago (Dat c; Dat a). We use the database schema and six queries proposed by <ref type="bibr" target="#b13">Dixit and Kolaitis (2019)</ref>: there are four relations, each having a key constraint and one having a further FD. The dataset contains 523K facts, 37% of them belong to some conflict. The conflict graph contains 192K facts and 219K conflicts.</p><p>We build the Physicians dataset from the National Downloadable File provided by the Centers for Medicare &amp; Medicaid Services (Dat b). It contains information on medical professionals and their affiliations. We decompose it into seven relations, add four reasonable key constraints and two FDs, and design six queries. In total, the dataset contains more than 8M facts and 2% of them are in some conflict. The conflict graph contains 183K facts and 2.7M conflicts.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Priority Relations</head><p>We build score-structured priority relations by randomly assigning each fact a score between 1 or n = 5, and not score-structured with p = 0.5 or p = 0.8) and type of repairs (standard, Pareto-or completion-optimal).</p><p>and n. To construct a non-score-structured priority relation, we consider each conflict and assign a random direction to the corresponding edge in the conflict graph with a probability p, except if doing so creates a cycle, and verify that the resulting priority is indeed not score-structured. On the Food Inspection and Physicians datasets, we build four priority relations: two score-structured with n = 2 and n = 5, and two non-score-structured with p = 0.5 and p = 0.8. For the CQAPri benchmark, we build two priority relations, one score-structured with n = 5 and one non-score-structured with p = 0.8, on our largest dataset (u20c50), then propagate them to the other datasets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="6">Experimental Evaluation</head><p>Our experimental evaluation aims at assessing (i) the impact of adopting different kinds of repairs, and (ii) the relative performances of alternative procedures for the same semantics. More precisely, we consider the following questions.</p><p>• What is the impact in terms of number of answers of adopting optimal repairs rather than standard repairs, or completion-optimal repairs instead of Pareto-optimal repairs when the priority relation is not score-structured?</p><p>• What is the impact of using one kind of repairs rather than another on the computation time?</p><p>• Given a semantics and type of repair, what is the impact in terms of computation times of the choice of:</p><p>how to encode optimality (P 1 or P 2 for Pareto-optimal repairs, P 1 , P 2 or C when is score-structured)? how to encode contradictions (ϕ ¬C with neg 1 or neg 2 )? the algorithm used to filter the non-trivial answers?</p><p>In what follows, we summarize our main observations. Detailed results are given in <ref type="bibr" target="#b5">(Bienvenu and Bourgaux 2022)</ref>.</p><p>Comparing Semantics w.r.t. Number of Answers Table <ref type="table" target="#tab_0">1</ref> shows the impact on the number of answers of the type of priority relation and chosen notion of optimal repairs for an example query. For each priority relation and repair type X, it gives the number of answers that: are trivially X-IAR (i.e. some cause contains only facts without outgoing edges in the directed conflict graph), hold under X-IAR but not trivially, hold under X-AR but not under X-IAR, hold under X-brave but not X-AR, and do not hold under X-brave semantics. Priority relations leads to fewer edges in the directed conflict graph, which in turn makes more answers hold trivially. The more the priority relation sets preferences between facts (higher parameter n or p of the priority relation), the more trivially X-IAR answers we obtain. Adopting optimal repairs also significantly increases the number of potential answers that do not hold under X-brave semantics, which are very rare when using classical subset repairs.</p><p>An interesting observation is that while, in the absence of a priority relation, many queries of the CQAPri benchmark do not have any AR answers that are not trivial, which makes trivial answers a good approximation of AR, this is no longer the case for optimal repairs. It hence seems even more important to actually compute the answers that hold under the desired semantics rather simply computing the polynomial lower bound given by the trivial answers.</p><p>Regarding the impact of the choice between Pareto-and completion-optimal repairs, in many cases ORBITS did not manage to compute the answers for completion-optimal repairs in our given time and memory limits. When it does manage to compute them (for 5 queries on the Physicians dataset; none on the Food Inspection dataset; and from between 7 and 13 on uXc1 to less than 3 on uXc50), we observe a difference with Pareto-answers in only two cases.</p><p>Comparing Semantics w.r.t. Computation Time Figure <ref type="figure" target="#fig_0">3</ref> shows the best running times (across all algorithms and encoding variants) for each semantics and an example query. We did this comparison for all queries on Physicians and Food Inspection datasets and two CQAPri datasets.</p><p>Given a kind of repair X, the relative difficulty of the X-AR, X-IAR and X-brave semantics depends on the query, dataset and sometimes the nature of the priority relation.</p><p>Comparing S-AR, P-AR, and C-AR semantics, we observe that using optimal repairs may either increase or decrease the answer filtering time, intuitively because there are more trivial answers, but the encodings are more complex. Given a dataset, query and semantics, if we compare two priority relations of the same kind (score-structured or not), the one that sets preferences between more facts leads to lower running times. This can be explained by the increase of the number of trivial answers and maybe by the fact that the encodings involve less facts and encode more 'forced choices' between facts so that there are less possibilities to explore. When we compare the 'easiest' non score-structured priority relations (p = 0.8) and the hardest score-structured ones (n = 2), which lead to comparable sizes of directed conflict graphs, score-structured priority relations seem to be easier than non-score-structured ones.</p><p>Finally, we conclude that our procedures do not perform well for completion-optimal repair-based semantics, which form most of the cases that fail due to lack of time or memory, and very often have higher running times than Paretooptimal-based semantics with the same priority relation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Choice of Algorithm &amp; Encoding for Given Semantics</head><p>Table <ref type="table" target="#tab_1">2</ref> presents the time needed to filter the candidate answers that hold under brave semantics based on optimalrepairs (score-structured case) for some example queries. It illustrates the huge impact that the choice of an algorithm and encoding can have. For example, q6 answers are filtered in 3.5s with algorithm Cause-by-cause and ϕ P1-max , but need at least 546s with the Assumptions algorithm, at least 5.9s with ϕ P2-max , and cannot be filtered in our time and memory limits with encoding ϕ C-max . For X-AR and X-IAR semantics, we also observe sometimes huge variations when using the neg 1 or neg 2 version of ϕ ¬C . For example, for X-AR semantics on u20c50 with a score-structured priority relation, the best times for queries q2 and q18 are both obtained with algorithm All-MaxSAT and ϕ P1-max , but with the neg 2 variant for q2 (50 seconds versus 85 with neg 1 ) and neg 1 for q18 (23 seconds versus 47 with neg 2 ). The comparison of the possible procedures for each semantics on the different datasets and queries shows that there is not a 'best' method in general. However, we still gain some relevant insights.</p><p>The first one concerns the choice of ϕ X-max . The encoding ϕ P1-max is generally the best one for Pareto-optimal repairs, in the sense that it achieves 'close to best times' (cf. Table 2) much more often than the others. However, there are a few cases where ϕ P2-max performs significantly better, especially on the CQAPri datasets with fewer conflicts (e.g., on u20c1 with a score-structured priority relation, the best time for filtering q9 answers under P-AR semantics is 480ms with ϕ P2-max , while the best time with another encoding is 825ms). When the priority relation is score-structured, ϕ C-max never significantly outperforms ϕ P1-max and ϕ P2-max and leads to much more time or memory failures.</p><p>The second concerns the choice of algorithm for X-IAR semantics. For all kinds of repairs, algorithm IAR-causes is generally better than the others in terms of frequency of 'close to best times'. It is sometimes outperformed by algorithms Cause-by-cause or IAR-facts. The 'generic' algorithms (Simple, All-MaxSAT, All-MUSes, Assumptions) perform quite poorly, except on the simplest cases.</p><p>For the AR and brave semantics, it is more difficult to find an algorithm that is superior to the others. For non-scorestructured priority relations and completion-optimal repairs, algorithm Simple seems to be the best choice for both C-AR and C-brave semantics, but all algorithms fail in most cases. A related observation is that algorithms that consider answers individually and use smaller encodings seems to be often more robust in terms of time-out and out-of-memory, with a notable exception for P-AR and P-brave semantics on u20c50 with non-score-structured priority, where algorithms All-MaxSAT and All-MUSes are more robust. For S-AR, P-AR and P-brave, we observe different behaviours depending on the benchmark: All-MaxSAT and All-MUSes tend to perform better for the CQAPri benchmark, while Simple tends to perform better for the Food Inspection dataset.</p><p>Finally, comparing neg 1 and neg 2 versions of ϕ ¬C , we observe that the relative performance depends on the dataset, query, algorithm, and choice of ϕ X-max . However, we note that ϕ P2-max usually works better with neg 1 . Even if there is not a direct relationship between the encoding sizes and the running times, this is probably due to the fact that neg 2 enforces that both the facts that occur in the causes and their conflicts are part of the encoding, which significantly increases the size of ϕ P2-max , but has little impact on ϕ P1-max .</p><p>Figure <ref type="figure">4</ref> shows the evolution of the running times of three algorithms using the same encoding variants as the proportion of facts involved in some conflicts grows, on the u20cY datasets with a score-structured priority for X-AR semantics (X ∈ {P,C}). It illustrates the fact that the relative performance of the algorithms depends on the query and dataset (here, the proportion of facts involved in some conflict): For example, All-MaxSAT is the best for q9 over the three first datasets, but runs out of time on the three last (more that 20% of facts in conflict), while Simple can handle them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="7">Conclusion</head><p>We have presented a comprehensive exploration of SATbased approaches to querying inconsistent data using (optimal) repair-based inconsistency tolerant semantics, including the proposal of novel encodings and algorithms. Our generic framework places existing approaches into a broader context and makes our results and system directly applicable to both the (pure) database and OMQA settings.</p><p>Our experimental comparison of different SAT-based algorithms and encoding variants shows that the choice of algorithm and encoding may have huge impact on the computation time. While in some cases our results can be used to single out some approaches as more effective, more often there are no clear winner(s). This suggests that to minimize runtimes, it may make sense to launch multiple algorithms in parallel, and/or devise methods that can help predict which algorithm and encoding will perform best on a given dataset and query, e.g. using machine learning techniques.</p><p>Our work lays important foundations for the future development of mature systems for querying inconsistent data. We plan to investigate different ways of improving the performance for optimal repair-based semantics. For example, it would be interesting to explore alternative approaches for completion-optimal repairs based upon SAT modulo graph techniques <ref type="bibr" target="#b15">(Gebser, Janhunen, and Rintanen 2014)</ref>. Another promising direction is to employ more refined polynomial lower approximations than the trivial answers, such as the grounded semantics <ref type="bibr" target="#b4">(Bienvenu and Bourgaux 2020)</ref>.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Figure 3 :</head><label>3</label><figDesc>Figure 3: Best running times (in milliseconds) for each semantics and priority relation (none, score-structured with n = 2 or n = 5, not score-structured with p = 0.5 or p = 0.8) for query q2 over the Food Inspection dataset. An empty bar means that the query ran out of time / memory for all possible algorithms and encodings. The lower part of bars is the time to identify self-inconsistent facts and trivial answers, the upper part the time to filter non-trivial answers.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><label>1</label><figDesc>Number of answers of q1 over the Physicians dataset depending on the priority relation (none, score-structured with n = 2</figDesc><table><row><cell></cell><cell cols="5">Triv. IAR\Triv. AR\IAR brave\AR not brave</cell></row><row><cell>S</cell><cell>1,655</cell><cell></cell><cell>7</cell><cell>77</cell><cell>0</cell></row><row><cell>{P,C}-2</cell><cell>1,668</cell><cell>0</cell><cell>7</cell><cell>48</cell><cell>16</cell></row><row><cell>{P,C}-5</cell><cell>1,679</cell><cell>1</cell><cell>7</cell><cell>29</cell><cell>23</cell></row><row><cell>P-0.5</cell><cell>1,671</cell><cell>1</cell><cell>7</cell><cell>45</cell><cell>15</cell></row><row><cell>C-0.5</cell><cell>1,671</cell><cell>23</cell><cell>0</cell><cell>30</cell><cell>15</cell></row><row><cell>P-0.8</cell><cell>1,680</cell><cell>5</cell><cell>7</cell><cell>25</cell><cell>22</cell></row><row><cell>C-0.8</cell><cell>1,680</cell><cell>24</cell><cell>0</cell><cell>13</cell><cell>22</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>Table 2 :</head><label>2</label><figDesc>Query answer filtering time (in milliseconds, t.o:time out, oom:out of memory) under X-brave semantics (X ∈ {P,C}), for each algorithm and encoding ϕ X-max , on Physicians dataset with score-structured priority (n = 2). Alg. 1: Simple, Alg. 2: All-MaxSAT, Alg. 3: All-MUSes, Alg. 4: Assumptions, Alg. 5: Cause-by-cause. Best time in bold red and 'close to best times' (i.e., not exceeding the best by more than 50ms or 10%) on grey.</figDesc><table><row><cell></cell><cell></cell><cell>q1</cell><cell>q2</cell><cell>q3</cell><cell>q4</cell><cell>q5</cell><cell>q6</cell></row><row><cell></cell><cell>P1</cell><cell cols="3">417 141 350</cell><cell cols="2">12,799 224</cell><cell>4,009</cell></row><row><cell>Alg. 1</cell><cell>P2</cell><cell cols="5">804 142 379 326,594 213</cell><cell>8,684</cell></row><row><cell></cell><cell cols="4">C 252,694 179 550</cell><cell cols="2">oom 284</cell><cell>t.o</cell></row><row><cell></cell><cell>P1</cell><cell cols="3">268 166 326</cell><cell cols="2">1,730 214</cell><cell>11,263</cell></row><row><cell>Alg. 2</cell><cell>P2</cell><cell cols="3">502 163 333</cell><cell cols="2">2,961 221</cell><cell>10,833</cell></row><row><cell></cell><cell>C</cell><cell cols="2">oom 632</cell><cell>t.o</cell><cell cols="2">t.o 551</cell><cell>oom</cell></row><row><cell></cell><cell>P1</cell><cell cols="3">272 154 313</cell><cell cols="2">t.o 211 245,804</cell></row><row><cell>Alg. 3</cell><cell>P2</cell><cell cols="3">466 146 281</cell><cell cols="2">t.o 201 241,030</cell></row><row><cell></cell><cell>C</cell><cell cols="2">oom 624</cell><cell>t.o</cell><cell cols="2">t.o 550</cell><cell>oom</cell></row><row><cell></cell><cell>P1</cell><cell cols="3">362 166 997</cell><cell cols="2">42,544 281 559,923</cell></row><row><cell>Alg. 4</cell><cell>P2</cell><cell cols="3">566 193 972</cell><cell cols="2">36,923 304 546,199</cell></row><row><cell></cell><cell>C</cell><cell cols="2">oom 764</cell><cell>t.o</cell><cell cols="2">t.o 846</cell><cell>oom</cell></row><row><cell></cell><cell>P1</cell><cell cols="3">383 135 335</cell><cell cols="2">8,192 211</cell><cell>3,419</cell></row><row><cell>Alg. 5</cell><cell>P2</cell><cell cols="5">565 157 309 225,170 207</cell><cell>5,963</cell></row><row><cell></cell><cell cols="4">C 192,429 164 544</cell><cell cols="2">oom 238</cell><cell>t.o</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_2"><head></head><label></label><figDesc>Time (in milliseconds, log. scale) to filter query answers under X-AR semantics (X ∈ {P,C}) w.r.t. percentage of facts involved in some conflict for u20cY with score-structured priority relation (ϕ P 1 -max and neg 1 encoding). Missing queries ran out of time or memory.</figDesc><table><row><cell>10 6</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q1</cell><cell>q2</cell><cell>10 6</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q1</cell><cell>q2</cell><cell>10 6</cell><cell></cell><cell></cell><cell></cell><cell>q1</cell><cell>q2</cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q3</cell><cell>q4</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q3</cell><cell>q4</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q3</cell><cell>q5</cell></row><row><cell>10 5</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q5 q7</cell><cell>q6 q8</cell><cell>10 5</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q5 q7</cell><cell>q6 q8</cell><cell>10 5</cell><cell></cell><cell></cell><cell></cell><cell>q6 q8</cell><cell>q7 q9</cell></row><row><cell>10 4</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q9 q11 q13</cell><cell>q10 q12 q14</cell><cell>10 4</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q9 q11 q13</cell><cell>q10 q12 q14</cell><cell>10 4</cell><cell></cell><cell></cell><cell></cell><cell>q10 q12 q14</cell><cell>q11 q13 q15</cell></row><row><cell>10 3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q15 q17</cell><cell>q16 q18</cell><cell>10 3</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q15 q17</cell><cell>q16 q18</cell><cell>10 3</cell><cell></cell><cell></cell><cell></cell><cell>q17 q19</cell><cell>q18 q20</cell></row><row><cell>10 2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q19</cell><cell>q20</cell><cell>10 2</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>q19</cell><cell>q20</cell><cell>10 2</cell><cell></cell><cell></cell><cell></cell></row><row><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell>10 1</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell>0</cell><cell>10</cell><cell>20</cell><cell>30</cell><cell>40</cell><cell>50</cell><cell></cell><cell>0</cell><cell>10</cell><cell>20</cell><cell>30</cell><cell>40</cell><cell>50</cell><cell></cell><cell>0</cell><cell>10</cell><cell>20</cell><cell>30</cell><cell>40</cell><cell>50</cell></row><row><cell></cell><cell></cell><cell></cell><cell cols="2">(a) Simple</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">(b) All-MaxSAT</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell cols="3">(c) All-MUSes</cell></row><row><cell cols="2">Figure 4:</cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell><cell></cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p><ref type="bibr" target="#b22">Staworko et al. (2012)</ref> defined a third notion, globally-optimal repairs, which we do not consider due to their higher complexity.</p></note>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="2" xml:id="foot_1"><p>If Causes(q( a), K) = ∅, q( a) holds for none of our semantics.</p></note>
+		</body>
+		<back>
+
+			<div type="acknowledgement">
+<div><head>Acknowledgements</head><p>This work was supported by the <rs type="funder">ANR</rs> <rs type="projectName">AI Chair INTENDED</rs> (<rs type="grantNumber">ANR-19-CHIA-0014</rs>).</p></div>
+			</div>
+			<listOrg type="funding">
+				<org type="funded-project" xml:id="_5tFeUNc">
+					<idno type="grant-number">ANR-19-CHIA-0014</idno>
+					<orgName type="project" subtype="full">AI Chair INTENDED</orgName>
+				</org>
+			</listOrg>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Consistent query answers in inconsistent databases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</title>
+		<meeting>the 18th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</meeting>
+		<imprint>
+			<date type="published" when="1999">1999</date>
+			<biblScope unit="page" from="68" to="79" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The sat4j library, release 2.2</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">L</forename><surname>Berre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Parrain</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">JSAT</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="59" to="64" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Database Repairing and Consistent Query Answering</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">E</forename><surname>Bertossi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Synthesis Lectures on Data Management</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Inconsistencytolerant querying of description logic knowledge bases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Tutorial Lectures of the 12th International Reasoning Web Summer School</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="156" to="202" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Querying and repairing inconsistent prioritized knowledge bases: Complexity analysis and links with abstract argumentation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 17th International Conference on Principles of Knowledge Representation and Reasoning (KR)</title>
+		<meeting>the 17th International Conference on Principles of Knowledge Representation and Reasoning (KR)</meeting>
+		<imprint>
+			<date type="published" when="2020">2020</date>
+			<biblScope unit="page" from="141" to="151" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<monogr>
+		<title level="m" type="main">Querying inconsistent prioritized data with ORBITS: Algorithms, implementation, and experiments</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<idno>arxiv.org/abs/2202.07980</idno>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+	<note>cs.LO</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Ontology-mediated query answering with data-tractable description logics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ortiz</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Tutorial Lectures of the 11th Reasoning Web International Summer School</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="218" to="307" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Tractable approximations of consistent query answering for robust ontologybased data access</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 23rd International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<meeting>the 23rd International Joint Conference on Artificial Intelligence (IJCAI)</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Querying inconsistent description logic knowledge bases under preferred repair semantics</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 28th AAAI Conference on Artificial Intelligence (AAAI)</title>
+		<meeting>the 28th AAAI Conference on Artificial Intelligence (AAAI)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="996" to="1002" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Computing and explaining query answers over inconsistent DL-Lite knowledge bases</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Goasdoué</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Artificial Intelligence Research (JAIR)</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="page" from="563" to="644" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A short survey on inconsistency handling in ontology-mediated query answering</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Bienvenu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Künstliche Intelligenz</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="443" to="451" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">Inconsistency Handling in Ontology-Mediated Query Answering</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Bourgaux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Gestion des incohérences pour l&apos;accès aux données en présence d&apos;ontologies)</title>
+		<meeting><address><addrLine>France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+		</imprint>
+		<respStmt>
+			<orgName>University of Paris-Saclay</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Ph.D. Dissertation</note>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Tractable reasoning and efficient query answering in description logics: The DL-Lite family</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<ptr target="43nn-pn8j" />
+	</analytic>
+	<monogr>
+		<title level="m">National Downloadable File, Centers for Medicare &amp; Medicaid Services</title>
+		<meeting><address><addrLine>NYC Open Data; York-City</addrLine></address></meeting>
+		<imprint>
+			<publisher>New York City Restaurant Inspection Results, Department of Health and Mental Hygiene (DOHMH</publisher>
+			<date type="published" when="2007-12-07">2007. December 7, 2020. December 10, 2020. December 7, 2020</date>
+			<biblScope unit="volume">39</biblScope>
+			<biblScope unit="page" from="385" to="429" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">A SAT-based system for consistent query answering</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">A</forename><surname>Dixit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">G</forename><surname>Kolaitis</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd International Conference on Theory and Applications of Satisfiability Testing (SAT)</title>
+		<meeting>the 22nd International Conference on Theory and Applications of Satisfiability Testing (SAT)</meeting>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+			<biblScope unit="page" from="117" to="135" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Data quality: From theory to practice</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Fan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIG-MOD Rec</title>
+		<imprint>
+			<biblScope unit="volume">44</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="7" to="18" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">SAT modulo graphs: Acyclicity</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Gebser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Janhunen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rintanen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 14th European Conference on Logics in Artificial Intelligence (JELIA)</title>
+		<meeting>the 14th European Conference on Logics in Artificial Intelligence (JELIA)</meeting>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+			<biblScope unit="page" from="137" to="151" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Inconsistency-tolerant semantics for description logics</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ruzzi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Savo</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 4th International Conference on Web Reasoning and Rule Systems (RR)</title>
+		<meeting>the 4th International Conference on Web Reasoning and Rule Systems (RR)</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="103" to="117" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Counting and enumerating (preferred) database repairs</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Livshits</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kimelfeld</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 36th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</title>
+		<meeting>the 36th ACM SIGMOD-SIGACT-SIGAI Symposium on Principles of Database Systems (PODS)</meeting>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="289" to="301" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">The combined approach to OBDA: Taming role hierarchies using filters</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Lutz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Seylan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Toman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Wolter</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 12th International Semantic Web Conference (ISWC)</title>
+		<meeting>the 12th International Semantic Web Conference (ISWC)</meeting>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="314" to="330" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Linking data to ontologies</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>De Giacomo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lenzerini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Data Semantics</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="page" from="133" to="173" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Holoclean: Holistic data repairs with probabilistic inference</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Rekatsinas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Ilyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ré</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Proceedings of the VLDB Endowment (PVLDB)</title>
+		<imprint>
+			<biblScope unit="volume">10</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="1190" to="1201" />
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">On the complexity of dealing with inconsistency in description logic ontologies</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 22nd International Joint Conference on Artificial Intelligence (IJCAI)</title>
+		<meeting>the 22nd International Joint Conference on Artificial Intelligence (IJCAI)</meeting>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="1057" to="1062" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Prioritized repairing and consistent query answering in relational databases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Staworko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Chomicki</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Marcinkowski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Annals of Mathematics and Artifcial Intelligence (AMAI)</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">2-3</biblScope>
+			<biblScope unit="page" from="209" to="246" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">Foundations of query answering on inconsistent databases</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wijsen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SIGMOD Record</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="issue">3</biblScope>
+			<biblScope unit="page" from="6" to="16" />
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Ontologybased data access: A survey</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Calvanese</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Kontchakov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Lembo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poggi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rosati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zakharyaschev</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th International Joint Conference on Artificial Intelligence (IJ-CAI)</title>
+		<meeting>the 27th International Joint Conference on Artificial Intelligence (IJ-CAI)</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="5511" to="5519" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

@@ -1,0 +1,1002 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Siame-se(3): regression in se(3) for end-to-end visual servoing</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Samuel</forename><surname>Felton</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Élisa</forename><surname>Fromont</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Eric</forename><surname>Marchand</surname></persName>
+						</author>
+						<title level="a" type="main">Siame-se(3): regression in se(3) for end-to-end visual servoing</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">7A8A8CCB6366263A693911DF0053FBCB</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this paper we propose a deep architecture and the associated learning strategy for end-to-end direct visual servoing. The considered approach allows to sequentially predict, in se(3), the velocity of a camera mounted on the robot's end-effector for positioning tasks. Positioning is achieved with high precision despite large initial errors in both cartesian and image spaces. Training is fully done in simulation, alleviating the burden of data collection. We demonstrate the efficiency of our method in experiments in both simulated and real-world environments. We also show that the proposed approach is able to handle multiple scenes.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Visual servoing (VS) is the task of controlling the motion of a robot in order to reach a desired goal or a desired pose using only visual information extracted from an image stream <ref type="bibr" target="#b3">[4]</ref>. The camera can be mounted on the robot's end effector or directly observing the robot. Visual servoing usually requires the extraction and the tracking of visual information (usually geometric features) from the image in order to design the control law. While there has been progress in extracting and tracking relevant features, a new approach called direct visual servoing (DVS) emerged a decade ago <ref type="bibr" target="#b16">[17]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b7">[8]</ref>. It has been demonstrated that the sole pixel intensities of the images can be used to control the robot's motion and that conventional tracking and matching processes can thus be avoided. Nevertheless, due to strong non-linearities in the cost function to be minimized, such direct approaches feature a small convergence domain compared to classical techniques.</p><p>To alleviate these issues, machine learning techniques have recently been investigated to learn the relation between the image error and the camera's motion. As for direct approaches, the goal is to avoid explicit feature extraction while increasing the convergence area. In recent years, the use of Deep Learning (DL) has soared, and is now the stateof-the-art on many robotics vision tasks. Lately, DL has been studied for the visual servoing use case. Works <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b37">[37]</ref>, <ref type="bibr" target="#b33">[33]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref> already demonstrate interesting advances. Most of these works seek to learn, using reinforcement learning approaches, optimal motion for grasping tasks by directly regressing the joint velocities <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b12">[13]</ref>. Other approaches, suited for positioning tasks, aim to estimate the pose difference between the current and desired camera poses <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b37">[37]</ref>, <ref type="bibr" target="#b33">[33]</ref>.</p><p>The latter methods <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b37">[37]</ref>, <ref type="bibr" target="#b33">[33]</ref> amount to performing position-based visual servoing <ref type="bibr" target="#b36">[36]</ref>, <ref type="bibr" target="#b3">[4]</ref> task (PBVS), where the error is regressed by a neural network. Indeed, PBVS is Authors are with Univ Rennes, Inria, CNRS IRISA, Rennes, France Email: {samuel.felton, elisa.fromont, eric.marchand}@irisa.fr directly related to the pose estimation issue <ref type="bibr" target="#b26">[27]</ref>. In <ref type="bibr" target="#b19">[20]</ref>, a CNN is used to estimate the camera pose with respect to a fixed scene. The network takes as input a single RGB image, and regresses the pose (camera translation and rotation). The authors expand their work in <ref type="bibr" target="#b17">[18]</ref> and devise new losses to achieve better re-localization accuracy by taking into account geometric information and provide task uncertainty estimation. <ref type="bibr" target="#b0">[1]</ref> proposes two networks based on standard CNN architectures. They are trained to regress the pose of the camera (using an approach similar to <ref type="bibr" target="#b19">[20]</ref>). <ref type="bibr" target="#b33">[33]</ref> is similar to <ref type="bibr" target="#b0">[1]</ref> in that the two images are given together as different channels as input to a single network which regresses the pose difference. In this case, the chosen network is FlowNet <ref type="bibr" target="#b10">[11]</ref>, which is trained to perform optical flow estimation. They propose a 3D dataset, containing indoors and outdoors scenes. They show that their scheme is transferable to the real world and can be used to control the motion of a drone. In <ref type="bibr" target="#b11">[12]</ref>, a deep Siamese network is used to regress the relative pose between two cameras. Siamese networks are used to process multiple inputs in the same way. They have, for example, been successful to perform metric learning <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b21">[22]</ref> and tracking <ref type="bibr" target="#b2">[3]</ref>, <ref type="bibr" target="#b13">[14]</ref>. <ref type="bibr" target="#b37">[37]</ref> uses, as us, a siamese network for visual servoing but, they only regress the pose. They perform an early fusion of the two images with a much shallower siamese part and the network has a very high parameter count. They trained and tested their approach with real and very restricted data (related to plugging connectors).</p><p>In this paper, we propose a new learning-based framework to achieve visual servoing tasks. It is based on a siamese network that directly regresses the camera velocity without estimating the relative pose. Indeed we argue that relative pose estimation is error-prone mainly due to ill-defined loss functions. The contributions of this paper are:</p><p>• rather than estimating the positioning error and achieve a PBVS task, we directly regress the camera velocity and learn in an "end-to-end" manner. We use a loss function that is less sensitive to non-homogeneous scales between the regressed components; • we propose a new network architecture, Siame-se(3), which is based on a siamese network, that applies a unique processing to multiple inputs (current and desired images); • training is fully done in simulation and only requires a single image per scene, from which we generate multiple viewpoints to create the dataset; • our approach is generic and allows us to consider visual servoing in multiple scenes with the same network.</p><p>The paper is structured as follows. First, we recall the principle of visual servoing approaches (section II). In Section III, we show how, starting from classical work dedicated to predicting poses, we can, with a relevant loss, directly regress the camera velocity. The architecture of our solution, Siamese(3) is then described in IV. Finally, we demonstrate the validity of our approach with experiments in Section V.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>II. VISUAL SERVOING OVERVIEW</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Positioning task by visual servoing</head><p>The aim of a positioning task is to reach a desired pose of the camera r * , starting from an arbitrary initial pose. To achieve this goal, one needs to define a cost function that reflects, in the image space, this error. Most of the time this cost function is an error measure which needs to be minimized. Considering the actual pose of the camera r the problem can therefore be written as an optimization process: r = arg min r e(r).</p><p>(</p><formula xml:id="formula_0">)<label>1</label></formula><p>which consists in minimizing an error e(r) = s(r) -s * between what the camera sees (a set of features s(r)) and what it wants to see (i.e., the desired configuration of the visual features s * ).</p><p>The choice of the visual features s(r) is important since it will determine the camera motion and thus the robot behavior. Different approaches to VS which use various features s have been considered <ref type="bibr" target="#b3">[4]</ref>. In image-based VS (IBVS), 2D primitives such as points or lines are retrieved from the images. In position-based VS (PBVS), the relative pose (position and orientation) between the current and desired camera position has to be estimated. In any case, it requires to extract and track visual information from the image in order to design the control law.</p><p>Recent works propose to directly use the information provided by the entire image <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b5">[6]</ref>: photometric visual servoing (PhVS). In <ref type="bibr" target="#b5">[6]</ref>, a control law was proposed that minimizes the error between the current image and the desired one: the vector of visual features in nothing but the image itself (s(r) = vec(I(r)) where vec(I) denotes the vectorization of the image matrix I) and the error to be regulated is the sum of squared differences (the SSD): e(r) = vec(I(r))vec(I 0 ). This leads to very precise end positioning, but suffers from a very limited convergence area due to a highly non linear cost function e(r).</p><p>In all cases, the visual servoing task is achieved by iteratively applying a velocity to the camera. This requires the knowledge of the interaction matrix L s related to s(r) that links the variation of ṡ to the camera velocity v and which is defined as: ṡ(r) = L s v. The control law is then given by <ref type="bibr" target="#b3">[4]</ref>:</p><formula xml:id="formula_1">v = -λL + s e(r)<label>(2)</label></formula><p>where L + s is the pseudo inverse of L s and λ a positive scalar.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Deep Learning-based Visual Servoing</head><p>DL has been studied for the visual servoing use case. Multiple works <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b37">[37]</ref>, <ref type="bibr" target="#b33">[33]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref> already demonstrate satisfying results. These works seek to learn the optimal motion either by estimating the velocity of each of the robot's joints <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b23">[24]</ref>, <ref type="bibr" target="#b12">[13]</ref> or by estimating the pose difference between the two cameras <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b37">[37]</ref>, <ref type="bibr" target="#b33">[33]</ref>. These last methods estimate, from the current I(r) and desired I * images, the displacement ∆r that the camera has to achieve <ref type="foot" target="#foot_0">1</ref> . This is done considering a CNN using a PoseNet-like network <ref type="bibr" target="#b19">[20]</ref>. Nevertheless, this estimation is very sensitive to non-homogeneous scales between translation and rotation. Once the displacement ∆r to be achieved is computed from the CNN, it is immediate to compute the camera velocity using a classical PBVS control law <ref type="bibr" target="#b36">[36]</ref>, <ref type="bibr" target="#b3">[4]</ref>:</p><formula xml:id="formula_2">v = -λ c * R c c * t c θu<label>(3)</label></formula><p>In such approaches, the quality of the positioning task and camera trajectory is then dependent on the quality of the estimation of the relative pose. In the next section, we will see how to learn the camera velocity in an "end-to-end" manner. Instead of estimating ∆r, we will directly regress the camera velocity v.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. LEARNING ON SE(3) AND se(3)</head><p>Supervised training of neural networks requires the formulation of a loss function that is minimized while training. We explain in the following why it is difficult to define such a loss to successfully learn in SE(3), the space of poses, and how to extend it to the space of se(3).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Deep learning for pose estimation</head><p>Poses (and pose differences) are elements of SE(3) = R 3 × SO(3), with a real vector t representing the 3D pose position and a 3 × 3 rotation matrix R encoding the pose orientation. In machine learning, the loss function encodes the error between the model's prediction and the ground truth. The loss function of a network trained to predict a pose in SE(3) would need to carefully balance the contributions of both components of the pose since they are not homogeneous (meters and radians). Previous works <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b33">[33]</ref>, <ref type="bibr" target="#b19">[20]</ref>, <ref type="bibr" target="#b37">[37]</ref> use a loss function of the following form:</p><formula xml:id="formula_3">L( t, q) = t -t 2 + β q -q 2 (<label>4</label></formula><formula xml:id="formula_4">)</formula><p>where q is a minimal representation of R, such as a quaternion or an axis/angle vector. The β value is an hyperparameter to be chosen before training and acts as the weighting between the translation and the rotation components of the pose. β is a sensitive parameter which can have a strong effect on the final performance of the learning system. Moreover, this parameter is scene-dependent as the impact in the image space of translation and rotation errors will vary with respect to the depth of the scene. In <ref type="bibr" target="#b18">[19]</ref>, a new type of loss is introduced for multi-task learning which aims at automatically estimating the weighting of different tasks.</p><p>When learning on SE(3), one can view the estimation of the two components of the pose as two different prediction tasks. Following this idea, it is shown in <ref type="bibr" target="#b17">[18]</ref> that superior result compared to training with the loss in ( <ref type="formula" target="#formula_3">4</ref>) can be obtained. The multi-task loss works by introducing one weighting parameter σ x for each task x, to be optimised alongside the network via gradient descent. For the case of estimating SE(3) poses, the loss is then given by:</p><formula xml:id="formula_5">L( t, q) = 1 2σ 2 t t -t 2 + 1 2σ 2 q q -q 2 + log σ t σ q (5)</formula><p>with σ t (respectively σ q ) the weighting associated to the translation (respectively rotation) error, and where the last term of the loss log σ t σ q is a regularization term. The added computational cost of this loss is negligible and does not impact inference, as the weights are discarded at inference. B. Towards end-to-end servoing: from SE(3) to se(3)</p><p>Wrt. <ref type="bibr" target="#b0">[1]</ref>, <ref type="bibr" target="#b33">[33]</ref>, <ref type="bibr" target="#b37">[37]</ref> our goal is to directly learn the velocity v = (υ, ω) required to minimize c * T c . An advantage of this method is that, since we directly output v, we are not restricted to a single control law, as is the case in works estimating the pose difference between the two cameras. It is thus possible to learn control laws based on IBVS, PBVS or incorporate more complex behaviour into the training data <ref type="bibr" target="#b4">[5]</ref>. Using the multitask learning framework <ref type="bibr" target="#b18">[19]</ref> presented above, the loss becomes:</p><formula xml:id="formula_6">L(υ, ω) = S=|υxy,υz,ωxy,ωz| y∈S 1 2σ 2 y ŷ -y 2 + log S y∈S σ y (6)</formula><p>where S is the set of 4 losses to balance: the combined translation on the x and y axes (υ xy ), the translation on the z axis (υ z ), as well as rotation on the x and y axis (ω xy ) and on the z axis (ω z ). We argue that, while the translation (or rotation) is expressed in the same unit on all axes, their associated motion is not the same and as such, combining the σ weights is not optimal, since estimating one type of translation/rotation may be easier than the other. For example, VS methods are traditionally more tolerant to large rotations around the z (depth) axis, while rotation on the x, y are more constrained.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. SIAMESE NETWORKS FOR VELOCITY REGRESSION</head><p>In this section, we detail the architecture of our network, that is trained in an end-to-end manner with the loss presented in <ref type="bibr" target="#b5">(6)</ref>. We then describe the way that we use simulation to craft the dataset.</p><p>The proposed architecture is composed of two networks trained end-to-end. The first network extracts features from the desired and current images I and I * . The second network takes as input the difference between the features extracted from I and I * and regresses v (given as ground truth during training).</p><p>1) Feature extraction network: To extract the features from I and I * , we use a siamese network S. The term siamese is employed because the same processing is applied to multiple inputs (i.e. one body -the shared weights -with multiple heads -the outputs <ref type="bibr" target="#b21">[22]</ref>). The siamese network S extracts the features of image I, denoted as S(I) which takes the form of a vector of fixed size that best describes the image for the task at hand. Since it is the processing for both images, the two feature vectors lie in the same latent space and can be "compared". The general method is independent of the extractor backbone, which can be freely chosen to take into account parameters such as inference speed, accuracy or the transfer learning weights available for a specific architecture (see Section V).</p><p>2) Velocity regression network: After the feature extraction step, the velocity v can be regressed. Drawing inspiration from the formulation of the error in visual servoing, we give as an input to the regression network S(I) -S(I * ). Using a subtraction is natural here since the embeddings coming from S lie in the same space and subtraction expresses a notion of signed distance between the vectors' components. Concatenating S(I) and S(I * ) is another possible way of fusing information, but experiments showed that results were inferior, with the added drawback that the number of trainable parameters of the regression network is higher.</p><p>When considering Equation ( <ref type="formula" target="#formula_1">2</ref>), the computation of v is dependent on an interaction matrix L s specific to the control law, the formulation of the features s and their estimated values. Here, we do not know the interaction matrix expressing ∂S(I)  ∂r . This is why we regress v with a nonlinear function of the error f (e). This function f is built from multiple Fully Connected (FC) layers (see Fig. <ref type="figure" target="#fig_0">1</ref>), with ReLU <ref type="bibr" target="#b27">[28]</ref> activations to make f non-linear. The last FC layer has no activation function, as the values of v are unbounded. We choose this simple architecture because we do not make any assumption about the shape of the extracted features and their relations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Training</head><p>As deep learning requires large amounts of data and collecting such data on a real robot can be expensive, we resort to simulation to train our network. As in <ref type="bibr" target="#b0">[1]</ref>, we simulate the projection of a planar scene I * , I for two different poses. We simulates the desired control law from these poses using equation ( <ref type="formula" target="#formula_2">3</ref>) and feed the network using the two images and the corresponding computed camera velocity. A potentially infinite number of viewpoints can then be generated to constitute the training dataset. Data are generated on the fly so as to avoid potential overfitting to specific viewpoints.</p><p>To help transfering from simulation to real-world, we use lighting and occlusion augmentations. Indeed, it has been shown that networks trained in simulated environments tend to transfer poorly to real world situations <ref type="bibr" target="#b35">[35]</ref>, <ref type="bibr" target="#b31">[31]</ref>, and that augmentation can bridge the gap between simulation and real world sample distributions. To ensure that the samples are relevant, they are further filtered so that there is a minimal ). These features are then subtracted to form e, from which we regress the velocity v. To compute the loss L during training, we add free weights σ as done in <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b18">[19]</ref> so as to balance the optimized losses. amount of overlap between I and I * (i.e. the cameras are looking at the same part of the scene).</p><p>We argue that the proposed approach has multiple benefits. First, regressing the velocity directly allows us to have a generic feature representation, with the architecture being control law-independent. Indeed, although our network was trained with a PBVS control law, other control laws (2D, 2 1/2D,...) could have been considered. One needs only change the features used when generating v, as the network architecture does not require any modification. Because the features are learned, the time usually spent engineering the feature extraction is spent training a network. Compared to other learning approaches, we rely on a siamese network to regress a compact image representation that can then be stored.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTS AND RESULTS</head><p>This section details the dataset design, the training process and the experiments performed in simulation and on an actual 6-DOF robot. We consider a positioning task, with the robot being moved to a different starting pose, and the goal being to move back to the desired pose.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Network training</head><p>As a feature extractor siamese network, we choose a recent state of the art neural network architecture, EfficientNets <ref type="bibr" target="#b34">[34]</ref>, and apply transfer learning <ref type="bibr" target="#b28">[29]</ref> to benefit from the training of EfficientNets on ImageNet <ref type="bibr" target="#b9">[10]</ref> to initialise the weights of our architecture. EfficientNets is chosen because its ratio accuracy/parameters is higher than other architectures and this alleviates the risk of overfitting. Besides, the number of Floating Point Operations Per Seconds is also lower (1.8B for the EfficientNetB3 vs 4.1B for the nowadays very popular ResNet-50 <ref type="bibr" target="#b14">[15]</ref>), making inference during servoing faster and more efficient. Finally, It has been shown in <ref type="bibr" target="#b34">[34]</ref> that the transfer learning capabilities of the EfficientNet are better than other standard architectures, albeit on other classification datasets. There are multiple versions of EfficientNet, going from B0 to B7, with an increasing width, depth and resolution scaling. As a tradeoff between accuracy and computation, we settled on the B3 version, which has 10.5M parameters. A ResNet-50 was also evaluated, but the results were inferior.</p><p>The network is initialized with the pretrained ImageNet weights, which are not frozen during training to allow potentially large readaptation of the network for our regression task. While the siamese backbone is an EfficientNetB3, which works on images of dimensions 300×300, we directly feed images of size 224 × 224.</p><p>The network is trained on a single RTX 2080Ti for 50 epochs with 100k samples per epoch and batch size 25, for a total of 5M image pairs seen during training. We use the Adam optimizer <ref type="bibr" target="#b20">[21]</ref> with a learning rate of 1e-4 for the model weights and 5e-4 for the loss weights. We initialise these to σ 2 υxy = σ 2 υz = σ 2 ωxy = σ 2 ωz = e 0 = 1.0. While these values are initialized higher than the starting errors, we note that this acts as a learning rate warm-up and helps the convergence.</p><p>At inference, since I * is captured at the start, the feature extraction to get S(I * ) is only ran once and S(I * ) is stored, heavily reducing the computational cost. On a RTX 2080Ti, the network runs in ≈20ms per iteration. Common neural network tricks, such as folding batch normalization into convolutional layers or using mixed precision, may be used to deploy Siame-se(3) onto embedded devices. The network is trained with PyTorch <ref type="bibr" target="#b29">[30]</ref> and the data is generated with ViSP <ref type="bibr" target="#b25">[26]</ref>. The training takes approximately 18 hours on a single GPU, making it easy to deploy rapidly. The storage requirements are weak, with the model taking around 50MB of memory vs 550Mb for the VGG.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Simulation experiments</head><p>We first compare the impact of different settings on the servoing results by running experiments in simulation. The approach is also compared with photometric VS <ref type="bibr" target="#b6">[7]</ref> and a another recent direct VS approach where the images are transformed in the frequency domain <ref type="bibr" target="#b24">[25]</ref>. The considered scene is the one used in the experiments of Fig. <ref type="figure">4</ref>. We run 1000 trajectories, with the mean and standard deviations of the starting translation and rotation errors of 12.5cm ± 7.5cm/17.5  the servoing results of methods <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b24">[25]</ref>, as well as a reimplementation of the network trained in <ref type="bibr" target="#b0">[1]</ref> and various versions of our siamese network. The IBVS method is based on ORB <ref type="bibr" target="#b32">[32]</ref> keypoints. The network denoted as Siame-SE(3) has the same design as Siame-se(3), but is trained to regress the pose difference ∆r. "Siame-se(3) with two task weights" is the velocity regressing Siame-se(3), but only two weights are used during training: one for translation and one for rotation instead of the 4 used in Eq. 6. Direct servoing methods such as DVS and DCT-VS suffer from low convergence rates, but have the advantage of having a very precise end positioning. Compared to our Siamese networks, the VGG from <ref type="bibr" target="#b0">[1]</ref> diverges more often and tends to remain far from the desired position. For our siamese architecture, the results show that regressing the velocity v works well and achieves similar positioning accuracy to when it is trained to output ∆r with the advantages discussed before (genericity and independence to the control law). It can also be seen that our siamese network trained to imitate PBVS succeeds and provides a trajectory that is closer to the ground truth (straight line in the Cartesian space) than with other methods, which either do not have this objective or, in the case of the VGG, realize it poorly, as attested by the trajectory statistics in Table <ref type="table" target="#tab_1">I</ref>. While photometric methods will often diverge, our method converges in almost all cases with a small remaining error that is fairly constant. Running photometric VS <ref type="bibr" target="#b6">[7]</ref> after any of the network-based methods results in a positioning error below the millimetre/tenth of a degree on all samples, illustrating the complementarity of the methods. Finally, Fig. <ref type="figure" target="#fig_1">2</ref> examines the convergence behaviour of different methods as a function of the overlap between the starting and desired images. While traditional methods benefit from higher overlap, Siame-se(3) manages to reliably converge even when the overlap is low. This suggests that in the monoscene case, Siame-se(3) learns a global representation akin to a pose.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Multiscene experiments</head><p>To further test our method, we train on multiple scenes at the same time: this time the reference scene is drawn randomly. To build the dataset, we select multiple images from the ImageNet dataset. We restrain ourselves to a single class of ImageNet <ref type="bibr" target="#b9">[10]</ref>: the car class. By doing this, we should have common information between the scenes, which is often the case when applying VS to the real world. Because of the added difficulty, we train for 75 epochs. We train several networks, each on different numbers of scenes and with or without color, to demonstrate the scalability (to multiple scenes) of the method, as well as the potential benefit of incorporating chrominance information. We notice that as the number of scene grows, training becomes harder (the training loss does not converge to zero). To remedy this, we use curriculum learning <ref type="bibr" target="#b1">[2]</ref>: we progressively add ramp up augmentation over the first 10 epochs. Fig. <ref type="figure">3</ref> highlights the obtained results, and reports the results of servoing on the scenes the networks were trained on. It can be seen that adding color information is indeed helpful. As the number of scene grows, the convergence rate decreases, especially for the grayscale version of the network. The end positioning error is also higher, but remains small enough that other servoing methods can be used afterwards to correct it.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Experiments on a 6DOF robot</head><p>Fig. <ref type="figure">4</ref> demonstrates a real-world servoing example. We place the desired pose (see Fig. <ref type="figure">4(b)</ref>) 80cm above the center of scene and move to another pose to get Fig. <ref type="figure">4(a)</ref>. The initial displacement is very large, with ∆r(0) = (45cm, 19cm, 9cm, 34 • , -20 • , -47 • ), and I(0) contains large specularities. We run 500 iterations, with λ = 0.1. The final error is ∆r = (0.5cm, 0.2cm, 0.06cm, 0.3 • , -0.33 • , 0.12 • ) and the end image difference is displayed in Fig. <ref type="figure">4(c</ref>). While the end positioning is not perfect, it can be trivially corrected by applying photometric VS <ref type="bibr" target="#b6">[7]</ref> in the last few iterations, since we are close to the desired pose and the image error is low. Fig. <ref type="figure">4(d)</ref> shows the values of v regressed by the network,   In our second experiment, we test our multiscene network on (printed) A3-sized scenes. During training, we set the average distance from the poster to 30cm. As in our simulation setting, we train on 100 different images of cars. For this experiment, we picked one scene in the training set, and ran the servoing with the 6DOF robot on this printed scene. To illustrate the complementarity of our method and DVS, we first run Siame-se(3) for 500 iterations, then correct the remaining error with DVS. The starting and desired image are presented in 5(a) and (b). There is very low overlap between the two. Indeed, the initial error is ∆r(0) = (-17.9cm, 1cm, 0.5cm, 4.3 • , 18.4 • , 44.6 • ). After our method is over, the remaining error is ∆r(500) = (-1.6cm, -0.4cm, 0.3cm, -0.89 • , 3.16 • , -0.76 • ). The remaining error in image space is displayed in 5(c). In general, the remaining error after VS with Siame-se( <ref type="formula" target="#formula_2">3</ref>) is present because of compensations between the translations and rotations on the x and y axes, as the diminution of the error in the image is mostly the same between the two types of motion. From there, DVS is applied and the final distance from the desired pose is 0.06cm/0.13 • . Our method accomplishes most of the motion, providing a fairly straight trajectory and is able to bring the end effector close enough to the desired pose so that it is in the convergence cone of DVS. </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. CONCLUSION</head><p>We have proposed a new siamese deep architecture for end-to-end visual servoing. Our network directly regresses, in real time, the velocity of a camera in se(3). Our method features an accurate positioning, a broad convergence cone and combines well with photometric VS. While we have focused on learning a PBVS control law, this method can be applied to other control laws with minimal effort. Using multi-task learning to regress the different components of the velocity reduces the time spent training and tweaking networks, helping deploy VS solutions faster. Our learning protocol effectively trains our network on simulated data and can be applied to real scenes. Simulated and real experiments demonstrated the efficiency of the proposed approach.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 :</head><label>1</label><figDesc>Fig. 1: Diagram of the proposed Siame-se(3) architecture. The images are first processed by a siamese feature extractor to compute S(I), S(I *). These features are then subtracted to form e, from which we regress the velocity v. To compute the loss L during training, we add free weights σ as done in<ref type="bibr" target="#b17">[18]</ref>,<ref type="bibr" target="#b18">[19]</ref> so as to balance the optimized losses.</figDesc><graphic coords="5,127.86,55.75,352.80,138.04" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 :</head><label>2</label><figDesc>Fig.2: Convergence rate vs overlap between starting and desired images. The first batch has very low overlap (0-10%), while the last one has a higher one (90-99%).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 3 :Fig. 4 :</head><label>34</label><figDesc>Fig.3: Multiscene results: for different number of scenes, the convergence rate of our method is reported. We also report the convergence rate of photometric VS, a non learning-based approach. For each point we also report the end positioning error for samples that converged in the format cm/ • .</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: (a) Starting image I. (b) Desired image I * . (c) Image difference before using DVS. (d) Final image difference. (e) Pose difference ∆r. (f) 3d trajectories. Green: ground truth trajectory. Blue: Siame-se(3). Red: DVS.</figDesc><graphic coords="7,176.40,541.97,122.39,70.87" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>• ± 12 • . Results reported in Table I show</figDesc><table><row><cell>Method</cell><cell>Translation error in cm</cell><cell>Rotation error in degrees</cell><cell>Convergence, %</cell><cell>Trajectory absolute position error in cm</cell><cell>Trajectory absolute rotation error in degrees</cell></row><row><cell>DVS [7]</cell><cell>0.2 ± 1.5</cell><cell>0.1 ± 0.9</cell><cell>34.8</cell><cell>2.19 ± 3.77</cell><cell>1.97 ± 3.47</cell></row><row><cell>DCT-VS, k = 20 [25]</cell><cell>0.01 ± 0.001</cell><cell>0.004 ± 0.003</cell><cell>38.6</cell><cell>1.41 ± 3.5</cell><cell>1.12 ± 3.07</cell></row><row><cell>Point-based IBVS, ORB features [32]</cell><cell>2.3 ± 4.6</cell><cell>2.7 ± 7.1</cell><cell>43.4</cell><cell>2.49 ± 4.51</cell><cell>2.8 ± 7</cell></row><row><cell>[1]: VGG backbone, learned loss [19], regressing ∆r, Eq (5)</cell><cell>5.4 ± 2.0</cell><cell>3.43 ± 1.65</cell><cell>76.9</cell><cell>5.08 ± 1.91</cell><cell>3.28 ± 1.44</cell></row><row><cell>Siame-SE(3), Eq (5)</cell><cell>1.12 ± 0.43</cell><cell>0.79 ± 0.3</cell><cell>98</cell><cell>1.05 ± 0.33</cell><cell>0.74 ± 0.23</cell></row><row><cell>Siame-se(3), Eq (6) with two task weights</cell><cell>1.27 ± 0.44</cell><cell>0.94 ± 0.3</cell><cell>97.8</cell><cell>1.15 ± 0.36</cell><cell>0.85 ± 0.25</cell></row><row><cell>Siame-se(3), Eq (6)</cell><cell>1.0 ± 0.48</cell><cell>0.75 ± 0.3</cell><cell>98.9</cell><cell>1.08 ± 0.48</cell><cell>0.77 ± 0.3</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head>TABLE I :</head><label>I</label><figDesc>Results of different methods on a set of 1000 simulated trajectories in a single scene setting. The end positioning errors of the servoing, as well as the mean trajectory errors with respect to a PBVS control law are reported in centimetres and degrees for the cases that converge.</figDesc><table /></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" n="1" xml:id="foot_0"><p>The following notations are used: ∆r = ( c * tc, θu), where t describes the translation part of the homogeneous matrix c * Tc related to the transformation from the current Fc to the desired frame F c * , while its rotation part c * Rc is expressed under the form θu, where u represents the unit rotation-axis vector and θ the rotation angle around this axis.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Training deep neural networks for visual servoing</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Bateux</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Leitner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chaumette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Corke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;18</title>
+		<meeting><address><addrLine>Brisbane, Australia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018-05">May 2018</date>
+			<biblScope unit="page" from="3307" to="3314" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Curriculum learning</title>
+		<author>
+			<persName><forename type="first">Yoshua</forename><surname>Bengio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jérôme</forename><surname>Louradour</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Ronan</forename><surname>Collobert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Jason</forename><surname>Weston</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 26th Annual International Conference on Machine Learning</title>
+		<meeting>the 26th Annual International Conference on Machine Learning</meeting>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Fully-convolutional siamese networks for object tracking</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Bertinetto</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Valmadre</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Henriques</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Vedaldi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Torr</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">European conference on computer vision</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="850" to="865" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Visual servo control, Part I: Basic approaches</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chaumette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hutchinson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Magazine</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="82" to="90" />
+			<date type="published" when="2006-12">December 2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Visual servo control, Part II: Advanced approaches</title>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chaumette</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Hutchinson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Magazine</title>
+		<imprint>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="109" to="118" />
+			<date type="published" when="2007-03">March 2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Photometric visual servoing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Collewet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Robotics</title>
+		<imprint>
+			<biblScope unit="volume">27</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="828" to="834" />
+			<date type="published" when="2011-08">August 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Visual servoing set free from image processing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Collewet</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chaumette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;08</title>
+		<meeting><address><addrLine>Pasadena, CA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2008-05">May 2008</date>
+			<biblScope unit="page" from="81" to="86" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Photometric Gaussian mixtures based visual servoing</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Crombez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">M</forename><surname>Mouaddib</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Caron</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int. Conf. on Intelligent Robots and Systems, IROS&apos;15</title>
+		<meeting><address><addrLine>Hamburg, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015-09">September 2015</date>
+			<biblScope unit="page" from="5486" to="5491" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Entropy-based visual servoing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dame</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;09</title>
+		<meeting><address><addrLine>Kobe, Japan</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2009-05">May 2009</date>
+			<biblScope unit="page" from="707" to="713" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Imagenet: A large-scale hierarchical image database</title>
+		<author>
+			<persName><forename type="first">Jia</forename><surname>Deng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Wei</forename><surname>Dong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Richard</forename><surname>Socher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li-Jia</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Kai</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><surname>Fei-Fei</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">2009 IEEE conference on computer vision and pattern recognition</title>
+		<imprint>
+			<publisher>Ieee</publisher>
+			<date type="published" when="2009">2009</date>
+			<biblScope unit="page" from="248" to="255" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Flownet: Learning optical flow with convolutional networks</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Dosovitskiy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Fischer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Ilg</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Hausser</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hazirbas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Golkov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Van Der Smagt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cremers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Brox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2758" to="2766" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">RPNet: an end-to-end network for relative camera pose estimation</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>En</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lechervy</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Jurie</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The European Conference on Computer Vision (ECCV) Workshops</title>
+		<imprint>
+			<date type="published" when="2018-09">September 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Deep spatial autoencoders for visuomotor learning</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">Tan</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Duan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;16</title>
+		<imprint>
+			<date type="published" when="2016">2016</date>
+			<biblScope unit="page" from="512" to="519" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Re 3 : Real-time recurrent regression networks for visual tracking of generic objects</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Gordon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Farhadi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="788" to="795" />
+			<date type="published" when="2018-04">April 2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Deep residual learning for image recognition</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ren</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Sun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2016">2016. 2016</date>
+			<biblScope unit="page" from="770" to="778" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Deep metric learning using triplet network</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Hoffer</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Ailon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Similarity-Based Pattern Recognition</title>
+		<editor>
+			<persName><forename type="first">Aasa</forename><surname>Feragen</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Marcello</forename><surname>Pelillo</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Marco</forename><surname>Loog</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="84" to="92" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Kernel-based visual servoing</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kallem</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Dewan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Swensen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">D</forename><surname>Hager</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><forename type="middle">J</forename><surname>Cowan</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int. Conf. on Intelligent Robots and System, IROS&apos;07</title>
+		<meeting><address><addrLine>San Diego, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2007-10">October 2007</date>
+			<biblScope unit="page" from="1975" to="1980" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Geometric loss functions for camera pose regression with deep learning</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cipolla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</title>
+		<imprint>
+			<date type="published" when="2017">2017. 2017</date>
+			<biblScope unit="page" from="6555" to="6564" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<analytic>
+		<title level="a" type="main">Multi-task learning using uncertainty to weigh losses for scene geometry and semantics</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Gal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cipolla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/CVF Conf. on Computer Vision and Pattern Recognition</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="page" from="7482" to="7491" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Posenet: A convolutional network for real-time 6-dof camera relocalization</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kendall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Grimes</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Cipolla</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE International Conference on Computer Vision, ICCV</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="2938" to="2946" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">A method for stochastic optimization</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Kingma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Ba</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Adam</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Learning Representations (ICLR)</title>
+		<imprint>
+			<date type="published" when="2015">2015. 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Siamese neural networks for one-shot image recognition</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Koch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Zemel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Salakhutdinov</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICML deep learning workshop</title>
+		<imprint>
+			<date type="published" when="2015-07">July 2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">Learning visual servoing with deep features and fitted q-iteration</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Learning Representations</title>
+		<imprint>
+			<publisher>ICLR</publisher>
+			<date type="published" when="2017-03">March 2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<analytic>
+		<title level="a" type="main">End-to-end training of deep visuomotor policies</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Levine</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Finn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Darrell</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">J. Mach. Learn. Res</title>
+		<imprint>
+			<biblScope unit="volume">17</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1334" to="1373" />
+			<date type="published" when="2016-01">January 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Direct visual servoing in the frequency domain</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Letters</title>
+		<imprint>
+			<biblScope unit="volume">5</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="620" to="627" />
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">ViSP for visual servoing: a generic software platform with a wide class of robot control skills</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Spindler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chaumette</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Robotics and Automation Magazine</title>
+		<editor>
+			<persName><forename type="first">P</forename><surname>Oh</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Burschka</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">4</biblScope>
+			<biblScope unit="page" from="40" to="52" />
+			<date type="published" when="2005-12">December 2005</date>
+		</imprint>
+	</monogr>
+	<note>Special Issue on &quot;Software Packages for Vision-Based Control of Motion</note>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Pose estimation for augmented reality: a hands-on survey</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Marchand</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Uchiyama</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Spindler</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Visualization and Computer Graphics</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="2633" to="2651" />
+			<date type="published" when="2016-12">December 2016</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Rectified linear units improve restricted boltzmann machines</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Nair</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Hinton</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 27th International Conference on International Conference on Machine Learning, ICML&apos;10</title>
+		<meeting>the 27th International Conference on International Conference on Machine Learning, ICML&apos;10</meeting>
+		<imprint>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="807" to="814" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">A survey on transfer learning</title>
+		<author>
+			<persName><forename type="first">Jialin</forename><surname>Sinno</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Qiang</forename><surname>Pan</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Knowl. and Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">10</biblScope>
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Pytorch: An imperative style, high-performance deep learning library</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Paszke</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Advances in Neural Information Processing Systems</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="8024" to="8035" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<title/>
+		<author>
+			<persName><surname>Curran Associates</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Inc</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Sim-toreal transfer of robotic control with dynamics randomization</title>
+		<author>
+			<persName><forename type="first">X</forename><forename type="middle">B</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Andrychowicz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;18</title>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">ORB: an efficient alternative to SIFT or SURF</title>
+		<author>
+			<persName><forename type="first">E</forename><surname>Rublee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Rabaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Konolige</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bradski</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Computer Vision</title>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="page" from="2564" to="2571" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Exploring convolutional networks for end-to-end visual servoing</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Saxena</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pandya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kumar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gaud</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">M</forename><surname>Krishna</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE Int. Conf. on Robotics and Automation, ICRA&apos;17</title>
+		<imprint>
+			<date type="published" when="2017-05">May 2017</date>
+			<biblScope unit="page" from="3817" to="3823" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">EfficientNet: Rethinking model scaling for convolutional neural networks</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Tan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><forename type="middle">V</forename><surname>Le</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Int. Conf. on Machine Learning</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Domain randomization for transferring deep neural networks from simulation to the real world</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Tobin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Fong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Ray</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Schneider</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zaremba</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Abbeel</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ Int. Conf. on Intelligent Robots and Systems, IROS&apos;17</title>
+		<imprint>
+			<date type="published" when="2017">2017</date>
+			<biblScope unit="page" from="23" to="30" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Relative end-effector control using cartesian position-based visual servoing</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wilson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Hulls</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bell</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. on Robotics and Automation</title>
+		<imprint>
+			<biblScope unit="volume">12</biblScope>
+			<biblScope unit="issue">5</biblScope>
+			<biblScope unit="page" from="684" to="696" />
+			<date type="published" when="1996-10">October 1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Siamese convolutional neural network for sub-millimeter-accurate camera pose estimation and visual servoing</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Cai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Pham</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Pham</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)</title>
+		<imprint>
+			<date type="published" when="2019-11">2019. 11 2019</date>
+			<biblScope unit="page" from="935" to="941" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

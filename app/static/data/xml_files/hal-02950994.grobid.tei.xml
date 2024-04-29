@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Interpretable privacy with optimizable utility</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Jan</forename><surname>Ramon</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">INRIA</orgName>
+								<address>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Moitree</forename><surname>Basu</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="institution">INRIA</orgName>
+								<address>
+									<settlement>Lille</settlement>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Interpretable privacy with optimizable utility</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">85CA601B46AAAF993CE557E6A6FC45B9</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-04-12T14:45+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Privacy</term>
+					<term>Explainability</term>
+					<term>Constraint optimization</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>In this position paper, we discuss the problem of specifying privacy requirements for machine learning based systems, in an interpretable yet operational way. Explaining privacy-improving technology is a challenging problem, especially when the goal is to construct a system which at the same time is interpretable and has a high performance. In order to address this challenge, we propose to specify privacy requirements as constraints, leaving several options for the concrete implementation of the system open, followed by a constraint optimization approach to achieve an efficient implementation also, next to the interpretable privacy guarantees.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="1">Introduction</head><p>Over recent years, one has seen an increasing interest in privacy, as the awareness of privacy risks of data processing systems increased. Legislation was introduced to protect data, and sufficient data and insights became available to create technology capable to realize several tasks while preserving the privacy of participants. One of the most popular notions of privacy, which we will also adopt in this paper, is differential privacy <ref type="bibr" target="#b2">[3]</ref> and its extensions, e.g., <ref type="bibr" target="#b3">[4,</ref><ref type="bibr" target="#b9">10]</ref>.</p><p>An important aspect of this evolution is the question of informing users of what privacy guarantees a system offers. Some legislation, such as Europe's GDPR <ref type="bibr" target="#b0">[1]</ref>, requires transparency, i.e., users have the right to know how their data are used and how their sensitive data are protected. Explaining privacy protection strategies is also important to increase trust among the users of a system. Finally, being able to explain what privacy guarantees a system offers is also helpful in the sometimes challenging communication between computer scientists who develop solutions and legal experts who are interested in understanding the guarantees without the burden of having to investigate many technical details.</p><p>While a large number of papers in the machine learning community studies a single machine learning problem and strategies to perform that machine learning task in a privacy-preserving way, real-world systems are often complex, consisting of several machine learning, preprocessing, prediction or inference steps, user interactions, and data transfers. The privacy requirements of interest to a user are requirements on the system as a whole, combining the behavior of its many components including their privacy guarantees. While some researches have focused on analyzing privacy guarantees of complete systems, the literature on that topic is still rather limited.</p><p>Such large systems combine heterogeneous components, each having their own characteristics for what concerns their effects on the privacy of the data. There is an increasing need for systems allowing one to specify and explain the privacy guarantees for a complete system. However, next to interpretability, performance, e.g., in terms of precision of computation, communication, and storage cost, is also required. In this paper, we study strategies to achieve both interpretability and good performance.</p><p>In particular, we argue that composition rules for differential privacy, which start from the building blocks and combine them bottom-up, may not offer sufficient flexibility. We suggest an alternative approach, where privacy requirements are specified top-down and implementation choices, such as the allocation of "privacy budget" to several components or the choice between more costly multi-party computing and less accurate noisy data sharing, are optimized afterward.</p><p>We start in Section 2 with a brief review of relevant literature and a discussion of the advantages and drawbacks of several strategies. We then sketch our ideas in Section 3 and provide a number of examples to illustrate them.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="2">Existing approaches</head><p>An important notion of privacy is differential privacy <ref type="bibr" target="#b2">[3]</ref>: Definition 1 (Differential privacy). Let ε &gt; 0, δ ≥ 0. A (randomized) protocol A is (ε, δ)-differentially private if for all neighboring datasets X, X , i.e., datasets differing only in a single data point, and for all sets of possible outputs O, we have:</p><formula xml:id="formula_0">P r(A(X) ∈ O) ≤ e ε P r(A(X ) ∈ O) + δ.<label>(1)</label></formula><p>Several variants and generalizations of differential privacy have been proposed, including proposals focusing on the adversarial model <ref type="bibr" target="#b3">[4]</ref> and proposals allowing for more refined secret definitions <ref type="bibr" target="#b9">[10]</ref>. In this paper, we will sometimes adopt the term 'secret' from Pufferfish privacy <ref type="bibr" target="#b9">[10]</ref> to refer to variables that are private but are not necessary on the level of a single individual in a database of individuals (classic differential privacy). A wide variety of languages have been proposed to describe privacy properties of systems. Some are aimed at compilers or circuit evaluators <ref type="bibr" target="#b5">[6]</ref>, others are not necessarily aimed at privacy-preserving technology but rather at trust or consent <ref type="bibr" target="#b7">[8]</ref>. In the sequel, we will focus our discussion on languages aimed at specifying privacy properties of systems using privacy-preserving technology.</p><p>A classical approach to study the privacy of a compound system is to take the different components as input and to analyze the behavior of the compound system. One basic strategy is to apply composition rules for differential privacy. The basic rule states that if data is queried twice, once with an ( 1 , δ 1 )-differentially private algorithm and once with a ( 2 , δ 2 )-differentially private algorithm, then the combination is ( 1 + 2 , δ 1 + δ 2 )-differentially private. Even though this always holds, this is usually not a tight bound on the privacy of the combination. A number of improved bounds have been proposed, e.g., <ref type="bibr" target="#b4">[5]</ref>, but even those are often not immediately practical. One issue is that the order of steps to be performed in a system may not be known a priori, e.g., a system could branch due to an if-then-else decision, or parts could be repeated.</p><p>To address this problem and at the same time have a more uniform way to represent privacy properties, many authors have proposed languages to specify privacy properties, together with associated techniques to verify whether these properties are satisfied when a number of rules can be applied <ref type="bibr" target="#b10">[11,</ref><ref type="bibr" target="#b8">9,</ref><ref type="bibr" target="#b6">7]</ref>. The advantage is that next to a language there is a system which can attempt to verify whether a given system satisfies the described privacy properties. However, several problems remain. First, theorem proving style techniques usually only work for a limited set of rules or reasoning primitives and they don't scale very well with increasing problem size. Second, while verifying that a property holds is interesting, optimizing the performance would be even better. In such theorem proving settings, it remains the task of the human expert to design the characteristics of the individual components of the system and combine them such that they collaborate efficiently.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">Privacy constraint optimization</head><p>Similar to earlier work discussed in the previous section, our approach starts from a language to describe privacy constraints. However, rather than aiming at verification, we aim at optimization. We propose to first formulate the problem and its privacy requirements in a systematic way, and then to treat these privacy requirements as the constraints of an optimization problem where the objective function is the utility, or conversely the loss. The loss function can incorporate various types of costs, such as the expected error on the output, the computational cost of the resulting system, or its storage cost.</p><p>Below, we first sketch at a high level, how problems can be specified. Next, we provide examples of this idea applied to different types of problems. In this position paper, our goal is not to improve some quantifiable performance measures or to solve more difficult problems than before, but rather to illustrate that the idea of constraint programming with privacy requirements has several potentially interesting applications.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.1">Problem specification</head><p>For the purpose of this paper, our main aim is not to develop a complete language allowing for representing as many as possible privacy properties (languages to describe privacy properties have been proposed in the literature to some extent), our main objective is to open the discussion on how to optimize the performance of a system given fixed global privacy requirements.</p><p>Therefore, we will use here only a basic language sufficient for our examples. In particular, we distinguish the following components in a specification:</p><p>-Declaring relevant variables. We will treat both data and models as random variables: data may be public or private and may be drawn jointly with other data variables from some distribution. According to the definition of differential privacy, a differentially private learning algorithm must be a randomized algorithm that outputs a model which follows some probability distribution conditioned on the training data. -Specifying relations between variables (background knowledge).</p><p>After specifying the relevant random variables, we can specify the conditional dependencies between these variables using a probabilistic model, e.g., a Bayesian network or a Markov random field. -Privacy requirements. Then, we can specify the required privacy properties. This typically involves specifying that the several possible values of a secret can't be distinguished with significant probability by parties not authorized to know the secret.</p><p>Below, we present a number of example scenarios where we can apply the proposed technique of compiling privacy requirements to constraint programs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.2">Optimizing differential privacy noise as a function of the desired output</head><p>Assume we have n sensitive input variables and we want to answer m queries over these sensitive variables. For the simplicity of our presentation, we will assume that the answer to each query is a linear combination of the sensitive variables.</p><p>We can specify our problem as follows:</p><formula xml:id="formula_1">Variables: -x ∈ [0, 1] n : input -y ∈ R m : intermediate variable -A ∈ R m×n : constant -b ∈ R m : constant -O : output Background knowledge: -y = Ax + b -Loss function: L = O -y 2 2 Privacy requirements: -O is ( , δ)-DP w.r.t. x.</formula><p>Here, we organize our specification as outlined in Section 3.1. It is clear that revealing the exact answers to the queries y i is unacceptable, resulting in some approximation of the original answers to the queries. So, we specify a loss function representing the cost of the approximation errors.</p><p>There are two classic approaches. First, one can use Local Differential Privacy (LDP) <ref type="bibr" target="#b1">[2]</ref>. This means that to every input variable x i sufficient noise is added to obtain a fully private version xi . Next, any query can be answered starting from these noisy versions, so, the output can be computed as O = Ax + b. A major drawback of this approach is that this requires a lot of noise and hence the expected loss will be high. For the simplicity of our analysis, we use the Gaussian mechanism throughout this example. We get</p><formula xml:id="formula_2">E [L LDP ] = tr(A A) 2 log(1.25/δ) 2 .</formula><p>Second, one can use classic differential privacy for each query y i separately, adding noise to every y i to obtain a noise version ŷi . If multiple queries are obtained, the realized loss may be still high, and if m &gt; n, even higher than in the LDP case above:</p><formula xml:id="formula_3">L DP =   m j=1 n i=1 |A i,j | 2   2 log(1.25/δ) 2 .</formula><p>In contrast, given the specifications above, we propose to (semi-automatically) generate options to address the privacy requirements, not committing to adding noise to input (as in LDP) or output (as in classic DP), but to address the possibility to add noise at meaningful points in the computation. This could result in the following constraint optimization program:</p><formula xml:id="formula_4">Minimize E η,ξ L σ (η) , σ (ξ) = E η,ξ O -(Ax + b) 2 2 Subject to -x = x + η -O = ŷ = Ax + b + ξ -η i ∼ N 0, σ 2 (η),i -ξ i ∼ N 0, σ 2 (ξ),i -O is ( , δ)-DP w.r.t. x.</formula><p>For one query (m = 1), the optimal solution to this problem will correspond with classic differential privacy, in the case the number of queries m is large, the solution of the optimization problem will converge to the local differential privacy case. Between the two extremes, we expect a loss that is lower than either of both classic strategies.</p><p>The constraint program we consider is easy to solve numerically, and if the approximations are made which are commonly used for the Gaussian mechanism, we get a relaxed constraint optimization problem only involving quadratic functions.</p><p>We hence distinguish four steps to address problems with privacy requirements:</p><p>1. Specifying the problem and the privacy requirements 2. Adding options to realize the privacy requirements and casting it into a constraint optimization problem 3. Solving the constraint optimization problem 4. Executing the algorithm with the obtained solutions and parameters</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.3">Shaping differential privacy noise</head><p>In a number of situations, the classic additive noise mechanisms don't provide an adequate solution. Consider for example the following problem. Suppose that we have a finite domain X of positive numbers. Consider n parties numbered from 1 to n. Each party i has a sensitive value x i ∈ X which it doesn't want to be revealed. At the same time, the parties collectively would like to compute k ≥ 2 means of their private values, including the arithmetic mean m 1 and harmonic mean m -1 where</p><formula xml:id="formula_5">m p = 1 n n i=1 x p i 1/p .</formula><p>This gives us the following problem:</p><formula xml:id="formula_6">Variables: -x ∈ [0, 1] n : input -p ∈ R k : constant -O : output Background knowledge: -Loss function: L = k i=1 (O i -m pi (x)) 2 Privacy requirements: -O is ( , δ)-DP w.r.t. x.</formula><p>The several parties don't trust a common curator and therefore decide they will all share noisy versions xi of their private values x i and perform the computation on these noisy values. This is also the setting considered by local differential privacy.</p><p>Classic additive noise mechanisms such as the Laplace mechanism and the Gaussian mechanism have the drawback that the noise distribution has an infinite domain. So, for every value x i , especially if x i is one of the smallest elements of X , there is a probability that xi is close to 0 or negative, which would make the estimation of m -1 very difficult.</p><p>Several solutions are conceivable. First, for every i we could approximate the p i -mean m pi (x) using a separate noisy version of x pi . Averaging over values of x pi with additive zero-mean (Laplacian or Gaussian) error would give an unbiased estimate. Still, this would imply that the k means to be computed should share the available privacy budget. We could follow an approach similar to the one in Section 3.2 to optimally spread the privacy budget.</p><p>Another option is to use the full privacy budget for a single noisy version xi of x i for every i. As we can't use classical additive noise mechanisms, we consider an arbitrary parameterized distribution, and aim at estimating optimal parameters for it subject to a number of desirable properties. We should take into account that if the smallest (respectively largest) possible noisy versions of the x i can't be much smaller (resp. larger) than the smallest (resp. largest) possible value of X (in our case to avoid zero or negative noisy versions which may harm the approximation of m -1 (x)), then we can't use zero-mean additive noise. A common solution is to chose for xi with probability α, an unbiased estimator of x and with probability 1 -α, some background distribution B.</p><p>In particular, we consider a distribution over a domain Y ⊇ X . For (x, y) ∈ X × Y, let f x,y = P (x i = y | x), i.e., f x,y is the probability, given that a private value is x that the noise version is y. This naturally leads to the following quadratic program: </p><formula xml:id="formula_7">Minimize x∈X ,y∈Y f x,y (x -y) 2 Subject to -∀x, y∈Y f x,y y = αx + (1 -α)E[B] -∀x, y∈Y f x,y y -1 = αx -1 + (1 -α)E B -1 -∀x, y∈Y f x,y = 1 -O is ( , δ)-DP w.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3.4">Combining building blocks</head><p>The examples in Sections 3.2 and 3.3 focused on isolated problems. Practical systems are often large and consist of many steps. Even if for each of these steps a privacy-preserving solution is available, these still need to be combined into a global solution. Classic approaches to differential privacy often use combination rules, e.g., the combination of an ( 1 , δ 1 )-differentially private step and an ( 2 , δ 2 )-differentially private step is ( 1 + 2 , δ 1 + δ 2 )-differentially private. The disadvantage is that the privacy budget is not recycled and therefore is exhausted quickly.</p><p>The same approach can be taken using constraint programs. However, additionally, we can attempt to obtain globally better solutions. First, we can combine two constraint programs, which share variables and/or constraints. An optimal solution for the combined program may be globally more optimal than the combination of the solutions of the individual programs. Second, it becomes easier to program design choices. Often, several possible solution strategies exist, especially when considering in distributed settings the trade-off between encryption (which is more expensive in computational cost) or adding noise (which decreases the utility of the output). In such situations, we can introduce both solution strategies as separate sub-programs of the larger constraint program, and introduce an additional variable π which is 0 when the first solution is used and 1 if the other solution is used. While constraint optimization typically works with real-valued variables, if the constraint programs corresponding to the two solutions don't share parameters then the design choice variable π will be either 0 or 1 in the optimum of the constraint program. In this way, in several cases, the user can focus on specifying requirements and possible solution strategies, while the optimization algorithm computes the value of the alternatives and selects the best solution.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="4">Discussion and conclusions</head><p>In this position paper, we argue that the explainability of privacy-preserving systems can be helped by clearly specifying the privacy guarantees the systems satisfy, and we propose to see these privacy requirements as constraints in an optimization problem.</p><p>First, during the design and development phase, this methodology helps the developer to focus on the requirements rather than on implementation choices. In fact, the constraint optimization problem represents the space of all possible high-level implementations, and the solver accordingly finds the most interesting implementation strategy.</p><p>Second, in the deployment phase, such an explicit representation of the privacy guarantees facilitates answering user queries about exactly to what extent sensitive data is protected.</p><p>We presented a few examples showing that in several cases the translation of privacy requirements to constraint optimization problems is reasonably easy, and often yields constraint optimization problems which can be solved efficiently. Of course, this doesn't constitute a proof that such a methodology will deliver good results in all cases. An interesting line of future work is to explore more different situations and analyze whether the obtained constraint optimization problems remain tractable and scale well with the problem complexity.</p><p>Another idea for future work may be to explore whether this methodology also allows us to translate interpretable fairness requirements to efficiently solvable constraint optimization problems. However, a number of additional challenges that may arise there, e.g., there is no widespread consensus on a single good notion of fairness (as is the case with differential privacy in the privacy domain). Second, while in the current paper on privacy we rely on the relation between uncertainty (e.g., variance) and privacy strength, which often leads to efficiently solvable constraints, it is not immediately clear whether we could rely on a similar relation in the fairness domain.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>r.t. x, i.e., ∀x 1 , x 2 , y : f x1,y ≤ e f x2,y + δ</figDesc><table><row><cell>|X |</cell></row></table></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title/>
+		<ptr target="https://gdpr-info.eu/" />
+	</analytic>
+	<monogr>
+		<title level="j">European General Data Protection Regulation</title>
+		<imprint/>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">Local privacy and statistical minimax rates</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Duchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">I</forename><surname>Jordan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">J</forename><surname>Wainwright</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">FOCS</title>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Differential Privacy: A Survey of Results</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Dwork</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Theory and Applications of Models of Computation</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Agrawal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">D</forename><surname>Du</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">Z</forename><surname>Duan</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Li</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Amplification by Shuffling: From Local to Central Differential Privacy via Anonymity</title>
+		<author>
+			<persName><forename type="first">U</forename><surname>Erlingsson</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Feldman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Mironov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Raghunathan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Talwar</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">SODA</title>
+		<imprint>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">The composition theorem for differential privacy</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Kairouz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Oh</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Viswanath</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 32nd International Conference on Machine Learning</title>
+		<meeting>the 32nd International Conference on Machine Learning<address><addrLine>Lille, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Lessons learned with pcf: Scaling secure computation</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Kreuter</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2517872.2517877</idno>
+		<ptr target="https://doi.org/10.1145/2517872.2517877" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the First ACM Workshop on Language Support for Privacy-Enhancing Technologies</title>
+		<meeting>the First ACM Workshop on Language Support for Privacy-Enhancing Technologies<address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="page" from="7" to="10" />
+		</imprint>
+	</monogr>
+	<note>PETShop &apos;13</note>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Duet: An Expressive Higher-order Language and Linear Type System for Statically Enforcing Differential Privacy</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">P</forename><surname>Near</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Darais</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Abuah</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Stevens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Gaddamadugu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Somani</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Sharma</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Shan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Song</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3360598</idno>
+		<ptr target="http://doi.acm.org/10.1145/3360598" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. ACM Program. Lang</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="page">30</biblScope>
+			<date type="published" when="2019-10">Oct 2019</date>
+		</imprint>
+	</monogr>
+	<note>OOPSLA)</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Analysis of Privacy Policies to Enhance Informed Consent</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Pardo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Le Métayer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Data and Applications Security and Privacy XXXIII</title>
+		<editor>
+			<persName><forename type="first">S</forename><forename type="middle">N</forename><surname>Foley</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer International Publishing</publisher>
+			<date type="published" when="2019">2019</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">Modelling and automatically analysing privacy properties for honest-but-curious adversaries</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">J</forename><surname>Paverd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Martin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Brown</surname></persName>
+		</author>
+		<ptr target="https://www.cs.ox.ac.uk/people/andrew.paverd/casper/casper-privacy-report.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">Tech. Rep</title>
+		<imprint>
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Pufferfish Privacy Mechanisms for Correlated Data</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Song</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Chaudhuri</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM International Conference on Management of Data. SIGMOD &apos;17</title>
+		<meeting>the 2017 ACM International Conference on Management of Data. SIGMOD &apos;17</meeting>
+		<imprint>
+			<publisher>Association for Computing Machinery</publisher>
+			<date type="published" when="2017">2017</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">Modular Reasoning about Differential Privacy in a Probabilistic Process Calculus</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Xu</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Trustworthy Global Computing</title>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Palamidessi</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Ryan</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Berlin Heidelberg</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
