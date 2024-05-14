@@ -2,6 +2,8 @@ import os
 import json
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
+import requests
+import time
 
 def insert_json_db (data_path_json,data_path_xml,db):
 
@@ -45,8 +47,27 @@ def insert_json_db (data_path_json,data_path_xml,db):
         file_name = os.path.basename(file_path)
         while "." in file_name:
             file_name, extension = os.path.splitext(file_name)
+
         if file_name in files_list_registered:
             continue
+        time.sleep(0.5)
+        url = "https://api.archives-ouvertes.fr/search/"
+        params = {
+            "q": f"halId_id:{file_name}",
+            "rows": 10,
+            "fl": "citationFull_s"
+        }
+
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            try:
+                citations = data["response"]["docs"][0]["citationFull_s"]
+            except IndexError:
+                citations = None
+        else:
+            print("Error:", response.status_code)
+
         with open(file_path, 'r') as xml_file:
             data_json_get_document = {}
             tree = ET.parse(xml_file)
@@ -90,6 +111,7 @@ def insert_json_db (data_path_json,data_path_xml,db):
                     data_json_get_document['abstract'] = ['GROBID' , abstract]
 
             data_json_get_document['file_hal_id'] = file_name
+            data_json_get_document['citation'] = citations
             data_json_get_document['title'] = title
             data_json_get_document['author'] = list_author
 

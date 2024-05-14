@@ -15,7 +15,7 @@ def dashboard(db):
     dic_struct = {}
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list[:20]:
+    for file_id in file_id_list[:100]:
         list_struct.extend(file_id['structures'])
         structures = file_id['structures']
         hal_id = file_id['hal_id']
