@@ -1,8 +1,9 @@
 import os
 import json
 from tqdm import tqdm
+import xml.etree.ElementTree as ET
 
-def insert_json_db (data_path,db):
+def insert_json_db (data_path_json,data_path_xml,db):
 
     if db.hasCollection('documents'):
         documents_collection = db['documents']
@@ -35,41 +36,89 @@ def insert_json_db (data_path,db):
         doc_ref_edge = db['edge_reference']
 
 
-    data_files = os.listdir(data_path)
-    files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.md5', rawResults=True)
+    data_json_files = os.listdir(data_path_json)
+    data_xml_list = os.listdir(data_path_xml)
+    files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.file_hal_id', rawResults=True)
 
+    for data_file_xml in tqdm(data_xml_list):
+        file_path = f'{data_path_xml}/{data_file_xml}'
+        file_name = os.path.basename(file_path)
+        while "." in file_name:
+            file_name, extension = os.path.splitext(file_name)
+        if file_name in files_list_registered:
+            continue
+        with open(file_path, 'r') as xml_file:
+            data_json_get_document = {}
+            tree = ET.parse(xml_file)
+            root = tree.getroot()
+            ns = {"tei": "http://www.tei-c.org/ns/1.0"}
 
-    for data_file in tqdm(data_files, colour='white'):
-        if data_file.endswith('.software.json'):
-            with open(data_path + '/' + data_file, 'r') as json_file:
-                data_json = json.load(json_file)
-                data_md5 = data_json.get("md5")
+            title = tree.find("//tei:listBibl//tei:titleStmt//tei:title", ns)
+            title = title.text
 
-                if data_md5 in files_list_registered:
-                    continue
+            structures = tree.find("//tei:back//tei:listOrg", ns)
+            list_org = []
+            for org in structures:
+                if org.attrib['type'] in ['regrouplaboratory','regroupinstitution','institution']:
+                    for org_child_tags in list(org):
+                        try:
+                            if org_child_tags.attrib['type'] == 'acronym':
+                                list_org.append(org_child_tags.text)
+                        except KeyError:
+                            continue
+            data_json_get_document['structures'] = list_org
 
-                data_json_get_document = {key: value for key, value in data_json.items() if key not in ['references', 'mentions', 'original_file_path']}
-                data_file = data_file.replace('.software.json','')
-                data_json_get_document['file_hal_id'] = data_file
-                document_document = documents_collection.createDocument(data_json_get_document)
-                document_document.save()
+            author_list = tree.findall("//tei:listBibl//tei:titleStmt//tei:author", ns)
+            list_author = []
+            for elm in author_list:
+                author = {}
+                persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
+                author['role'] = elm.attrib['role']
+                for name in persName:
+                    author[name.tag.split('}')[1]] =  name.text
+                list_author.append(author)
 
-                data_json_get_mentions = data_json.get("mentions")
-                for data_json_get_mention in data_json_get_mentions:
-                    software_document = softwares_collection.createDocument(data_json_get_mention)
-                    software_document.save()
+            abstract = tree.find("//{http://www.tei-c.org/ns/1.0}abstract")
+            if abstract:
+                tag_text = list(abstract)[0]
+                if tag_text.tag == '{http://www.tei-c.org/ns/1.0}p':
+                    abstract = "".join(tag_text.itertext())
+                    data_json_get_document['abstract'] = ['HAL' , abstract]
+                if tag_text.tag == '{http://www.tei-c.org/ns/1.0}div':
+                    for p_tag in list(tag_text):
+                        text = "".join(p_tag.itertext())
+                    data_json_get_document['abstract'] = ['GROBID' , abstract]
 
-                    edge = doc_soft_edge.createEdge()
-                    edge['_from'] = document_document._id
-                    edge['_to'] = software_document._id
-                    edge.save()
+            data_json_get_document['file_hal_id'] = file_name
+            data_json_get_document['title'] = title
+            data_json_get_document['author'] = list_author
 
-                data_json_get_references = data_json.get("references")
-                for data_json_get_reference in data_json_get_references:
-                    references_document = references_collection.createDocument(data_json_get_reference)
-                    references_document.save()
+            document_document = documents_collection.createDocument(data_json_get_document)
+            document_document.save()
+            if f"{file_name}.software.json" in data_json_files:
+                with open(f'{data_path_json}/{file_name}.software.json', 'r') as json_file:
+                    data_json = json.load(json_file)
 
-                    edge = doc_ref_edge.createEdge()
-                    edge['_from'] = document_document._id
-                    edge['_to'] = references_document._id
-                    edge.save()
+                    data_json_get_mentions = data_json.get("mentions")
+                    for data_json_get_mention in data_json_get_mentions:
+                        data_json_get_mention['software_name'] = data_json_get_mention['software-name']
+                        data_json_get_mention.pop('software-name')
+                        data_json_get_mention['software_type'] = data_json_get_mention['software-type']
+                        data_json_get_mention.pop('software-type')
+                        software_document = softwares_collection.createDocument(data_json_get_mention)
+                        software_document.save()
+
+                        edge = doc_soft_edge.createEdge()
+                        edge['_from'] = document_document._id
+                        edge['_to'] = software_document._id
+                        edge.save()
+
+                    data_json_get_references = data_json.get("references")
+                    for data_json_get_reference in data_json_get_references:
+                        references_document = references_collection.createDocument(data_json_get_reference)
+                        references_document.save()
+
+                        edge = doc_ref_edge.createEdge()
+                        edge['_from'] = document_document._id
+                        edge['_to'] = references_document._id
+                        edge.save()

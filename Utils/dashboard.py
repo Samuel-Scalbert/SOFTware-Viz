@@ -2,7 +2,7 @@ from pyArango.theExceptions import AQLQueryError
 
 def dashboard(db):
     try:
-        file_id_list = db.AQLQuery("FOR file_id in documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }",rawResults=True)
+        file_id_list = db.AQLQuery("FOR file_id in documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures}",rawResults=True)
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta
@@ -11,9 +11,13 @@ def dashboard(db):
     dic_created = {}
     dic_shared = {}
     nb_mention = 0
+    list_struct = []
+    dic_struct = {}
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list:
+    for file_id in file_id_list[:20]:
+        list_struct.extend(file_id['structures'])
+        structures = file_id['structures']
         hal_id = file_id['hal_id']
         file_id = file_id['_id']
         edges_id_software_doc = db['edge_software'].getEdges(file_id)
@@ -25,7 +29,7 @@ def dashboard(db):
                 json_software = json_software.getStore()
                 max_score = float('-inf')
                 max_attribute = None
-                software = json_software['software-name']['normalizedForm']
+                software = json_software['software_name']['normalizedForm']
 
                 for attribute, details in json_software["documentContextAttributes"].items():
                     if details["score"] > max_score:
@@ -49,4 +53,12 @@ def dashboard(db):
                             dic_used[software] = []
                         if hal_id not in dic_used[software]:
                             dic_used[software].append(hal_id)
-    return [dic_attributes,doc_with_mention,nb_mention,doc_wno_mention, dic_used, dic_shared, dic_created]
+            for org in list_struct:
+                if org not in dic_struct.keys():
+                    dic_struct[org] = []
+                if file_id not in dic_struct[org]:
+                    dic_struct[org].append(hal_id)
+
+        else:
+            doc_wno_mention += 1
+    return [dic_attributes,doc_with_mention,nb_mention,doc_wno_mention, dic_used, dic_shared, dic_created, dic_struct]

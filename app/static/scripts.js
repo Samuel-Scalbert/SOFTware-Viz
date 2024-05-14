@@ -1,44 +1,50 @@
 function generateCircleChart(selector, value1, value2, value3) {
-  const chartConfig = {
-    type: 'pie',
-    data: {
-      labels: ["Used", "Created", "Shared"],
-      datasets: [{
-        backgroundColor: ["#6C9BCF", "#363949","#677483"],
-        data: [value1, value2,value3],
-        borderWidth:1,
-        cutout:'20%',
-      }]
-    },
-    options:{
-      radius:100,
-      rotation:180,
-      hoverOffset: 4,
-      responsive:false,
-       animation:{animateScale:true},
+    const chartConfig = {
+        type: 'pie',
+        data: {
+            labels: ["Used", "Created", "Shared"],
+            datasets: [{
+                backgroundColor: ["#6C9BCF", "#363949", "#677483"],
+                data: [value1, value2, value3],
+                borderWidth: 1,
+                cutout: '20%',
+            }]
+        },
+        options: {
+            radius: 100,
+            rotation: 180,
+            hoverOffset: 4,
+            responsive: false,
+            animation: {
+                animateScale: true
+            },
 
-      tooltips:{enabled:false},
-       legend:{display:false}
-    },
+            tooltips: {
+                enabled: false
+            },
+            legend: {
+                display: false
+            }
+        },
 
-   plugins:[{
-     beforeDraw:function(chart){
-          const width = chart.width;
-          const height = chart.height;
-        	const ctx = chart.ctx;
+        plugins: [{
+            beforeDraw: function(chart) {
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
 
-        	ctx.restore();
-        	ctx.font='bold 55px sans-serif';
-      		ctx.textAlign= 'center';
-      		chart.ctx.fillStyle="black";
-  	 },
-   }]
+                ctx.restore();
+                ctx.font = 'bold 55px sans-serif';
+                ctx.textAlign = 'center';
+                chart.ctx.fillStyle = "black";
+            },
+        }]
 
- };
+    };
 
-const ctx = document.querySelector(selector);
+    const ctx = document.querySelector(selector);
 
-new Chart(ctx.getContext('2d'),chartConfig);
+    new Chart(ctx.getContext('2d'), chartConfig);
 
 }
 
@@ -55,45 +61,62 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const availableSoftwareND = Array.from(availableSoftware);
     const resultBox = document.getElementById("result-box");
     const inputBox = document.getElementById("input-box");
-    inputBox.onkeyup = function (){
+    inputBox.onkeyup = function() {
         let result = []
         let input = inputBox.value;
-        if(input.length){
-            result = availableSoftwareND.filter((keyword)=>{return keyword.toLowerCase().includes(input.toLowerCase());
+        if (input.length) {
+            result = availableSoftwareND.filter((keyword) => {
+                return keyword.toLowerCase().includes(input.toLowerCase());
             });
-        displayResult(result);
-        let previousClickedElement = null;
+            displayResult(result);
+            let previousClickedElement = null;
 
-        document.querySelectorAll('.mention_search_doc_id').forEach(item => {
-            item.addEventListener('click', event => {
-                // Reset the color of the previously clicked element
-                if (previousClickedElement !== null) {
-                    previousClickedElement.style.backgroundColor = ''; // Reset to default
-                }
-
-                // Set the background color of the current clicked element
-                item.style.backgroundColor = 'red';
-
-                // Set the current clicked element as the previous clicked element
-                previousClickedElement = item;
-
-                const idValue = item.getAttribute('id');
-                handleClick(idValue);
-    });
-    });
+            document.querySelectorAll('.mention_search_doc_id').forEach(item => {
+                item.addEventListener('click', event => {
+                    console.log(item)
+                });
+            });
         }
     }
-    function displayResult(result){
-    const content = result.map((list)=> {
-        return "<div class='mention_search_doc_id' id=" + list + ">" + list + "</div>";
-    }).join(''); // Join the array elements into a single string without any separator
-    resultBox.innerHTML = "<div class='dropdown-content-search'>" + content + "</div>";
+
+   document.querySelectorAll('.structure').forEach(item => {
+    item.addEventListener('click', event => {
+        const elements = document.querySelectorAll('.mention_doc_id');
+        elements.forEach(element => {
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            dropdownBtn.style.color = '';
+            dropdownContent.style.display = 'none';
+        });
+        item.querySelectorAll('div').forEach(child_div => {
+            // Get all div elements
+            const divElements = document.querySelectorAll('.dropdown-content');
+
+            // Iterate over each div element
+            divElements.forEach(div => {
+                if (div.textContent.trim() === child_div.className) {
+                    const element = div.parentNode.parentNode;
+                    console.log(element)
+                    var dropdownBtn = element.querySelector('.dropbtn');
+                    var dropdownContent = element.querySelector('.dropdown-content');
+                    dropdownBtn.style.color = 'red';
+                }
+            });
+        });
+    });
+});
+
+
+    function displayResult(result) {
+        const content = result.map((list) => {
+            return "<div class='mention_search_doc_id' id=" + list + ">" + list + "</div>";
+        }).join(''); // Join the array elements into a single string without any separator
+        resultBox.innerHTML = "<div class='dropdown-content-search'>" + content + "</div>";
     };
 
     function handleClick(idValue) {
         if (previousElement) {
             const elements = document.querySelectorAll(`#${previousElement}.mention_doc_id`);
-            console.log(elements)
             elements.forEach(element => {
                 var dropdownBtn = element.querySelector('.dropbtn');
                 var dropdownContent = element.querySelector('.dropdown-content');
@@ -109,7 +132,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             var dropdownContent = element.querySelector('.dropdown-content');
             dropdownBtn.style.color = 'red';
             dropdownContent.style.display = 'block';
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
         });
         previousElement = sanitizedId;
     }
@@ -121,9 +147,3 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 });
-
-
-
-
-
-

@@ -4,7 +4,6 @@ from collections import defaultdict
 def doc_info_from_id(file_id,db):
     try:
         file_meta = db.AQLQuery("FOR file_meta in documents FILTER file_meta.file_hal_id == '"+ file_id +"'  RETURN file_meta", rawResults=True)
-        print(file_meta)
         if len(file_meta) > 0:
             file_meta_id = file_meta[0]['_id']
         else:
@@ -17,7 +16,7 @@ def doc_info_from_id(file_id,db):
         to_id = id_software_doc['_to']
         json_software = db.AQLQuery("LET file_meta = DOCUMENT('"+to_id+"') RETURN file_meta", rawResults=True)
         json_software = json_software[0]
-        software_name = json_software['software-name']['normalizedForm']
+        software_name = json_software['software_name']['normalizedForm']
         max_score = float('-inf')
         max_attribute = None
 
