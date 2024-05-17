@@ -50,7 +50,7 @@ def insert_json_db (data_path_json,data_path_xml,db):
 
         if file_name in files_list_registered:
             continue
-        time.sleep(0.5)
+        time.sleep(0.2)
         url = "https://api.archives-ouvertes.fr/search/"
         params = {
             "q": f"halId_id:{file_name}",
@@ -74,10 +74,10 @@ def insert_json_db (data_path_json,data_path_xml,db):
             root = tree.getroot()
             ns = {"tei": "http://www.tei-c.org/ns/1.0"}
 
-            title = tree.find("//tei:listBibl//tei:titleStmt//tei:title", ns)
+            title = tree.find(".//tei:listBibl//tei:titleStmt//tei:title", ns)
             title = title.text
 
-            structures = tree.find("//tei:back//tei:listOrg", ns)
+            structures = tree.find(".//tei:back//tei:listOrg", ns)
             list_org = []
             for org in structures:
                 if org.attrib['type'] in ['regrouplaboratory','regroupinstitution','institution']:
@@ -89,7 +89,27 @@ def insert_json_db (data_path_json,data_path_xml,db):
                             continue
             data_json_get_document['structures'] = list_org
 
-            author_list = tree.findall("//tei:listBibl//tei:titleStmt//tei:author", ns)
+            doc_type = tree.findall(".//tei:listBibl//tei:biblFull//tei:profileDesc//tei:textClass//tei:classCode", ns)
+            for tag in doc_type:
+                if tag.attrib.get('n') == 'COMM':
+                    production_date = tree.find(".//tei:listBibl//tei:biblFull//tei:sourceDesc//tei:biblStruct//tei:monogr//tei:meeting//tei:date[@type='start']", ns)
+                    if production_date is not None:
+                        data_json_get_document['date'] = production_date.text[:4]
+                else:
+                    production_date = tree.find(
+                        ".//tei:listBibl//tei:biblFull//tei:sourceDesc//tei:biblStruct//tei:monogr//tei:imprint//tei:date[@type='datePub']",
+                        ns)
+                    if production_date is not None:
+                        data_json_get_document['date'] = production_date.text[:4]
+                    else:
+                        production_date = tree.find(
+                            ".//tei:listBibl//tei:biblFull//tei:editionStmt//tei:edition[@type='current']//tei:date[@type='whenProduced']",
+                            ns)
+                        if production_date is not None:
+                            data_json_get_document['date'] = production_date.text[:4]
+                        else:
+                            print(f'problem : {file_name}')
+            author_list = tree.findall(".//tei:listBibl//tei:titleStmt//tei:author", ns)
             list_author = []
             for elm in author_list:
                 author = {}
@@ -99,7 +119,7 @@ def insert_json_db (data_path_json,data_path_xml,db):
                     author[name.tag.split('}')[1]] =  name.text
                 list_author.append(author)
 
-            abstract = tree.find("//{http://www.tei-c.org/ns/1.0}abstract")
+            abstract = tree.find(".//{http://www.tei-c.org/ns/1.0}abstract")
             if abstract:
                 tag_text = list(abstract)[0]
                 if tag_text.tag == '{http://www.tei-c.org/ns/1.0}p':

@@ -1,6 +1,5 @@
 from pyArango.theExceptions import AQLQueryError
 from collections import defaultdict
-from flask import render_template
 
 def doc_info_wsoftware_from_id(file_id,software,db):
     list_context = []
@@ -21,6 +20,16 @@ def doc_info_wsoftware_from_id(file_id,software,db):
     max_attribute = None
 
     query = f"""
+                LET doc = DOCUMENT('{file_meta_id}')
+                FOR edge IN edge_software
+                  FILTER edge._from == doc._id
+                  LET software = DOCUMENT(edge._to)
+                  RETURN DISTINCT software.software_name.normalizedForm
+                """
+
+    list_other_softwares = db.AQLQuery(query, rawResults=True)
+
+    query = f"""
                 FOR software IN softwares
                     FILTER software.software_name.normalizedForm == "{software}"
                     FOR edge IN edge_software
@@ -36,7 +45,6 @@ def doc_info_wsoftware_from_id(file_id,software,db):
         json_software = db.AQLQuery("LET file_meta = DOCUMENT('" + to_id + "') RETURN file_meta", rawResults=True)
         json_software = json_software[0]
 
-
         if json_software['software_name']['normalizedForm'] == software:
             context = json_software['context']
             software_tag = f'<span class="software-name">{json_software["software_name"]["normalizedForm"]}</span>'
@@ -48,9 +56,9 @@ def doc_info_wsoftware_from_id(file_id,software,db):
                         max_score = details["score"]
                         max_attribute = attribute
                         software_title = f"{json_software['software_name']['normalizedForm']}: mentions «{attribute}»"
-    data = [list_context, abstract, citation,software_title,list_other_articles]
+    data = [list_context, abstract, citation,software_title,list_other_articles,list_other_softwares]
 
-    return render_template('pages/doc_wsoftware.html',data = data)
+    return data
 
 def doc_info_from_id(file_id,db):
     try:
