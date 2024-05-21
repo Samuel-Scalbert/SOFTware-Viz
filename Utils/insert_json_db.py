@@ -68,7 +68,7 @@ def insert_json_db (data_path_json,data_path_xml,db):
         else:
             print("Error:", response.status_code)
 
-        with open(file_path, 'r') as xml_file:
+        with open(file_path, 'r', encoding='utf-8') as xml_file:
             data_json_get_document = {}
             tree = ET.parse(xml_file)
             root = tree.getroot()
