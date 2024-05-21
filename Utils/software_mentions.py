@@ -20,10 +20,16 @@ def software_all_mentions(software, db):
         list_attr_halid = db.AQLQuery(query, rawResults=True)
     except Exception as e:
         print(f'Error executing query: {e}')
+        return None, None, None, None  # Returning None in case of query failure
+
     result_dict = {}
+    min_year = float('inf')
+    max_year = float('-inf')
+    max_occurrences = 0
+
     for item in list_attr_halid:
         max_field = item['max_field']
-        year = item['date']
+        year = item['date'].split('-')[0]  # Assuming 'date' is in 'YYYY-MM-DD' format
         file_hal_id = item['file_hal_id']
 
         if max_field not in result_dict:
@@ -35,4 +41,34 @@ def software_all_mentions(software, db):
         result_dict[max_field][year][0] += 1
         result_dict[max_field][year][1].append(file_hal_id)
 
-    print(result_dict)
+        # Update min and max year
+        year_int = int(year)
+        if year_int < min_year:
+            min_year = year_int
+        if year_int > max_year:
+            max_year = year_int
+
+        # Update max occurrences
+        if result_dict[max_field][year][0] > max_occurrences:
+            max_occurrences = result_dict[max_field][year][0]
+
+    if min_year == float('inf'):
+        min_year = None
+    if max_year == float('-inf'):
+        max_year = None
+
+    return result_dict, min_year, max_year, max_occurrences
+
+def dataset_creator(raw_dictionnary):
+    dataset = []
+    colors = ["#fa0519","#2efa05","#1905fa"]
+
+    for idx, (label, values) in enumerate(raw_dictionnary.items()):
+        new_dataset = {"label": label, "backgroundColor": colors[idx], "borderColor": colors[idx], "data": []}
+        for item, data in values.items():
+            new_data = {"x": int(item), "y": data[0], "v": data[0], "label": data[1]}
+            new_dataset['data'].append(new_data)
+        dataset.append(new_dataset)
+    print(dataset)
+    return dataset
+

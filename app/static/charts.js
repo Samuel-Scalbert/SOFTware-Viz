@@ -1,59 +1,59 @@
 Chart.register(ChartDataLabels);
 
-function generateBubbleChart(selector) {
+function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
     var labels = [];
-    var DATA_COUNT = 3;
-    let datamin = 2010;
-    let datamax = 2025;
+    let xdatamin = minyear - 1;
+    let xdatamax = maxyear + 1;
+    let ydatamin = 0;
+    let ydatamax = maxoccu + 2;
 
     const chartConfig = {
         type: 'bubble',
         data: {
-            datasets: [{
-                backgroundColor: "#6C9BCF",
-                borderColor: "#6C9BCF",
-                data: [
-                        {
-                            "x": 2012,
-                            "y": 22,
-                            "v": 22
-                        },
-                        {
-                            "x": 2019,
-                            "y": 9,
-                            "v": 9
-                        },
-                        {
-                            "x": 2020,
-                            "y": 2,
-                            "v": 2
-                        }
-                    ]
-            },
-            {
-                backgroundColor: "#CF0D14",
-                borderColor: "#CF0D14",
-                data: [
-                        {
-                            "x": 2021,
-                            "y": 15,
-                            "v": 15
-                        },
-                        {
-                            "x": 2018,
-                            "y": 18,
-                            "v": 18
-                        },
-                        {
-                            "x": 2023,
-                            "y": 3,
-                            "v": 3
-                        }
-                    ]
-            }]
+            datasets: dictionnary_data_raw
         },
         options: {
+            onClick: (e) => {
+                    console.log(e);
+                },
+            hitRadius :  5,
+            hoverBorderWidth : 15,
+            scales: {
+            y: {suggestedMin: ydatamin,
+                suggestedMax: ydatamax,
+                 ticks:{
+                    display: true,
+                    font: {size:25}
+                    },
+                title:{
+                display:true,
+                    text:'Nb of occurences',
+                    font: {size:25}
+                }
+                },
+            x: {suggestedMin: xdatamin,
+                suggestedMax: xdatamax,
+                ticks:{
+                    display: true,
+                    font: {size:25}
+                    },
+                title:{
+                display:true,
+                    text:'Year',
+                    font: {size:25}
+                }
+                }
+            },
+            events: ['mouseout', 'click'],
             plugins: {
+                legend: {
+                              position: 'top',
+                              labels: {
+                                  font: {
+                                    size: 25
+                                  }
+                             }
+                          },
                 datalabels: {
                     anchor: function(context) {
                         var value = context.dataset.data[context.dataIndex];
@@ -63,32 +63,49 @@ function generateBubbleChart(selector) {
                         var value = context.dataset.data[context.dataIndex];
                         return value.v < 50 ? 'end' : 'center';
                     },
-                    color: function(context) {
-                        var value = context.dataset.data[context.dataIndex];
-                        return value.v < 50 ? context.dataset.backgroundColor : 'white';
-                    },
-                    font: {
-                        weight: 'bold'
+                    color: 'black',
+                    font: {weight: 'bold',
+                           size: 25,
                     },
                     formatter: function(value) {
                         return Math.round(value.v);
                     },
-                    offset: 2,
+                    offset: 4,
                     padding: 0
+                },
+                tooltip:{
+                    padding : 20,
+                    bodyFont: {
+                      size: function(context){
+                          console.log(events)
+                        return document.body.offsetWidth / 100;
+                      },
+                    },
+                    callbacks: {
+                        title: function(context) {
+                            return '';
+                        },
+                        label: function(context) {
+                            return context.raw.label;
+                        },
+                        labelTextColor: function(context) {
+                            let color = context.dataset.backgroundColor;
+                            return color;
+                        },
+                    }
                 }
             },
 
             // Core options
-            aspectRatio: 5 / 3,
             layout: {
-                padding: 16
+                padding: 30
             },
             elements: {
                 point: {
                     radius: function(context) {
                         var value = context.dataset.data[context.dataIndex];
                         var size = context.chart.width;
-                        var base = Math.abs(value.v) / 100;
+                        var base = Math.abs(value.v) / 15;
                         return (size / 24) * base;
                     }
                 }

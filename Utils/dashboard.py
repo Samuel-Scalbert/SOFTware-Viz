@@ -2,7 +2,8 @@ from pyArango.theExceptions import AQLQueryError
 
 def dashboard(db):
     try:
-        file_id_list = db.AQLQuery("FOR file_id in documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures}",rawResults=True)
+        file_id_list = db.AQLQuery("FOR file_id in documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures}",rawResults=True,
+            batchSize=500)
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta
@@ -15,7 +16,7 @@ def dashboard(db):
     dic_struct = {}
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list[:100]:
+    for file_id in file_id_list:
         list_struct.extend(file_id['structures'])
         structures = file_id['structures']
         hal_id = file_id['hal_id']
