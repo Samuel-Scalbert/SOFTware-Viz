@@ -1,4 +1,5 @@
 def software_all_mentions(software, db):
+    list_file_hal_id = []
     query = f"""
     FOR software IN softwares
       FILTER software.software_name.normalizedForm == "{software}"
@@ -40,6 +41,7 @@ def software_all_mentions(software, db):
 
         result_dict[max_field][year][0] += 1
         result_dict[max_field][year][1].append(file_hal_id)
+        list_file_hal_id.append(file_hal_id)
 
         # Update min and max year
         year_int = int(year)
@@ -57,7 +59,7 @@ def software_all_mentions(software, db):
     if max_year == float('-inf'):
         max_year = None
 
-    return result_dict, min_year, max_year, max_occurrences
+    return result_dict, min_year, max_year, max_occurrences, list_file_hal_id
 
 def dataset_creator(raw_dictionnary):
     dataset = []

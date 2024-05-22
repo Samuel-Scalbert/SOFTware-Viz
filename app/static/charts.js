@@ -13,9 +13,6 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
             datasets: dictionnary_data_raw
         },
         options: {
-            onClick: (e) => {
-                    console.log(e);
-                },
             hitRadius :  5,
             hoverBorderWidth : 15,
             scales: {
@@ -77,7 +74,6 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                     padding : 20,
                     bodyFont: {
                       size: function(context){
-                          console.log(events)
                         return document.body.offsetWidth / 100;
                       },
                     },
@@ -115,11 +111,24 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
 
     const ctx = document.querySelector(selector);
 
-    new Chart(ctx.getContext('2d'), chartConfig);
+    const chart = new Chart(ctx.getContext('2d'), chartConfig);
 
+    ctx.onclick = (evt) => {
+      const points = chart.getElementsAtEventForMode(
+        evt,
+        'nearest',
+        { intersect: true },
+        true
+      );
+      if (points.length) {
+          console.log(points)
+          const firstPoint = points[0]
+          const datasetPoint = firstPoint.datasetIndex;
+          const dataPoint = firstPoint.index;
+          console.log(chart.data.datasets[datasetPoint].data[dataPoint].label)
+      }
+    };
 }
-
-
 
 
 function generateCircleChart(selector, value1, value2, value3) {
