@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 def software_all_mentions(software, db):
     list_file_hal_id = []
     query = f"""
@@ -14,9 +16,8 @@ def software_all_mentions(software, db):
         FILTER edge._to == software._id
         LET doc_id = edge._from
         LET doc = DOCUMENT(doc_id)
-        RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date }}
+        RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
     """
-
     try:
         list_attr_halid = db.AQLQuery(query, rawResults=True)
     except Exception as e:
@@ -27,11 +28,22 @@ def software_all_mentions(software, db):
     min_year = float('inf')
     max_year = float('-inf')
     max_occurrences = 0
+    structure_dict = defaultdict(list)
 
     for item in list_attr_halid:
         max_field = item['max_field']
-        year = item['date'][:4]  # Assuming 'date' is in 'YYYY-MM-DD' format
+        year = item['date'].split('-')[0]  # Assuming 'date' is in 'YYYY-MM-DD' format
         file_hal_id = item['file_hal_id']
+
+        file_hal_id = item['file_hal_id']
+        for structure in item['structure']:
+            if file_hal_id in structure_dict:
+                if structure not in structure_dict[file_hal_id]:
+                    structure_dict[file_hal_id].append(structure)
+            else:
+                structure_dict[file_hal_id] = [
+                    structure]  # If the key doesn't exist, create a new list with the structure
+
 
         if max_field not in result_dict:
             result_dict[max_field] = {}
@@ -58,7 +70,6 @@ def software_all_mentions(software, db):
         min_year = None
     if max_year == float('-inf'):
         max_year = None
-
     return result_dict, min_year, max_year, max_occurrences, list_file_hal_id
 
 def dataset_creator(raw_dictionnary):
@@ -71,6 +82,5 @@ def dataset_creator(raw_dictionnary):
             new_data = {"x": int(item), "y": data[0], "v": data[0], "label": data[1]}
             new_dataset['data'].append(new_data)
         dataset.append(new_dataset)
-    print(dataset)
     return dataset
 

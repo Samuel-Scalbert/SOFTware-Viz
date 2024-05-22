@@ -1,9 +1,19 @@
 from pyArango.theExceptions import AQLQueryError
-
-def dashboard(db):
+from tqdm import tqdm
+def dashboard(db, structure):
     try:
-        file_id_list = db.AQLQuery("FOR file_id in documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures}",rawResults=True,
-            batchSize=500)
+        if structure is not None:
+            file_id_list = db.AQLQuery(
+                f"FOR file_id IN documents \
+                    FILTER '{structure}' IN file_id.structures \
+                    RETURN {{ _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures }}",
+                rawResults=True,
+                batchSize=1000)
+        else:
+            file_id_list = db.AQLQuery(
+                "FOR file_id IN documents RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures }",
+                rawResults=True,
+                batchSize=1000)
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta
@@ -16,7 +26,7 @@ def dashboard(db):
     dic_struct = {}
     doc_with_mention = 0
     doc_wno_mention = 0
-    for file_id in file_id_list:
+    for file_id in tqdm(file_id_list[:100]):
         list_struct.extend(file_id['structures'])
         structures = file_id['structures']
         hal_id = file_id['hal_id']

@@ -24,7 +24,7 @@ def init_db():
 init_db()  # Call the init_db function to initialize the db variable
 insert_json_db('./app/static/data/json_files/from_xml','./app/static/result/XML_meta_software', db)
 
-from app.routes import doc, dashboard_route,reset_db,software_count_route, software_mentions_route
+from app.routes import doc, dashboard_route,reset_db,software_count_route, software_mentions_route, api_route
 
 @app.route('/')
 def hello_world():

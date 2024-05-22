@@ -125,10 +125,104 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
           const firstPoint = points[0]
           const datasetPoint = firstPoint.datasetIndex;
           const dataPoint = firstPoint.index;
-          console.log(chart.data.datasets[datasetPoint].data[dataPoint].label)
+          showSources(chart.data.datasets[datasetPoint].data[dataPoint].label);
+          showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label);
+          showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
       }
     };
 }
+
+function showStructures(hal_id_list) {
+    const uniqueStructures = new Set();
+
+    hal_id_list.forEach(hal_id => {
+        fetch(`/api/str/${hal_id}`, {
+            method: "GET"
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            data.forEach(structure => {
+                uniqueStructures.add(structure);
+            });
+
+            const uniqueStructuresArray = Array.from(uniqueStructures);
+
+            // Clear previous content of structureContainer
+            const container = document.getElementById('structureContainer');
+            container.innerHTML = '';
+
+            // Create <p> tags for each structure and append them to a container
+            uniqueStructuresArray.forEach(structure => {
+                const pTag = document.createElement('a');
+                pTag.textContent = structure;
+                pTag.href = `/dashboard/${structure}`;
+                pTag.style.display = "block";
+                container.appendChild(pTag);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching structures:', error);
+        });
+    });
+}
+
+function showAuthors(hal_id_list) {
+    const uniqueStructures = new Set();
+
+    hal_id_list.forEach(hal_id => {
+        fetch(`/api/aut/${hal_id}`, {
+            method: "GET"
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            data.forEach(structure => {
+                uniqueStructures.add(structure);
+            });
+
+            const uniqueStructuresArray = Array.from(uniqueStructures);
+
+            // Clear previous content of structureContainer
+            const container = document.getElementById('authorContainer');
+            container.innerHTML = '';
+
+            // Create <p> tags for each structure and append them to a container
+            uniqueStructuresArray.forEach(structure => {
+                const pTag = document.createElement('div');
+                pTag.textContent = structure;
+                pTag.style.display = "block";
+                container.appendChild(pTag);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching structures:', error);
+        });
+    });
+}
+
+function showSources(hal_id_list) {
+    const softwareName = window.location.pathname.split('/').pop();
+    const container = document.getElementById('sourceContainer');
+    container.innerHTML = ''; // Clearing the container before adding new elements
+
+    hal_id_list.forEach(hal_id => {
+        const pTag = document.createElement('a');
+        pTag.textContent = hal_id;
+        pTag.href = `/doc/${hal_id}/${softwareName}`; // Assuming you want the hal_id to link to its corresponding API
+        pTag.style.display = "block";
+        container.appendChild(pTag);
+    });
+}
+
 
 
 function generateCircleChart(selector, value1, value2, value3) {
