@@ -30,7 +30,7 @@ def software_all_mentions(software, db):
 
     for item in list_attr_halid:
         max_field = item['max_field']
-        year = item['date'].split('-')[0]  # Assuming 'date' is in 'YYYY-MM-DD' format
+        year = item['date'][:4]  # Assuming 'date' is in 'YYYY-MM-DD' format
         file_hal_id = item['file_hal_id']
 
         if max_field not in result_dict:
