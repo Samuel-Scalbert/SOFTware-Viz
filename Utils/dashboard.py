@@ -59,7 +59,10 @@ def dashboard(db, structure):
                     }.get(max_attribute)
 
                     if attribute_dict is not None:
-                        attribute_dict.setdefault(software, []).append(hal_id)
+                        if hal_id in attribute_dict.setdefault(software, []):
+                            continue
+                        else:
+                            attribute_dict.setdefault(software, []).append(hal_id)
 
             for struct in file_structures:
                 structure_dict.setdefault(struct, []).append(hal_id)
