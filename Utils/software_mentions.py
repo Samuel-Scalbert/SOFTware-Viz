@@ -74,10 +74,14 @@ def software_all_mentions(software, db):
 
 def dataset_creator(raw_dictionnary):
     dataset = []
-    colors = ["#fa0519","#2efa05","#1905fa"]
 
-    for idx, (label, values) in enumerate(raw_dictionnary.items()):
-        new_dataset = {"label": label, "backgroundColor": colors[idx], "borderColor": colors[idx], "data": []}
+    for label, values in raw_dictionnary.items():
+        if label == 'created':
+            new_dataset = {"label": label, "backgroundColor": "#fa0519", "borderColor": "#fa0519", "data": []}
+        if label == 'used':
+            new_dataset = {"label": label, "backgroundColor": "#2efa05", "borderColor": "#2efa05", "data": []}
+        if label == 'shared':
+            new_dataset = {"label": label, "backgroundColor": "#1905fa", "borderColor": "#1905fa", "data": []}
         for item, data in values.items():
             new_data = {"x": int(item), "y": data[0], "v": data[0], "label": data[1]}
             new_dataset['data'].append(new_data)
