@@ -20,7 +20,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                 suggestedMax: ydatamax,
                  ticks:{
                     display: true,
-                    font: {size:25}
+                    font: {size:25},
                     },
                 title:{
                 display:true,
@@ -32,13 +32,17 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                 suggestedMax: xdatamax,
                 ticks:{
                     display: true,
-                    font: {size:25}
+                    font: {size:25},
+                    callback: function(value, index, values) {
+                        return Math.floor(value);  // Only show whole numbers (years)
+                    },
+                    stepSize: 1
                     },
                 title:{
                 display:true,
                     text:'Year',
-                    font: {size:25}
-                }
+                    font: {size:25},
+                    }
                 }
             },
             events: ['mouseout', 'click'],
