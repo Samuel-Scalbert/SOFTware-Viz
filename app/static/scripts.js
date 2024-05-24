@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
                     // Set the current clicked element as the previous clicked element
                     previousClickedElement = item;
+                    console.log(item)
 
                     const idValue = item.getAttribute('id');
                     handleClick(idValue, 1);
