@@ -124,11 +124,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
     if (!clickedExcludedElement) {
         // Handle clicks outside the specified elements
         const elements = document.querySelectorAll('.mention_doc_id');
+        const elements_search =document.querySelectorAll('.dropdown-content-search');
             elements.forEach(element => {
                 var dropdownBtn = element.querySelector('.dropbtn');
                 var dropdownContent = element.querySelector('.dropdown-content');
                 dropdownBtn.style.color = '';
                 dropdownContent.style.display = 'none';
+                elements_search.forEach(searchElement => {searchElement.style.display = 'none';})
             })
     }
 });

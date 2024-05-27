@@ -6,6 +6,43 @@ import requests
 import time
 
 def insert_json_db (data_path_json,data_path_xml,db):
+    blacklist = [".js", ".lib", ".py", "@jspatcher/package-dsp", "2020 BirdCLEF", "-Access Research Testbed", "Alibaba",
+             "Amber", "Android", "Angular", "Apache", "Apache Calcite", "Apache Commons Math", "Apache Drill",
+             "Apache Flink", "Apache Giraph", "Apache Hadoop YARN", "Apache Jena", "Apache Kafka", "Apache Livy",
+             "Apache NiFi", "Apache Spark", "Apache Zeppelin", "Apache Zookeeper", "API", "APIs", "App", "application",
+             "Application Programming Interface", "Apps", "Audio", "Audio API", "Berkeley", "BitsAbout", "CentOs Linux",
+             "CloudLocker", "Code", "code", "CouchDB", "d3.js", "d3js", "dashboard", "Dashboard", "Dashboards",
+             "DataBox", "Digi.me", "Distant Viewing Toolkit", "DIY", "dlr", "file", "friendly", "G-core", "G-Core",
+             "google", "Google", "Google 2", "Google Ads", "Google AdSense", "Google API", "Google Chrome",
+             "Google Chromecast", "Google Cloud", "Google Dataset Search", "Google Docs", "Google Drive",
+             "Google Earth Engine", "Google File System", "Google Maps", "Google ngrams", "Google Perch",
+             "Google Photos", "Google Play Store", "Google Scholar", "Google Translate", "Google Vertex AI",
+             "googleadservices", "GoogleMaps", "GoogleNet", "GPL3", "GPredictor", "hasPredecessor", "Helixee",
+             "HyperGraphQL", "-IO", "iOS", "IOS", "isLiteral", "isLocatedIn", "isNew", "ISNotes", "isPartOf",
+             "IterateJoin", "libraries", "library", "-lin-", "linux", "Linux", "linux kernel", "Longformer", "ma",
+             "Manager", "MdErr", "Mediapart", "MirageOS", "MongoDB", "Mon-goDB", "MongoGraph", "Monitor", "mouse",
+             "MS OneDrive", "MyCloud", "MySQL", "MySQL Cluster", "MySQL Workbench", "MyTest.", "MyTest.java",
+             "Natural Language Toolkit", "-nIE", "Ontop 6", "OntoPortal", "OpenCypher", "OpenPDS", "Oracle M", "OS",
+             "package", "PlugDB", "Plugin", "plugins", "Plugins", "Pre-comp", "PrepareFiles.java", "program", "PROGRAM",
+             "programming language", "programs", "Py-", "Pydio", "Query Dashboard", "Query Dashboard (QD)", "Quit",
+             "Quit-Store", "Safari Desktop", "-Sandbox", "script", "script code", "scripting", "scripts", "sd", "-SD",
+             "sd:", "SeaFile", "seL", "seL4", "SERVICE", "service", "SINGLETON", "Singularity", "Snap", "Snapshot",
+             "SolveDB", "SparkSQL", "Spark-SQL", "SPARQKLIS", "SPARQL", "-SPARQL", "SPARQL 1", "SPARQL CONSTRUCT",
+             "SPARQL EndPoint", "SPARQL.js", "SPARQL-Anything", "SPARQLES", "SPAR-QLES", "S-Paths", "SpiderOak", "SQL",
+             "SQL Server", "SQL Server Parallel", "SQL++", "SQLite", "SQUALL", "sseArray", "SSSOM", "Stable Diffusion",
+             "Stardog", "toolbox", "toolkit", "tools", "transformers", "Ubuntu", "Ubuntu Linux", "Unix", "UNIX",
+             "Update", "Virtuoso", "WamEnv API GUI", "Warehouse", "WasAssociatedWith", "wasAttributedTo", "Web",
+             "Web Assembly", "Web Audio", "Web Audio API", "Web Audio Au-dioParams", "Web Audio Modules",
+             "Web Audio Modules API", "Web Audio Plugins", "Web Audio Plugins (WAP)", "Web browser", "Web Browsers",
+             "Web Midi", "Web service", "web service", "Web Worker API", "WebApp", "webapp", "Web-App", "WebAssembly",
+             "WebAssembly APis", "We-bAssembly Modules", "WebAudio", "WebAudio 18", "WebAudio 2",
+             "WebAudio AnalyserNode", "WebAudio API", "WebAudio API eXtension", "WebAudio AudioWorklet",
+             "WebAudio AudioWorkletNodes", "WebAudio F", "WebAudio filter API", "WebAudio Modules",
+             "WebAudio Pl ugins', 'Grid'5000', 'KerasProv++", "WebAudio Plugin", "WebAudio Plugins",
+             "WebAudio Plugins (WAP)", "WebAudio Visual Editor", "WebAudioDesigner", "WebAu-dioDsp", "WebAudioModule",
+             "WebAu-dioModule", "WebAudioModule (WAM)", "WebAudioModules", "WebComponent", "WebComponents", "Webdamlog",
+             "WebGL", "webgl", "WebMIDI", "WebMidi", "WebMidi API", "WebNLG", "Weboob", "WebPd", "WebPd 2", "WebSocket",
+             "WebSub", "windowData"]
 
     if db.hasCollection('documents'):
         documents_collection = db['documents']
@@ -143,12 +180,13 @@ def insert_json_db (data_path_json,data_path_xml,db):
 
                     data_json_get_mentions = data_json.get("mentions")
                     for data_json_get_mention in data_json_get_mentions:
-                        data_json_get_mention['software_name'] = data_json_get_mention['software-name']
-                        data_json_get_mention.pop('software-name')
-                        data_json_get_mention['software_type'] = data_json_get_mention['software-type']
-                        data_json_get_mention.pop('software-type')
-                        software_document = softwares_collection.createDocument(data_json_get_mention)
-                        software_document.save()
+                        if data_json_get_mention['software-name']['normalizedForm'] not in blacklist:
+                            data_json_get_mention['software_name'] = data_json_get_mention['software-name']
+                            data_json_get_mention.pop('software-name')
+                            data_json_get_mention['software_type'] = data_json_get_mention['software-type']
+                            data_json_get_mention.pop('software-type')
+                            software_document = softwares_collection.createDocument(data_json_get_mention)
+                            software_document.save()
 
                         edge = doc_soft_edge.createEdge()
                         edge['_from'] = document_document._id

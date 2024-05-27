@@ -3,6 +3,7 @@ from collections import defaultdict
 
 def doc_info_wsoftware_from_id(file_id,software,db):
     list_context = []
+    software_title = {}
     try:
         file_meta = db.AQLQuery("FOR file_meta in documents FILTER file_meta.file_hal_id == '"+ file_id +"'  RETURN file_meta", rawResults=True)
         if len(file_meta) > 0:
