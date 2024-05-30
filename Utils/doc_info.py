@@ -48,7 +48,7 @@ def doc_info_wsoftware_from_id(file_id,software,db):
 
         if json_software['software_name']['normalizedForm'] == software:
             context = json_software['context']
-            software_tag = f'<span class="software-name">{json_software["software_name"]["normalizedForm"]}</span>'
+            software_tag = f'<span class="software-name"><strong>{json_software["software_name"]["normalizedForm"]}</strong></span>'
             context_wtags = context.replace(json_software['software_name']['normalizedForm'], software_tag)
             list_context.append(context_wtags)
             if not max_attribute:
@@ -92,7 +92,9 @@ def doc_info_from_id(file_id,db):
     for software, attributes in result:
         context_attribute = attributes['ContextAttributes']
         software_counts[software][context_attribute] += 1
-
+    print(file_meta)
+    file_meta = file_meta[0:]
     software_counts = dict(software_counts)
+    software_counts = {"metadata": file_meta,"software":software_counts}
 
     return software_counts
