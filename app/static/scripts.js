@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 dropdownContent.style.display = 'None';
             });
         }
-        const sanitizedId = idValue.replace(/\s/g, '').replace(".", ''); // Remove spaces and "." from the ID
+        const sanitizedId = idValue.replace(/\s/g, '').replace(".", '')?.replace("@",'\\@'); // Remove spaces and "." from the ID
         const elements = document.querySelectorAll(`#${sanitizedId}.mention_doc_id`);
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
