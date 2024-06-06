@@ -16,6 +16,8 @@ def doc_info_wsoftware_from_id(file_id,software,db):
     abstract = (file_meta[0]['abstract'])
     if abstract[0] == 'HAL':
         abstract.remove('HAL')
+    if abstract[0] == 'GROBID':
+        abstract.remove('GROBID')
     citation = (file_meta[0]['citation'])
     max_score = float('-inf')
     max_attribute = None
@@ -57,6 +59,11 @@ def doc_info_wsoftware_from_id(file_id,software,db):
                         max_score = details["score"]
                         max_attribute = attribute
                         software_title = f"{json_software['software_name']['normalizedForm']}: mentions «{attribute}»"
+    try:
+        if not abstract[0].text():
+            abstract = None
+    except AttributeError:
+        abstract = None
     data = [list_context, abstract, citation,software_title,list_other_articles,list_other_softwares]
 
     return data
