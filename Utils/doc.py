@@ -54,7 +54,7 @@ def doc_info_wsoftware_from_id(file_id,software,db):
             context_wtags = context.replace(json_software['software_name']['normalizedForm'], software_tag)
             list_context.append(context_wtags)
             if not max_attribute:
-                for attribute, details in json_software["mentionContextAttributes"].items():
+                for attribute, details in json_software["documentContextAttributes"].items():
                     if details["score"] > max_score:
                         max_score = details["score"]
                         max_attribute = attribute
