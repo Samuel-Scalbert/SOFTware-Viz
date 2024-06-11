@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 from pyArango.connection import Connection
 from Utils.insert_json_db import insert_json_db
+from Utils.dashboard import dashboard
 import sys
 
 app = Flask(__name__,template_folder='templates',static_folder='static')
@@ -26,6 +27,10 @@ try:
 except:
     sys.exit(1)
 insert_json_db('./app/static/data/json_files/from_xml','./app/static/result/XML_meta_software', db)
+structure = None
+global data_dashboard
+data_dashboard = None
+#data_dashboard = dashboard(db, structure)
 
 from app.routes import doc, dashboard_route,reset_db,software_count_route, software_mentions_route, api_route
 

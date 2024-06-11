@@ -72,19 +72,71 @@ def software_all_mentions(software, db):
         max_year = None
     return result_dict, min_year, max_year, max_occurrences, list_file_hal_id
 
+
+def find_duplicate_positions(data_list):
+    position_counts = {}
+
+    for item in data_list:
+        for data_point in item['data']:
+            position = (data_point['x'], data_point['y'])
+            if position in position_counts:
+                position_counts[position] += [item['label']]
+            else:
+                position_counts[position] = [item['label']]
+    position_counts_cleaned = {}
+    for key, value in position_counts.items():
+        if len(value) > 1:
+            position_counts_cleaned[key] = value
+    return position_counts_cleaned
+
+
 def dataset_creator(raw_dictionnary):
     dataset = []
+    dataset_label = {}
 
     for label, values in raw_dictionnary.items():
         if label == 'created':
-            new_dataset = {"label": label, "backgroundColor": "#fa0519", "borderColor": "#fa0519", "data": []}
-        if label == 'used':
-            new_dataset = {"label": label, "backgroundColor": "#2efa05", "borderColor": "#2efa05", "data": []}
-        if label == 'shared':
-            new_dataset = {"label": label, "backgroundColor": "#1905fa", "borderColor": "#1905fa", "data": []}
+            new_dataset = {"label": label, "backgroundColor": "#fa0519", "borderColor": "#fa0519", "data": [],
+                           "order": 0}
+        elif label == 'used':
+            new_dataset = {"label": label, "backgroundColor": "#2efa05", "borderColor": "#2efa05", "data": [],
+                           "order": 1}
+        elif label == 'shared':
+            new_dataset = {"label": label, "backgroundColor": "#1905fa", "borderColor": "#1905fa", "data": [],
+                           "order": 2}
+
         for item, data in values.items():
             new_data = {"x": int(item), "y": data[0], "v": data[0], "label": data[1]}
             new_dataset['data'].append(new_data)
         dataset.append(new_dataset)
+
+    position_counts = find_duplicate_positions(dataset)
+
+    for date,label_list in position_counts.items():
+        if len(label_list) >= 2:
+           for data in dataset:
+               if data['label'] == label_list[0]:
+                  for data_point in data['data']:
+                      if data_point['x'] == date[0] and data_point['v'] == date[1]:
+                        data_point['display_custom'] = 'off'
+                        padding = (data_point['v']*4)*0.01
+                        data_point['x'] -= padding
+
+               elif data['label'] == label_list[1]:
+                  for data_point in data['data']:
+                      if data_point['x'] == date[0] and data_point['v'] == date[1]:
+                        padding = (data_point['v']*4) * 0.01
+                        data_point['x'] += padding
+                        data_point['display_custom'] = 'off'
+
+    dataset_label = {"label": "label", "backgroundColor": "transparent", "borderColor": "transparent",
+                     "data": [],
+                     "order": 3}
+
+    for blank_data_point in position_counts.keys():
+        new_point = {"x": blank_data_point[0], "y": blank_data_point[1], "v": blank_data_point[1], "label": "", "display_custom" : "on"}
+        dataset_label['data'].append(new_point)
+
+    dataset.append(dataset_label)
     return dataset
 

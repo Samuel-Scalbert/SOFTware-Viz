@@ -10,7 +10,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
     const chartConfig = {
         type: 'bubble',
         data: {
-            datasets: dictionnary_data_raw
+            datasets: dictionnary_data_raw,
         },
         options: {
             hitRadius :  5,
@@ -47,34 +47,44 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
             },
             events: ['mouseout', 'click'],
             plugins: {
-                legend: {
-                              position: 'top',
-                              labels: {
-                                  font: {
-                                    size: 25
-                                  }
-                             }
-                          },
+                animation: false,
+                legend : {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: function(size){return 25}
+                        },
+                        filter: function(item, chart) {
+                        return !item.text.includes('label');
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: function(context) {
                         var value = context.dataset.data[context.dataIndex];
-                        return value.v < 50 ? 'end' : 'center';
+                        return value.v < 20 ? 'end' : 'center';
                     },
                     align: function(context) {
                         var value = context.dataset.data[context.dataIndex];
-                        return value.v < 50 ? 'end' : 'center';
+                        return value.v < 20 ? 'end' : 'center';
                     },
                     color: 'black',
                     font: {weight: 'bold',
                            size: 25,
                     },
                     formatter: function(value) {
-                        return Math.round(value.v);
+                        var display = value.display_custom;
+                        if (display){
+                        return display == 'on' ? Math.round(value.v) : null;
+                        }
+                        else return Math.round(value.v);
                     },
-                    offset: 4,
+                    offset: 1,
                     padding: 0
                 },
                 tooltip:{
+                    filter: function (tooltipItem) {
+                    return tooltipItem.label != "label"},
                     padding : 20,
                     bodyFont: {
                       size: function(context){
@@ -107,7 +117,8 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                         var size = context.chart.width;
                         var base = Math.abs(value.v) / 15;
                         return (size / 24) * base;
-                    }
+                    },
+                    "x": function(context){}
                 }
             },
         }
@@ -125,13 +136,15 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
         true
       );
       if (points.length) {
-          console.log(points)
           const firstPoint = points[0]
           const datasetPoint = firstPoint.datasetIndex;
           const dataPoint = firstPoint.index;
-          showSources(chart.data.datasets[datasetPoint].data[dataPoint].label);
-          showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label);
-          showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
+          if (chart.data.datasets[datasetPoint].data[dataPoint].label)
+          {
+              showSources(chart.data.datasets[datasetPoint].data[dataPoint].label);
+              showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label);
+              showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
+          }
       }
     };
 }
