@@ -7,7 +7,7 @@ def software_all_mentions(software, db):
       FILTER software.software_name.normalizedForm == "{software}"
       LET max_field = (
         FOR field IN ['used', 'created', 'shared']
-          LET score = software.mentionContextAttributes[field].score
+          LET score = software.documentContextAttributes[field].score
           SORT score DESC
           LIMIT 1
           RETURN field
@@ -23,7 +23,6 @@ def software_all_mentions(software, db):
     except Exception as e:
         print(f'Error executing query: {e}')
         return None, None, None, None  # Returning None in case of query failure
-
     result_dict = {}
     min_year = float('inf')
     max_year = float('-inf')
@@ -111,32 +110,33 @@ def dataset_creator(raw_dictionnary):
         dataset.append(new_dataset)
 
     position_counts = find_duplicate_positions(dataset)
+    print(position_counts)
+    if position_counts:
+        for date,label_list in position_counts.items():
+            if len(label_list) >= 2:
+               for data in dataset:
+                   if data['label'] == label_list[0]:
+                      for data_point in data['data']:
+                          if data_point['x'] == date[0] and data_point['v'] == date[1]:
+                            data_point['display_custom'] = 'off'
+                            padding = (data_point['v']*4)*0.01
+                            data_point['x'] -= padding
 
-    for date,label_list in position_counts.items():
-        if len(label_list) >= 2:
-           for data in dataset:
-               if data['label'] == label_list[0]:
-                  for data_point in data['data']:
-                      if data_point['x'] == date[0] and data_point['v'] == date[1]:
-                        data_point['display_custom'] = 'off'
-                        padding = (data_point['v']*4)*0.01
-                        data_point['x'] -= padding
+                   elif data['label'] == label_list[1]:
+                      for data_point in data['data']:
+                          if data_point['x'] == date[0] and data_point['v'] == date[1]:
+                            padding = (data_point['v']*4) * 0.01
+                            data_point['x'] += padding
+                            data_point['display_custom'] = 'off'
 
-               elif data['label'] == label_list[1]:
-                  for data_point in data['data']:
-                      if data_point['x'] == date[0] and data_point['v'] == date[1]:
-                        padding = (data_point['v']*4) * 0.01
-                        data_point['x'] += padding
-                        data_point['display_custom'] = 'off'
+        dataset_label = {"label": "label", "backgroundColor": "transparent", "borderColor": "transparent",
+                         "data": [],
+                         "order": 3}
 
-    dataset_label = {"label": "label", "backgroundColor": "transparent", "borderColor": "transparent",
-                     "data": [],
-                     "order": 3}
-
-    for blank_data_point in position_counts.keys():
-        new_point = {"x": blank_data_point[0], "y": blank_data_point[1], "v": blank_data_point[1], "label": "", "display_custom" : "on"}
-        dataset_label['data'].append(new_point)
-
-    dataset.append(dataset_label)
+        for blank_data_point in position_counts.keys():
+            new_point = {"x": blank_data_point[0], "y": blank_data_point[1], "v": blank_data_point[1], "label": "", "display_custom" : "on"}
+            dataset_label['data'].append(new_point)
+        dataset.append(dataset_label)
+        print('dataset',dataset)
     return dataset
 

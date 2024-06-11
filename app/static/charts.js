@@ -1,6 +1,7 @@
 Chart.register(ChartDataLabels);
 
 function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
+    console.log(dictionnary_data_raw);
     var labels = [];
     let xdatamin = minyear - 1;
     let xdatamax = maxyear + 1;
@@ -13,6 +14,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
             datasets: dictionnary_data_raw,
         },
         options: {
+            responsive: true,
             hitRadius :  5,
             hoverBorderWidth : 15,
             scales: {
