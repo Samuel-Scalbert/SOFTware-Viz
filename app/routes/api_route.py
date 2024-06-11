@@ -1,6 +1,6 @@
 from app.app import app, db
 from flask import render_template
-from Utils.software_mentions import software_all_mentions, dataset_creator
+from Utils.software import software_all_mentions, dataset_creator
 from flask import jsonify
 
 @app.route('/api/str/<hal_id>')

@@ -1,6 +1,6 @@
 from app.app import app, db
 from flask import render_template
-from Utils.software_mentions import software_all_mentions, dataset_creator
+from Utils.software import software_all_mentions, dataset_creator
 
 @app.route('/<software>')
 def software_mentions(software):

@@ -6,6 +6,7 @@ import requests
 import time
 
 def insert_json_db (data_path_json,data_path_xml,db):
+    software_document = []
     blacklist = [".js", ".lib", ".py", "@jspatcher/package-dsp", "2020 BirdCLEF", "-Access Research Testbed", "Alibaba",
              "Amber", "Android", "Angular", "Apache", "Apache Calcite", "Apache Commons Math", "Apache Drill",
              "Apache Flink", "Apache Giraph", "Apache Hadoop YARN", "Apache Jena", "Apache Kafka", "Apache Livy",

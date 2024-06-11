@@ -1,5 +1,5 @@
 from app.app import app, db
-from Utils.doc_info import doc_info_from_id, doc_info_wsoftware_from_id
+from Utils.doc import doc_info_from_id, doc_info_wsoftware_from_id
 from flask import render_template
 
 @app.route('/doc')

@@ -45,7 +45,7 @@ def dashboard(db, structure):
                 software = json_software['software_name']['normalizedForm']
 
                 max_attribute, max_score = max(
-                    json_software["documentContextAttributes"].items(),
+                    json_software["mentionContextAttributes"].items(),
                     key=lambda item: item[1]["score"],
                     default=(None, float('-inf'))
                 )

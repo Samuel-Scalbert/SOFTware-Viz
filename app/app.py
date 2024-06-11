@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from pyArango.connection import Connection
-from Utils.insert_json_db import insert_json_db
+from Utils.db import insert_json_db
 from Utils.dashboard import dashboard
 import sys
 
@@ -32,7 +32,7 @@ global data_dashboard
 data_dashboard = None
 #data_dashboard = dashboard(db, structure)
 
-from app.routes import doc, dashboard_route,reset_db,software_count_route, software_mentions_route, api_route
+from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route
 
 @app.route('/')
 def hello_world():
