@@ -1,23 +1,42 @@
 from collections import defaultdict
 
-def software_all_mentions(software, db):
+def software_all_mentions(software,structure, db):
     list_file_hal_id = []
-    query = f"""
-    FOR software IN softwares
-      FILTER software.software_name.normalizedForm == "{software}"
-      LET max_field = (
-        FOR field IN ['used', 'created', 'shared']
-          LET score = software.documentContextAttributes[field].score
-          SORT score DESC
-          LIMIT 1
-          RETURN field
-      )[0]
-      FOR edge IN edge_software
-        FILTER edge._to == software._id
-        LET doc_id = edge._from
-        LET doc = DOCUMENT(doc_id)
-        RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
-    """
+    if structure is None:
+        query = f"""
+        FOR software IN softwares
+          FILTER software.software_name.normalizedForm == "{software}"
+          LET max_field = (
+            FOR field IN ['used', 'created', 'shared']
+              LET score = software.documentContextAttributes[field].score
+              SORT score DESC
+              LIMIT 1
+              RETURN field
+          )[0]
+          FOR edge IN edge_software
+            FILTER edge._to == software._id
+            LET doc_id = edge._from
+            LET doc = DOCUMENT(doc_id)
+            RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
+        """
+    else:
+        query = f"""
+                FOR software IN softwares
+                  FILTER software.software_name.normalizedForm == "{software}"
+                  LET max_field = (
+                    FOR field IN ['used', 'created', 'shared']
+                      LET score = software.documentContextAttributes[field].score
+                      SORT score DESC
+                      LIMIT 1
+                      RETURN field
+                  )[0]
+                  FOR edge IN edge_software
+                    FILTER edge._to == software._id
+                    LET doc_id = edge._from
+                    LET doc = DOCUMENT(doc_id)
+                    FILTER '{structure}' IN doc.structures 
+                    RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
+                """
     try:
         list_attr_halid = db.AQLQuery(query, rawResults=True)
     except Exception as e:
