@@ -1,8 +1,8 @@
 from pyArango.theExceptions import AQLQueryError
 from collections import defaultdict
 
-def doc_info_wsoftware_from_id(file_id,software,db):
-    list_context = []
+def doc_software(file_id,software,db):
+    dic_context = {"used": [],"created":[],"shared":[]}
     software_title = {}
     try:
         file_meta = db.AQLQuery("FOR file_meta in documents FILTER file_meta.file_hal_id == '"+ file_id +"'  RETURN file_meta", rawResults=True)
@@ -19,7 +19,6 @@ def doc_info_wsoftware_from_id(file_id,software,db):
     if abstract[0] == 'GROBID':
         abstract.remove('GROBID')
     citation = (file_meta[0]['citation'])
-    max_score = float('-inf')
     max_attribute = None
 
     query = f"""
@@ -49,22 +48,23 @@ def doc_info_wsoftware_from_id(file_id,software,db):
         json_software = json_software[0]
 
         if json_software['software_name']['normalizedForm'] == software:
+            offsetStart = json_software["software_name"]["offsetStart"]
+            offsetEnd = json_software["software_name"]["offsetEnd"]
             context = json_software['context']
-            software_tag = f'<span class="software-name"><strong>{json_software["software_name"]["normalizedForm"]}</strong></span>'
-            context_wtags = context.replace(json_software['software_name']['normalizedForm'], software_tag)
-            list_context.append(context_wtags)
-            if not max_attribute:
-                for attribute, details in json_software["documentContextAttributes"].items():
-                    if details["score"] > max_score:
-                        max_score = details["score"]
-                        max_attribute = attribute
-                        software_title = f"{json_software['software_name']['normalizedForm']}: mentions «{attribute}»"
+            context = context[:offsetStart] + '<span class="software-name"><strong>' + context[offsetStart:offsetEnd] + '</strong></span>' + context[offsetEnd:]
+            max_score = float('-inf')
+            for attribute, details in json_software["mentionContextAttributes"].items():
+                if details["score"] > max_score:
+                    max_score = details["score"]
+                    max_attribute = attribute
+                    software_title = f"{json_software['software_name']['normalizedForm']}"
+            dic_context[max_attribute].append(context)
     try:
         if not abstract[0].text():
             abstract = None
     except AttributeError:
         abstract = None
-    data = [list_context, abstract, citation,software_title,list_other_articles,list_other_softwares]
+    data = [dic_context, abstract, citation,software_title,list_other_articles,list_other_softwares]
 
     return data
 

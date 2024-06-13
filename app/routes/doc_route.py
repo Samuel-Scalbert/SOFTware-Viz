@@ -1,5 +1,5 @@
 from app.app import app, db
-from Utils.doc import doc_info_from_id, doc_info_wsoftware_from_id
+from Utils.doc import doc_info_from_id, doc_software
 from flask import render_template
 
 @app.route('/doc')
@@ -19,7 +19,7 @@ def doc_info(doc_id):
 
 @app.route('/doc/<doc_id>/<software>')
 def doc_info_wsoftware(doc_id,software):
-    data = doc_info_wsoftware_from_id(doc_id,software,db)
+    data = doc_software(doc_id,software,db)
     data.append(doc_id)
     data.append(software)
     return render_template('pages/doc_wsoftware.html',data = data)
