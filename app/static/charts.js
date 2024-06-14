@@ -155,7 +155,7 @@ function showStructures(hal_id_list) {
     const uniqueStructures = new Set();
 
     hal_id_list.forEach(hal_id => {
-        fetch(`/api/str/${hal_id}`, {
+        fetch(`/api/stru_id/${hal_id}`, {
             method: "GET"
         })
         .then(response => {

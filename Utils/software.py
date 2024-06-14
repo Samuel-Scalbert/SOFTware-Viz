@@ -8,7 +8,7 @@ def software_all_mentions(software,structure, db):
           FILTER software.software_name.normalizedForm == "{software}"
           LET max_field = (
             FOR field IN ['used', 'created', 'shared']
-              LET score = software.documentContextAttributes[field].score
+              LET score = software.mentionContextAttributes[field].score
               SORT score DESC
               LIMIT 1
               RETURN field
@@ -25,7 +25,7 @@ def software_all_mentions(software,structure, db):
                   FILTER software.software_name.normalizedForm == "{software}"
                   LET max_field = (
                     FOR field IN ['used', 'created', 'shared']
-                      LET score = software.documentContextAttributes[field].score
+                      LET score = software.mentionContextAttributes[field].score
                       SORT score DESC
                       LIMIT 1
                       RETURN field

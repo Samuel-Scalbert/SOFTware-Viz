@@ -8,16 +8,29 @@ def dashboard(db, structure):
             query = """
                 FOR file_id IN documents
                 FILTER @structure IN file_id.structures
-                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures }
+                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id}
+            """
+            query_structure = """
+                FOR file_id IN documents
+                    FILTER @structure IN file_id.structures
+                    FOR struc in file_id.structures
+                    RETURN DISTINCT struc
             """
             bind_vars = {'structure': structure}
             file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=1000)
+            struct_list = db.AQLQuery(query_structure, bindVars=bind_vars, rawResults=True, batchSize=1000)
         else:
             query = """
                 FOR file_id IN documents
-                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id, structures: file_id.structures }
+                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id}
             """
+            query_structure = """
+                        FOR file_id IN documents
+                            FOR struc in file_id.structures
+                            RETURN DISTINCT struc
+                        """
             file_id_list = db.AQLQuery(query, rawResults=True, batchSize=1000)
+            struct_list = db.AQLQuery(query_structure, rawResults=True, batchSize=1000)
     except AQLQueryError:
         return 'not file'
 
@@ -25,13 +38,14 @@ def dashboard(db, structure):
     used_software = Counter()
     created_software = Counter()
     shared_software = Counter()
-    structure_dict = {}
+    structure_dict = []
     nb_mention = 0
     doc_with_mention = 0
     doc_wno_mention = 0
+    file_structures = list(struct_list)
+
 
     for file in tqdm(file_id_list):
-        file_structures = file['structures']
         hal_id = file['hal_id']
         file_id = file['_id']
 
@@ -65,10 +79,9 @@ def dashboard(db, structure):
                             attribute_dict.setdefault(software, []).append(hal_id)
 
             for struct in file_structures:
-                structure_dict.setdefault(struct, []).append(hal_id)
+                structure_dict.append(struct)
         else:
             doc_wno_mention += 1
-
     return [
         attributes_count,
         doc_with_mention,

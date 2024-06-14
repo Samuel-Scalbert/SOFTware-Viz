@@ -50,29 +50,47 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
     document.querySelectorAll('.structure').forEach(item => {
-        item.addEventListener('click', event => {
-            const elements = document.querySelectorAll('.mention_doc_id');
-            elements.forEach(element => {
-                var dropdownBtn = element.querySelector('.dropbtn');
-                var dropdownContent = element.querySelector('.dropdown-content');
-                dropdownBtn.style.color = '';
-                dropdownContent.style.display = 'none';
-            });
-            item.querySelectorAll('div').forEach(child_div => {
-                // Get all div elements
+    item.addEventListener('click', event => {
+        // Reset the dropdowns
+        const elements = document.querySelectorAll('.mention_doc_id');
+        elements.forEach(element => {
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            dropdownBtn.style.color = '';
+            dropdownContent.style.display = 'none';
+        });
+
+        // Fetch data based on the clicked item text content
+        fetch(`/api/id_struc/${item.textContent.trim()}`, {
+            method: "GET"
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Number of documents:', data.length);
+            data.forEach(fileHalId => {
                 const divElements = document.querySelectorAll('.dropdown-content');
                 // Iterate over each div element
                 divElements.forEach(div => {
-                    if (div.textContent.trim() === child_div.className) {
-                        const element = div.parentNode.parentNode;
+                    if (div.textContent.trim() === fileHalId) {
+                        const element = div.closest('.mention_doc_id');
                         var dropdownBtn = element.querySelector('.dropbtn');
                         var dropdownContent = element.querySelector('.dropdown-content');
                         dropdownBtn.style.color = 'red';
                     }
                 });
             });
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
         });
     });
+});
+
 
     function displayResult(result) {
         const content = result.map((list) => {
