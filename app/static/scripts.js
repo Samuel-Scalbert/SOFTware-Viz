@@ -72,24 +72,52 @@ document.addEventListener('DOMContentLoaded', (event) => {
         })
         .then(data => {
             console.log('Number of documents:', data.length);
-            data.forEach(fileHalId => {
-                const divElements = document.querySelectorAll('.dropdown-content');
-                // Iterate over each div element
-                divElements.forEach(div => {
-                    if (div.textContent.trim() === fileHalId) {
-                        const element = div.closest('.mention_doc_id');
+
+            // Split the data into chunks of 50
+            function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                    chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+            }
+
+            const dataChunks = chunkArray(data, 50);
+
+            // Process each chunk sequentially
+            function processChunk(chunkIndex) {
+                if (chunkIndex >= dataChunks.length) {
+                    return;
+                }
+
+                console.time(`Process Chunk ${chunkIndex + 1}`);
+                const chunk = dataChunks[chunkIndex];
+
+                chunk.forEach(software_name => {
+                    software = CSS.escape(software_name).replace(" ", '').replace(".", '')
+                    software = CSS.escape(software)
+                    console.log("\'",software,"\'")
+                    const soft_div = document.querySelectorAll(`#${software}.mention_doc_id`);
+                    soft_div.forEach(element => {
                         var dropdownBtn = element.querySelector('.dropbtn');
-                        var dropdownContent = element.querySelector('.dropdown-content');
                         dropdownBtn.style.color = 'red';
-                    }
+                    });
                 });
-            });
+
+                console.timeEnd(`Process Chunk ${chunkIndex + 1}`);
+
+                // Process the next chunk
+                setTimeout(() => processChunk(chunkIndex + 1), 0);
+            }
+
+            processChunk(0);
         })
         .catch(error => {
             console.error('Error fetching data:', error);
         });
     });
 });
+
 
 
     function displayResult(result) {
