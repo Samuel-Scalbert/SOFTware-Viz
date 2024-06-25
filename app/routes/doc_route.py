@@ -14,8 +14,8 @@ def doc_url():
 
 @app.route('/doc/<doc_id>')
 def doc_info(doc_id):
-    result = doc_info_from_id(doc_id,db)
-    return result
+    data = doc_info_from_id(doc_id,db)
+    return render_template('pages/doc.html', data=data)
 
 @app.route('/doc/<doc_id>/<software>')
 def doc_info_wsoftware(doc_id,software):
