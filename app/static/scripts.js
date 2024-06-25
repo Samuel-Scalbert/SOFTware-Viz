@@ -94,9 +94,20 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 const chunk = dataChunks[chunkIndex];
 
                 chunk.forEach(software_name => {
-                    software = CSS.escape(software_name).replace(" ", '').replace(".", '')
-                    software = CSS.escape(software)
-                    console.log("\'",software,"\'")
+                    const software = software_name ? software_name
+                          .replace(/\s/g, '')  // Remove all whitespace
+                          .replace(/\./g, '')  // Remove all periods
+                          .replace(/@/g, '')  // Escape '@'
+                          .replace(/\(/g, '')  // Escape '('
+                          .replace(/\)/g, '')  // Escape ')'
+                          .replace(/\*/g, '')  // Escape '*'
+                          .replace(/[0-9]/g, '')  // Escape [0,9]
+                          .replace(/\//g, '')  // Escape \
+                          .replace(/\+/g, '')  // Escape '+'
+                          .replace(/\'/g, '')  // Escape '
+                          .replace(/\"/g, '')  // Escape "
+                          : '';
+                    console.log(software)
                     const soft_div = document.querySelectorAll(`#${software}.mention_doc_id`);
                     soft_div.forEach(element => {
                         var dropdownBtn = element.querySelector('.dropbtn');
@@ -137,8 +148,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 dropdownContent.style.display = 'None';
             });
         }
-        const sanitizedId = idValue.replace(/\s/g, '').replace(".", '')?.replace("@",'\\@'); // Remove spaces and "." from the ID
+        const sanitizedId = idValue ? idValue
+          .replace(/\s/g, '')  // Remove all whitespace
+          .replace(/\./g, '')  // Remove all periods
+          .replace(/@/g, '\\@')  // Escape '@'
+          .replace(/\+/g, '\\+')  // Escape '+'
+          : '';
+
+        const csssanitizedId = CSS.escape(sanitizedId)
+        console.log(sanitizedId, csssanitizedId)
         const elements = document.querySelectorAll(`#${sanitizedId}.mention_doc_id`);
+        console.log(elements)
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
             var dropdownContent = element.querySelector('.dropdown-content');

@@ -21,7 +21,7 @@ def links_id_from_struc(struc):
         FOR software IN edge_software 
         FILTER software._from == doc._id
         LET software_name = DOCUMENT(software._to)
-        RETURN Distinct software_name.software_name.rawForm
+        RETURN Distinct software_name.software_name.normalizedForm
     '''
     response = db.AQLQuery(query, rawResults=True, batchSize=3000)
     print(len(response))
