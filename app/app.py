@@ -30,7 +30,7 @@ insert_json_db('./app/static/data/json_files/from_xml','./app/static/result/XML_
 structure = None
 global data_dashboard
 data_dashboard = None
-#data_dashboard = dashboard(db, structure)
+data_dashboard = dashboard(db, structure)
 
 from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route
 
