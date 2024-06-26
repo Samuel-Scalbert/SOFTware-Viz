@@ -90,31 +90,31 @@
 > $ python -m venv env
 > ```
 >
-> 4. Install the dependencies:
-> ```console
-> $ pip install -r requirements.txt
-> ```
->
-> 5. Install docker image
+> 4. Install docker image
 > ```console
 > $ docker pull arangodb/arangodb:3.11.6
 > ```
 >
-> 6. Launch docker container
+> 5. Launch docker container
 > ```console
 > $ docker run -p 8529:8529 -e ARANGO_NO_AUTH=1 arangodb/arangodb:3.11.6
 > ```
 >
-> 7. Create the database "SOF-viz"
+> 6. Create the database "SOF-viz"
 >```
 > go to the port http://localhost:8529/ and create mannualy the database named "SOF-viz"
 >```
 >
-> 8. Launch the virtualenv
+> 7. Launch the virtualenv
 > ```console
 > $ source env/bin/activate
 > ```
 >
+> 8. Install the dependencies:
+> ```console
+> $ pip install -r requirement.txt
+> ```
+> 
 > 9. Launch the app
 > ```console
 > $ python run.py
