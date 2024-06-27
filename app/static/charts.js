@@ -143,7 +143,8 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
           const dataPoint = firstPoint.index;
           if (chart.data.datasets[datasetPoint].data[dataPoint].label)
           {
-              showSources(chart.data.datasets[datasetPoint].data[dataPoint].label);
+              const software = document.getElementById("software_name")
+              showSources(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
               showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label);
               showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
           }
@@ -228,8 +229,14 @@ function showAuthors(hal_id_list) {
     });
 }
 
-function showSources(hal_id_list) {
-    const softwareName = window.location.pathname.split('/').pop();
+function showSources(hal_id_list, software) {
+    let softwareName;
+    if (software !== "") {
+        softwareName = software;
+    } else {
+        softwareName = window.location.pathname.split('/').pop();
+    }
+
     const container = document.getElementById('sourceContainer');
     container.innerHTML = ''; // Clearing the container before adding new elements
 
