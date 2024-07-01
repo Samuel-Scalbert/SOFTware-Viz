@@ -4,46 +4,19 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 import requests
 import time
+from openpyxl import load_workbook
 
 def insert_json_db (data_path_json,data_path_xml,db):
     software_document = []
-    blacklist = [".js", ".lib", ".py", "@jspatcher/package-dsp", "2020 BirdCLEF", "-Access Research Testbed", "Alibaba",
-             "Amber", "Android", "Angular", "Apache", "Apache Calcite", "Apache Commons Math", "Apache Drill",
-             "Apache Flink", "Apache Giraph", "Apache Hadoop YARN", "Apache Jena", "Apache Kafka", "Apache Livy",
-             "Apache NiFi", "Apache Spark", "Apache Zeppelin", "Apache Zookeeper", "API", "APIs", "App", "application",
-             "Application Programming Interface", "Apps", "Audio", "Audio API", "Berkeley", "BitsAbout", "CentOs Linux",
-             "CloudLocker", "Code", "code", "CouchDB", "d3.js", "d3js", "dashboard", "Dashboard", "Dashboards",
-             "DataBox", "Digi.me", "Distant Viewing Toolkit", "DIY", "dlr", "file", "friendly", "G-core", "G-Core",
-             "google", "Google", "Google 2", "Google Ads", "Google AdSense", "Google API", "Google Chrome",
-             "Google Chromecast", "Google Cloud", "Google Dataset Search", "Google Docs", "Google Drive",
-             "Google Earth Engine", "Google File System", "Google Maps", "Google ngrams", "Google Perch",
-             "Google Photos", "Google Play Store", "Google Scholar", "Google Translate", "Google Vertex AI",
-             "googleadservices", "GoogleMaps", "GoogleNet", "GPL3", "GPredictor", "hasPredecessor", "Helixee",
-             "HyperGraphQL", "-IO", "iOS", "IOS", "isLiteral", "isLocatedIn", "isNew", "ISNotes", "isPartOf",
-             "IterateJoin", "libraries", "library", "-lin-", "linux", "Linux", "linux kernel", "Longformer", "ma",
-             "Manager", "MdErr", "Mediapart", "MirageOS", "MongoDB", "Mon-goDB", "MongoGraph", "Monitor", "mouse",
-             "MS OneDrive", "MyCloud", "MySQL", "MySQL Cluster", "MySQL Workbench", "MyTest.", "MyTest.java",
-             "Natural Language Toolkit", "-nIE", "Ontop 6", "OntoPortal", "OpenCypher", "OpenPDS", "Oracle M", "OS",
-             "package", "PlugDB", "Plugin", "plugins", "Plugins", "Pre-comp", "PrepareFiles.java", "program", "PROGRAM",
-             "programming language", "programs", "Py-", "Pydio", "Query Dashboard", "Query Dashboard (QD)", "Quit",
-             "Quit-Store", "Safari Desktop", "-Sandbox", "script", "script code", "scripting", "scripts", "sd", "-SD",
-             "sd:", "SeaFile", "seL", "seL4", "SERVICE", "service", "SINGLETON", "Singularity", "Snap", "Snapshot",
-             "SolveDB", "SparkSQL", "Spark-SQL", "SPARQKLIS", "SPARQL", "-SPARQL", "SPARQL 1", "SPARQL CONSTRUCT",
-             "SPARQL EndPoint", "SPARQL.js", "SPARQL-Anything", "SPARQLES", "SPAR-QLES", "S-Paths", "SpiderOak", "SQL",
-             "SQL Server", "SQL Server Parallel", "SQL++", "SQLite", "SQUALL", "sseArray", "SSSOM", "Stable Diffusion",
-             "Stardog", "toolbox", "toolkit", "tools", "transformers", "Ubuntu", "Ubuntu Linux", "Unix", "UNIX",
-             "Update", "Virtuoso", "WamEnv API GUI", "Warehouse", "WasAssociatedWith", "wasAttributedTo", "Web",
-             "Web Assembly", "Web Audio", "Web Audio API", "Web Audio Au-dioParams", "Web Audio Modules",
-             "Web Audio Modules API", "Web Audio Plugins", "Web Audio Plugins (WAP)", "Web browser", "Web Browsers",
-             "Web Midi", "Web service", "web service", "Web Worker API", "WebApp", "webapp", "Web-App", "WebAssembly",
-             "WebAssembly APis", "We-bAssembly Modules", "WebAudio", "WebAudio 18", "WebAudio 2",
-             "WebAudio AnalyserNode", "WebAudio API", "WebAudio API eXtension", "WebAudio AudioWorklet",
-             "WebAudio AudioWorkletNodes", "WebAudio F", "WebAudio filter API", "WebAudio Modules",
-             "WebAudio Pl ugins', 'Grid'5000', 'KerasProv++", "WebAudio Plugin", "WebAudio Plugins",
-             "WebAudio Plugins (WAP)", "WebAudio Visual Editor", "WebAudioDesigner", "WebAu-dioDsp", "WebAudioModule",
-             "WebAu-dioModule", "WebAudioModule (WAM)", "WebAudioModules", "WebComponent", "WebComponents", "Webdamlog",
-             "WebGL", "webgl", "WebMIDI", "WebMidi", "WebMidi API", "WebNLG", "Weboob", "WebPd", "WebPd 2", "WebSocket",
-             "WebSub", "windowData"]
+
+    workbook = load_workbook(filename='./app/static/data/Logiciels_Blacklist_et_autres_remarques.xlsx')
+    sheet = workbook.active
+    data = []
+    for row in sheet.iter_rows(values_only=True):
+        data.append(row)
+    blacklist = []
+    for row in data[1:]:
+        blacklist.append(row[0])
 
     if db.hasCollection('documents'):
         documents_collection = db['documents']
