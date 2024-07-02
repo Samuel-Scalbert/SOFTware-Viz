@@ -6,8 +6,8 @@ import re
 @app.route('/dashboard')
 def dashboard_route():
     structure = None
+    data_dashboard = dashboard(db, structure)
     data = data_dashboard
-    print(data[4])
     #print("Template search path:",app.jinja_loader.searchpath)
     return render_template('pages/dashboard.html',data = data)
 
