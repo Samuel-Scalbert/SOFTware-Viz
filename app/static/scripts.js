@@ -49,9 +49,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         }
     }
+   let last_clicked_structure = null; // Declare last_clicked_structure as a mutable variable
+
     document.querySelectorAll('.structure').forEach(item => {
-    item.addEventListener('click', event => {
-        // Reset the dropdowns
+        item.addEventListener('click', event => {
+            // Reset the dropdowns
+            if (last_clicked_structure) { // Check if last_clicked_structure is not null
+                last_clicked_structure.style.color = 'black'; // Reset color to black
+            }
+            last_clicked_structure = item; // Assign the clicked item to last_clicked_structure
+            item.style.color = 'red'; // Change the color of the clicked item to red
         const elements = document.querySelectorAll('.mention_doc_id');
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
