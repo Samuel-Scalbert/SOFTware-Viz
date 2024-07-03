@@ -44,7 +44,6 @@ def dashboard(db, structure):
     doc_wno_mention = 0
     file_structures = list(struct_list)
 
-
     for file in tqdm(file_id_list):
         hal_id = file['hal_id']
         file_id = file['_id']
@@ -78,8 +77,6 @@ def dashboard(db, structure):
                         else:
                             attribute_dict.setdefault(software, []).append(hal_id)
 
-            for struct in file_structures:
-                structure_dict.append(struct)
         else:
             doc_wno_mention += 1
     return [
@@ -90,5 +87,5 @@ def dashboard(db, structure):
         used_software,
         shared_software,
         created_software,
-        structure_dict
+        file_structures
     ]
