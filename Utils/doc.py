@@ -42,11 +42,14 @@ def doc_software(file_id,software,db):
             """
 
     list_other_articles = db.AQLQuery(query, rawResults=True)
-    for id_software_doc in db['edge_software'].getEdges(file_meta_id):
-        to_id = id_software_doc['_to']
-        json_software = db.AQLQuery("LET file_meta = DOCUMENT('" + to_id + "') RETURN file_meta", rawResults=True)
-        json_software = json_software[0]
-
+    query = f"""
+                    FOR ids IN edge_software
+                        FILTER ids._from == '{file_meta_id}'
+                        LET software_mention = DOCUMENT(ids._to)
+                        RETURN distinct software_mention
+                """
+    json_software_all = db.AQLQuery(query, rawResults=True)
+    for json_software in json_software_all:
         if json_software['software_name']['normalizedForm'] == software:
             offsetStart = json_software["software_name"]["offsetStart"]
             offsetEnd = json_software["software_name"]["offsetEnd"]
@@ -65,7 +68,6 @@ def doc_software(file_id,software,db):
     except AttributeError:
         abstract = None
     data = [dic_context, abstract, citation,software_title,list_other_articles,list_other_softwares]
-    print(data)
 
     return data
 
@@ -137,6 +139,5 @@ def doc_info_from_id(file_id,db):
     except AttributeError:
         abstract = None
     data = [dic_context, abstract, citation, software_title, list_other_softwares]
-    print(data)
 
     return data

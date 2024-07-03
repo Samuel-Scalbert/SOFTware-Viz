@@ -6,6 +6,19 @@ import requests
 import time
 from openpyxl import load_workbook
 
+def duplicates_JSON(lst):
+    seen = set()
+    duplicates = []
+
+    for item in lst:
+        item_hashable = str(item)
+        if item_hashable in seen:
+            duplicates.append(item)
+        else:
+            seen.add(item_hashable)
+
+    return duplicates
+
 def insert_json_db (data_path_json,data_path_xml,db):
     software_document = []
 
@@ -151,27 +164,33 @@ def insert_json_db (data_path_json,data_path_xml,db):
             if f"{file_name}.software.json" in data_json_files:
                 with open(f'{data_path_json}/{file_name}.software.json', 'r') as json_file:
                     data_json = json.load(json_file)
-
                     data_json_get_mentions = data_json.get("mentions")
-                    for data_json_get_mention in data_json_get_mentions:
-                        if data_json_get_mention['software-name']['normalizedForm'] not in blacklist:
-                            data_json_get_mention['software_name'] = data_json_get_mention['software-name']
-                            data_json_get_mention.pop('software-name')
-                            data_json_get_mention['software_type'] = data_json_get_mention['software-type']
-                            data_json_get_mention.pop('software-type')
-                            software_document = softwares_collection.createDocument(data_json_get_mention)
+
+                    # Remove duplicates
+                    for elm in duplicates_JSON(data_json_get_mentions):
+                        data_json_get_mentions.remove(elm)
+
+                    # Process each mention
+                    for mention in data_json_get_mentions:
+                        if mention['software-name']['normalizedForm'] not in blacklist:
+                            mention['software_name'] = mention.pop('software-name')
+                            mention['software_type'] = mention.pop('software-type')
+                            software_document = softwares_collection.createDocument(mention)
                             software_document.save()
 
-                        edge = doc_soft_edge.createEdge()
-                        edge['_from'] = document_document._id
-                        edge['_to'] = software_document._id
-                        edge.save()
+                            # Create edge from document to software
+                            edge = doc_soft_edge.createEdge()
+                            edge['_from'] = document_document._id
+                            edge['_to'] = software_document._id
+                            edge.save()
 
+                    # Process each reference
                     data_json_get_references = data_json.get("references")
-                    for data_json_get_reference in data_json_get_references:
-                        references_document = references_collection.createDocument(data_json_get_reference)
+                    for reference in data_json_get_references:
+                        references_document = references_collection.createDocument(reference)
                         references_document.save()
 
+                        # Create edge from document to reference
                         edge = doc_ref_edge.createEdge()
                         edge['_from'] = document_document._id
                         edge['_to'] = references_document._id
