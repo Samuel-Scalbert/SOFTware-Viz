@@ -35,6 +35,6 @@ data_dashboard = None
 from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route
 
 @app.route('/')
-def hello_world():
+def home():
     return render_template('partials/conteneur.html')
 
