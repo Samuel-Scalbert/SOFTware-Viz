@@ -72,9 +72,9 @@ fetch(`/api/line_chart`, {
         }
     };
 
-    // Render the chart
+    // Render the chart and store the instance
     const ctx = document.getElementById('lineChart').getContext('2d');
-    new Chart(ctx, chartConfig);
+    window.myLineChart = new Chart(ctx, chartConfig); // Store the chart instance in a global variable
 })
 .catch(error => {
     console.error('Error:', error);

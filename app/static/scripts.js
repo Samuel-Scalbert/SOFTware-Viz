@@ -1,3 +1,12 @@
+function updateLineChartData(newUsedData, newCreatedData, newSharedData) {
+    if (window.myLineChart) {
+        window.myLineChart.data.datasets[0].data = newUsedData;
+        window.myLineChart.data.datasets[1].data = newCreatedData;
+        window.myLineChart.data.datasets[2].data = newSharedData;
+        window.myLineChart.update();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
 
     const mentionDocElements = document.querySelectorAll('.mention_doc_id');
@@ -49,16 +58,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         }
     }
-   let last_clicked_structure = null; // Declare last_clicked_structure as a mutable variable
+    let last_clicked_structure = null; // Declare last_clicked_structure as a mutable variable
 
     document.querySelectorAll('.structure').forEach(item => {
         item.addEventListener('click', event => {
-            // Reset the dropdowns
-            if (last_clicked_structure) { // Check if last_clicked_structure is not null
-                last_clicked_structure.style.color = 'black'; // Reset color to black
-            }
-            last_clicked_structure = item; // Assign the clicked item to last_clicked_structure
-            item.style.color = 'red'; // Change the color of the clicked item to red
+        // Reset the dropdowns
+        if (last_clicked_structure) { // Check if last_clicked_structure is not null
+            last_clicked_structure.style.color = 'black'; // Reset color to black
+        }
+        last_clicked_structure = item; // Assign the clicked item to last_clicked_structure
+        item.style.color = 'red'; // Change the color of the clicked item to red
+        fetch(`/api/line_chart/${item.textContent.trim()}`, {
+                method: "GET"
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(data); // Log the fetched data to verify its structure
+
+                // Extract datasets from the fetched data
+                const usedData = data[0];
+                const createdData = data[1];
+                const sharedData = data[2];
+                updateLineChartData(usedData, createdData, sharedData)
+                })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         const elements = document.querySelectorAll('.mention_doc_id');
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
