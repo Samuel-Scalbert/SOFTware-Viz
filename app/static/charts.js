@@ -1,3 +1,4 @@
+Chart.register(ChartDataLabels);
 
 function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
     var labels = [];
@@ -13,49 +14,48 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
         },
         options: {
             responsive: true,
-            hitRadius :  5,
-            hoverBorderWidth : 15,
             scales: {
-            y: {suggestedMin: ydatamin,
-                suggestedMax: ydatamax,
-                 ticks:{
-                    display: true,
-                    font: {size:25},
+                y: {
+                    suggestedMin: ydatamin,
+                    suggestedMax: ydatamax,
+                    ticks: {
+                        display: true,
+                        font: { size: 25 },
                     },
-                title:{
-                display:true,
-                    text:'Nb of occurences',
-                    font: {size:25}
-                }
+                    title: {
+                        display: false,
+                        text: 'Nb of occurences',
+                        font: { size: 25 }
+                    }
                 },
-            x: {suggestedMin: xdatamin,
-                suggestedMax: xdatamax,
-                ticks:{
-                    display: true,
-                    font: {size:25},
-                    callback: function(value, index, values) {
-                        return Math.floor(value);  // Only show whole numbers (years)
+                x: {
+                    suggestedMin: xdatamin,
+                    suggestedMax: xdatamax,
+                    ticks: {
+                        display: true,
+                        font: { size: 25 },
+                        callback: function(value, index, values) {
+                            return Math.floor(value);  // Only show whole numbers (years)
+                        },
+                        stepSize: 1
                     },
-                    stepSize: 1
-                    },
-                title:{
-                display:true,
-                    text:'Year',
-                    font: {size:25},
+                    title: {
+                        display: false,
+                        text: 'Year',
+                        font: { size: 25 }
                     }
                 }
             },
-            events: ['mouseout', 'click'],
+            events: ['mouseout'], // Remove 'click' from here
             plugins: {
-                animation: false,
-                legend : {
+                legend: {
                     position: 'top',
                     labels: {
                         font: {
-                            size: function(size){return 25}
+                            size: function(size) { return 25; }
                         },
                         filter: function(item, chart) {
-                        return !item.text.includes('label');
+                            return !item.text.includes('label');
                         }
                     }
                 },
@@ -69,41 +69,21 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                         return value.v < 20 ? 'end' : 'center';
                     },
                     color: 'black',
-                    font: {weight: 'bold',
-                           size: 25,
+                    font: {
+                        weight: 'bold',
+                        size: 25,
                     },
                     formatter: function(value) {
                         var display = value.display_custom;
-                        if (display){
-                        return display == 'on' ? Math.round(value.v) : null;
+                        if (display) {
+                            return display == 'on' ? Math.round(value.v) : null;
                         }
                         else return Math.round(value.v);
                     },
                     offset: 1,
                     padding: 0
                 },
-                tooltip:{
-                    filter: function (tooltipItem) {
-                    return tooltipItem.label != "label"},
-                    padding : 20,
-                    bodyFont: {
-                      size: function(context){
-                        return document.body.offsetWidth / 100;
-                      },
-                    },
-                    callbacks: {
-                        title: function(context) {
-                            return '';
-                        },
-                        label: function(context) {
-                            return context.raw.label;
-                        },
-                        labelTextColor: function(context) {
-                            let color = context.dataset.backgroundColor;
-                            return color;
-                        },
-                    }
-                }
+                tooltip: { enabled: false }
             },
 
             // Core options
@@ -117,15 +97,21 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                         var size = context.chart.width;
                         var base = Math.abs(value.v) / 15;
                         return (size / 24) * base;
-                    },
-                    "x": function(context){}
+                    }
                 }
             },
+            // Disable animations
+            animation: {
+                duration: 0
+            },
+            hover: {
+                animationDuration: 0
+            },
+            responsiveAnimationDuration: 0
         }
     };
 
     const ctx = document.querySelector(selector);
-
     const chart = new Chart(ctx.getContext('2d'), chartConfig);
 
     ctx.onclick = (evt) => {

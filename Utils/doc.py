@@ -131,13 +131,14 @@ def doc_info_from_id(file_id,db):
                 if details["score"] > max_score:
                     max_score = details["score"]
                     max_attribute = attribute
-                    software_title = f"{json_software['software_name']['normalizedForm']}"
             dic_context[max_attribute].append(context)
     try:
         if not abstract[0].text():
             abstract = None
     except AttributeError:
         abstract = None
-    data = [dic_context, abstract, citation, software_title, list_other_softwares]
+    title = db.AQLQuery(f"LET doc = DOCUMENT('{file_meta_id}') RETURN doc.title", rawResults=True)
+    title = title[0]
+    data = [dic_context, abstract, citation, list_other_softwares, title]
 
     return data
