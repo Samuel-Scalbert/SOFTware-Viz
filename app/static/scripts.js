@@ -12,7 +12,6 @@ function updateRecapData(newUsedData, newCreatedData, newSharedData, newCircleDa
 }
 
 document.addEventListener('DOMContentLoaded', (event) => {
-
     const mentionDocElements = document.querySelectorAll('.mention_doc_id');
     const availableSoftware = new Set();
     mentionDocElements.forEach(item => {
