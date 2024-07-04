@@ -195,3 +195,46 @@ def insert_json_db (data_path_json,data_path_xml,db):
                         edge['_from'] = document_document._id
                         edge['_to'] = references_document._id
                         edge.save()
+                # Define the AQL query to fetch software names and their counts
+                query = f"""
+                FOR doc IN edge_software
+                    FILTER doc._from == "{document_document._id}"
+                    LET software = DOCUMENT(doc._to)
+                    COLLECT softwareName = software.software_name.normalizedForm WITH COUNT INTO count
+                    RETURN {{ softwareName, count }}
+                """
+
+                # Execute the AQL query to get software names and counts
+                all_software_dict = db.AQLQuery(query, rawResults=True)
+
+                # Fetch distinct software names
+                distinct_query = f"""
+                FOR doc IN edge_software
+                    FILTER doc._from == "{document_document._id}"
+                    LET software = DOCUMENT(doc._to)
+                    RETURN DISTINCT software.software_name.normalizedForm
+                """
+                software_name_list = db.AQLQuery(distinct_query, rawResults=True)
+
+                # Convert software names and counts to a dictionary
+                dict_software = {software_dict['softwareName']: software_dict['count'] for software_dict in
+                                 all_software_dict}
+
+                # Process software names containing hyphens and update as needed
+                for software_name in software_name_list:
+                    if "-" in software_name:
+                        software_name_cleaned = software_name.replace('-', '')
+                        if software_name_cleaned in dict_software and dict_software[software_name] < dict_software[
+                            software_name_cleaned]:
+                            # Example: Update software name in the database
+                            update_query = f"""
+                            FOR doc IN edge_software
+                                FILTER doc._from == "{document_document._id}"
+                                LET software = DOCUMENT(doc._to)
+                                FILTER software.software_name.normalizedForm == "{software_name}"
+                                UPDATE software WITH {{ software_name: {{ normalizedForm: "{software_name_cleaned}" }} }} IN softwares
+                            """
+                            try:
+                                db.AQLQuery(update_query)
+                            except Exception as e:
+                                print(f"Error updating document: {e}")
