@@ -1,7 +1,5 @@
-Chart.register(ChartDataLabels);
 
 function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
-    console.log(dictionnary_data_raw);
     var labels = [];
     let xdatamin = minyear - 1;
     let xdatamax = maxyear + 1;
@@ -297,6 +295,6 @@ function generateCircleChart(selector, value1, value2, value3) {
 
     const ctx = document.querySelector(selector);
 
-    new Chart(ctx.getContext('2d'), chartConfig);
+    circleChart = new Chart(ctx.getContext('2d'), chartConfig);
 
 }

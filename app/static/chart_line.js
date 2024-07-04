@@ -9,8 +9,6 @@ fetch(`/api/line_chart`, {
     return response.json();
 })
 .then(data => {
-    console.log(data); // Log the fetched data to verify its structure
-
     // Extract datasets from the fetched data
     const usedData = data[0];
     const createdData = data[1];

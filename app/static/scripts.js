@@ -1,9 +1,13 @@
-function updateLineChartData(newUsedData, newCreatedData, newSharedData) {
+function updateRecapData(newUsedData, newCreatedData, newSharedData, newCircleData) {
     if (window.myLineChart) {
         window.myLineChart.data.datasets[0].data = newUsedData;
         window.myLineChart.data.datasets[1].data = newCreatedData;
         window.myLineChart.data.datasets[2].data = newSharedData;
         window.myLineChart.update();
+    }
+    if (window.circleChart){
+        window.circleChart.data.datasets[0].data = newCircleData;
+        window.circleChart.update();
     }
 }
 
@@ -49,7 +53,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
                     // Set the current clicked element as the previous clicked element
                     previousClickedElement = item;
-                    console.log(item)
 
                     const idValue = item.getAttribute('id');
                     handleClick(idValue, 1);
@@ -78,14 +81,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 return response.json();
             })
             .then(data => {
-                console.log(data); // Log the fetched data to verify its structure
 
                 // Extract datasets from the fetched data
                 const usedData = data[0];
                 const createdData = data[1];
                 const sharedData = data[2];
-                updateLineChartData(usedData, createdData, sharedData)
-                })
+                const newCircleData = data[3];
+                updateRecapData(usedData, createdData, sharedData,newCircleData)
+                const recapDwMention = document.querySelector('.recap_dw_mention');
+                const recapDwnMention = document.querySelector('.recap_dwn_mention');
+                const recapNbMention = document.querySelector('.recap_nb_mention');
+
+                // Update the inner text with the new data
+                if (recapDwMention) recapDwMention.textContent = data[4][0];
+                if (recapDwnMention) recapDwnMention.textContent = data[4][1];
+                if (recapNbMention) recapNbMention.textContent = data[4][2];
+                    })
             .catch(error => {
                 console.error('Error:', error);
             });
@@ -108,7 +119,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             return response.json();
         })
         .then(data => {
-            console.log('Number of documents:', data.length);
 
             // Split the data into chunks of 50
             function chunkArray(array, chunkSize) {
@@ -127,7 +137,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     return;
                 }
 
-                console.time(`Process Chunk ${chunkIndex + 1}`);
                 const chunk = dataChunks[chunkIndex];
 
                 chunk.forEach(software_name => {
@@ -144,7 +153,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                           .replace(/\'/g, '')  // Escape '
                           .replace(/\"/g, '')  // Escape "
                           : '';
-                    console.log(software)
                     const soft_div = document.querySelectorAll(`#${software}.mention_doc_id`);
                     soft_div.forEach(element => {
                         var dropdownBtn = element.querySelector('.dropbtn');
@@ -152,10 +160,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     });
                 });
 
-                console.timeEnd(`Process Chunk ${chunkIndex + 1}`);
-
-                // Process the next chunk
-                setTimeout(() => processChunk(chunkIndex + 1), 0);
+                processChunk(chunkIndex + 1);
             }
 
             processChunk(0);
@@ -193,9 +198,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
           : '';
 
         const csssanitizedId = CSS.escape(sanitizedId)
-        console.log(sanitizedId, csssanitizedId)
         const elements = document.querySelectorAll(`#${sanitizedId}.mention_doc_id`);
-        console.log(elements)
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
             var dropdownContent = element.querySelector('.dropdown-content');

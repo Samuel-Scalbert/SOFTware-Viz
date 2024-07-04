@@ -43,12 +43,29 @@ def line_chart_data():
 
 @app.route('/api/line_chart/<struct>')
 def line_chart_data_struc(struct):
+    recapData = [0,0,0]
+    query = f'''
+            for doc in documents
+            filter "{struct}" in doc.structures
+            let mention = (
+                FOR edge IN edge_software
+                Filter edge._from == doc._id
+                return edge._to
+            )
+            return mention
+            '''
+    response = db.AQLQuery(query, rawResults=True)
+    for mention in response:
+        if len(mention) == 0:
+            recapData[1] += 1
+        if len(mention) > 1:
+            recapData[0] += 1
+            recapData[2] += len(mention)
     years = ["2019", "2020", "2021", "2022", "2023"]
-    results = {year: {"used": 0, "created": 0, "shared": 0} for year in years}
     dataset_used = []
     dataset_shared = []
     dataset_created = []
-    print(struct)
+    newCircleData = [0,0,0]
     for year in years:
         query = f'''
         LET attributes = ['used', 'created', 'shared']
@@ -82,13 +99,14 @@ def line_chart_data_struc(struct):
 
         RETURN attributeCounts
         '''
-
         response = db.AQLQuery(query, rawResults=True)
-        print(response)
         dataset_used.append(response[0][0]['count'])
         dataset_shared.append(response[0][1]['count'])
         dataset_created.append(response[0][2]['count'])
-    return [dataset_used,dataset_shared,dataset_created]
+        newCircleData[0] += response[0][0]['count']
+        newCircleData[1] += response[0][1]['count']
+        newCircleData[2] += response[0][2]['count']
+    return [dataset_used,dataset_shared,dataset_created,newCircleData, recapData]
 
 
 @app.route('/api/stru_id/<hal_id>')

@@ -114,13 +114,13 @@ def dataset_creator(raw_dictionnary):
 
     for label, values in raw_dictionnary.items():
         if label == 'created':
-            new_dataset = {"label": label, "backgroundColor": "#fa0519", "borderColor": "#fa0519", "data": [],
+            new_dataset = {"label": label, "backgroundColor": "#363949", "borderColor": "#363949", "data": [],
                            "order": 0}
         elif label == 'used':
-            new_dataset = {"label": label, "backgroundColor": "#2efa05", "borderColor": "#2efa05", "data": [],
+            new_dataset = {"label": label, "backgroundColor": "#6C9BCF", "borderColor": "#6C9BCF", "data": [],
                            "order": 1}
         elif label == 'shared':
-            new_dataset = {"label": label, "backgroundColor": "#1905fa", "borderColor": "#1905fa", "data": [],
+            new_dataset = {"label": label, "backgroundColor": "#677483", "borderColor": "#677483", "data": [],
                            "order": 2}
 
         for item, data in values.items():
