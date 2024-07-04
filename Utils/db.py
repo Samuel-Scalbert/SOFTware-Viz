@@ -234,7 +234,4 @@ def insert_json_db (data_path_json,data_path_xml,db):
                                 FILTER software.software_name.normalizedForm == "{software_name}"
                                 UPDATE software WITH {{ software_name: {{ normalizedForm: "{software_name_cleaned}" }} }} IN softwares
                             """
-                            try:
-                                db.AQLQuery(update_query)
-                            except Exception as e:
-                                print(f"Error updating document: {e}")
+                            db.AQLQuery(update_query)
