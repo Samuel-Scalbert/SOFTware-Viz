@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     soft_div.forEach(element => {
                         var dropdownBtn = element.querySelector('.dropbtn');
                         dropdownBtn.style.color = 'red';
+                        element.parentNode.prepend(element);
                     });
                 });
 
