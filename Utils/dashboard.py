@@ -2,48 +2,58 @@ from collections import Counter
 from pyArango.theExceptions import AQLQueryError
 from tqdm import tqdm
 
+
 def dashboard(db, structure):
     try:
-        if structure is not None:
+        # Define queries based on whether structure is specified
+        if structure:
             query = """
                 FOR file_id IN documents
                 FILTER @structure IN file_id.structures
-                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id}
+                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }
             """
             query_structure = """
                 FOR file_id IN documents
-                    FILTER @structure IN file_id.structures
-                    FOR struc in file_id.structures
-                    RETURN DISTINCT struc
+                FILTER @structure IN file_id.structures
+                FOR struc IN file_id.structures
+                RETURN DISTINCT struc
             """
             bind_vars = {'structure': structure}
-            file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=1000)
-            struct_list = db.AQLQuery(query_structure, bindVars=bind_vars, rawResults=True, batchSize=1000)
         else:
             query = """
                 FOR file_id IN documents
-                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id}
+                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }
             """
             query_structure = """
-                        FOR file_id IN documents
-                            FOR struc in file_id.structures
-                            RETURN DISTINCT struc
-                        """
-            file_id_list = db.AQLQuery(query, rawResults=True, batchSize=1000)
-            struct_list = db.AQLQuery(query_structure, rawResults=True, batchSize=1000)
+                FOR file_id IN documents
+                FOR struc IN file_id.structures
+                RETURN DISTINCT struc
+            """
+            bind_vars = {}
+
+        # Execute queries
+        file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=1000)
+        struct_list = db.AQLQuery(query_structure, bindVars=bind_vars, rawResults=True, batchSize=1000)
+
     except AQLQueryError:
-        return 'not file'
+        return 'AQL query error: Unable to fetch files'
 
     attributes_count = Counter()
     used_software = Counter()
     created_software = Counter()
     shared_software = Counter()
-    structure_dict = []
+    software_attribute_mentions = {
+        'used': Counter(),
+        'shared': Counter(),
+        'created': Counter()
+    }
+    file_structures = list(struct_list)
+
     nb_mention = 0
     doc_with_mention = 0
     doc_wno_mention = 0
-    file_structures = list(struct_list)
 
+    # Process each file to count software mentions and attributes
     for file in tqdm(file_id_list):
         hal_id = file['hal_id']
         file_id = file['_id']
@@ -65,20 +75,31 @@ def dashboard(db, structure):
 
                 if max_attribute:
                     attributes_count[max_attribute] += 1
+                    software_attribute_mentions[max_attribute][software] += 1
                     attribute_dict = {
                         'created': created_software,
                         'shared': shared_software,
                         'used': used_software
-                    }.get(max_attribute)
+                    }.get(max_attribute, None)
 
                     if attribute_dict is not None:
-                        if hal_id in attribute_dict.setdefault(software, []):
-                            continue
-                        else:
-                            attribute_dict.setdefault(software, []).append(hal_id)
-
+                        if hal_id not in attribute_dict.setdefault(software, []):
+                            attribute_dict[software].append(hal_id)
         else:
             doc_wno_mention += 1
+    # Print and update the counts for 'used' software
+    for software, count in software_attribute_mentions['used'].items():
+        if software in used_software:
+            used_software[software] = [used_software[software], count]
+
+    for software, count in software_attribute_mentions['created'].items():
+        if software in created_software:
+            created_software[software] = [created_software[software], count]
+
+    for software, count in software_attribute_mentions['shared'].items():
+        if software in shared_software:
+            shared_software[software] = [shared_software[software], count]
+
     return [
         attributes_count,
         doc_with_mention,

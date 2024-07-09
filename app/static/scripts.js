@@ -170,8 +170,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 });
+    function reorderSoftwareMentions() {
+        const listSoftwareContainers = document.querySelectorAll(".list-software");
 
+        listSoftwareContainers.forEach(container => {
+            const softwareDivs = Array.from(container.getElementsByClassName("mention_doc_id"));
 
+            softwareDivs.sort((a, b) => {
+                const aNumber = parseInt(a.querySelector(".dropbtn").getAttribute("number"));
+                const bNumber = parseInt(b.querySelector(".dropbtn").getAttribute("number"));
+                return bNumber - aNumber; // Sort in descending order
+            });
+
+            softwareDivs.forEach(div => {
+                container.appendChild(div);
+            });
+        });
+    }
+    reorderSoftwareMentions();
 
     function displayResult(result) {
         const content = result.map((list) => {
@@ -190,31 +206,38 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 dropdownContent.style.display = 'None';
             });
         }
+
         const sanitizedId = idValue ? idValue
-          .replace(/\s/g, '')  // Remove all whitespace
-          .replace(/\./g, '')  // Remove all periods
-          .replace(/@/g, '\\@')  // Escape '@'
-          .replace(/\+/g, '\\+')  // Escape '+'
-          : '';
+            .replace(/\s/g, '')  // Remove all whitespace
+            .replace(/\./g, '')  // Remove all periods
+            .replace(/@/g, '\\@')  // Escape '@'
+            .replace(/\+/g, '\\+')  // Escape '+'
+            : '';
 
-        const csssanitizedId = CSS.escape(sanitizedId)
+        const csssanitizedId = CSS.escape(sanitizedId);
         const elements = document.querySelectorAll(`#${sanitizedId}.mention_doc_id`);
-        elements.forEach(element => {
-            var dropdownBtn = element.querySelector('.dropbtn');
-            var dropdownContent = element.querySelector('.dropdown-content');
-            dropdownBtn.style.color = 'red';
-            if (value == 2) {
-                dropdownContent.style.display = 'block';
-            }
 
-            // Scroll the current element into view smoothly, aligning it to the center
-            element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+        elements.forEach((element, index) => {
+            setTimeout(() => {
+                console.log(element);
+                var dropdownBtn = element.querySelector('.dropbtn');
+                var dropdownContent = element.querySelector('.dropdown-content');
+                dropdownBtn.style.color = 'red';
+                if (value == 2) {
+                    dropdownContent.style.display = 'block';
+                }
+
+                // Scroll the current element into view smoothly, aligning it to the center
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }, index * 50);  // Adjust the delay (500ms) as needed
         });
+
         previousElement = sanitizedId;
     }
+
 
     document.addEventListener('click', function(event) {
     // Selectors to exclude
