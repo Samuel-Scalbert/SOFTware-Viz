@@ -130,7 +130,6 @@ def links_id_from_struc(struc):
         RETURN Distinct software_name.software_name.normalizedForm
     '''
     response = db.AQLQuery(query, rawResults=True, batchSize=3000)
-    print(len(response))
     return list(response)
 
 @app.route('/api/aut/<hal_id>')

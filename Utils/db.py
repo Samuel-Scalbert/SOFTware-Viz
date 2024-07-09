@@ -108,7 +108,9 @@ def insert_json_db (data_path_json,data_path_xml,db):
                     for org_child_tags in list(org):
                         try:
                             if org_child_tags.attrib['type'] == 'acronym':
-                                list_org.append(org_child_tags.text)
+                                structure_name = org_child_tags.text
+                                structure_name_sanitized = structure_name.rstrip()
+                                list_org.append(structure_name_sanitized)
                         except KeyError:
                             continue
             data_json_get_document['structures'] = list_org
