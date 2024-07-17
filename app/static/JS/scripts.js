@@ -1,17 +1,49 @@
-function updateRecapData(newUsedData, newCreatedData, newSharedData, newCircleData) {
-    if (window.myLineChart) {
-        window.myLineChart.data.datasets[0].data = newUsedData;
-        window.myLineChart.data.datasets[1].data = newCreatedData;
-        window.myLineChart.data.datasets[2].data = newSharedData;
-        window.myLineChart.update();
-    }
-    if (window.circleChart){
-        window.circleChart.data.datasets[0].data = newCircleData;
-        window.circleChart.update();
-    }
-}
+function updateRecap (item){
+    fetch(`/api/line_chart/${item}`, {
+                method: "GET"
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+
+                // Extract datasets from the fetched data
+                const usedData = data[0];
+                const createdData = data[1];
+                const sharedData = data[2];
+                const newCircleData = data[3];
+                if (window.myLineChart) {
+                    window.myLineChart.data.datasets[0].data = usedData;
+                    window.myLineChart.data.datasets[1].data = createdData;
+                    window.myLineChart.data.datasets[2].data = sharedData;
+                    window.myLineChart.update();
+                }
+                if (window.circleChart){
+                    window.circleChart.data.datasets[0].data = newCircleData;
+                    window.circleChart.update();
+                }
+                const recapDwMention = document.querySelector('.recap_dw_mention');
+                const recapDwnMention = document.querySelector('.recap_dwn_mention');
+                const recapNbMention = document.querySelector('.recap_nb_mention');
+
+                // Update the inner text with the new data
+                if (recapDwMention) recapDwMention.textContent = data[4][0];
+                if (recapDwnMention) recapDwnMention.textContent = data[4][1];
+                if (recapNbMention) recapNbMention.textContent = data[4][2];
+                    })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+};
 
 document.addEventListener('DOMContentLoaded', (event) => {
+    const struc = window.location.pathname.split('/').pop();
+    if (struc !== "dashboard") {
+        updateRecap(struc);
+    };
     const mentionDocElements = document.querySelectorAll('.mention_doc_id');
     const availableSoftware = new Set();
     mentionDocElements.forEach(item => {
@@ -70,35 +102,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
         last_clicked_structure = item; // Assign the clicked item to last_clicked_structure
         item.style.color = 'red'; // Change the color of the clicked item to red
-        fetch(`/api/line_chart/${item.textContent.trim()}`, {
-                method: "GET"
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-
-                // Extract datasets from the fetched data
-                const usedData = data[0];
-                const createdData = data[1];
-                const sharedData = data[2];
-                const newCircleData = data[3];
-                updateRecapData(usedData, createdData, sharedData,newCircleData)
-                const recapDwMention = document.querySelector('.recap_dw_mention');
-                const recapDwnMention = document.querySelector('.recap_dwn_mention');
-                const recapNbMention = document.querySelector('.recap_nb_mention');
-
-                // Update the inner text with the new data
-                if (recapDwMention) recapDwMention.textContent = data[4][0];
-                if (recapDwnMention) recapDwnMention.textContent = data[4][1];
-                if (recapNbMention) recapNbMention.textContent = data[4][2];
-                    })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+        updateRecap(item.textContent.trim())
         const elements = document.querySelectorAll('.mention_doc_id');
         elements.forEach(element => {
             var dropdownBtn = element.querySelector('.dropbtn');
