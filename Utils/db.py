@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import requests
 import time
 from openpyxl import load_workbook
+from Utils.TEI_to_JSON import transformer_TEI_JSON
 
 def duplicates_JSON(lst):
     seen = set()
@@ -19,8 +20,9 @@ def duplicates_JSON(lst):
 
     return duplicates
 
-def insert_json_db (data_path_json,data_path_xml,db):
+def insert_json_db(data_path_json,data_path_xml,db):
     software_document = []
+    list_errors = []
 
     workbook = load_workbook(filename='./app/static/data/Logiciels_Blacklist_et_autres_remarques.xlsx')
     sheet = workbook.active
@@ -189,6 +191,15 @@ def insert_json_db (data_path_json,data_path_xml,db):
                     # Process each reference
                     data_json_get_references = data_json.get("references")
                     for reference in data_json_get_references:
+                        result_json = []
+                        try:
+                            result_json,error = transformer_TEI_JSON(reference['tei'])
+                            if len(error) > 0:
+                                list_errors.append(error, reference['tei'])
+                        except Exception as e:
+                            print(f"Error during the transformation from XML to JSON: {e}")
+                        if result_json:
+                            reference['json'] = result_json
                         references_document = references_collection.createDocument(reference)
                         references_document.save()
 
@@ -237,3 +248,5 @@ def insert_json_db (data_path_json,data_path_xml,db):
                                 UPDATE software WITH {{ software_name: {{ normalizedForm: "{software_name_cleaned}" }} }} IN softwares
                             """
                             db.AQLQuery(update_query)
+    if len(list_errors) > 0:
+       print(list_errors)
