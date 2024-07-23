@@ -32,7 +32,7 @@ global data_dashboard
 data_dashboard = None
 #data_dashboard = dashboard(db, structure)
 
-from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route
+from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route
 
 @app.route('/')
 def home():
