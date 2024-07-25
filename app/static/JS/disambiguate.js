@@ -14,42 +14,48 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const cardBox = document.getElementById("card-box");
         const titleNoDup = document.getElementById("nb-sofwnodup");
         const titleDup = document.getElementById("nb-sofwdup");
+        const loadingIndicator = document.getElementById('loading');
+        console.log(loadingIndicator)
 
         const availableSoftware_sliced = availableSoftware.slice(0, 10);
 
         let list_dup_software = []
 
-        // Display for each card
+        loadingIndicator.style.display = 'contents'; // Show the loading indicator
+
         for (const item of availableSoftware_sliced) {
             try {
-                if (!list_dup_software.includes(item)){
+                if (!list_dup_software.includes(item)) {
                     const possibleSoftwareDup = await software_dup_displayer(item);
                     if (Array.isArray(possibleSoftwareDup)) {
-                            const contentDup = possibleSoftwareDup.map(softwareDup => {
-                                return `<div class="${softwareDup} software_item" name="${softwareDup}">${softwareDup}</div>`;
-                            }).join('');
-                            const software_target = `<div class="software_item" name="${item}">${item}</div>`;
-                            if (contentDup) {
-                                possibleSoftwareDup.forEach(software => {list_dup_software.push(software)});
-                                list_dup_software.push(item);
-                                cardBox.innerHTML += "<div id='software_card'>" + software_target + contentDup + "<div class='button_dup'><span class=\"material-symbols-outlined\">\n" +
-                                    "keyboard_arrow_down\n" +
-                                    "</span></div></div>";
-                                let currentNumber = parseInt(titleDup.textContent);
-                                currentNumber += 1;
-                                titleDup.textContent = currentNumber;
-                            } else {
-                                noDupBox.innerHTML += `<li>${item}</li>`;
-                                let currentNumber = parseInt(titleNoDup.textContent);
-                                currentNumber += 1;
-                                titleNoDup.textContent = currentNumber;
-                            }
-                        }}
+                        const contentDup = possibleSoftwareDup.map(softwareDup => {
+                            return `<div class="${softwareDup} software_item" name="${softwareDup}">${softwareDup}</div>`;
+                        }).join('');
+                        const software_target = `<div class="software_item" name="${item}">${item}</div>`;
+                        if (contentDup) {
+                            possibleSoftwareDup.forEach(software => { list_dup_software.push(software) });
+                            list_dup_software.push(item);
+                            cardBox.innerHTML += "<div id='software_card'>" + software_target + contentDup + "<div class='button_dup'><span class=\"material-symbols-outlined\">\n" +
+                                "keyboard_arrow_down\n" +
+                                "</span></div></div>";
+                            let currentNumber = parseInt(titleDup.textContent);
+                            currentNumber += 1;
+                            titleDup.textContent = currentNumber;
+                        } else {
+                            noDupBox.innerHTML += `<li>${item}</li>`;
+                            let currentNumber = parseInt(titleNoDup.textContent);
+                            currentNumber += 1;
+                            titleNoDup.textContent = currentNumber;
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching software details:', error);
                 cardBox.innerHTML += 'Error fetching details.';
             }
         }
+
+    loadingIndicator.style.display = 'none'; // Hide the loading indicator
 
         // Event delegation for resultBox
         resultBox.addEventListener('click', async function(event) {
