@@ -32,7 +32,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                             if (contentDup) {
                                 possibleSoftwareDup.forEach(software => {list_dup_software.push(software)});
                                 list_dup_software.push(item);
-                                cardBox.innerHTML += "<div id='software_card'>" + software_target + contentDup + "<div class='button_dup'>More Info</div></div>";
+                                cardBox.innerHTML += "<div id='software_card'>" + software_target + contentDup + "<div class='button_dup'><span class=\"material-symbols-outlined\">\n" +
+                                    "keyboard_arrow_down\n" +
+                                    "</span></div></div>";
                                 let currentNumber = parseInt(titleDup.textContent);
                                 currentNumber += 1;
                                 titleDup.textContent = currentNumber;
@@ -91,31 +93,62 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         const buttons = document.querySelectorAll('.button_dup');
 
+
         buttons.forEach(button => {
             button.addEventListener('click', function() {
-                let listSoftwareToSend = [];
                 const parent = button.closest('#software_card');
-                parent.querySelectorAll('div:not(.button_dup)').forEach(software => {
-                    listSoftwareToSend.push(software.innerText);
-                });
+                const tagContext = parent.getElementsByClassName('document_dis_context');
+                const icon = button.querySelector('.material-symbols-outlined');
+                console.log(icon)
+                if (icon.innerHTML.includes("keyboard_arrow_down")) {
+                    if (tagContext.length === 0) {  // No additional info elements
+                        let listSoftwareToSend = [];
+                        icon.classList.add('rotate-up');
+                        icon.classList.remove('rotate-down');
+                        icon.innerHTML = 'keyboard_arrow_up';
+                        parent.querySelectorAll('div:not(.button_dup)').forEach(software => {
+                            listSoftwareToSend.push(software.innerText);
+                        });
 
-                // Send the list to the Flask route
-                fetch('/receive_list', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ list: listSoftwareToSend })  // Send the list as JSON
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
+                        // Send the list to the Flask route
+                        fetch('/receive_list', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ list: listSoftwareToSend })  // Send the list as JSON
+                        })
+                        .then(response => response.text())  // Expect HTML as response
+                        .then(data => {
+                            console.log('Success:', data);
+                            parent.insertAdjacentHTML('beforeend', data);  // Append the returned HTML
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        });
+                    } else {
+                        for (let i = 0; i < tagContext.length; i++) {
+                            tagContext[i].style.display = "contents";  // Show existing additional info elements
+                        }
+                        icon.classList.add('rotate-up');
+                        icon.classList.remove('rotate-down');
+                        icon.innerHTML = 'keyboard_arrow_up';
+                    }
+                } else {
+                    icon.classList.add('rotate-down');
+                    icon.classList.remove('rotate-up');
+                    icon.innerHTML = 'keyboard_arrow_down';
+
+                    for (let i = 0; i < tagContext.length; i++) {
+                        tagContext[i].style.display = "none";  // Hide existing additional info elements
+                    }
+                }
             });
         });
+
+
+
+
 
         inputBox.onkeyup = function() {
             let result = [];

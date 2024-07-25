@@ -1,5 +1,7 @@
 from app.app import db
 from rapidfuzz import fuzz
+from flask import url_for
+
 
 def desambiguate_from_software(software):
     query = f'''
@@ -17,3 +19,36 @@ def desambiguate_from_software(software):
             if average_ratio > 80:
                 list_possible_dup.append(software_available)
     return list_possible_dup
+
+
+def api_list_software(list_software):
+    dict_software = {}
+    query = f"""
+            FOR software IN softwares
+                FILTER software.software_name.normalizedForm in {list_software} or software.software_name.rawForm in {list_software}
+                LET context = software.context
+                LET forms = [software.software_name.normalizedForm, software.software_name.rawForm]
+                LET offset =  [software.software_name.offsetStart,software.software_name.offsetEnd]
+                FOR edge IN edge_software
+                FILTER software._id == edge._to
+                LET doc = document(edge._from)
+                    RETURN [doc.file_hal_id, context, offset, forms]
+            """
+    list_context_halid = db.AQLQuery(query, rawResults=True)
+    for context in list_context_halid:
+        if context[0] in dict_software.keys():
+            dict_software[context[0]].append([context[1], context[2], context[3]])
+        else:
+            dict_software[context[0]] = [[context[1], context[2],context[3]]]
+
+    html_content = ""
+    html_title = ""
+    for key, value in dict_software.items():
+        html_context= ""
+        for context in value:
+            context_html = ("<li>" + context[0][:context[1][0]] + "<span style='color: red'>" +
+                context[0][context[1][0]:context[1][1]] + "</span>" + context[0][context[1][1]:] + f"(Rawform: '{context[2][0]}',Normalizedform: '{context[2][1]}')" +"</li>")
+            html_context += context_html
+        html_title += f"<h4><a href='{ url_for('doc_info',doc_id=key) }'>{key}</a></h4>{html_context}"
+    html_content = f"<div class='document_dis_context'>{html_title}</div>"
+    return html_content
