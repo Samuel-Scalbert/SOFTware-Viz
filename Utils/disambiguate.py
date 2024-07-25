@@ -46,8 +46,8 @@ def api_list_software(list_software):
     for key, value in dict_software.items():
         html_context= ""
         for context in value:
-            context_html = ("<li>" + context[0][:context[1][0]] + "<span style='color: red'>" +
-                context[0][context[1][0]:context[1][1]] + "</span>" + context[0][context[1][1]:] + f"(Rawform: '{context[2][0]}',Normalizedform: '{context[2][1]}')" +"</li>")
+            context_html = ("<div class='list-context'>" + context[0][:context[1][0]] + f"<div class='software_item' name='{context[2][1]}'>" +
+                context[0][context[1][0]:context[1][1]] + "</div>" + context[0][context[1][1]:] + f"(Rawform: '{context[2][0]}',Normalizedform: '{context[2][1]}')" +"</div>")
             html_context += context_html
         html_title += f"<h4><a href='{ url_for('doc_info',doc_id=key) }'>{key}</a></h4>{html_context}"
     html_content = f"<div class='document_dis_context'>{html_title}</div>"

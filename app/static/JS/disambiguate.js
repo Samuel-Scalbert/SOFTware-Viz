@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                     const possibleSoftwareDup = await software_dup_displayer(item);
                     if (Array.isArray(possibleSoftwareDup)) {
                             const contentDup = possibleSoftwareDup.map(softwareDup => {
-                                return `<div>${softwareDup}</div>`;
+                                return `<div class="${softwareDup} software_item" name="${softwareDup}">${softwareDup}</div>`;
                             }).join('');
-                            const software_target = `<div>${item}</div>`;
+                            const software_target = `<div class="software_item" name="${item}">${item}</div>`;
                             if (contentDup) {
                                 possibleSoftwareDup.forEach(software => {list_dup_software.push(software)});
                                 list_dup_software.push(item);
@@ -89,17 +89,47 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             }
         });
 
+        let last_list_elements = []; // Declare last_list_elements outside the function to keep track of previously processed elements
+
+        function addSoftwareItemListeners() {
+            const software_buttons = document.querySelectorAll('.software_item');
+
+            software_buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Reset styles of previously highlighted elements
+                    last_list_elements.forEach(elem => {
+                        elem.style.color = ''; // Resetting to default or original style
+                    });
+
+                    // Get the name attribute of the clicked button
+                    const software_name = button.getAttribute('name');
+                    const all_software_elements = document.querySelectorAll(`[name="${software_name}"]`);
+
+                    // Apply styles to current elements and update last_list_elements
+                    all_software_elements.forEach(elem => {
+                        elem.style.color = 'green';
+                        elem.style.fontWeight = 'bold';
+                    });
+
+                    // Update last_list_elements to the current selection
+                    last_list_elements = Array.from(all_software_elements);
+                });
+            });
+        }
+
+
+        // Initial call to add event listeners to existing software items
+        addSoftwareItemListeners();
+
         // button for duplicates
-
         const buttons = document.querySelectorAll('.button_dup');
-
 
         buttons.forEach(button => {
             button.addEventListener('click', function() {
                 const parent = button.closest('#software_card');
                 const tagContext = parent.getElementsByClassName('document_dis_context');
                 const icon = button.querySelector('.material-symbols-outlined');
-                console.log(icon)
+
                 if (icon.innerHTML.includes("keyboard_arrow_down")) {
                     if (tagContext.length === 0) {  // No additional info elements
                         let listSoftwareToSend = [];
@@ -122,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         .then(data => {
                             console.log('Success:', data);
                             parent.insertAdjacentHTML('beforeend', data);  // Append the returned HTML
+                            addSoftwareItemListeners();  // Reattach event listeners to newly added software items
                         })
                         .catch((error) => {
                             console.error('Error:', error);
@@ -145,6 +176,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 }
             });
         });
+
 
 
 
