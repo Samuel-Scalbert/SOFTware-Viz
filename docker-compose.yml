@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  arangodb:
+    image: arangodb/arangodb:3.11.6
+    depends_on:
+      - traefik
+    ports:
+      - "8529:8529"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.arangodb.rule=Host(`arango.prod-datadcis-app.inria.fr`)"
+      - "traefik.http.services.arangodb.loadbalancer.server.port=8529"
+    environment:
+      - ARANGO_NO_AUTH=1
+    volumes:
+      - arangodb_data:/var/lib/arangodb3
+
+  flask-app:
+    image: samuelscalbert/software-viz_flask-app:latest
+    depends_on:
+      - arangodb
+      - traefik
+    environment:
+      - ARANGO_HOST=arangodb
+      - ARANGO_PORT=8529
+      - ARANGO_DB=SOF-viz
+      - ARANGO_USERNAME=root
+      - ARANGO_PASSWORD=root
+    ports:
+      - "8040:8040"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask-app.rule=Host(`viz.prod-datadcis-app.inria.fr`)"
+      - "traefik.http.services.flask-app.loadbalancer.server.port=8040"
+
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  arangodb_data:
