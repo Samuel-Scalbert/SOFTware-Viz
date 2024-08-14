@@ -201,46 +201,56 @@ document.addEventListener('DOMContentLoaded', (event) => {
     };
 
     function handleClick(idValue, value) {
-        if (previousElement) {
-            const elements = document.querySelectorAll(`#${previousElement}.mention_doc_id`);
-            elements.forEach(element => {
-                var dropdownBtn = element.querySelector('.dropbtn');
-                var dropdownContent = element.querySelector('.dropdown-content');
-                dropdownBtn.style.color = '';
-                dropdownContent.style.display = 'None';
-            });
-        }
-
-        const sanitizedId = idValue ? idValue
-            .replace(/\s/g, '')  // Remove all whitespace
-            .replace(/\./g, '')  // Remove all periods
-            .replace(/@/g, '\\@')  // Escape '@'
-            .replace(/\+/g, '\\+')  // Escape '+'
-            : '';
-
-        const csssanitizedId = CSS.escape(sanitizedId);
-        const elements = document.querySelectorAll(`#${sanitizedId}.mention_doc_id`);
-
-        elements.forEach((element, index) => {
-            setTimeout(() => {
-                console.log(element);
-                var dropdownBtn = element.querySelector('.dropbtn');
-                var dropdownContent = element.querySelector('.dropdown-content');
-                dropdownBtn.style.color = 'red';
-                if (value == 2) {
-                    dropdownContent.style.display = 'block';
-                }
-
-                // Scroll the current element into view smoothly, aligning it to the center
-                element.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            }, index * 50);  // Adjust the delay (500ms) as needed
+    if (previousElement) {
+        const elements = document.querySelectorAll(`#${previousElement}.mention_doc_id`);
+        elements.forEach(element => {
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            if (dropdownBtn) dropdownBtn.style.color = '';
+            if (dropdownContent) dropdownContent.style.display = 'none';
         });
-
-        previousElement = sanitizedId;
     }
+
+    const sanitizedId = idValue ? idValue
+        .replace(/\s/g, '')  // Remove all whitespace
+        .replace(/\./g, '')  // Remove all periods
+        .replace(/@/g, '\\@')  // Escape '@'
+        .replace(/\+/g, '\\+')  // Escape '+'
+        : '';
+
+    const csssanitizedId = CSS.escape(sanitizedId);
+    const elements = document.querySelectorAll(`#${csssanitizedId}.mention_doc_id`);
+
+    if (elements.length === 0) {
+        console.log('No elements found for ID:', csssanitizedId);
+        return;
+    }
+
+    console.log("query", elements);
+
+    elements.forEach((element, index) => {
+        setTimeout(() => {
+            console.log("debug:", element);
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            if (dropdownBtn) dropdownBtn.style.color = 'red';
+            if (dropdownContent) dropdownContent.style.display = 'block';
+            const container = element.parentElement.parentElement;
+            console.log("container", container)
+            // Scroll the current element into view smoothly, aligning it to the center
+            container.scrollTo({
+                top: element.offsetTop - container.offsetTop - (container.clientHeight / 2) + (element.clientHeight / 2),
+                behavior: 'smooth'
+            });
+
+            // Additional debug to check scroll position
+            console.log('Element position:', element.getBoundingClientRect());
+        }, index * 500);  // Adjust the delay (500ms) as needed
+    });
+
+    previousElement = csssanitizedId;
+}
+
 
 
     document.addEventListener('click', function(event) {

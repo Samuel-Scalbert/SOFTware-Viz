@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const loadingIndicator = document.getElementById('loading');
         console.log(loadingIndicator)
 
-        const availableSoftware_sliced = availableSoftware.slice(0, 10);
+        const availableSoftware_sliced = availableSoftware.slice(0, 100);
 
         let list_dup_software = []
 
