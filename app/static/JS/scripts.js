@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
 
             processChunk(0);
+            reorderSoftwareMentions();
         })
         .catch(error => {
             console.error('Error fetching data:', error);
@@ -175,23 +176,41 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 });
     function reorderSoftwareMentions() {
-        const listSoftwareContainers = document.querySelectorAll(".list-software");
+    const listSoftwareContainers = document.querySelectorAll(".list-software");
 
-        listSoftwareContainers.forEach(container => {
-            const softwareDivs = Array.from(container.getElementsByClassName("mention_doc_id"));
+    listSoftwareContainers.forEach(container => {
+        const softwareDivs = Array.from(container.getElementsByClassName("mention_doc_id"));
 
-            softwareDivs.sort((a, b) => {
-                const aNumber = parseInt(a.querySelector(".dropbtn").getAttribute("number"));
-                const bNumber = parseInt(b.querySelector(".dropbtn").getAttribute("number"));
-                return bNumber - aNumber; // Sort in descending order
-            });
+        // Separate red and non-red software
+        const redSoftware = [];
+        const otherSoftware = [];
 
-            softwareDivs.forEach(div => {
-                container.appendChild(div);
-            });
+        softwareDivs.forEach(div => {
+            const isRed = window.getComputedStyle(div.querySelector('button')).color === 'rgb(255, 0, 0)';
+            if (isRed) {
+                redSoftware.push(div);
+            } else {
+                otherSoftware.push(div);
+            }
         });
-    }
-    reorderSoftwareMentions();
+
+        // Sort each list by their numbers in descending order
+        const sortByNumberDesc = (a, b) => {
+            const aNumber = parseInt(a.querySelector(".dropbtn").getAttribute("number"));
+            const bNumber = parseInt(b.querySelector(".dropbtn").getAttribute("number"));
+            return bNumber - aNumber;
+        };
+
+        redSoftware.sort(sortByNumberDesc);
+        otherSoftware.sort(sortByNumberDesc);
+
+        // Reattach sorted elements: first red, then others
+        redSoftware.forEach(div => container.appendChild(div));
+        otherSoftware.forEach(div => container.appendChild(div));
+    });
+}
+reorderSoftwareMentions();
+
 
     function displayResult(result) {
         const content = result.map((list) => {
@@ -226,17 +245,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         return;
     }
 
-    console.log("query", elements);
-
     elements.forEach((element, index) => {
         setTimeout(() => {
-            console.log("debug:", element);
             var dropdownBtn = element.querySelector('.dropbtn');
             var dropdownContent = element.querySelector('.dropdown-content');
             if (dropdownBtn) dropdownBtn.style.color = 'red';
             if (dropdownContent) dropdownContent.style.display = 'block';
             const container = element.parentElement.parentElement;
-            console.log("container", container)
             // Scroll the current element into view smoothly, aligning it to the center
             container.scrollTo({
                 top: element.offsetTop - container.offsetTop - (container.clientHeight / 2) + (element.clientHeight / 2),
@@ -245,7 +260,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
             // Additional debug to check scroll position
             console.log('Element position:', element.getBoundingClientRect());
-        }, index * 500);  // Adjust the delay (500ms) as needed
+        }, index * 100);  // Adjust the delay (500ms) as needed
     });
 
     previousElement = csssanitizedId;
@@ -265,6 +280,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const clickedExcludedElement = selectors.some(selector => event.target.closest(selector));
 
     if (!clickedExcludedElement) {
+        last_clicked_structure.style.color = 'black';
         // Handle clicks outside the specified elements
         const elements = document.querySelectorAll('.mention_doc_id');
         const elements_search =document.querySelectorAll('.dropdown-content-search');
@@ -274,7 +290,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 dropdownBtn.style.color = '';
                 dropdownContent.style.display = 'none';
                 elements_search.forEach(searchElement => {searchElement.style.display = 'none';})
-            })
+            });
+        reorderSoftwareMentions();
     }
 });
 
