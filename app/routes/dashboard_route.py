@@ -6,9 +6,10 @@ import re
 @app.route('/dashboard')
 def dashboard_route():
     structure = None
-    data_dashboard = dashboard(db, structure)
-    data = data_dashboard
-    return render_template('pages/dashboard.html',data = data)
+    global data_dashboard
+    if not data_dashboard:
+        data_dashboard = dashboard(db, structure)
+    return render_template('pages/dashboard.html',data = data_dashboard)
 
 @app.route('/dashboard/<structure>')
 def dashboard_route_structure(structure):
