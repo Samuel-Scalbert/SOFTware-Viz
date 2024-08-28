@@ -10,9 +10,9 @@ fetch(`/api/line_chart`, {
 })
 .then(data => {
     // Extract datasets from the fetched data
-    const usedData = data[0];
-    const createdData = data[1];
-    const sharedData = data[2];
+    const createdData = data[0];
+    const sharedData = data[1];
+    const usedData = data[2];
 
     // Data for the chart
     const chartData = {
