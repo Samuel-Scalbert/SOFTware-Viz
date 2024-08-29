@@ -304,12 +304,29 @@ def insert_json_db(data_path_json,data_path_xml,db):
                 affiliations_list = elm.findall("{http://www.tei-c.org/ns/1.0}affiliation")
                 if len(affiliations_list) > 0:
                     for affiliation in affiliations_list:
+                        inria_team = False
+                        if affiliation.attrib['ref'] == "#struct-300009":
+                            inria_team = True
                         affiliated_struct = tree.find(
                             f".//tei:back//tei:listOrg//tei:org[@xml:id='{affiliation.attrib['ref'][1:]}']", ns)
                         if affiliated_struct is not None:
                             affiliated_struct_name = affiliated_struct.findall('tei:orgName', ns)
                             if affiliated_struct_name is not None:
                                 org = {}
+                                org['url_team'] = False
+                                url_team = affiliated_struct.find('.//{http://www.tei-c.org/ns/1.0}desc//ref[@type="url"]')
+                                for url_team in affiliated_struct.find('.//{http://www.tei-c.org/ns/1.0}desc'):
+                                    if url_team.attrib == {'type': 'url'}:
+                                       org['url_team'] = url_team.text
+                                try:
+                                    list_affiliated_str = list(affiliated_struct.find(".//{http://www.tei-c.org/ns/1.0}listRelation"))
+                                except TypeError:
+                                    list_affiliated_str = []
+                                org['INRIA'] = False
+                                for st in list_affiliated_str:
+                                    if st.attrib['active'] == "#struct-300009" and st.attrib['type'] == "indirect":
+                                        org['INRIA'] = True
+
                                 for struct in affiliated_struct_name:
                                     if struct.attrib:
                                         org[struct.attrib['type']] = struct.text
