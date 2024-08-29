@@ -176,7 +176,9 @@ function showStructures(hal_id_list) {
 }
 
 function showAuthors(hal_id_list) {
-    const uniqueStructures = new Set();
+    // Clear the container before adding new content
+    const container = document.getElementById('authorContainer');
+    container.innerHTML = '';
 
     hal_id_list.forEach(hal_id => {
         fetch(`/api/aut/${hal_id}`, {
@@ -189,29 +191,41 @@ function showAuthors(hal_id_list) {
             return response.json();
         })
         .then(data => {
-            data.forEach(structure => {
-                uniqueStructures.add(structure);
+            console.log(data);
+            const uniqueAuthor = new Set(data); // Assuming data is an array of authors
+
+            // Create a section for each hal_id
+            const section = document.createElement('div');
+
+            // Create a heading for each hal_id
+            const heading = document.createElement('a');
+            heading.textContent = hal_id;
+            heading.href = `/doc/${hal_id}`;
+            section.appendChild(heading);
+
+            // Create a <ul> element for this hal_id
+            const ulTag = document.createElement('ul');
+
+            // Add <li> elements for each unique author
+            uniqueAuthor.forEach(author => {
+                const liTag = document.createElement('p');
+                liTag.textContent = author;
+                ulTag.appendChild(liTag);
             });
 
-            const uniqueStructuresArray = Array.from(uniqueStructures);
+            // Append the <ul> to the section
+            section.appendChild(ulTag);
 
-            // Clear previous content of structureContainer
-            const container = document.getElementById('authorContainer');
-            container.innerHTML = '';
-
-            // Create <p> tags for each structure and append them to a container
-            uniqueStructuresArray.forEach(structure => {
-                const pTag = document.createElement('div');
-                pTag.textContent = structure;
-                pTag.style.display = "block";
-                container.appendChild(pTag);
-            });
+            // Append the section to the main container
+            container.appendChild(section);
         })
         .catch(error => {
-            console.error('Error fetching structures:', error);
+            console.error('Error fetching authors:', error);
         });
     });
 }
+
+
 
 function showSources(hal_id_list, software) {
     let softwareName;

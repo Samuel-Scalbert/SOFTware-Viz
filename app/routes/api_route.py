@@ -173,11 +173,18 @@ def links_id_from_struc(struc):
 def links_authors(hal_id):
     query = f'''
     FOR doc in documents
-      FILTER doc.file_hal_id == "{hal_id}"
-      for author in doc.author
-      FILTER author.role == "aut"
-      return CONCAT(author.forename, " ", author.surname)
+        FILTER doc.file_hal_id == "{hal_id}"
+        RETURN doc._id
     '''
     # Execute the query and return the response as JSON
+    id_document = db.AQLQuery(query, rawResults=True)
+    query = f'''
+    FOR edge in edge_author
+        FILTER edge._from ==  "{id_document[0]}"
+        LET doc = document(edge._to)
+        RETURN concat(doc.name.forename, " ",doc.name.surname)
+        '''
+    # Execute the query and return the response as JSON
     response = db.AQLQuery(query, rawResults=True)
+    print(response)
     return jsonify(response[0:])
