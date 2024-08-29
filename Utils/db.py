@@ -78,7 +78,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
     data_json_files = os.listdir(data_path_json)
     data_xml_list = os.listdir(data_path_xml)
     files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.file_hal_id', rawResults=True)
-    list_author = {}
     dict_registered = {}
     dict_edge_author = {}
 
@@ -150,101 +149,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
                             data_json_get_document['date'] = production_date.text[:4]
                         else:
                             print(f'problem : {file_name}')
-            author_list = tree.findall(".//tei:listBibl//tei:titleStmt//tei:author", ns)
-            list_author_old = []
-            for elm in author_list:
-                author = {}
-                persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
-                author['role'] = elm.attrib['role']
 
-                #TO DO delete this part --------------------------------------------------------------------------------
-                for name in persName:
-                    author[name.tag.split('}')[1]] =  name.text
-                list_author_old.append(author)
-                # ------------------------------------------------------------------------------------------------------
-
-                # insert test--------------------------------------------------------------------------------------------
-                author = {}
-
-                # idhal
-                author_id = {}
-                id_halid = None
-                id_halauthorid = None
-                id_halid = elm.findall(".//tei:idno[@type='idhal']", ns)
-                if len(id_halid) > 0:
-                    for id_type in id_halid:
-                        author_id[id_type.attrib['notation']] = id_type.text
-                id_halauthorid = elm.find(".//tei:idno[@type='halauthorid']", ns)
-                if id_halauthorid is not None:
-                    author_id[id_halauthorid.attrib['type']] = id_halauthorid.text
-                    id_final = 0
-                try:
-                    author_final_id = author_id['numeric']
-                except KeyError:
-                    author_final_id = author_id['halauthorid']
-                if author_final_id in list(dict_registered.keys()):
-                    registered = True
-                else:
-                    registered = False
-
-                # name
-                author_name = {}
-                persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
-                for name in persName:
-                    author_name[name.tag.split('}')[1]] = name.text
-
-                # document
-                author_documents = {}
-                author_documents[data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", "")] = elm.attrib[
-                    'role']
-
-                # affiliation
-                author_affiliation = []
-                affiliations_list = elm.findall("{http://www.tei-c.org/ns/1.0}affiliation")
-                if len(affiliations_list) > 0:
-                    for affiliation in affiliations_list:
-                        affiliated_struct = tree.find(
-                            f".//tei:back//tei:listOrg//tei:org[@xml:id='{affiliation.attrib['ref'][1:]}']", ns)
-                        if affiliated_struct is not None:
-                            affiliated_struct_name = affiliated_struct.findall('tei:orgName', ns)
-                            if affiliated_struct_name is not None:
-                                org = {}
-                                for struct in affiliated_struct_name:
-                                    if struct.attrib:
-                                        org[struct.attrib['type']] = struct.text
-                                    else:
-                                        org["name"] = struct.text
-                                    org['ref'] = affiliation.attrib['ref']
-                                    org['type'] = affiliated_struct.attrib['type']
-                                author_affiliation.append(org)
-
-                if registered == False:
-
-                    author['id'] = author_id
-                    author['name'] = author_name
-                    author['documents'] = author_documents
-                    author['affiliation'] = author_affiliation
-
-                    document_author = authors_collection.createDocument(author)
-                    document_author.save()
-                    dict_registered[author_final_id] = document_author._id
-                    # print(dict_registered)
-
-                elif registered == True:
-                    document_id = dict_registered[author_final_id]
-                    # AQL query to append to the documents and affiliation
-                    aql_query = f'''
-                                    FOR doc IN authors
-                                        FILTER doc._id == '{document_id}'
-                                        UPDATE doc WITH {{ 
-                                            documents: MERGE(doc.documents, {author_documents}),
-                                            affiliation: APPEND(doc.affiliation, {author_affiliation}, true)
-                                        }} IN authors
-                                '''
-                    # Execute the AQL query
-                    result = db.AQLQuery(aql_query, rawResults=True)
-
-            #-----------------------------------------------------------------------------------------------------------
 
             abstract = tree.find(".//{http://www.tei-c.org/ns/1.0}abstract")
             if abstract:
@@ -260,7 +165,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
             data_json_get_document['file_hal_id'] = file_name
             data_json_get_document['citation'] = citations
             data_json_get_document['title'] = title
-            data_json_get_document['author'] = list_author
 
             document_document = documents_collection.createDocument(data_json_get_document)
             document_document.save()
@@ -347,14 +251,109 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 UPDATE software WITH {{ software_name: {{ normalizedForm: "{software_name_cleaned}" }} }} IN softwares
                             """
                             db.AQLQuery(update_query)
+            author_list = tree.findall(".//tei:listBibl//tei:titleStmt//tei:author", ns)
+            list_author_old = []
+            for elm in author_list:
+                author = {}
+                persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
+                author['role'] = elm.attrib['role']
+
+                #TO DO delete this part --------------------------------------------------------------------------------
+                for name in persName:
+                    author[name.tag.split('}')[1]] =  name.text
+                list_author_old.append(author)
+                # ------------------------------------------------------------------------------------------------------
+
+                # insert test--------------------------------------------------------------------------------------------
+                author = {}
+
+                # idhal
+                author_id = {}
+                id_halid = None
+                id_halauthorid = None
+                id_halid = elm.findall(".//tei:idno[@type='idhal']", ns)
+                if len(id_halid) > 0:
+                    for id_type in id_halid:
+                        author_id[id_type.attrib['notation']] = id_type.text
+                id_halauthorid = elm.find(".//tei:idno[@type='halauthorid']", ns)
+                if id_halauthorid is not None:
+                    author_id[id_halauthorid.attrib['type']] = id_halauthorid.text
+                    id_final = 0
+                try:
+                    author_final_id = author_id['numeric']
+                except KeyError:
+                    author_final_id = author_id['halauthorid']
+                if author_final_id in list(dict_registered.keys()):
+                    registered = True
+                else:
+                    registered = False
+
+                # name
+                author_name = {}
+                persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
+                for name in persName:
+                    author_name[name.tag.split('}')[1]] = name.text
+
+                # document
+                author_documents = {}
+                author_documents[data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", "")] = elm.attrib[
+                    'role']
+
+                # affiliation
+                author_affiliation = []
+                affiliations_list = elm.findall("{http://www.tei-c.org/ns/1.0}affiliation")
+                if len(affiliations_list) > 0:
+                    for affiliation in affiliations_list:
+                        affiliated_struct = tree.find(
+                            f".//tei:back//tei:listOrg//tei:org[@xml:id='{affiliation.attrib['ref'][1:]}']", ns)
+                        if affiliated_struct is not None:
+                            affiliated_struct_name = affiliated_struct.findall('tei:orgName', ns)
+                            if affiliated_struct_name is not None:
+                                org = {}
+                                for struct in affiliated_struct_name:
+                                    if struct.attrib:
+                                        org[struct.attrib['type']] = struct.text
+                                    else:
+                                        org["name"] = struct.text
+                                    org['ref'] = affiliation.attrib['ref']
+                                    org['type'] = affiliated_struct.attrib['type']
+                                author_affiliation.append(org)
+
+                if registered == False:
+
+                    author['id'] = author_id
+                    author['name'] = author_name
+                    author['documents'] = author_documents
+                    author['affiliation'] = author_affiliation
+
+                    document_author = authors_collection.createDocument(author)
+                    document_author.save()
+                    dict_registered[author_final_id] = document_author._id
+                    # print(dict_registered)
+                    edge = doc_auth_edge.createEdge()
+                    edge['_from'] = document_document._id
+                    edge['_to'] = document_author._id
+                    edge.save()
+
+                elif registered == True:
+                    document_id = dict_registered[author_final_id]
+                    # AQL query to append to the documents and affiliation
+                    aql_query = f'''
+                                    FOR doc IN authors
+                                        FILTER doc._id == '{document_id}'
+                                        UPDATE doc WITH {{ 
+                                            documents: MERGE(doc.documents, {author_documents}),
+                                            affiliation: APPEND(doc.affiliation, {author_affiliation}, true)
+                                        }} IN authors
+                                '''
+                    # Execute the AQL query
+                    result = db.AQLQuery(aql_query, rawResults=True)
+                    edge = doc_auth_edge.createEdge()
+                    edge['_from'] = document_document._id
+                    edge['_to'] = document_id
+                    edge.save()
+
+            #-----------------------------------------------------------------------------------------------------------
     if len(list_errors) > 0:
        print(list_errors)
-
- #----------------------------------------------------------------------------------------------------------------------
-    for document_author_id,list_document_id in dict_edge_author.items():
-        for document_id in list_document_id:
-            edge = doc_auth_edge.createEdge()
-            edge['_from'] = document_author_id
-            edge['_to'] = document_id
-            edge.save()
 
