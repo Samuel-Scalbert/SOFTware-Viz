@@ -1,7 +1,9 @@
 from app.app import app, db
 
+
 @app.route('/resett')
 def reset():
+    # Dropping all collections
     db.dropAllCollections()
-    db.dropAllEdges()
-    return '<br>'.join('reset')
+
+    return 'Database reset successfully'
