@@ -1,5 +1,6 @@
 from app.app import app, db
 from Utils.disambiguate import desambiguate_from_software
+from Utils.author import author_info_from_id
 from flask import jsonify
 
 @app.route('/api/disambiguate/list_software')
@@ -167,24 +168,18 @@ def links_id_from_struc(struc):
     response = db.AQLQuery(query, rawResults=True, batchSize=3000)
     return list(response)
 
+@app.route('/api/author/<author_halauthorid>')
+def author_info(author_halauthorid):
+    data = author_info_from_id(author_halauthorid)
+    return jsonify(data[0:])
 
-# API endpoint to retrieve authors associated with a specific HAL ID
-@app.route('/api/aut/<hal_id>')
-def links_authors(hal_id):
+@app.route('/api/author/list_authors')
+def list_authors():
     query = f'''
-    FOR doc in documents
-        FILTER doc.file_hal_id == "{hal_id}"
-        RETURN doc._id
-    '''
-    # Execute the query and return the response as JSON
-    id_document = db.AQLQuery(query, rawResults=True)
-    query = f'''
-    FOR edge in edge_author
-        FILTER edge._from ==  "{id_document[0]}"
-        LET doc = document(edge._to)
-        RETURN concat(doc.name.forename, " ",doc.name.surname)
+        FOR aut IN authors
+            RETURN DISTINCT [CONCAT(aut.name.surname, " ", aut.name.forename),aut.id.halauthorid]
         '''
-    # Execute the query and return the response as JSON
-    response = db.AQLQuery(query, rawResults=True)
-    print(response)
-    return jsonify(response[0:])
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return jsonify(data[0:])
+

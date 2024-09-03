@@ -1,4 +1,19 @@
 document.addEventListener('DOMContentLoaded', async (event) => {
+
+    function affi_type(str) {
+        const typeMap = {
+            "department": "Department",
+            "institution": "Institution",
+            "laboratory": "Laboratory",
+            "regroupinstitution": "Regroup Institution",
+            "regrouplaboratory": "Regroup Laboratory",
+            "researchteam": "Research Team"
+        };
+
+        // Return the formatted string if it exists in the map, otherwise return the original string
+        return typeMap[str] || str;
+    }
+
     try {
         // Fetch the list of authors from the API
         const response = await fetch(`/api/author/list_authors`, {
@@ -73,19 +88,44 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                     authorCard.id = auth_id;
 
                     let documentsList = '<ul>';
-                        auth_info[0].documents.forEach((doc) => {
-                            documentsList += `<li>${doc}</li>`;
-                        });
-                        documentsList += '</ul>';
+                    Object.entries(auth_info[0].documents).forEach(([docID, role]) => {
+                        documentsList += `<li class="${role}"><a href="/doc/${docID}">${docID}</a></li>`;
+                    });
+                    documentsList += '</ul>';
+
+
+                    let affiList = '<ul>';
+                    auth_info[0].affiliation.forEach(affi => {
+                        const affi_type_cleaned = affi_type(affi.type);
+                        let affi_card;
+                        console.log(affi.INRIA)
+                        if (affi.INRIA == true){
+                            if (affi.acronym) {affi_card = `<h4>${affi.acronym} (${affi_type_cleaned} - <span class="INRIA">INRIA</span>)</h4>`}
+                            else {affi_card = `<h4>${affi_type_cleaned} - <span class="INRIA">INRIA</span></h4>`}
+                        } else {
+                            if (affi.acronym) {affi_card = `<h4>${affi.acronym} (${affi_type_cleaned})</h4>`}
+                            else {affi_card = `<h4>${affi_type_cleaned}</h4>`}
+                        }
+
+                        if (affi.url_team) {  // Check if `url_team` is truthy
+                            affi_card += `<p>${affi.name} (<a href='${affi.url_team}'>url</a>)</p>`;
+                        } else {
+                            affi_card += `<p>${affi.name}</p>`;
+                        }
+
+                        affi_card += `<p>AureHAL ID: <a href='https://aurehal.archives-ouvertes.fr/structure/read/id/${affi.ref.substring(8)}'>${affi.ref}</a></p>`;
+                        affiList += `<li>${affi_card}</li>`;  // Add the `affi_card` to the list
+                    });
+                    affiList += '</ul>';
+                    console.log(affiList);
 
                     // Assuming auth_info is an object, format it for display
                     authorCard.innerHTML = `
                         <h2>${auth_info[0].name.surname} ${auth_info[0].name.forename} </h2>
                         <p>Hal ID: ${auth_info[0].id.halauthorid}</p>
-                        <p>Documents: ${auth_info[0].documents}</p>
-                        <p>Affiliations: ${auth_info[0].affiliation}</p>
+                        <p>Documents: ${documentsList}</p>
+                        <p>Affiliations: ${affiList}</p>
                     `;
-
                     // Prepend the new card to the top of the author box
                     authorBox.prepend(authorCard);
 
