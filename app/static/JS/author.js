@@ -28,9 +28,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // Parse the response as JSON
         const Author_list = await response.json();
 
-        // Log the list of authors to the console for debugging
-        console.log(Author_list);
-
         // Example of using the Author_list
         const resultBox = document.getElementById("result-box-dis");
         const inputBox = document.getElementById("input-box-dis");
@@ -81,6 +78,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
                     // Parse the response JSON
                     const auth_info = await response.json();
+                    console.log("full info:",auth_info[0]);
+                    const soft_info = auth_info[0].software_names;
 
                     // Create a new author card
                     const authorCard = document.createElement('div');
@@ -88,17 +87,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                     authorCard.id = auth_id;
 
                     let documentsList = '<ul>';
-                    Object.entries(auth_info[0].documents).forEach(([docID, role]) => {
+                    Object.entries(auth_info[0].author.documents).forEach(([docID, role]) => {
                         documentsList += `<li class="${role}"><a href="/doc/${docID}">${docID}</a></li>`;
                     });
                     documentsList += '</ul>';
 
 
                     let affiList = '<ul>';
-                    auth_info[0].affiliation.forEach(affi => {
+                    auth_info[0].author.affiliation.forEach(affi => {
                         const affi_type_cleaned = affi_type(affi.type);
                         let affi_card;
-                        console.log(affi.INRIA)
                         if (affi.INRIA == true){
                             if (affi.acronym) {affi_card = `<h4>${affi.acronym} (${affi_type_cleaned} - <span class="INRIA">INRIA</span>)</h4>`}
                             else {affi_card = `<h4>${affi_type_cleaned} - <span class="INRIA">INRIA</span></h4>`}
@@ -117,19 +115,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         affiList += `<li>${affi_card}</li>`;  // Add the `affi_card` to the list
                     });
                     affiList += '</ul>';
-                    console.log(affiList);
 
+                    let software_list = '<ul>';
+                    soft_info.forEach(soft_list => {
+                            let soft_tag = `<li><a href="/doc/${soft_list[1]}/${soft_list[0]}">${soft_list[0]}</a>(${soft_list[1]})</li>`
+                            software_list += soft_tag
+                        });
+                    software_list += '</ul>';
+                    console.log(software_list)
                     // Assuming auth_info is an object, format it for display
                     authorCard.innerHTML = `
-                        <h2>${auth_info[0].name.surname} ${auth_info[0].name.forename} </h2>
-                        <p>Hal ID: ${auth_info[0].id.halauthorid}</p>
+                        <h2>${auth_info[0].author.name.surname} ${auth_info[0].author.name.forename} </h2>
+                        <p>Hal ID: ${auth_info[0].author.id.halauthorid}</p>
                         <p>Documents: ${documentsList}</p>
                         <p>Affiliations: ${affiList}</p>
+                        <p>Software: ${software_list}</p>
                     `;
                     // Prepend the new card to the top of the author box
                     authorBox.prepend(authorCard);
 
-                    console.log(auth_info);
                 } catch (error) {
                     // Handle any errors that occurred during the fetch
                     console.error('Error fetching the author details:', error);
