@@ -105,6 +105,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                             else {affi_card = `<h4>${affi_type_cleaned}</h4>`}
                         }
 
+                        if (affi.status){
+                            affi_card += `<p class="status">Status : <span class="${affi.status}">${affi.status}</span></p>`
+                        }
+
                         if (affi.url_team) {  // Check if `url_team` is truthy
                             affi_card += `<p>${affi.name} (<a href='${affi.url_team}'>url</a>)</p>`;
                         } else {
@@ -112,6 +116,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         }
 
                         affi_card += `<p>AureHAL ID: <a href='https://aurehal.archives-ouvertes.fr/structure/read/id/${affi.ref.substring(8)}'>${affi.ref}</a></p>`;
+
+
+
                         affiList += `<li>${affi_card}</li>`;  // Add the `affi_card` to the list
                     });
                     affiList += '</ul>';
@@ -129,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         <p>Hal ID: ${auth_info[0].author.id.halauthorid}</p>
                         <p>Documents: ${documentsList}</p>
                         <p>Affiliations: ${affiList}</p>
-                        <p>Software: ${software_list}</p>
+                        <p>Softwares: ${software_list}</p>
                     `;
                     // Prepend the new card to the top of the author box
                     authorBox.prepend(authorCard);

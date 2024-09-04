@@ -127,6 +127,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 list_org.append(structure_name_sanitized)
                         except KeyError:
                             continue
+
             data_json_get_document['structures'] = list_org
 
             doc_type = tree.findall(".//tei:listBibl//tei:biblFull//tei:profileDesc//tei:textClass//tei:classCode", ns)
@@ -313,6 +314,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
                             affiliated_struct_name = affiliated_struct.findall('tei:orgName', ns)
                             if affiliated_struct_name is not None:
                                 org = {}
+                                org['status'] = affiliated_struct.attrib['status']
                                 org['url_team'] = False
                                 url_team = affiliated_struct.find('.//{http://www.tei-c.org/ns/1.0}desc//ref[@type="url"]')
                                 for url_team in affiliated_struct.find('.//{http://www.tei-c.org/ns/1.0}desc'):
