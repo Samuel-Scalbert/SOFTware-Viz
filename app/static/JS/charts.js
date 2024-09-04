@@ -262,20 +262,29 @@ function generateCircleChart(selector, value1, value2, value3) {
             }]
         },
         options: {
-            radius: 100,
-            rotation: 180,
-            hoverOffset: 4,
-            responsive: false,
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    enabled: true, // Disables tooltips
+                },
+                legend: {
+                    display: true, // Hides the legend
+                },
+                datalabels: {
+                    display: false // Hides data labels
+                }
+            },
             animation: {
-                animateScale: true
+                animateScale: true, // Enables scaling animation
             },
-
-            tooltips: {
-                enabled: false
+            layout: {
+                padding: 20 // Adds padding around the chart
             },
-            legend: {
-                display: false
-            }
+            elements: {
+                arc: {
+                    borderWidth: 1 // Sets the border width of each slice
+                }
+            },
         },
 
         plugins: [{
@@ -290,7 +299,6 @@ function generateCircleChart(selector, value1, value2, value3) {
                 chart.ctx.fillStyle = "black";
             },
         }]
-
     };
 
     const ctx = document.querySelector(selector);

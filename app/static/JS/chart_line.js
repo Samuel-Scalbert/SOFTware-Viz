@@ -51,6 +51,11 @@ fetch(`/api/line_chart`, {
         data: chartData,
         options: {
             responsive: true,
+            plugins: {
+                datalabels: {
+                    display: false // Hides data labels
+                }
+            },
             scales: {
                 x: {
                     display: true,
