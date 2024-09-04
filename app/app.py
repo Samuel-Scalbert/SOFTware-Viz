@@ -43,9 +43,9 @@ global data_dashboard
 data_dashboard = None
 #data_dashboard = dashboard(db, structure)
 
-from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route
+from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route, author_route
 
 @app.route('/')
 def home():
-    return render_template('partials/conteneur.html')
+    return render_template('pages/home.html')
 
