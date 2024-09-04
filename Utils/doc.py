@@ -139,6 +139,6 @@ def doc_info_from_id(file_id,db):
         abstract = None
     title = db.AQLQuery(f"LET doc = DOCUMENT('{file_meta_id}') RETURN doc.title", rawResults=True)
     title = title[0]
-    data = [dic_context, abstract, citation, list_other_softwares, title]
+    data = [dic_context, abstract, citation, list_other_softwares, title,file_id]
 
     return data
