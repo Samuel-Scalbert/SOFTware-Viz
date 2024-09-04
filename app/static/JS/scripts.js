@@ -259,7 +259,6 @@ reorderSoftwareMentions();
             });
 
             // Additional debug to check scroll position
-            console.log('Element position:', element.getBoundingClientRect());
         }, index * 100);  // Adjust the delay (500ms) as needed
     });
 
@@ -280,7 +279,8 @@ reorderSoftwareMentions();
     const clickedExcludedElement = selectors.some(selector => event.target.closest(selector));
 
     if (!clickedExcludedElement) {
-        last_clicked_structure.style.color = 'black';
+        if (last_clicked_structure) {last_clicked_structure.style.color = 'black';}
+        console.log(last_clicked_structure)
         // Handle clicks outside the specified elements
         const elements = document.querySelectorAll('.mention_doc_id');
         const elements_search =document.querySelectorAll('.dropdown-content-search');
