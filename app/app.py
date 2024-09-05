@@ -47,5 +47,5 @@ from app.routes import doc_route, dashboard_route,reset_db, software_route, api_
 
 @app.route('/')
 def home():
-    return render_template('pages/home.html')
+    return render_template('partials/conteneur.html')
 
