@@ -57,23 +57,23 @@ def insert_json_db(data_path_json,data_path_xml,db):
         db.createCollection('Collection', name='authors')
         authors_collection = db['authors']
 
-    if db.hasCollection('edge_software'):
-        doc_soft_edge = db['edge_software']
+    if db.hasCollection('edge_doc_to_software'):
+        doc_soft_edge = db['edge_doc_to_software']
     else:
-        db.createCollection('Edges', name='edge_software')
-        doc_soft_edge = db['edge_software']
+        db.createCollection('Edges', name='edge_doc_to_software')
+        doc_soft_edge = db['edge_doc_to_software']
 
-    if db.hasCollection('edge_reference'):
-        doc_ref_edge = db['edge_reference']
+    if db.hasCollection('edge_doc_to_reference'):
+        doc_ref_edge = db['edge_doc_to_reference']
     else:
-        db.createCollection('Edges', name='edge_reference')
-        doc_ref_edge = db['edge_reference']
+        db.createCollection('Edges', name='edge_doc_to_reference')
+        doc_ref_edge = db['edge_doc_to_reference']
 
-    if db.hasCollection('edge_author'):
-        doc_auth_edge = db['edge_author']
+    if db.hasCollection('edge_doc_to_author'):
+        doc_auth_edge = db['edge_doc_to_author']
     else:
-        db.createCollection('Edges', name='edge_author')
-        doc_auth_edge = db['edge_author']
+        db.createCollection('Edges', name='edge_doc_to_author')
+        doc_auth_edge = db['edge_doc_to_author']
 
     data_json_files = os.listdir(data_path_json)
     data_xml_list = os.listdir(data_path_xml)
@@ -111,6 +111,9 @@ def insert_json_db(data_path_json,data_path_xml,db):
             tree = ET.parse(xml_file)
             root = tree.getroot()
             ns = {"tei": "http://www.tei-c.org/ns/1.0", 'xml': 'http://www.w3.org/XML/1998/namespace'}
+
+
+            # DOCUMENT -----------------------------------------------------
 
             title = tree.find(".//tei:listBibl//tei:titleStmt//tei:title", ns)
             title = title.text
@@ -154,6 +157,9 @@ def insert_json_db(data_path_json,data_path_xml,db):
 
             document_document = documents_collection.createDocument(data_json_get_document)
             document_document.save()
+
+            # SOFTWARE -----------------------------------------------------
+
             if f"{file_name}.software.json" in data_json_files:
                 with open(f'{data_path_json}/{file_name}.software.json', 'r') as json_file:
                     data_json = json.load(json_file)
@@ -176,6 +182,8 @@ def insert_json_db(data_path_json,data_path_xml,db):
                             edge['_from'] = document_document._id
                             edge['_to'] = software_document._id
                             edge.save()
+
+            # REFERENCES -----------------------------------------------------
 
                     # Process each reference
                     data_json_get_references = data_json.get("references")
@@ -206,7 +214,9 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     RETURN {{ softwareName, count }}
                 """
 
-                # Execute the AQL query to get software names and counts
+            # Cleaning the software for the dashboard (maybe obsolete now) -----------------------------------------
+
+                '''# Execute the AQL query to get software names and counts
                 all_software_dict = db.AQLQuery(query, rawResults=True)
 
                 # Fetch distinct software names
@@ -236,21 +246,16 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 FILTER software.software_name.normalizedForm == "{software_name}"
                                 UPDATE software WITH {{ software_name: {{ normalizedForm: "{software_name_cleaned}" }} }} IN softwares
                             """
-                            db.AQLQuery(update_query)
+                            db.AQLQuery(update_query)'''
+
+            # AUTHORS -----------------------------------------------------
+
             author_list = tree.findall(".//tei:listBibl//tei:titleStmt//tei:author", ns)
             list_author_old = []
             for elm in author_list:
                 author = {}
                 persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
                 author['role'] = elm.attrib['role']
-
-                #TO DO delete this part --------------------------------------------------------------------------------
-                for name in persName:
-                    author[name.tag.split('}')[1]] =  name.text
-                list_author_old.append(author)
-                # ------------------------------------------------------------------------------------------------------
-
-                # insert test--------------------------------------------------------------------------------------------
                 author = {}
 
                 # idhal
@@ -285,17 +290,19 @@ def insert_json_db(data_path_json,data_path_xml,db):
                 try:
                     # Create a dictionary for each document and append it to the list
                     document_data = {
-                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", ""),
+                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", "").replace(".xml", "").replace(".hal.xml", ""),
                         'role': elm.attrib['role']
                     }
                     author_documents.append(document_data)
                 except KeyError:
                     # Handle the case where 'role' may not be present, and append with a default 'role'
                     document_data = {
-                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", ""),
+                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", "").replace(".xml", "").replace(".hal.xml", ""),
                         'role': elm.attrib.get('role', 'unknown')
                     }
                     author_documents.append(document_data)
+
+            # STRUCT -----------------------------------------------------
 
                 # affiliation
                 author_affiliation = []
@@ -369,7 +376,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     edge['_to'] = document_id
                     edge.save()
 
-            #-----------------------------------------------------------------------------------------------------------
     if len(list_errors) > 0:
        print(list_errors)
 
