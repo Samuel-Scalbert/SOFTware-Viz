@@ -115,21 +115,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
             title = tree.find(".//tei:listBibl//tei:titleStmt//tei:title", ns)
             title = title.text
 
-            structures = tree.find(".//tei:back//tei:listOrg", ns)
-            list_org = []
-            for org in structures:
-                if org.attrib['type'] in ['regrouplaboratory','regroupinstitution','institution']:
-                    for org_child_tags in list(org):
-                        try:
-                            if org_child_tags.attrib['type'] == 'acronym':
-                                structure_name = org_child_tags.text
-                                structure_name_sanitized = structure_name.rstrip()
-                                list_org.append(structure_name_sanitized)
-                        except KeyError:
-                            continue
-
-            data_json_get_document['structures'] = list_org
-
             doc_type = tree.findall(".//tei:listBibl//tei:biblFull//tei:profileDesc//tei:textClass//tei:classCode", ns)
             for tag in doc_type:
                 if tag.attrib.get('n') == 'COMM':
@@ -296,9 +281,21 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     author_name[name.tag.split('}')[1]] = name.text
 
                 # document
-                author_documents = {}
-                author_documents[data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", "")] = elm.attrib[
-                    'role']
+                author_documents = []
+                try:
+                    # Create a dictionary for each document and append it to the list
+                    document_data = {
+                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", ""),
+                        'role': elm.attrib['role']
+                    }
+                    author_documents.append(document_data)
+                except KeyError:
+                    # Handle the case where 'role' may not be present, and append with a default 'role'
+                    document_data = {
+                        'document_halid': data_file_xml.replace(".hal.xml", "").replace(".hal.grobid.xml", ""),
+                        'role': elm.attrib.get('role', 'unknown')
+                    }
+                    author_documents.append(document_data)
 
                 # affiliation
                 author_affiliation = []
@@ -358,12 +355,12 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     document_id = dict_registered[author_final_id]
                     # AQL query to append to the documents and affiliation
                     aql_query = f'''
-                                    FOR doc IN authors
-                                        FILTER doc._id == '{document_id}'
-                                        UPDATE doc WITH {{ 
-                                            documents: MERGE(doc.documents, {author_documents}),
-                                            affiliation: APPEND(doc.affiliation, {author_affiliation}, true)
-                                        }} IN authors
+                                FOR doc IN authors
+                                    FILTER doc._id == '{document_id}'
+                                    UPDATE doc WITH {{ 
+                                        documents: APPEND(doc.documents, {author_documents}, true), 
+                                        affiliation: APPEND(doc.affiliation, {author_affiliation}, true)
+                                    }} IN authors
                                 '''
                     # Execute the AQL query
                     result = db.AQLQuery(aql_query, rawResults=True)
