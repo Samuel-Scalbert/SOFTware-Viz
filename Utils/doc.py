@@ -13,11 +13,14 @@ def doc_software(file_id,software,db):
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta
-    abstract = (file_meta[0]['abstract'])
-    if abstract[0] == 'HAL':
-        abstract.remove('HAL')
-    if abstract[0] == 'GROBID':
-        abstract.remove('GROBID')
+    try:
+        abstract = (file_meta[0]['abstract'])
+        if abstract[0] == 'HAL':
+            abstract.remove('HAL')
+        if abstract[0] == 'GROBID':
+            abstract.remove('GROBID')
+    except KeyError:
+        abstract = 'No abstract'
     citation = (file_meta[0]['citation'])
     max_attribute = None
 
@@ -85,11 +88,14 @@ def doc_info_from_id(file_id,db):
     except AQLQueryError:
         file_meta = 'not file'
         return file_meta
-    abstract = (file_meta[0]['abstract'])
-    if abstract[0] == 'HAL':
-        abstract.remove('HAL')
-    if abstract[0] == 'GROBID':
-        abstract.remove('GROBID')
+    try:
+        abstract = (file_meta[0]['abstract'])
+        if abstract[0] == 'HAL':
+            abstract.remove('HAL')
+        if abstract[0] == 'GROBID':
+            abstract.remove('GROBID')
+    except KeyError:
+        abstract = 'No abstract'
     citation = (file_meta[0]['citation'])
     max_attribute = None
 
