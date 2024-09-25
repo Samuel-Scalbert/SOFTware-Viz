@@ -68,7 +68,7 @@ def find_ancestor_paths(current_affiliation_id, ns, tree):
 def insert_json_db(data_path_json,data_path_xml,db):
     software_document = []
     list_errors = []
-    db.dropAllCollections()
+    #db.dropAllCollections()
 
     workbook = load_workbook(filename='./app/static/data/Logiciels_Blacklist_et_autres_remarques.xlsx')
     sheet = workbook.active
@@ -124,7 +124,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
                 citations = None
         else:
             print("Error:", response.status_code)
-
         with open(file_path, 'r', encoding='utf-8') as xml_file:
             data_json_get_document = {}
             tree = ET.parse(xml_file)
@@ -273,7 +272,6 @@ def insert_json_db(data_path_json,data_path_xml,db):
             list_author_old = []
             for elm in author_list:
                 author = {}
-                list_registered_edge_struc = []
                 persName = elm.find("{http://www.tei-c.org/ns/1.0}persName")
                 author['role'] = elm.attrib['role']
                 author = {}
@@ -336,13 +334,14 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     edge['_from'] = document_document._id
                     edge['_to'] = document_author._id
                     edge.save()
+                    author_document_id = document_author._id
 
                 elif registered == True:
-                    document_id = dict_registered[author_final_id]
+                    author_document_id = dict_registered[author_final_id]
                     # AQL query to append to the documents and affiliation
                     aql_query = f'''
                                 FOR doc IN authors
-                                    FILTER doc._id == '{document_id}'
+                                    FILTER doc._id == '{author_document_id}'
                                     UPDATE doc WITH {{ 
                                         documents: APPEND(doc.documents, {author_documents}, true), 
                                     }} IN authors
@@ -351,7 +350,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     result = db.AQLQuery(aql_query, rawResults=True)
                     edge = doc_auth_edge.createEdge()
                     edge['_from'] = document_document._id
-                    edge['_to'] = document_id
+                    edge['_to'] = author_document_id
                     edge.save()
             # STRUCT -----------------------------------------------------
 
@@ -401,30 +400,38 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                             org['type'] = affiliated_struct.attrib['type']
                                             document_org = structures_collection.createDocument(org)
                                             document_org.save()
-
+                                            struct_id = document_org._id
                                 else:
-                                    if result[0] not in list_registered_edge_struc:
-                                        list_registered_edge_struc.append(result[0])
-                                        edge = doc_struc_edge.createEdge()
-                                        edge['_from'] = document_document._id
-                                        edge['_to'] = result[0]
-                                        edge.save()
+                                    struct_id = result[0]
+                                    pass
 
-                                        print(id_halauthorid.text)
-                                        print(document_document['file_hal_id'])
+                                query = f"""
+                                            for edge in edge_doc_to_struc
+                                                filter edge._from == "{document_document._id}"
+                                                let struct = document(edge._to)
+                                                return struct._id
+                                                """
+                                list_registered_edge_struc_doc = db.AQLQuery(query, rawResults=True)
 
-                                        query = f'''for auth in authors 
-                                                        filter auth.id.halauthorid == "{id_halauthorid.text}"
-                                                            for doc in auth.documents
-                                                                filter doc.document_halid == "{document_document['file_hal_id']}"
-                                                                return auth._id
-                                                                '''
-                                        author_id = db.AQLQuery(query, rawResults=True, batchSize=10)
+                                if struct_id not in list_registered_edge_struc_doc:
+                                    edge = doc_struc_edge.createEdge()
+                                    edge['_from'] = document_document._id
+                                    edge['_to'] = struct_id
+                                    edge.save()
 
-                                        edge = auth_struc_edge.createEdge()
-                                        edge['_from'] = author_id[0]
-                                        edge['_to'] = result[0]
-                                        edge.save()
+                                query = f"""
+                                            for edge in edge_auth_to_struc
+                                                filter edge._from == "{author_document_id}"
+                                                let struct = document(edge._to)
+                                                return struct._id
+                                                """
+                                list_registered_edge_struc_author = db.AQLQuery(query, rawResults=True)
+
+                                if struct_id not in list_registered_edge_struc_author:
+                                    edge = auth_struc_edge.createEdge()
+                                    edge['_from'] = author_document_id
+                                    edge['_to'] = struct_id
+                                    edge.save()
 
                             for index, structure in enumerate(author_affiliation_path):
                                 if index + 1 < len(author_affiliation_path):
