@@ -1,5 +1,7 @@
 Chart.register(ChartDataLabels);
 
+document.addEventListener('DOMContentLoaded', async (event) => {reorderSoftwareMentions()})
+
 function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
     var labels = [];
     let xdatamin = minyear - 1;

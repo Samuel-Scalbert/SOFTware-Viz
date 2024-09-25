@@ -12,28 +12,16 @@ def dashboard(db, structure):
                 FILTER @structure IN file_id.structures
                 RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }
             """
-            query_structure = """
-                FOR file_id IN documents
-                FILTER @structure IN file_id.structures
-                FOR struc IN file_id.structures
-                RETURN DISTINCT struc
-            """
             bind_vars = {'structure': structure}
         else:
             query = """
                 FOR file_id IN documents
                 RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }
             """
-            query_structure = """
-                FOR file_id IN documents
-                FOR struc IN file_id.structures
-                RETURN DISTINCT struc
-            """
             bind_vars = {}
 
         # Execute queries
         file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=1000)
-        struct_list = db.AQLQuery(query_structure, bindVars=bind_vars, rawResults=True, batchSize=1000)
 
     except AQLQueryError:
         return 'AQL query error: Unable to fetch files'
@@ -47,7 +35,6 @@ def dashboard(db, structure):
         'shared': Counter(),
         'created': Counter()
     }
-    file_structures = list(struct_list)
 
     nb_mention = 0
     doc_with_mention = 0
@@ -58,7 +45,7 @@ def dashboard(db, structure):
         hal_id = file['hal_id']
         file_id = file['_id']
 
-        edges = db['edge_software'].getEdges(file_id)
+        edges = db['edge_doc_to_software'].getEdges(file_id)
         if edges:
             doc_with_mention += 1
             for edge in edges:
@@ -107,6 +94,5 @@ def dashboard(db, structure):
         doc_wno_mention,
         used_software,
         shared_software,
-        created_software,
-        file_structures
+        created_software
     ]
