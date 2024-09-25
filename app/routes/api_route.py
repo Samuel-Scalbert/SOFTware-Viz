@@ -33,7 +33,7 @@ def line_chart_data():
     for year in years:
         query = f'''
                 LET attributeCounts = (
-                    FOR edge IN edge_software
+                    FOR edge IN edge_doc_to_software
                         LET document_id = DOCUMENT(edge._from)
                         FILTER document_id.date == "{year}"
                         LET software_mention = DOCUMENT(edge._to)
@@ -68,14 +68,16 @@ def line_chart_data_struc(struct):
     # Initialize a summary data list with zero counts
     recapData = [0, 0, 0]
     query = f'''
-            for doc in documents
-            filter "{struct}" in doc.structures
-            let mention = (
-                FOR edge IN edge_software
-                Filter edge._from == doc._id
-                return edge._to
-            )
-            return mention
+            FOR struct in structures
+            FILTER struct.id_haureal == "{struct}"
+            FOR edge_doc_to_struct in edge_doc_to_struc
+                FILTER edge_doc_to_struct._to == struct._id
+                    let mention = (
+                        FOR edge IN edge_doc_to_software
+                        Filter edge._from == edge_doc_to_struct._from
+                        return edge._to
+                    )
+                    return mention
             '''
     # Execute the query and process the response
     response = db.AQLQuery(query, rawResults=True)
@@ -101,10 +103,18 @@ def line_chart_data_struc(struct):
         LET attributeCounts = (
             FOR attr IN attributes
                 LET counts = (
-                    FOR edge IN edge_software
+                    FOR edge IN edge_doc_to_software
                         LET document_id = DOCUMENT(edge._from)
                         FILTER document_id.date == "{year}"
-                        FILTER "{struct}" IN document_id.structures
+                        
+                        LET structure_affiliated = (
+                            for doc_to_struct in edge_doc_to_struc
+                                filter doc_to_struct._from == document_id._id
+                                let struct = document(doc_to_struct._to)
+                                return distinct struct.id_haureal
+                        )
+                        FILTER "{struct}" IN structure_affiliated
+                        
                         LET software_mention = DOCUMENT(edge._to)
                         LET usedScore = software_mention.mentionContextAttributes.used.score
                         LET createdScore = software_mention.mentionContextAttributes.created.score
@@ -157,12 +167,14 @@ def links_structures(hal_id):
 @app.route('/api/id_struc/<struc>')
 def links_id_from_struc(struc):
     query = f'''
-    FOR doc IN documents
-        FILTER "{struc}" IN doc.structures
-        FOR software IN edge_software 
-        FILTER software._from == doc._id
-        LET software_name = DOCUMENT(software._to)
-        RETURN Distinct software_name.software_name.normalizedForm
+    FOR struct in structures
+    FILTER struct.id_haureal == "{struc}"
+    FOR edge_doc_to_struct in edge_doc_to_struc
+        FILTER edge_doc_to_struct._to == struct._id
+        FOR edge_doc_to_soft in edge_doc_to_software
+            FILTER edge_doc_to_soft._from == edge_doc_to_struct._from
+            LET software = DOCUMENT(edge_doc_to_soft._to)
+            RETURN distinct software.software_name.normalizedForm
     '''
     # Execute the query and return the response as a list
     response = db.AQLQuery(query, rawResults=True, batchSize=3000)
@@ -183,3 +195,23 @@ def list_authors():
     data = db.AQLQuery(query, rawResults=True, batchSize=2000)
     return jsonify(data[0:])
 
+@app.route('/api/list_type_institution')
+def list_type_institution():
+    query = f'''
+        FOR struc IN structures 
+            RETURN DISTINCT struc.type
+        '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return jsonify(data[0:])
+
+@app.route('/api/list_institution/<type_institution>')
+def list_from_type_institution(type_institution):
+    query = f'''
+        FOR affiliation in structures
+            FILTER affiliation.type == "{type_institution}"
+            RETURN distinct {{acronym :affiliation.acronym, name : affiliation.name, status: affiliation.status, ref: affiliation.id_haureal}}
+                '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return jsonify(data[0:])
