@@ -29,7 +29,7 @@ def api_list_software(list_software):
                 LET context = software.context
                 LET forms = [software.software_name.normalizedForm, software.software_name.rawForm]
                 LET offset =  [software.software_name.offsetStart,software.software_name.offsetEnd]
-                FOR edge IN edge_software
+                FOR edge IN edge_doc_to_software
                 FILTER software._id == edge._to
                 LET doc = document(edge._from)
                     RETURN [doc.file_hal_id, context, offset, forms]

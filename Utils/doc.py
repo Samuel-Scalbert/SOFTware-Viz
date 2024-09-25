@@ -26,7 +26,7 @@ def doc_software(file_id,software,db):
 
     query = f"""
                 LET doc = DOCUMENT('{file_meta_id}')
-                FOR edge IN edge_software
+                FOR edge IN edge_doc_to_software
                   FILTER edge._from == doc._id
                   LET software = DOCUMENT(edge._to)
                   RETURN DISTINCT software.software_name.normalizedForm
@@ -37,7 +37,7 @@ def doc_software(file_id,software,db):
     query = f"""
                 FOR software IN softwares
                     FILTER software.software_name.normalizedForm == "{software}"
-                    FOR edge IN edge_software
+                    FOR edge IN edge_doc_to_software
                         FILTER edge._to == software._id
                         LET doc_id = edge._from
                         LET doc = DOCUMENT(doc_id)
@@ -46,7 +46,7 @@ def doc_software(file_id,software,db):
 
     list_other_articles = db.AQLQuery(query, rawResults=True)
     query = f"""
-                    FOR ids IN edge_software
+                    FOR ids IN edge_doc_to_software
                         FILTER ids._from == '{file_meta_id}'
                         LET software_mention = DOCUMENT(ids._to)
                         RETURN distinct software_mention
@@ -101,7 +101,7 @@ def doc_info_from_id(file_id,db):
 
     query = f"""
                    LET doc = DOCUMENT('{file_meta_id}')
-                   FOR edge IN edge_software
+                   FOR edge IN edge_doc_to_software
                      FILTER edge._from == doc._id
                      LET software = DOCUMENT(edge._to)
                      RETURN DISTINCT software.software_name.normalizedForm
@@ -112,7 +112,7 @@ def doc_info_from_id(file_id,db):
     '''query = f"""
                    FOR software IN softwares
                        FILTER software.software_name.normalizedForm == "{software}"
-                       FOR edge IN edge_software
+                       FOR edge IN edge_doc_to_software
                            FILTER edge._to == software._id
                            LET doc_id = edge._from
                            LET doc = DOCUMENT(doc_id)
@@ -120,7 +120,7 @@ def doc_info_from_id(file_id,db):
                """
 
     list_other_articles = db.AQLQuery(query, rawResults=True)'''
-    for id_software_doc in db['edge_software'].getEdges(file_meta_id):
+    for id_software_doc in db['edge_doc_to_software'].getEdges(file_meta_id):
         to_id = id_software_doc['_to']
         json_software = db.AQLQuery("LET file_meta = DOCUMENT('" + to_id + "') RETURN file_meta", rawResults=True)
         json_software = json_software[0]

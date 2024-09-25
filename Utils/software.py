@@ -13,7 +13,7 @@ def software_all_mentions(software,structure, db):
               LIMIT 1
               RETURN field
           )[0]
-          FOR edge IN edge_software
+          FOR edge IN edge_doc_to_software
             FILTER edge._to == software._id
             LET doc_id = edge._from
             LET doc = DOCUMENT(doc_id)
@@ -30,7 +30,7 @@ def software_all_mentions(software,structure, db):
                       LIMIT 1
                       RETURN field
                   )[0]
-                  FOR edge IN edge_software
+                  FOR edge IN edge_doc_to_software
                     FILTER edge._to == software._id
                     LET doc_id = edge._from
                     LET doc = DOCUMENT(doc_id)
@@ -46,7 +46,6 @@ def software_all_mentions(software,structure, db):
     min_year = float('inf')
     max_year = float('-inf')
     max_occurrences = 0
-    structure_dict = defaultdict(list)
 
     for item in list_attr_halid:
         max_field = item['max_field']
@@ -54,14 +53,6 @@ def software_all_mentions(software,structure, db):
         file_hal_id = item['file_hal_id']
 
         file_hal_id = item['file_hal_id']
-        for structure in item['structure']:
-            if file_hal_id in structure_dict:
-                if structure not in structure_dict[file_hal_id]:
-                    structure_dict[file_hal_id].append(structure)
-            else:
-                structure_dict[file_hal_id] = [
-                    structure]  # If the key doesn't exist, create a new list with the structure
-
 
         if max_field not in result_dict:
             result_dict[max_field] = {}
