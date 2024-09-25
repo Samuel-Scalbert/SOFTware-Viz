@@ -9,7 +9,6 @@ function updateRecap (item){
                 return response.json();
             })
             .then(data => {
-
                 // Extract datasets from the fetched data
                 const usedData = data[0];
                 const createdData = data[1];
@@ -92,125 +91,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         }
     }
-    let last_clicked_structure = null; // Declare last_clicked_structure as a mutable variable
-
-    document.querySelectorAll('.structure').forEach(item => {
-        item.addEventListener('click', event => {
-        // Reset the dropdowns
-        if (last_clicked_structure) { // Check if last_clicked_structure is not null
-            last_clicked_structure.style.color = 'black'; // Reset color to black
-        }
-        last_clicked_structure = item; // Assign the clicked item to last_clicked_structure
-        item.style.color = 'red'; // Change the color of the clicked item to red
-        updateRecap(item.textContent.trim())
-        const elements = document.querySelectorAll('.mention_doc_id');
-        elements.forEach(element => {
-            var dropdownBtn = element.querySelector('.dropbtn');
-            var dropdownContent = element.querySelector('.dropdown-content');
-            dropdownBtn.style.color = '';
-            dropdownContent.style.display = 'none';
-        });
-
-        // Fetch data based on the clicked item text content
-        fetch(`/api/id_struc/${item.textContent.trim()}`, {
-            method: "GET"
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-
-            // Split the data into chunks of 50
-            function chunkArray(array, chunkSize) {
-                const chunks = [];
-                for (let i = 0; i < array.length; i += chunkSize) {
-                    chunks.push(array.slice(i, i + chunkSize));
-                }
-                return chunks;
-            }
-
-            const dataChunks = chunkArray(data, 50);
-
-            // Process each chunk sequentially
-            function processChunk(chunkIndex) {
-                if (chunkIndex >= dataChunks.length) {
-                    return;
-                }
-
-                const chunk = dataChunks[chunkIndex];
-
-                chunk.forEach(software_name => {
-                    const software = software_name ? software_name
-                          .replace(/\s/g, '')  // Remove all whitespace
-                          .replace(/\./g, '')  // Remove all periods
-                          .replace(/@/g, '')  // Escape '@'
-                          .replace(/\(/g, '')  // Escape '('
-                          .replace(/\)/g, '')  // Escape ')'
-                          .replace(/\*/g, '')  // Escape '*'
-                          .replace(/[0-9]/g, '')  // Escape [0,9]
-                          .replace(/\//g, '')  // Escape \
-                          .replace(/\+/g, '')  // Escape '+'
-                          .replace(/\'/g, '')  // Escape '
-                          .replace(/\"/g, '')  // Escape "
-                          : '';
-                    const soft_div = document.querySelectorAll(`#${software}.mention_doc_id`);
-                    soft_div.forEach(element => {
-                        var dropdownBtn = element.querySelector('.dropbtn');
-                        dropdownBtn.style.color = 'red';
-                        element.parentNode.prepend(element);
-                    });
-                });
-
-                processChunk(chunkIndex + 1);
-            }
-
-            processChunk(0);
-            reorderSoftwareMentions();
-        })
-        .catch(error => {
-            console.error('Error fetching data:', error);
-        });
-    });
-});
-    function reorderSoftwareMentions() {
-    const listSoftwareContainers = document.querySelectorAll(".list-software");
-
-    listSoftwareContainers.forEach(container => {
-        const softwareDivs = Array.from(container.getElementsByClassName("mention_doc_id"));
-
-        // Separate red and non-red software
-        const redSoftware = [];
-        const otherSoftware = [];
-
-        softwareDivs.forEach(div => {
-            const isRed = window.getComputedStyle(div.querySelector('button')).color === 'rgb(255, 0, 0)';
-            if (isRed) {
-                redSoftware.push(div);
-            } else {
-                otherSoftware.push(div);
-            }
-        });
-
-        // Sort each list by their numbers in descending order
-        const sortByNumberDesc = (a, b) => {
-            const aNumber = parseInt(a.querySelector(".dropbtn").getAttribute("number"));
-            const bNumber = parseInt(b.querySelector(".dropbtn").getAttribute("number"));
-            return bNumber - aNumber;
-        };
-
-        redSoftware.sort(sortByNumberDesc);
-        otherSoftware.sort(sortByNumberDesc);
-
-        // Reattach sorted elements: first red, then others
-        redSoftware.forEach(div => container.appendChild(div));
-        otherSoftware.forEach(div => container.appendChild(div));
-    });
-}
-reorderSoftwareMentions();
-
 
     function displayResult(result) {
         const content = result.map((list) => {
@@ -278,9 +158,6 @@ reorderSoftwareMentions();
     // Check if the click occurred on any of the excluded elements
     const clickedExcludedElement = selectors.some(selector => event.target.closest(selector));
 
-    if (!clickedExcludedElement) {
-        if (last_clicked_structure) {last_clicked_structure.style.color = 'black';}
-        console.log(last_clicked_structure)
         // Handle clicks outside the specified elements
         const elements = document.querySelectorAll('.mention_doc_id');
         const elements_search =document.querySelectorAll('.dropdown-content-search');
@@ -291,8 +168,6 @@ reorderSoftwareMentions();
                 dropdownContent.style.display = 'none';
                 elements_search.forEach(searchElement => {searchElement.style.display = 'none';})
             });
-        reorderSoftwareMentions();
-    }
 });
 
 
