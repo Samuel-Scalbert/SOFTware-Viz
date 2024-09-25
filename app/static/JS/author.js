@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                     authorCard.id = auth_id;
 
                     let documentsList = '<ul>';
-                    Object.entries(auth_info[0].author.documents).forEach(([docID, role]) => {
-                        documentsList += `<li class="${role}"><a href="/doc/${docID}">${docID}</a></li>`;
+                    auth_info[0].author.documents.forEach(dict_doc=> {
+                        documentsList += `<li class="${dict_doc.role}"><a href="/doc/${dict_doc.document_halid}">${dict_doc.document_halid}</a></li>`;
                     });
                     documentsList += '</ul>';
 
@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         affiList += `<li>${affi_card}</li>`;  // Add the `affi_card` to the list
                     });
                     affiList += '</ul>';
-
                     let software_list = '<ul>';
                     soft_info.forEach(soft_list => {
                             let soft_tag = `<li><a href="/doc/${soft_list[1]}/${soft_list[0]}">${soft_list[0]}</a>(${soft_list[1]})</li>`
@@ -135,9 +134,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                         <h2>${auth_info[0].author.name.surname} ${auth_info[0].author.name.forename} </h2>
                         <p>Hal ID: ${auth_info[0].author.id.halauthorid}</p>
                         <p>Documents: ${documentsList}</p>
-                        <p>Affiliations: ${affiList}</p>
-                        <p>Softwares: ${software_list}</p>
                     `;
+
+                    if (auth_info[0].author.affiliation.length > 0){
+                        authorCard.innerHTML += `<p>Affiliations: ${affiList}</p>`;
+                    }
+                    else {authorCard.innerHTML += `<p>We found no affiliations for this author</p>`;}
+
+                    if (soft_info.length > 0) {
+                        authorCard.innerHTML += `<p>Softwares: ${software_list}</p>`;
+                    }
+                    else {authorCard.innerHTML += `<p>No softwares associated with this author</p>`;}
                     // Prepend the new card to the top of the author box
                     authorBox.prepend(authorCard);
 
