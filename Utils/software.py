@@ -129,7 +129,6 @@ def dataset_creator(raw_dictionnary):
         dataset.append(new_dataset)
 
     position_counts = find_duplicate_positions(dataset)
-    print(position_counts)
     if position_counts:
         for date,label_list in position_counts.items():
             if len(label_list) >= 2:
