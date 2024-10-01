@@ -85,14 +85,15 @@ def insert_json_db(data_path_json,data_path_xml,db):
     references_collection = check_or_create_collection(db, 'references')
     authors_collection = check_or_create_collection(db, 'authors')
     structures_collection = check_or_create_collection(db, 'structures')
+    list_relation_collection = check_or_create_collection(db, 'list_relation')
 
     # Create or retrieve edge collections
-    vertex_structures_edge = check_or_create_collection(db, 'edge_vertex_structures', 'Edges')
     doc_struc_edge = check_or_create_collection(db, 'edge_doc_to_struc', 'Edges')
     auth_struc_edge = check_or_create_collection(db, 'edge_auth_to_struc', 'Edges')
     doc_soft_edge = check_or_create_collection(db, 'edge_doc_to_software', 'Edges')
     doc_ref_edge = check_or_create_collection(db, 'edge_doc_to_reference', 'Edges')
     doc_auth_edge = check_or_create_collection(db, 'edge_doc_to_author', 'Edges')
+    auth_rel_struc_edge = check_or_create_collection(db, 'edge_auth_to_rel_struc', 'Edges')
 
     data_json_files = os.listdir(data_path_json)
     data_xml_list = os.listdir(data_path_xml)
@@ -196,10 +197,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
                             software_document.save()
 
                             # Create edge from document to software
-                            edge = doc_soft_edge.createEdge()
-                            edge['_from'] = document_document._id
-                            edge['_to'] = software_document._id
-                            edge.save()
+                            edge_doc_soft = doc_soft_edge.createEdge()
+                            edge_doc_soft['_from'] = document_document._id
+                            edge_doc_soft['_to'] = software_document._id
+                            edge_doc_soft.save()
 
             # REFERENCES -----------------------------------------------------
 
@@ -219,10 +220,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
                         references_document.save()
 
                         # Create edge from document to reference
-                        edge = doc_ref_edge.createEdge()
-                        edge['_from'] = document_document._id
-                        edge['_to'] = references_document._id
-                        edge.save()
+                        edge_doc_ref = doc_ref_edge.createEdge()
+                        edge_doc_ref['_from'] = document_document._id
+                        edge_doc_ref['_to'] = references_document._id
+                        edge_doc_ref.save()
                 # Define the AQL query to fetch software names and their counts
                 query = f"""
                 FOR doc IN edge_software
@@ -330,10 +331,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
                     document_author.save()
                     dict_registered[author_final_id] = document_author._id
                     # print(dict_registered)
-                    edge = doc_auth_edge.createEdge()
-                    edge['_from'] = document_document._id
-                    edge['_to'] = document_author._id
-                    edge.save()
+                    edge_doc_auth = doc_auth_edge.createEdge()
+                    edge_doc_auth['_from'] = document_document._id
+                    edge_doc_auth['_to'] = document_author._id
+                    edge_doc_auth.save()
                     author_document_id = document_author._id
 
                 elif registered == True:
@@ -348,10 +349,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 '''
                     # Execute the AQL query
                     result = db.AQLQuery(aql_query, rawResults=True)
-                    edge = doc_auth_edge.createEdge()
-                    edge['_from'] = document_document._id
-                    edge['_to'] = author_document_id
-                    edge.save()
+                    edge_doc_auth = doc_auth_edge.createEdge()
+                    edge_doc_auth['_from'] = document_document._id
+                    edge_doc_auth['_to'] = author_document_id
+                    edge_doc_auth.save()
             # STRUCT -----------------------------------------------------
 
                 # Main logic to collect paths for all affiliations
@@ -367,6 +368,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
                         # Dictionary to store document key to _id mappings
                         document_id_map = {}
                         for author_affiliation_path in author_affiliation_paths:
+                            list_relation_idstruct = []
                             for index, structure in enumerate(author_affiliation_path):
                                 result = db.AQLQuery(
                                     f'FOR struc IN structures FILTER struc.id_haureal == "{structure}" RETURN struc._id',
@@ -414,10 +416,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 list_registered_edge_struc_doc = db.AQLQuery(query, rawResults=True)
 
                                 if struct_id not in list_registered_edge_struc_doc:
-                                    edge = doc_struc_edge.createEdge()
-                                    edge['_from'] = document_document._id
-                                    edge['_to'] = struct_id
-                                    edge.save()
+                                    edge_doc_struc = doc_struc_edge.createEdge()
+                                    edge_doc_struc['_from'] = document_document._id
+                                    edge_doc_struc['_to'] = struct_id
+                                    edge_doc_struc.save()
 
                                 query = f"""
                                             for edge in edge_auth_to_struc
@@ -428,34 +430,24 @@ def insert_json_db(data_path_json,data_path_xml,db):
                                 list_registered_edge_struc_author = db.AQLQuery(query, rawResults=True)
 
                                 if struct_id not in list_registered_edge_struc_author:
-                                    edge = auth_struc_edge.createEdge()
-                                    edge['_from'] = author_document_id
-                                    edge['_to'] = struct_id
-                                    edge.save()
+                                    edge_auth_struc = auth_struc_edge.createEdge()
+                                    edge_auth_struc['_from'] = author_document_id
+                                    edge_auth_struc['_to'] = struct_id
+                                    edge_auth_struc.save()
 
-                            for index, structure in enumerate(author_affiliation_path):
-                                if index + 1 < len(author_affiliation_path):
-                                    # Get the next structure's _id
-                                    next_structure = author_affiliation_path[index + 1]
-                                    from_id = db.AQLQuery(
-                                        f'FOR struc IN structures FILTER struc.id_haureal == "{structure}" RETURN struc._id',
-                                        rawResults=True)
-                                    to_id = db.AQLQuery(
-                                        f'FOR struc IN structures FILTER struc.id_haureal == "{author_affiliation_path[index + 1]}" RETURN struc._id',
-                                        rawResults=True)
-                                    _from_id = from_id[0]
-                                    _to_id = to_id[0]
-                                    #print(f"from {structure} to {next_structure}")
-                                    if _from_id and _to_id:
-                                        index_relation = {
-                                            '_from': _from_id,
-                                            '_to': _to_id,
-                                            'document_id': document_document._id,
-                                            'author_id': document_author._id
-                                        }
+                                result = db.AQLQuery(
+                                    f'FOR struc IN structures FILTER struc.id_haureal == "{structure}" RETURN struc._id',
+                                    rawResults=True)
+                                if result != []:
+                                    list_relation_idstruct.append(result[0])
 
-                                        document_vertex = vertex_structures_edge.createEdge(index_relation)
-                                        document_vertex.save()
+                            list_relation_documents = list_relation_collection.createDocument({"list_relation" : list_relation_idstruct})
+                            list_relation_documents.save()
+
+                        edge_auth_rel_struc = auth_rel_struc_edge.createEdge()
+                        edge_auth_rel_struc['_from'] = author_document_id
+                        edge_auth_rel_struc['_to'] = list_relation_documents._id
+                        edge_auth_rel_struc.save()
 
     if len(list_errors) > 0:
        print(list_errors)
