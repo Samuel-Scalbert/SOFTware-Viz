@@ -2,6 +2,18 @@ Chart.register(ChartDataLabels);
 
 document.addEventListener('DOMContentLoaded', async (event) => {reorderSoftwareMentions()})
 
+function affi_type(str) {
+    const typeMap = {
+        "department": "Department",
+        "institution": "Institution",
+        "laboratory": "Laboratory",
+        "regroupinstitution": "Regroup Institution",
+        "regrouplaboratory": "Regroup Laboratory",
+        "researchteam": "Research Team"
+    };
+    return typeMap[str] || str;
+}
+
 function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
     var labels = [];
     let xdatamin = minyear - 1;
@@ -131,50 +143,95 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
           {
               const software = document.getElementById("software_name")
               showSources(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
-              showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label);
+              showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
               showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
           }
       }
     };
 }
 
-function showStructures(hal_id_list) {
+async function showStructures(hal_id_list, software) {
     const uniqueStructures = new Set();
+    let softwareName;
+    if (software !== "") {
+        softwareName = software;
+    } else {
+        softwareName = window.location.pathname.split('/').pop();
+    }
+    try {
+        // Fetch the list of institution types once
+        const response = await fetch(`/api/list_type_institution`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const institutionTypes = await response.json();
 
-    hal_id_list.forEach(hal_id => {
-        fetch(`/api/stru_id/${hal_id}`, {
-            method: "GET"
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            data.forEach(structure => {
-                uniqueStructures.add(structure);
+        // Select the target div for displaying structures
+        const searchDiv = document.querySelector('.structureContainer');
+
+        // Iterate over each hal_id and institution type
+        hal_id_list.forEach(hal_id => {
+            institutionTypes.forEach(async (type_institution) => {
+                try {
+                    // Fetch the list of institutions for the current type and hal_id
+                    const response = await fetch(`/api/list_institution/${type_institution}/${hal_id}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data_insti = await response.json();
+
+                    // Process and add institutions to the DOM
+                    data_insti.forEach(insti => {
+                        // Check if the structure with the same 'ref' already exists
+                        if (!document.querySelector(`.structure[ref="${insti.ref}"]`)) {
+                            const structureHtml = `
+                                <div><a style="color:black" class="structure" href="/${softwareName}/${insti.ref}" ref="${insti.ref}" acro="${insti.acronym ? insti.acronym : ''}">
+                                    ${insti.name} (<span class="${insti.status}">${insti.status}</span>
+                                    ${insti.acronym ? ` - <span style="font-weight:bold">${insti.acronym}</span>` : ''})
+                                </a></div>`;
+                            const sanitizedType = affi_type(type_institution);
+
+                            // Check if the institution type section already exists
+                            let institutionDiv = document.querySelector(`.institution_div[data-type="${sanitizedType}"]`);
+                            if (!institutionDiv) {
+                                // If not found, create a new section for the institution type
+                                institutionDiv = document.createElement('div');
+                                institutionDiv.className = 'institution_div';
+                                institutionDiv.setAttribute('data-type', sanitizedType);
+                                institutionDiv.innerHTML = `
+                                    <h2 class="toggle-title">${sanitizedType}
+                                        <div class="button_insti">
+                                            <span class="material-symbols-outlined">keyboard_arrow_down</span>
+                                        </div>
+                                    </h2>
+                                    <div class="institution-list">${structureHtml}</div>`;
+                                searchDiv.appendChild(institutionDiv);
+
+                                // Add event listener for toggling visibility of the institution list
+                                const title = institutionDiv.querySelector('.toggle-title');
+                                title.addEventListener('click', () => {
+                                    const institutionList = title.nextElementSibling;
+                                    institutionList.classList.toggle('expanded');
+
+                                    const button = title.querySelector('.material-symbols-outlined');
+                                    button.innerHTML = (button.innerHTML === "keyboard_arrow_down") ? "keyboard_arrow_up" : "keyboard_arrow_down";
+                                });
+                            } else {
+                                // If section exists, append the new structure to the institution list
+                                const institutionList = institutionDiv.querySelector('.institution-list');
+                                institutionList.innerHTML += structureHtml;
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error fetching institution for ${type_institution} and ${hal_id}:`, error);
+                }
             });
-
-            const uniqueStructuresArray = Array.from(uniqueStructures);
-
-            // Clear previous content of structureContainer
-            const container = document.getElementById('structureContainer');
-            container.innerHTML = '';
-
-            // Create <p> tags for each structure and append them to a container
-            uniqueStructuresArray.forEach(structure => {
-                const pTag = document.createElement('a');
-                pTag.textContent = structure;
-                pTag.href = `/dashboard/${structure}`;
-                pTag.style.display = "block";
-                container.appendChild(pTag);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching structures:', error);
         });
-    });
+
+    } catch (error) {
+        console.error('Error fetching institution types:', error);
+    }
 }
 
 function showAuthors(hal_id_list) {
@@ -182,52 +239,70 @@ function showAuthors(hal_id_list) {
     const container = document.getElementById('authorContainer');
     container.innerHTML = '';
 
-    hal_id_list.forEach(hal_id => {
-        fetch(`/api/aut/${hal_id}`, {
-            method: "GET"
-        })
-        .then(response => {
+    hal_id_list.forEach(async (hal_id) => {
+        try {
+            const response = await fetch(`/api/soft_aut/${hal_id}`, {
+                method: "GET"
+            });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
+
+            const data = await response.json();
             console.log(data);
-            const uniqueAuthor = new Set(data); // Assuming data is an array of authors
+            const uniqueAuthors = new Set(data); // Assuming data is an array of authors
 
             // Create a section for each hal_id
-            const section = document.createElement('div');
+            const halSection = document.createElement('div');
 
-            // Create a heading for each hal_id
-            const heading = document.createElement('a');
-            heading.textContent = hal_id;
-            heading.href = `/doc/${hal_id}`;
-            section.appendChild(heading);
+            const halTitle = document.createElement('h2');
+            halTitle.className = "toggle-title"; // Set class to toggle-title
+            halTitle.textContent = `${hal_id}`; // Display the hal_id in the title
 
-            // Create a <ul> element for this hal_id
-            const ulTag = document.createElement('ul');
+            // Create the anchor element for hal_id (visually separate but still clickable)
+            const halLink = document.createElement('a');
+            halLink.href = `/doc/${hal_id}`; // Link to the document
+            halLink.textContent = "(link)"; // Display link text
 
-            // Add <li> elements for each unique author
-            uniqueAuthor.forEach(author => {
+            // Create a toggle button
+            const toggleButton = document.createElement('div');
+            toggleButton.classList.add('button_insti');
+            toggleButton.innerHTML = `<span class="material-symbols-outlined">keyboard_arrow_down</span>`;
+            halTitle.appendChild(halLink);
+            halTitle.appendChild(toggleButton);
+            halSection.appendChild(halTitle); // Add title to hal section
+
+            // Create a nested list for authors
+            const authorsNestedList = document.createElement('ul');
+            halSection.appendChild(authorsNestedList); // Add nested list to hal section
+
+            // Process and add authors to the nested list
+            uniqueAuthors.forEach(author => {
                 const liTag = document.createElement('p');
-                liTag.textContent = author;
-                ulTag.appendChild(liTag);
+                liTag.textContent = author; // Display author name
+                authorsNestedList.appendChild(liTag); // Append to nested list
             });
 
-            // Append the <ul> to the section
-            section.appendChild(ulTag);
+            // Initially hide the author list
+            authorsNestedList.style.display = 'none';
 
-            // Append the section to the main container
-            container.appendChild(section);
-        })
-        .catch(error => {
+            // Add event listener for toggling visibility of the author list
+            halTitle.addEventListener('click', () => {
+                const isExpanded = authorsNestedList.style.display === 'block';
+                authorsNestedList.style.display = isExpanded ? 'none' : 'block'; // Toggle display
+                toggleButton.querySelector('.material-symbols-outlined').innerHTML =
+                    isExpanded ? "keyboard_arrow_down" : "keyboard_arrow_up"; // Change icon
+            });
+
+            // Append the hal section to the main container
+            container.appendChild(halSection);
+
+        } catch (error) {
             console.error('Error fetching authors:', error);
-        });
+        }
     });
 }
-
-
 
 function showSources(hal_id_list, software) {
     let softwareName;
@@ -236,7 +311,6 @@ function showSources(hal_id_list, software) {
     } else {
         softwareName = window.location.pathname.split('/').pop();
     }
-
     const container = document.getElementById('sourceContainer');
     container.innerHTML = ''; // Clearing the container before adding new elements
 

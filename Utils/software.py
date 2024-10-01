@@ -17,25 +17,36 @@ def software_all_mentions(software,structure, db):
             FILTER edge._to == software._id
             LET doc_id = edge._from
             LET doc = DOCUMENT(doc_id)
-            RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
+            RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date}}
         """
     else:
         query = f"""
-                FOR software IN softwares
-                  FILTER software.software_name.normalizedForm == "{software}"
-                  LET max_field = (
-                    FOR field IN ['used', 'created', 'shared']
-                      LET score = software.mentionContextAttributes[field].score
-                      SORT score DESC
-                      LIMIT 1
-                      RETURN field
-                  )[0]
-                  FOR edge IN edge_doc_to_software
-                    FILTER edge._to == software._id
-                    LET doc_id = edge._from
-                    LET doc = DOCUMENT(doc_id)
-                    FILTER '{structure}' IN doc.structures 
-                    RETURN DISTINCT {{'file_hal_id': doc.file_hal_id, max_field: max_field, 'date': doc.date, 'author': doc.author, 'structure': doc.structures}}
+        FOR software IN softwares 
+            FILTER software.software_name.normalizedForm == "{software}" 
+            
+            LET max_field = (
+                FOR field IN ['used', 'created', 'shared'] 
+                    LET score = software.mentionContextAttributes[field].score 
+                    SORT score DESC 
+                    LIMIT 1 
+                    RETURN field 
+            )[0] 
+            
+            FOR edge IN edge_doc_to_software 
+                FILTER edge._to == software._id 
+                LET doc_id = edge._from 
+                LET doc = DOCUMENT(doc_id) 
+                
+                FOR edge_struct IN edge_doc_to_struc 
+                    FILTER edge_struct._from == doc._id 
+                    LET struct = DOCUMENT(edge_struct._to) 
+                    FILTER struct.id_haureal == "{structure}" 
+                    
+                    RETURN DISTINCT {{
+                        'file_hal_id': doc.file_hal_id, 
+                        'max_field': max_field, 
+                        'date': doc.date
+                    }}
                 """
     try:
         list_attr_halid = db.AQLQuery(query, rawResults=True)

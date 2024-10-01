@@ -215,3 +215,32 @@ def list_from_type_institution(type_institution):
     # Execute the query and return the response as a list
     data = db.AQLQuery(query, rawResults=True, batchSize=2000)
     return jsonify(data[0:])
+
+@app.route("/api/list_institution/<type_institution>/<halid>")
+def list_from_type_institution_halid(type_institution, halid):
+    query = f'''
+            FOR doc in documents
+                FILTER doc.file_hal_id == "{halid}"
+                FOR edge IN edge_doc_to_struc
+                  FILTER edge._from == doc._id
+                  LET struct = DOCUMENT(edge._to)
+                  FILTER struct.type == "{type_institution}"
+                  RETURN {{acronym :struct.acronym, name : struct.name, status: struct.status, ref: struct.id_haureal}}
+                    '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return data[0:]
+
+@app.route("/api/soft_aut/<hal_id>")
+def list_auth_from_halid(hal_id):
+    query = f'''
+    FOR doc IN documents
+    FILTER doc.file_hal_id == "{hal_id}"
+    FOR edge IN edge_doc_to_author
+        FILTER edge._from == doc._id
+        LET auth = DOCUMENT(edge._to)
+        RETURN CONCAT(auth.name.forename, " ", auth.name.surname)
+                    '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return data[0:]
