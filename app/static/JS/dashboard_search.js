@@ -10,6 +10,7 @@ function affi_type(str) {
     };
     return typeMap[str] || str;
 }
+
 // Load structures and setup event listeners
 document.addEventListener('DOMContentLoaded', () => {
     // Fetch the list of institution types from the API
@@ -23,8 +24,23 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             const searchDiv = document.querySelector('.structures');
 
-            // Fetch and process each type of institution
-            const contentPromises = data.map(type_institution => {
+            // Define the desired order of institution types
+            const typeOrder = [
+                "researchteam",        // Highest priority (appears at the top)
+                "laboratory",
+                "department",
+                "institution",
+                "regrouplaboratory",
+                "regroupinstitution"   // Lowest priority (appears at the bottom)
+            ];
+
+            // Sort the institution types according to the desired order
+            const sortedData = data.sort((a, b) => {
+                return typeOrder.indexOf(a) - typeOrder.indexOf(b);
+            });
+
+            // Fetch and process each type of institution in the new order
+            const contentPromises = sortedData.map(type_institution => {
                 return fetch(`/api/list_institution/${type_institution}`)
                     .then(response => {
                         if (!response.ok) {
@@ -33,9 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         return response.json();
                     })
                     .then(data_insti => {
-                        console.log(data_insti.length);
+                        // Sort institutions alphabetically by their name
+                        data_insti.sort((a, b) => a.name.localeCompare(b.name));
+
+                        // Generate HTML for each institution
                         const listStructure = data_insti.map(insti =>
-                           `<div class="structure" ref="${insti.ref}" acro="${insti.acronym ? `${insti.acronym}` : ''} ">
+                           `<div class="structure" ref="${insti.ref}" acro="${insti.acronym ? `${insti.acronym}` : ''}">
                                 ${insti.name} (<span class="${insti.status}">${insti.status}</span>${insti.acronym ? ` - <span style="font-weight:bold">${insti.acronym}</span>` : ''})
                               </div>`
                         ).join('');
@@ -74,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error:', error);
         });
 });
+
 
 // Setup event listeners for structure elements
 function setupStructureClickEvents() {
