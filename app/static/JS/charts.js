@@ -167,25 +167,25 @@ async function showStructures(hal_id_list, software) {
         const institutionTypes = await response.json();
 
         // Select the target div for displaying structures
-        const searchDiv = document.querySelector('.structureContainer');
+        const searchDiv = document.querySelector('.structureContainer_chart');
 
         // Iterate over each hal_id and institution type
         hal_id_list.forEach(hal_id => {
             institutionTypes.forEach(async (type_institution) => {
                 try {
                     // Fetch the list of institutions for the current type and hal_id
-                    const response = await fetch(`/api/list_institution/${type_institution}/${hal_id}`);
+                    const response = await fetch(`/api/list_institution/${type_institution}/chart_halid/${hal_id}`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data_insti = await response.json();
-
+                    console.log(data_insti)
                     // Process and add institutions to the DOM
                     data_insti.forEach(insti => {
                         // Check if the structure with the same 'ref' already exists
-                        if (!document.querySelector(`.structure[ref="${insti.ref}"]`)) {
+                        if (!document.querySelector(`.structure_chart[ref="${insti.ref}"]`)) {
                             const structureHtml = `
-                                <div><a style="color:black" class="structure" href="/${softwareName}/${insti.ref}" ref="${insti.ref}" acro="${insti.acronym ? insti.acronym : ''}">
+                                <div><a style="color:black" class="structure_chart" href="/${softwareName}/${insti.ref}" ref="${insti.ref}" acro="${insti.acronym ? insti.acronym : ''}">
                                     ${insti.name} (<span class="${insti.status}">${insti.status}</span>
                                     ${insti.acronym ? ` - <span style="font-weight:bold">${insti.acronym}</span>` : ''})
                                 </a></div>`;
@@ -250,7 +250,6 @@ function showAuthors(hal_id_list) {
             }
 
             const data = await response.json();
-            console.log(data);
             const uniqueAuthors = new Set(data); // Assuming data is an array of authors
 
             // Create a section for each hal_id

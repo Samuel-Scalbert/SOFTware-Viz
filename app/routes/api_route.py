@@ -242,7 +242,7 @@ def list_from_type_institution_and_a_struct(type_institution,specificStructId):
     data = db.AQLQuery(query, rawResults=True, batchSize=2000)
     return jsonify(data[0:])
 
-@app.route("/api/list_institution/<type_institution>/<halid>")
+@app.route("/api/list_institution/<type_institution>/chart_halid/<halid>")
 def list_from_type_institution_halid(type_institution, halid):
     query = f'''
             FOR doc in documents

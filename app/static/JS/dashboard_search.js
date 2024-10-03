@@ -59,17 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         return response.json();
                     })
                     .then(data_insti => {
-                        console.log("Fetched institutions:", data_insti);
 
                         // Check if data_insti is empty
                         if (data_insti.length === 0) {
-                            console.log(`No institutions found for type: ${type_institution}`);
                             return '';  // Return an empty string if no institutions
                         }
 
                         // Sort institutions alphabetically by their name
                         data_insti.sort((a, b) => a.name.localeCompare(b.name));
-                        console.log(data_insti);
 
                         // Generate HTML for each institution
                         const listStructure = data_insti.map(insti =>
