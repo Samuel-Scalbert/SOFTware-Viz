@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
                     const idValue = item.getAttribute('id');
                     handleClick(idValue, 1);
+                    resultBox.style.display = 'none'
                     resultBox.innerHTML = "<div class='dropdown-content-search'></div>";
                 });
             });
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const content = result.map((list) => {
             return "<div class='mention_search_doc_id' id=" + list + ">" + list + "</div>";
         }).join(''); // Join the array elements into a single string without any separator
+        resultBox.style.display = 'block'
         resultBox.innerHTML = "<div class='dropdown-content-search'>" + content + "</div>";
     };
 
@@ -147,41 +149,64 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 
 
-    document.addEventListener('click', function(event) {
+document.addEventListener('click', function(event) {
     // Selectors to exclude
     const selectors = [
         '.structure',
         '.mention_search_doc_id',
-        '.dropbtn'
+        '.dropbtn',
     ];
 
     // Check if the click occurred on any of the excluded elements
     const clickedExcludedElement = selectors.some(selector => event.target.closest(selector));
 
+    if (!clickedExcludedElement) {
         // Handle clicks outside the specified elements
         const elements = document.querySelectorAll('.mention_doc_id');
-        const elements_search =document.querySelectorAll('.dropdown-content-search');
-            elements.forEach(element => {
-                var dropdownBtn = element.querySelector('.dropbtn');
-                var dropdownContent = element.querySelector('.dropdown-content');
-                dropdownBtn.style.color = '';
-                dropdownContent.style.display = 'none';
-                elements_search.forEach(searchElement => {searchElement.style.display = 'none';})
-            });
+        const elements_search = document.querySelectorAll('.dropdown-content-search');
+
+        elements.forEach(element => {
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            dropdownBtn.style.color = '';
+            dropdownContent.style.display = 'none';
+        });
+
+        elements_search.forEach(searchElement => {
+            searchElement.style.display = 'none';
+        });
+
+        // Reset search dropdown visibility
+        const elements_search_soft = document.querySelector('.search');
+        const elements_search_soft_table = elements_search_soft.querySelector('#result-box');
+        elements_search_soft_table.style.display = 'none';
+
+        // Reset structure color only if click is outside excluded elements
+        const structure_reset = document.querySelectorAll('.structure');
+        structure_reset.forEach(stru => {
+            stru.style.color = 'black'; // Reset color
+        });
+    }
 });
 
+// Add event listeners for .mention_doc_id items
+document.querySelectorAll('.mention_doc_id').forEach(item => {
+    item.addEventListener('click', event => {
+        event.stopPropagation(); // Prevent the global click event from being triggered
+        const elements = document.querySelectorAll('.mention_doc_id');
 
-    document.querySelectorAll('.mention_doc_id').forEach(item => {
-        item.addEventListener('click', event => {
-            const elements = document.querySelectorAll('.mention_doc_id');
-            elements.forEach(element => {
-                var dropdownBtn = element.querySelector('.dropbtn');
-                var dropdownContent = element.querySelector('.dropdown-content');
-                dropdownBtn.style.color = '';
-                dropdownContent.style.display = 'none';
-            });
-            const idValue = item.getAttribute('id');
-            handleClick(idValue, 2);
+        // Reset all dropdowns
+        elements.forEach(element => {
+            var dropdownBtn = element.querySelector('.dropbtn');
+            var dropdownContent = element.querySelector('.dropdown-content');
+            dropdownBtn.style.color = '';
+            dropdownContent.style.display = 'none';
         });
+
+        // Handle the specific click
+        const idValue = item.getAttribute('id');
+        handleClick(idValue, 2);
     });
+});
+
 });

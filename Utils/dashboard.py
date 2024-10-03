@@ -8,9 +8,18 @@ def dashboard(db, structure):
         # Define queries based on whether structure is specified
         if structure:
             query = """
-                FOR file_id IN documents
-                FILTER @structure IN file_id.structures
-                RETURN { _id: file_id._id, hal_id: file_id.file_hal_id }
+                FOR struct IN structures
+                FILTER struct.id_haureal == @structure
+                LET struct_id = struct._id
+                FOR edge_struc IN edge_doc_to_struc
+                    FILTER edge_struc._to == struct_id
+                    FOR file_id IN documents
+                        FILTER file_id._id == edge_struc._from
+                        RETURN DISTINCT {
+                            id: struct_id,
+                            _id: file_id._id,
+                            hal_id: file_id.file_hal_id
+                        }
             """
             bind_vars = {'structure': structure}
         else:
@@ -86,7 +95,6 @@ def dashboard(db, structure):
     for software, count in software_attribute_mentions['shared'].items():
         if software in shared_software:
             shared_software[software] = [shared_software[software], count]
-
     return [
         attributes_count,
         doc_with_mention,

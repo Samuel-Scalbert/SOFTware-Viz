@@ -216,6 +216,32 @@ def list_from_type_institution(type_institution):
     data = db.AQLQuery(query, rawResults=True, batchSize=2000)
     return jsonify(data[0:])
 
+@app.route('/api/list_institution/<type_institution>/<specificStructId>')
+def list_from_type_institution_and_a_struct(type_institution,specificStructId):
+    query = f'''
+        LET struct_id = (
+            FOR stru IN structures
+                FILTER stru.id_haureal == "{specificStructId}"
+                RETURN stru._id
+        )
+        
+        LET all_lists = (
+            FOR list_rel IN list_relation
+                FILTER struct_id[0] IN list_rel.list_relation
+                RETURN list_rel.list_relation
+        )
+        
+        let list_unique_stru = UNIQUE(FLATTEN(all_lists))
+        
+        for stru in list_unique_stru
+            let affiliation = document(stru)
+            FILTER affiliation.type == "{type_institution}"
+            RETURN distinct {{acronym :affiliation.acronym, name : affiliation.name, status: affiliation.status, ref: affiliation.id_haureal}}
+                '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=2000)
+    return jsonify(data[0:])
+
 @app.route("/api/list_institution/<type_institution>/<halid>")
 def list_from_type_institution_halid(type_institution, halid):
     query = f'''

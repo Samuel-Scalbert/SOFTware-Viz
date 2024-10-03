@@ -13,6 +13,13 @@ function affi_type(str) {
 
 // Load structures and setup event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    const searchDiv = document.querySelector('.structures');
+    const currentPath = window.location.pathname;
+
+    // Check if the URL ends with /dashboard or a specific structure ID
+    const isSpecificStructure = currentPath.startsWith('/dashboard/struct-');
+    const specificStructId = isSpecificStructure ? currentPath.split('/').pop() : null; // Extract structure ID if it exists
+
     // Fetch the list of institution types from the API
     fetch(`/api/list_type_institution`)
         .then(response => {
@@ -22,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            const searchDiv = document.querySelector('.structures');
 
             // Define the desired order of institution types
             const typeOrder = [
@@ -39,9 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return typeOrder.indexOf(a) - typeOrder.indexOf(b);
             });
 
-            // Fetch and process each type of institution in the new order
+            // Depending on the URL, fetch either all structures or the specific structure
             const contentPromises = sortedData.map(type_institution => {
-                return fetch(`/api/list_institution/${type_institution}`)
+                const url = isSpecificStructure
+                    ? `/api/list_institution/${type_institution}/${specificStructId}`
+                    : `/api/list_institution/${type_institution}`;
+
+                return fetch(url)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
@@ -49,21 +59,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         return response.json();
                     })
                     .then(data_insti => {
+                        console.log("Fetched institutions:", data_insti);
+
+                        // Check if data_insti is empty
+                        if (data_insti.length === 0) {
+                            console.log(`No institutions found for type: ${type_institution}`);
+                            return '';  // Return an empty string if no institutions
+                        }
+
                         // Sort institutions alphabetically by their name
                         data_insti.sort((a, b) => a.name.localeCompare(b.name));
+                        console.log(data_insti);
 
                         // Generate HTML for each institution
                         const listStructure = data_insti.map(insti =>
                            `<div class="structure" ref="${insti.ref}" acro="${insti.acronym ? `${insti.acronym}` : ''}">
-                                ${insti.name} (<span class="${insti.status}">${insti.status}</span>${insti.acronym ? ` - <span style="font-weight:bold">${insti.acronym}</span>` : ''})
-                              </div>`
+                                <div class="monitor-icon">
+                                    <a href="/dashboard/${insti.ref}">
+                                        <span class="material-symbols-outlined">monitoring</span>
+                                    </a>
+                                </div>
+                                <span class="structure-text">
+                                    ${insti.name} (<span class="${insti.status}">${insti.status}</span>${insti.acronym ? ` - <span style="font-weight:bold">${insti.acronym}</span>` : ''})
+                                </span>
+                            </div>
+                        `
                         ).join('');
 
                         const sanitizedType = affi_type(type_institution);
                         return `<div class="institution_div">
                                     <h2 class="toggle-title">${sanitizedType} 
                                     <div class="button_insti">
-                                    <span class="material-symbols-outlined">keyboard_arrow_down</span></div></h2>
+                                    <span class="material-symbols-outlined">keyboard_arrow_down</span></div>
+                                    </h2>
                                     <div class="institution-list">${listStructure}</div>
                                 </div>`;
                     });
@@ -71,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Once all content is fetched and processed, update the DOM
             Promise.all(contentPromises).then(contents => {
-                searchDiv.innerHTML = '<h1>Structures</h1>' + contents.join('');
+                // Filter out empty strings from the contents
+                const filteredContents = contents.filter(content => content !== '');
+                searchDiv.innerHTML = '<h1>Structures</h1>' + filteredContents.join('');
 
                 // Set up event listeners for the toggle titles
                 const titles = document.querySelectorAll('.toggle-title');
@@ -95,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+
 // Setup event listeners for structure elements
 function setupStructureClickEvents() {
     let last_clicked_structure = null;
@@ -103,6 +135,14 @@ function setupStructureClickEvents() {
         item.addEventListener('click', event => {
             if (last_clicked_structure) {
                 last_clicked_structure.style.color = 'black';
+            }
+            if (event.target.tagName === 'SPAN' && event.target.classList.contains('material-symbols-outlined')) {
+                event.stopPropagation();
+                return;
+            }
+            if (event.target.tagName === 'A') {
+                event.stopPropagation();
+                return;
             }
             last_clicked_structure = item;
             item.style.color = 'red';
