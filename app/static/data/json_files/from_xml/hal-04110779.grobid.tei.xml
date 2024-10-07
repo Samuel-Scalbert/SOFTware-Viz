@@ -1,0 +1,2065 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Integrating Connection Search in Graph Queries</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Christos</forename><surname>Angelos</surname></persName>
+							<email>angelos.anadiotis@oracle.com</email>
+						</author>
+						<author>
+							<persName><surname>Anadiotis</surname></persName>
+						</author>
+						<author>
+							<persName><forename type="first">Ioana</forename><surname>Manolescu</surname></persName>
+							<email>ioana.manolescu@inria.fr</email>
+						</author>
+						<author>
+							<persName><forename type="first">Madhulika</forename><surname>Mohanty</surname></persName>
+							<email>madhulika.mohanty@inria.fr</email>
+						</author>
+						<author>
+							<affiliation key="aff0">
+								<address>
+									<settlement>Oracle</settlement>
+									<country key="CH">Switzerland</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff1">
+								<orgName type="institution">Inria and IPP</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<affiliation key="aff2">
+								<orgName type="institution">Inria and IPP</orgName>
+								<address>
+									<country key="FR">France</country>
+								</address>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Integrating Connection Search in Graph Queries</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date/>
+						</imprint>
+					</monogr>
+					<idno type="MD5">56169A6A19F0263A4C95B32A8F4ECD93</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2024-10-07T10:00+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<textClass>
+				<keywords>
+					<term>Graph Queries</term>
+					<term>Graph Data Management</term>
+					<term>Keyword Search on Graphs hasAccount</term>
+				</keywords>
+			</textClass>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>When graph database users explore unfamiliar graphs, potentially with heterogeneous structure, users may need to find how two or more groups of nodes are connected in a graph, even when users are not able to describe the connections. This is only partially supported by existing query languages, which allow searching for paths, but not for trees connecting three or more node groups.</p><p>In this work, we formally show how to integrate connecting tree patterns (CTPs, in short) with a graph query language such as GPML [1], SPARQL or Cypher, leading to Extended Queries (or EQs, in short). We then study a set of algorithms for evaluating CTPs; we generalize prior keyword search work to be complete, most importantly by (i) considering bidirectional edge traversal, (ii) allowing users to select any score function for ranking CTP results and (iii) returning all results. To cope with very large search spaces, we propose efficient pruning techniques and formally establish a large set of cases where our best algorithm, MOLESP, is complete even with pruning. Our experiments validate the performance of our algorithms on many synthetic and real-world workloads.</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. INTRODUCTION</head><p>Graph databases are increasingly adopted in many applications, e.g., social network analysis, scientific data exploration, the financial industry, etc. <ref type="bibr" target="#b1">[2]</ref>. To query RDF graphs, the W3C's standard SPARQL <ref type="bibr" target="#b2">[3]</ref> query language is the best known. For property graphs (PG), the International Organization for Standardization (ISO) and International Electrotechnical Commission (IEC) are developing GQL, with the graph pattern matching sub-language (GPML) <ref type="bibr" target="#b0">[1]</ref> at its core.</p><p>An interesting but challenging graph query language feature is reachability: a SPARQL 1.1 query can check, e.g., if there are some bank transfer paths, along which Mr. Shady eventually deposits funds into a given bank ABC. However, SPARQL 1.1 does not allow returning the matching paths to users. In contrast, a GPML query may also return the paths between two given sets of nodes. This is useful in investigative journalism applications <ref type="bibr" target="#b3">[4]</ref>, in the fight against money laundering, etc.</p><p>Unfortunately, none of these languages natively support finding trees, connecting three (or more) sets of nodes; this feature can be very useful. For instance, when investigating ill-acquired wealth, one may ask for "all connections between Mr. Shady, bank company ABC, and the tax office of country This work is funded by AI Chair SourcesSay project (ANR-20-CHIA-0015-01) grant.</p><p>*Work done while at Ecole Polytechnique.</p><p>DEF": an answer to this query is a tree, connecting three nodes corresponding to the person, bank, and tax office, respectively.</p><p>The above query has two parts: one structured, requiring that Mr. Shady be a person, ABC be the name of a bank and DEF that of a country, and an unstructured one, searching for connections between the nodes designated by the structured one. The unstructured part recalls keyword search in (relational, RDF or XML) databases: users specify m keywords, and request trees (or small graphs) connecting tuples (or nodes) from the database, such that a tuple attribute value (or node label) matches each keyword. Representative keyword search works include, e.g., <ref type="bibr" target="#b4">[5]</ref>- <ref type="bibr" target="#b13">[14]</ref>. Finding such trees is closely related to the Group Steiner Tree Problem (GSTP), which, given m node sets, asks for the top-score, e.g., fewest-edges, tree connecting one node from each set; the problem is NP-hard. To cope with the high complexity, existing keyword search algorithms: (i) consider a fixed score function and leverage its properties to limit the search, (ii) propose approximate solutions, within a known distance from the optimum, and/or (iii) implement heuristics with no guarantees, but which perform well in some cases.</p><p>Requirements From our collaborations with investigative journalists <ref type="bibr" target="#b3">[4]</ref>, <ref type="bibr" target="#b14">[15]</ref>, we identified some requirements. First, (R1) graph query languages should allow returning trees that connect m node sets, for some integer m ≥ 2; (R2) it must be possible to search for connecting trees orthogonally to (or, in conjunction with any) score function used to rank the trees. This is because different graphs and applications are best served by different scores, and when exploring a graph, journalists need to experiment with several before they find interesting patterns. In our example, if Mr. Shady is a citizen of DEF and ABC has offices there, the smallest solution connects them through the DEF country node; however, this is not interesting to journalists. Instead, a connection through three ABC accounts, sending money from DEF to Mr. Shady in country GHI, is likely much more interesting. An orthogonal requirement is (R3) to treat graphs as undirected when searching for trees. For instance, the graph may contain "Mr. Shady Definition II.1 (Graph). A graph is defined as a tuple G = (N, E, ρ, λ, π), where N consists of a finite set of node identifiers, E is a finite set of edge identifiers, ρ: E → (N×N) is a function mapping edges to ordered pairs of nodes, λ: (N ∪ E) → 2 L is a function mapping nodes and edges to a set of labels, L and π: (N∪E)×P ⇀ V al is a partial function assigning values from V al to node and edge properties (P).</p><p>Fig. <ref type="figure">1</ref> introduces a sample graph, assigning an integer ID and label to each node and edge. We will refer to nodes as n 1 , n 2 , etc., e.g., n 1 is the node whose ID is 1 and label is OrgB, and similarly to edges as e 1 , e 2 , etc. GPML graph querying Let V be a set of variable names, and Ω={=,&lt;,≤} be a set of comparison operators, used to express patterns over nodes or edges. At the core of GPML are path patterns (PPs, in short), such as the following:</p><p>MATCH (v: Alice WHERE v.τ =entrepreneur) -[e: citizenOf] → (w WHERE w.τ =country)  GPML also supports regular path queries (RPs, in short). For example, MATCH p = (x) -[y: founded]→ * (z) matches all paths of 0 or more edges labeled founded. Infinitely many paths (even cyclic ones) may match an RP. To ensure finite results, GPML provides restrictors, namely: TRAIL (no repeated edges), ACYCLIC (no repeated nodes) and SIMPLE (no repeated nodes except that it could be a loop). If no restrictor is used, GPML mandates limiting RP results through a selector, e.g., ANY k for at most k results. A GPML graph pattern (GP, in short) is a set of several PPs such that each PP shares a variable with at least one other PP.</p><p>GPML generalizes both RDF query languages such as SPARQL 1.1 and property graph query languages such as Cypher; significantly, GPML allows binding variables to paths and thus returning them. However, it does not allow searching for arbitrary connections between more than two variables.</p><p>Extending GPML: Connecting Tree Patterns To extend GPML's expressive power, we introduce: Definition II.2 (CT Pattern). A connecting tree pattern (CTP, in short) is a tuple of m+1 distinct variables of the form: (v 1 , v 2 , . . . , v m , v m+1 ). Intuitively, CTPs extend the path patterns by enabling connectivity search between more than 2 nodes, as follows. When replacing each v i , 1≤i≤m with a graph node, v m+1 is bound to a subtree of G, having these nodes as leaves (we formalize this below). To visually distinguish the last variable in a CTP, we always underline it.</p><p>For example, consider the CTP (x, y, z, w); on replacing x with n 3 , y with n 9 and z with n 12 , one subtree bound to w is the tree t α consisting of the edges n 3 e17 --→ n 11 e16 ← -n 9 , n 11 e18 ← --n 12 . Tree t α is one connection between the three nodes, via n 11 .</p><p>We extend GPML to allow CTPs alongside GPs:</p><p>Definition II.3 (Extended query). An extended query Q is a set of k GPs, k ≥ 0, and l CTPs, l ≥ 0, such that k+l &gt; 0, the variables in the GPs are pairwise disjoint, and each underlined (last) variable from a CTP appears exactly once in Q. Below, we simply use "query" to designate an extended one. A sample query Q 1 , of three GPs and one CTP, is:</p><formula xml:id="formula_0">MATCH (x WHERE x.τ = entrepreneur) -[a: citizenOf] → (b: USA), (y WHERE y.τ = entrepreneur) -[c: citizenOf] → (d: France), (z WHERE z.τ = politician) -[e: citizenOf] → (f : France), (x, y, z, w)</formula><p>asks: "What are the connections w between some American entrepreneur x, some French entrepreneur y, and some French politician z?" We denote the CTP of this query by g 1 .</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Definition</head><p>II.4 (Set-based CTP result). Let g = (v 1 , . . . , v m , v m+1 ) be a CTP pattern and S 1 , . . . , S m be sets of G nodes, called seed sets. The result of g based on S 1 , . . . , S m , denoted g(S 1 , . . . , S m ), is the set of all (s 1 , . . . , s m , t) tuples such that s 1 ∈ S 1 , . . ., s m ∈ S m and t is a minimal subtree (thus, acyclic) of G containing the nodes s 1 , . . . , s m . By minimal, we mean that (i) removing any edge from t disconnects it and/or removes some s i from t, and (ii) t contains only one node from each S i .</p><p>Minimality condition (ii) follows from application requirements, e.g., a minimal connection between a person and a company should not include other companies. If connections between more people and companies are sought, they can be obtained by joining more CTPs and/or GPs.</p><p>In Fig. The above definition allows arbitrary seed sets, in particular, an S i can be N, the set of all graph nodes (Sec. V-E2). We adjust Def. II.4 to allow a connecting tree to have any number of nodes from those seed sets equal to N (otherwise, only 1-node trees would appear in results).</p><p>The semantics of a PP <ref type="bibr" target="#b0">[1]</ref> is a table, associating to each variable v a graph node, edge, or path, which, together, satisfy the PP. The semantics of a GP is the natural join of its PP results, e.g., the variables in the GPs of Q   EQ semantics is defined by joining the GP semantics with the CTP set-based semantics, leading to a direct evaluation strategy as follows. Assume that evaluating all the GPs in the EQ, and joining their results, leads to a table of bindings as above, where each node variable v i is successively bound to a set of nodes; call that set S i . This provides seed sets for each of the CTPs in the EQ, whose set-based results can thus be computed (Def. II.4). The EQ result is obtained as the natural join of all the GP and CTP results, on their shared variables. In our example, GP semantics provide S 1 ={n 4 }, S 2 ={n 6 } and S 3 ={n 12 } to the CTP; CTP evaluation binds w to the tree having the edges n 4 e10 --→ n 7 e9 ← -n 6 , n 7 e19 ← --n 12 ; the EQ semantics extends the above table with the binding of w. This evaluation strategy pushes (applies) all possible GP conditions on the CTP node variables prior to CTP evaluation. Restricting CTP results A CTP can have a very large number of results, as illustrated by the graph in Fig. <ref type="figure">2</ref>: if v 1 is bound to the node labelled "1" and v 2 to the node labelled "N+1", the CTP (v 1 , v 2 , v 3 ) has 2 N solutions, or 2 |E|/2 , which grows exponentially in |E|, the number of graph edges. Observe that if we allowed only unidirectional paths, there would be only N + 1 results, rooted at each node. This shows that matching CTPs regardless of the edge direction may drastically increase the number of CTP results, and also the number of partial trees to explore before finding the results. In such cases, complete CTP result computation may be unfeasible. To control the amount of effort spent evaluating CTPs, similarly to GPML's restrictors, one may specify: that all paths must go from a CTP result root to its leaves (unidirection paths, through the keyword UNI); that only a fixed set of labels (LABEL a1, a2, . . .) are allowed on the edges in a CTP result. We also extend the (non-deterministic) GPML selector ANY k to a CTP, specifying that any k results can be returned; finally, TIMEOUT T stops execution and returns the results found after T milliseconds.</p><p>A CTP may be associted a score function σ, assigning to each result tree t a real number σ(t) (the higher, the better). Specifying (for a given CTP or for the whole query) SCORE σ [TOP k] means that the results of each CTP must be scored using σ, and the scores included in the query result. If TOP k is used, only the k highest-score trees are returned.</p><p>Since the GPs can be evaluated by any conjunctive graph query evaluation engine, in the remainder of the paper, we focus on efficient evaluation of set-based CTP results (Def. II.4). Table <ref type="table" target="#tab_3">I</ref> recaps all the notations used in the paper.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>III. CTPS COMPARED TO EXISTING LANGUAGES</head><p>We now discuss how close existing graph query languages come to allowing their users to ask for connection between several seed sets, in the spirit of CTPs. First, observe that languages such as SPARQL or CRPQs <ref type="bibr" target="#b15">[16]</ref>, <ref type="bibr" target="#b16">[17]</ref>, that do not allow returning a path of unspecified length, cannot be used.</p><p>Other languages, e.g., the JEDI extension of SPARQL <ref type="bibr" target="#b17">[18]</ref>, G-CORE <ref type="bibr" target="#b18">[19]</ref>, or GPML <ref type="bibr" target="#b0">[1]</ref>, allow returning such paths. To see how close this comes to CTPs, assume a GQL query identifies two seed sets S 1 , S 2 , and asks for all acyclic paths between a node from S 1 and one from S 2 . Some such paths may not be results of a CTP with the seed sets S 1 and S 2 : a path going from s 1 ∈ S 1 through s ′ 1 ∈ S 1 to s 2 ∈ S 2 violates minimality condition (ii) from Def. II.4. To ensure this minimality, we should check that each path has exactly one node from S 1 (at one end), but not more, and similarly for S 2 . Depending on the language syntax, this may be more or less easy to express.</p><p>Next, consider a CTP g ′′ =(v 1 , v 2 , v 3 , v 4 ) and three seed sets S 1 , S 2 , S 3 (the discussion is similar for more seed sets). In GPML, we can use three path patterns going from a common variable r, to a node from S 1 , one from S 2 and one from S 3 , respectively, to obtain triplets of paths joined on a common node matching r. We call this approach for finding connections among the seed sets, path stitching. Clearly, each of its results needs to be filtered for minimality, as explained above. However, path stitching results for three or more seed sets differ even more from g ′′ (S 1 , S 2 , S 3 ) <ref type="bibr" target="#b19">[20]</ref>, <ref type="bibr" target="#b20">[21]</ref>: (i) for each n-nodes tree in g ′′ (S 1 , S 2 , S 3 ), path stitching produces n trees (with the same edges, but different roots); deduplication based on the set of edges is then needed; (ii) if a path from r to s 1 shares nodes or even edges with a path from r to s 2 and/or the one from r to s 3 , the join of these paths is not a tree, but a graph, from which one or several CTP results may be extracted. This is a second, independent reason why trees obtained through path stitching must be globally deduplicated.</p><p>As our experiments show (Sec. V-E), even ignoring deduplication and minimization, path stitching is outperformed by our algorithms, where result tree minimality is built-in.</p><p>Finally, note that while our CTPs have the core restrictors useful in our application scenarios, languages such as Cypher <ref type="bibr" target="#b21">[22]</ref>, G-CORE <ref type="bibr" target="#b18">[19]</ref>, GPML <ref type="bibr" target="#b0">[1]</ref> provide more controls over: edge direction, presence of cycles, allowed edge labels, path length etc. One could adapt them to CTPs, with the semantics that they should apply on each path in a CTP result.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>IV. COMPUTING SET-BASED CTP RESULTS</head><p>We aim to find all the minimal subtrees with exactly one node (or seed) from each S i , limited only by the time and memory allowed to the search. As we detail in Sec. VI, most current algorithms require a regular graph structure, and/or find only one, or few subtrees, those minimizing (or k-optimal w.r.t.) a fixed score function. Below, Sec. IV-A to IV-C recall existing algorithms which find all results. In Sec. IV-D to IV-G, we propose novel algorithms, much more efficient, but which may, in worst-case scenarios, lead to missing certain results. Sec. IV-H shows how restrictors, selectors and score functions can be injected in our algorithms. We briefly discuss how to handle the special case of very large seed sets, in Sec. IV-I. Observation 1. Let us call leaf any node in a tree that is adjacent to exactly one edge. It is easy to see that in each CTP result, every leaf node is a seed. Clearly, the converse does not hold: in a result, some seeds may be internal nodes. We denote by sat(t) the node sets from which t has a seed. Observation 2. When users limit the search time and/or number of desired results, it is reasonable to return at least the smallest-size ones, given that smaller trees are favored by many score functions (see Sec. VI). However, we do not assume "smaller is always better": that is for the score function σ to decide. Nor do we require users to specify a maximum result size, which may be hard for them to guess. Rather, we investigate algorithms that find as many results as possible, as fast as possible, while also leveraging restrictors and selectors (when specified) to reduce the evaluation effort.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Simple Breadth-First algorithm (BFT)</head><p>A natural approach to find trees connecting seed sets is to explore the graph in breadth-first (BF) mode starting from each seed; when search paths starting from one seed of each set meet, a result is found. This approach has been taken by many non-complete algorithms, e.g., <ref type="bibr" target="#b6">[7]</ref> [9] <ref type="bibr" target="#b22">[23]</ref> and others, which also use score-based heuristics to limit the search. Independent of a score and aiming for completeness, we devise the following simple algorithm, which we call BFT. Start by creating a generation of trees T 0 , containing a one-node tree, denoted INIT (n), for each seed node n ∈ S 1 ∪. . .∪S m . Then, from each generation T i , build the trees T i+1 , by "growing" each tree t in T i , successively, with every edge (n, n ′ ) adjacent to one of its nodes n ∈ t, such that:</p><p>• (GROW1): n ′ is not already in t, and • (GROW2): n ′ is not a seed from a set S j ∈ sat(t). Condition (GROW1) ensures we only build trees. (GROW2) enforces the CTP result minimality condition (ii) (Def. II.4). As trees grow from their original seed, they can include more seeds. When a tree has a seed from each set, it must be minimized, by removing all edges that do not lead to a seed, before reporting it in the result. For instance, with the seed sets {n 2 } and {n 4 } on the graph in Fig. <ref type="figure">1</ref>, starting from n 2 , BFT may build {e 5 , e 4 }, then {e 5 , e 4 , e 6 } before realizing that e 4 is useless, and removing it through minimization. Minimization slows BFT down, as we experimentally show in Sec. V-D1. BFT can build a tree in multiple ways; to avoid duplicate work, any tree built during the search must be stored, and each new tree is checked against this memory of the search.</p><p>It is easy to see that BFT is complete, i.e., given enough time and memory, it finds all CTP results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. GAM algorithm</head><p>The GAM (Grow and Aggressive Merge) algorithm has been introduced recently <ref type="bibr" target="#b14">[15]</ref>, reusing some ideas from <ref type="bibr" target="#b8">[9]</ref>. Unlike BFT that views a tree as a set of edges, GAM distinguishes one root node in each tree it builds. GAM inserts in a priority queue GROW opportunities, as (tree, edge) pairs such that the tree could grow from its root with that edge. Any priority can be used in the queue to choose a desired exploration order without affecting the results.</p><p>GAM also starts from the set of INIT trees built from the seed sets. Next, it inserts in the priority queue all (t, e) pairs for some INIT tree t and edge e adjacent to the root (only node) of t, satisfying the conditions (GROW1) and (GROW2) introduced in Sec. IV-A. GAM then repeats the following, until no new trees can be built, or a time-out is reached:</p><p>1) (GROW): Pop a highest-priority (t, e) pair from the queue, where e connects t.root to n ′ , and build the tree t i having the edges of t as well as e, and rooted in n ′ . 2) (MERGE): For any tree t ii already built, such that:</p><p>• (MERGE1): t ii has the same root as t i , and no other node in common with t i ; and • (MERGE2): sat(t i ) ∩ sat(t ii )= ∅, take the following steps: a) Build t iii , a tree having the edges of t i and those of t ii , and the same root as t i and t ii ; b) Immediately MERGE t iii with all qualifying trees (see conditions MERGE1, MERGE2), and again merge the resulting trees etc., until no more MERGE are possible; 3) For each tree t iv built via GROW or MERGE as above:</p><p>(i) if t iv has a seed from each set, report it as a result;</p><p>(ii) otherwise, push in the priority queue all (t iv , e iv ) pairs such that e iv is adjacent to the (only) root node of t iv , satisfying the conditions (GROW1) and (GROW2).</p><p>Property 1 (GAM completeness). The GAM algorithm is complete.</p><p>Property 2 (GAM result minimality). By construction, each result tree built by GAM is minimal (in the sense of Def. II.4). Thus, GAM does not need to minimize the results it finds.</p><p>Search space exploration order Unlike BFT, GAM does not build trees in the strictly increasing order of their size; MERGE may build large trees before other, smaller trees. The order in which GAM enumerates trees is determined, first, by the priority of the queue with (t, e) entries, and second, by the available MERGE opportunities. In this work, to remain compatible with any score function, we study search algorithms regardless of (orthogonally to) the search order. GAM may also build a tree in multiple ways. Formally:</p><p>Definition IV.1 (Tree with provenance). A tree with provenance (or provenance, in short) is a formula of one of the forms below, together with a node called the provenance root:</p><formula xml:id="formula_1">1) INIT (n)</formula><p>where n is a seed; the root of such a provenance is n itself; 2) GROW (t, e) where t is a provenance, its root is n 0 , e is an edge going from n 0 to n 1 and n 1 does not appear in t; in this case, n 1 is the root of the GROW provenance; 3) MERGE (t 1 , t 2 ), where t 1 and t 2 are provenances, rooted in n 1 =n 2 ; in this case, n 1 is the root of the MERGE provenance.</p><p>We call rooted tree a set of edges that, together, form a tree, together with one distinguished root node. GAM may build several provenances for the same rooted tree, e.g., MERGE (MERGE (t 1 , t 2 ),t 3 ) and MERGE (t 2 ,MERGE (t 1 , t 3 )), for some trees t 1 , t 2 , t 3 . The interest of a tree as part of a possible result does not depend on its provenance. Therefore, GAM discards all but the first provenance built for a given rooted tree.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. BFT variants with MERGE</head><p>The MERGE operation can also be injected in the BFT algorithm to allow it to build some larger trees before all the smaller trees have been enumerated. We study two variants: BFT-M merges each new tree resulting from GROW with all partners having only one common node and no common edges (Step (2a) in Sec. IV-B), but does not apply MERGE on top of these MERGE results; in contrast, BFT-AM applies both Step (2a) and Step (2b) to aggressively merge. BFT-M and BFT-AM are obviously complete. Like BFT, they still need to minimize a potential result before reporting it. This is because BFT algorithms grow trees from any of their nodes, thus may add edges on one side of one seed node, which later turn to be useless. GAM avoids this by growing only from the root.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>D. Edge set pruning and ESP algorithm</head><p>GAM may build several rooted trees for the same set of edges. For example, on the graph in Fig. <ref type="figure" target="#fig_2">3</ref> with the seeds {B}, {C}, denoting a rooted tree by its edges and underlining the root, successive GROW from B lead to B-3-C, GROW's from C lead to B-3-C, and MERGE of two GROW provenances, B-3 and 3-C yields B-3-C. However, the root is meaningless in a CTP result, which is simply a set of edges. We introduce: Definition IV.2 (Edge set). An edge set is a set of edges that, together, form a tree such that at most 1 leaf is not a seed.</p><p>A result is a particular case of edge set, where all leaves are seeds (recall Observation 1).</p><p>As GAM builds several rooted trees for an edge set, it repeats some effort: we only need to find each result once. This leads to the following pruning idea: t 1 whose edge set is non-empty, such that another provenance t 0 , for the same edge set, had been created previously.</p><formula xml:id="formula_2">Definition IV.</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head n="3">(Edge-set pruning (ESP)). The ESP pruning technique during GAM consists of discarding any provenance</head><p>We will call ESP, in short, the GAM algorithm (Sec. IV-B) enhanced with ESP. As we will show, ESP significantly speeds up GAM execution. However, ESP compromises completeness for some graphs, seed sets, and execution orders. That is: depending on the order in which trees are built, the first (and only, due to ESP) provenance for a given edge set may prevent the algorithm from finding some results.</p><p>For instance, on the graph in Fig. <ref type="figure" target="#fig_2">3</ref>, with the seed sets S 1 ={A}, S 2 ={B}, S 3 ={C}, a possible GAM execution is:</p><p>1) Initial trees: A, B, C.</p><p>2) A set of GROW lead to these trees: A-1, B-2, B-3, C-3.</p><p>3) B-3 and C-3 merge into B-3-C. 4) GROW on A-1 leads to A-1-2, which immediately merges with B-2, forming A-1-2-B. 5) After this point:</p><p>• If the tree A-1-2-B is built, for instance by GROW on A-1-2, ESP discards it since A-1-2-B was found in step (4). Lacking A-1-2-B, we cannot GROW over it to build the result provenance A-1-2-B-3-C. Nor can we build the result provenance MERGE (A-1-2-B, B-3-C).</p><p>• By a similar reasoning, when B-3-C is built, it is discarded by ESP, preventing the construction of of A-1-2-B-3-C. Thus, no result is found. Note that with a favorable execution order, the CTP result would be found. For instance, A, B, C, ESP could build:</p><p>1) By repeated GROW's:</p><formula xml:id="formula_3">A-1, A-1-2, A-1-2-B, C-3, C-3-B 2) MERGE (A-1-2-B, C-3-B</formula><p>) is a provenance for the result. This raises the question: can we pick a GAM execution order that would ensure completeness, even when using ESP? Intuitively, the order should ensure that for each result r, a provenance p r is certainly built, which requires that at every sub-expression e of p r , over an edge set es, the first provenance p es we find for es is rooted in a node that allows to build on e until p r . Thus, the decisions made up to building p es would need to have a "look-ahead" knowledge of the future of the search, which is clearly not possible. In the above example, the "bad" order builds A-1-2-B first, instead of the favorable A-1-2-B. However, when exploring these three edges, we cannot "pre-determine" the best provenance for es. Recall also from Sec. IV-B that different orders may be suited for partial exploration with different score functions. In a conservative way, we consider an algorithm incomplete when for some "bad" execution order it may miss results.</p><p>ESP finds some answers for any execution order: Property 3 (2-seed sets ESP completeness). Let t be a result of a CTP with 2 seed sets. Then, t is guaranteed by ESP.</p><p>Here and throughout this paper, guaranteed, for a rooted tree or an edge set, means that at least one provenance for it is built; the first is not pruned by ESP. This and other proofs of our claims can be found in our technical report <ref type="bibr" target="#b23">[24]</ref>. CTP with two seed sets (path queries) are frequent in practice; on these, GAM <ref type="bibr" target="#b14">[15]</ref> and ESP are comparable, and we experimentally show the latter is much more efficient. Next, we refine our algorithms to extend our completeness guarantees.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>E. MoESP algorithm</head><p>We now introduce an algorithmic variant called Mergeoriented ESP, or MoESP, which finds many (but not all) CTP results for arbitrary numbers of seed sets.</p><p>MoESP works like ESP, but it creates more trees. Whenever GROW or MERGE produces a provenance t having strictly more seeds than any of its (one or two) children, the algorithm builds from t all the so-called MoESP trees t ′ such that:</p><p>• t ′ has the same edges (and nodes) as t, but • t ′ is rooted in a seed node, distinct from the root of t. The provenance of any such t ′ is denoted MO (t, r) where MO is new symbol and r is the root of t ′ . Within MoESP, MERGE is allowed on MoESP trees, but not GROW. More generally, GROW is disabled on any tree whose provenance includes MO as our MOESP completeness guarantees (Prop. 5) do not rely on GROW over such trees.</p><p>Clearly, MoESP builds a strict superset of the rooted trees created by ESP (thus, it finds all results of ESP). It also finds the result in Fig. <ref type="figure" target="#fig_2">3</ref> Definition IV.5 (Simple tree decomposition of a solution). Let t be a CTP result. A simple tree decomposition of t, denoted θ(t), is a set of simple edge sets which (i) are a partition of the edges of t and (ii) may share (leaf) nodes with each other.</p><p>For instance, in Fig. <ref type="figure" target="#fig_3">4</ref>, the red, blue, and violet edges, together, form a result for the 6-seed sets CTP. A simple tree Definition IV.6 (p-piecewise simple solution). A result t is ppiecewise simple (pps, in short), for some integer p, if every edge set in the simple tree decomposition is p-simple.</p><p>The sample result above in Fig. <ref type="figure" target="#fig_3">4</ref> is 2ps, since its simple tree decomposition only contains 2-simple edge sets. The following important MOESP property guarantees it is found: Property 4 (MoESP finds 2-piecewise simple solutions). For any number of seed sets m, MoESP is guaranteed to find any 2-piecewise simple result.</p><p>For a CTP with any number m of seed sets, a path result is one in which no node has more than two adjacent edges. In a path result, the two ends of the paths are seeds, while internal nodes may be seeds, or not. Thus, any path result is 2ps. It follows then, as a direct consequence of Prop. 4: Property 5 (MoESP finds all path results). For any CTP, MoESP finds all the path results.</p><p>However, outside 2ps results, MoESP may still fail. For instance, consider the graph in Fig. <ref type="figure" target="#fig_5">5</ref>, and the seed sets {A}, {B}, {C}. The only result here is 3-simple. A possible MoESP execution order is:</p><p>1) Starting from A, B, C, GROW produces A-1, B-2, C-3; 2) B-2-x, followed by B-2-x-3, which merges with C-3 into B-2-x-3-C, leading also to B-2-x-3-C and B-2-x-3-C. 3) B-2-x-1 which merges with A-1, leading to B-2-x-1-A and similar trees rooted in B and A. 4) GROW produces A-1-x. ESP discards the MERGE of A-1-x with B-2-x, due to the rooted tree built at step (3), over the same set of edges. 5) A-1-x-3 is built, then MERGE with C-3 creates A-1-x-3-C, and similar trees rooted in A and C. 6) GROW produces C-3-x. ESP discards the merges of C-3-x with A-1-x due to the 3-rooted tree built at step <ref type="bibr" target="#b4">(5)</ref> and with B-2-x due to the 3-rooted tree built at step (2). 7) At this point, we have trees with two seeds, rooted in 1, 3, A, B and C. GROW on any of them is impossible, because they already contain all the edges adjacent to their roots. There are no MERGE possibilities on their roots, either. Thus, the search fails to find a result. At steps (4) and ( <ref type="formula">6</ref>), ESP is "short-sighted": it prevents the construction of trees necessary for finding the result. Next, we present another optimization which prevents such errors.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>F. LESP algorithm</head><p>The Limited Edge-Set Pruning (LESP, in short) works like ESP (Sec. IV-D), but it limits edge-set pruning, as follows. S i , 1≤i≤ m, such that a rooted path has been built from a seed s i ∈S i , to n, since execution started. For any seed s∈S i , the signature ss s is initialized with a 1 at each j such that s∈S j (s may belong to several seed sets), and 0 in the remaining positions. For a non-seed n, initially ss n =0; the i-th bit is set to 1 when node n is reached by the first rooted path from a seed in S i .</p><p>• Prevent ESP from discarding a MERGE tree rooted in n such that: (i) there are at least 3 bits set to 1 in ss n ; and (ii) n has at least 3 adjacent edges in G.</p><p>Intuitively, the condition on ss n encourages merging on nodes already well-connected to seeds. We denote by d n the number of G edges adjacent to n; it can be computed and stored before evaluating any query. The condition on d n focuses the "protection against ESP" to MERGE trees rooted in nodes where such protection is likely to be most useful: specifically, those where 3 or more rooted paths can meet (see Lemma IV.1 below). GROW and MERGE apply on trees "spared" in this way with no restriction.</p><p>Clearly, LESP creates all the trees built by ESP, and may create more. In particular, reconsider the graph in Fig. <ref type="figure" target="#fig_5">5</ref>, the associated seed sets, and the execution steps we traced in Sec. IV-E. At step (2), ss x is initialized with 010 (there is a path from B to x). At step (4), when A-1-x is built, ss x becomes 110; since (ss x ) = 2, the tree A-1-x-2-B is pruned. However, at step (6), when C-3-x is built, ss x becomes 111, which, together with d x = 3, spares its MERGE result A-1-x-3-C (despite the presence of several trees with the same edges). In turn, this merges immediately with B-2-x into a result.</p><p>We formalize the guarantees of LESP as follows.</p><p>Definition IV.7 ((u, n) rooted merge). For an integer u ≥ 3 and non-seed node n, the (u, n) rooted merge is the rooted 2 3 C</p><note type="other">7 F 4 5 D E 6</note><p>Fig. <ref type="figure">6</ref>: MOLESP completeness example.</p><p>tree resulting from merging a set of u (n, s i ) rooted paths, for some seeds s 1 , . . . , s u .</p><p>It follows from the (MERGE2) pre-condition (Sec. IV-B) that in an (u, n) rooted merge, each s i is from a different seed set. Further, it follows from the definition of an (n, s i )rooted path, that in a (u, n) rooted merge, all seeds are leaves. In other words, a (u, n) rooted merge is a u-simple edge set.</p><p>Lemma IV.1. Any (3, n) rooted merge is guaranteed to be found by LESP. Property 6. For any integer u ≥ 3 and non-seed node n, any (u, n) rooted merge is guaranteed to be found by LESP.</p><p>For ≥4 seed sets, LESP may miss results that are not (u, n) rooted merges. For instance, consider the following execution order for S=({A}, {B}, {C}, {D}) on the graph in Fig. <ref type="figure" target="#fig_5">5:</ref> 1) From A, B, C, D, GROW builds: A-1, B-2, C-3, D-4.</p><p>2) GROW builds B-2-1, merging with A-1 into A-1-2-B.</p><p>3 </p><formula xml:id="formula_4">)</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>G. MoLESP algorithm</head><p>Our last algorithm, called MOLESP, is a GAM variant with ESP and both the modifications of MoESP (which injects more trees) and LESP (which avoids ESP pruning for some MERGE trees). Clearly, MOLESP finds all the trees found by MoESP and LESP. Further: Property 7 (MoLESP finds all 3ps results). MoLESP is guaranteed to find all the 3-piecewise simple results.</p><p>As an important consequence: Property 8. MoLESP is complete for m ≤ 3 seed sets.</p><p>Our strongest completeness result is:</p><p>Property 9 (Restricted MOLESP completeness). For any CTP of m ≥ 1 seeds, MOLESP finds any result t, such that: each edge set es ∈ θ(t) is a (u, n)-rooted merge (Def. IV.7), for some integer 1 ≤ u ≤ m and non-seed node n in es.</p><p>For example, in Fig. <ref type="figure">6</ref>, with the six seeds A to F , the result is guaranteed by MOLESP. Depending on the exploration order, MOESP and LESP may not find it.</p><p>Algorithm 3: Procedure RECORDFORMERGE(tree t) </p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>H. CTP evaluation with restrictors and score function</head><p>We now briefly explain how various restrictors (Sec. II) can be inserted in the above algorithms. UNI-directional search is enforced by adding pre-conditions to GROW and MERGE, to ensure we only create the desired provenances. To enforce (LABEL a1, a2, . . .), we only add in the queue (line 11 in PROCESSTREE), (tree, edge) pairs where the edge has an allowed label. TIMEOUT T is checked after each newly found rooted tree and within each algorithm's main loop.</p><p>For SCORE σ [TOP k], the score σ is evaluated either on each new result, or after all results are found, e.g., for the scores in <ref type="bibr" target="#b24">[25]</ref>, <ref type="bibr" target="#b25">[26]</ref>. For any given score σ, we may favor (with guarantees, or just heuristically) the early production of higher-score results, by appropriately chosing the priority queue order; this allows search to finish faster. Any order can be chosen in conjunction with MOLESP, since its completeness guarantees are independent of the exploration order.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>I. Handling very large seed sets</head><p>Our CTP evaluation algorithms build INIT trees for each seed. This has two risks: (i) when some seed sets are N (all graph nodes), exploring them may be unfeasible; (ii) one or more seed sets may be very large subsets of N, e.g., orders of magnitude larger than the other seed sets. To handle (i), assuming other seed sets are smaller, we only start exploring (INIT, GROW etc.) from the other (smaller) seed sets; any encountered node is acceptable as a match for the N seed set(s). To handle (ii), inspired by <ref type="bibr" target="#b6">[7]</ref>, we use multiple priority Algorithm 5: Procedure MERGEALL(tree t) queues, one for each subset of the seed sets, and GROW at any point from the queue having the fewest (tree, edge) pairs. Thus, exploration initially focuses on the neighborhood of the smaller seed sets, and hopefully encounters INIT trees from the large seed sets, leading to results.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>V. EXPERIMENTAL EVALUATION</head><p>We compare CTP evaluation algorithms, then consider systems capable, to some extent, to evaluate extended queries.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>A. Software and hardware setup</head><p>We implemented a parser and a query compiler for EQs (Sec. II), and all the CTP evaluation algorithms from Sec. IV, in Java 11. Our graphs are stored graph(id,source, edgeLabel, target) table within PostgreSQL 12.4; we delegate to Postgres the GP evaluation, and joining the result with CTP trees (Sec. II). When comparing CTP evaluation algorithms with in-memory competitors, we also load the graph in memory.</p><p>We ran our experiments on a server with 2x10-core Intel Xeon E5-2640 CPUs @ 2.4GHz, with 128-GB DRAM. Every execution point is averaged over 3 executions.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>B. Baselines</head><p>Complete CTP evaluation algorithms We use the algorithms GAM, BFT, BFT-M and BFT-AM as they are the only complete ones, in the sense introduced in Sec. I. Recent, incomplete CTP algorithms To study how our algorithms compare with incomplete GSTP approximation (graph keyword search) algorithms, we considered the most recent ones: QGSTP <ref type="bibr" target="#b12">[13]</ref> and LANCET <ref type="bibr" target="#b13">[14]</ref>, each leveraging a specific cost function. LANCET relies on DPBF <ref type="bibr" target="#b8">[9]</ref> to find an initial result, which it then improves. QGSTP strongly outperforms DPBF <ref type="bibr" target="#b12">[13]</ref>; thus we use QGSTP as a baseline. It runs in polynomial time in the size of the graph, and by design, returns only one result; we used the authors' code. Graph query engines Our first two baselines only support checking, but not returning unbounded-length, unidirectional paths whose edge labels match a regular expression that users must provide. Specifically, we use Virtuoso Open-Source v7.2.6 to evaluate SPARQL 1.1 property path queries. Internally, Virtuoso translates an incoming SPARQL query into an SQL dialect (accessible via the built-in function sparql_to_sql_text()) before executing it. Our second baseline, named Virtuoso-SQL, consists of editing these SQLlike queries to remove label constraints and thus query the graph for connectivity between nodes. However, Virtuoso's SQL dialect disables returning the nodes and edge labels along the paths (whereas standard recursive SQL allows it).</p><p>Our next three baselines also allow returning paths. JEDI <ref type="bibr" target="#b17">[18]</ref> returns all data paths matching a SPARQL property path; we use the authors' code. Neo4j supports Cypher queries asking for all directed or undirected paths between two sets of nodes. Finally, we used recursive queries in Postgres v12.4 to return the label on paths between node pairs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>C. Datasets and queries</head><p>We experiment on real-life as well as synthetic graphs, aiming to (i) control the parameters impacting the performance of our algorithms and (ii) compare with our baselines. To compare CTP evaluation algorithms, we generate three sets of parameterized graphs and associated CTPs (Fig. <ref type="figure" target="#fig_7">7</ref>). The seeds are labeled A, B, . . . , H, non-seed nodes are labeled 1, 2 etc.; each seed set is of size 1. Line(m, nL) contains m seeds, each connected to the next/previous seed by nL intermediary nodes, using sL=nL+1 edges. Comb(nA, nS, sL, dB) consists of a line, from which a lateral segment (called bristle) exits each seed. There are nA bristles, each made of nS segments (a segment ends in another seed); each bristle segment has sL edges, and there are dB nodes in the main line between two successive bristles. The number of seeds is m=nA•(nS+1). Star(m, sL) has a central node connected to each of the m seeds by a line of sL edges.</p><p>On each Line, Comb, and Star graph, we run a CTP defined by the m seeds, having 1 result. On Line and Comb, the result is 2ps (Def. IV.6), while on Star, it is a (u, n) rooted merge (Def. IV.7). Thus, by Prop. 9, MoLESP guarantees them.</p><p>The Line graphs minimize the number of subtrees for a given number of edges and seeds: there are O((m•nL) 2 ) subtrees, and O((m•nL) 3 ) rooted trees. On Star, there are O(2 m •sL 2 ) subtrees, and O(2 m •sL 3 ) rooted trees. In Comb and Line graphs, MoESP trees (Sec. IV-E) are part of results.</p><p>We also generated Barabasi-Albert (BA) graphs <ref type="bibr" target="#b26">[27]</ref> of 200 to 1000 edges. In these graphs, we start with a connected core of 3 nodes; each extra node adds an edge using preferential attachment. Seed nodes are chosen at random. As Table <ref type="table" target="#tab_8">II</ref> shows, the random, dense connections of BA graphs yield up to 20.522 results in a 200-edges graph.</p><p>To study the evaluation of our extended query language, we generate parameterized Connected Dense Forest (CDF) graphs (see Fig. <ref type="figure" target="#fig_8">8</ref>). Each graph has a top forest, and a bottom forest; each of these is a set of N T complete binary trees of depth 3. Links connect leaves from the top and bottom forests. We generate CDFs for m∈{2,3}: when m=2, chains of edges connect a top leaf to a bottom one; when m=3, a Y-shaped connection goes from a top-forest leaf, to two bottom-forest ones. A CDF graph contains N L links, each made of S L edges. Only top leaves that are targets of "c" edges can participate to links, and we concentrate the links on 50% of them (the others have no links). When m=2, only 50% of the bottom forest leaves that are targets of "g" edges can participate; when m=3, 50% of all the bottom forest leaf can participate. The links are uniformly distributed across the eligible leaves.</p><p>On CDF graphs with m=2, we run the query MATCH (x) -[e1: c]→ (tl), (v) -[e2: g]→ (bl), (tl, bl, l) whose two GPs bind tl, respectively, bl to leaves from the top and bottom forest, while its CTP asks for all the paths between each pair of such leaves. On graphs with m=3, we run MATCH (x) -[e 1 : c]→ (tl), (v) -[e 2 : g]→ (bl 1 ), (v) -[e 3 : h]→ (bl 2 ), (tl, bl 1 , bl 2 , l) requiring connecting trees between tl, bl 1 and bl 2 . Each CDF query has N L results, one for each link. The CDF graphs support both the structured and unstructured parts of our queries, while controlling the number of results. Real-world graphs To compare with JEDI <ref type="bibr" target="#b17">[18]</ref> and QGSTP <ref type="bibr" target="#b12">[13]</ref>, we reused their datasets (a 6M edges subset of YAGO3, and a 18M edges subset of DBPedia), and queries. D. CTP evaluation algorithms 1) Complete (baseline) algorithms: We start by comparing the algorithms without any pruning: BFT, GAM, BFT-M and BFT-AM, on Line, Comb and Star graphs of increasing size. We used a TIMEOUT T of 10 minutes. In all experiments with GAM and all its variants, our exploration order (queue priority) favors the smallest trees, and breaks ties arbitrarily. Fig. <ref type="figure">9</ref> depicts the algorithm running time; colors indicate the number of seed sets, while line patterns indicate the algorithm. Missing points (or curves) denote algorithms that timed out. Note the logarithmic y axes.</p><p>Across these plots, BFT-M performs worse than BFT-AM. On Line graphs, the difference is a factor 2× for m = 3 and up to 100× for m = 10. On the Comb and Star graphs, BFT-M times out on the larger graphs and queries. BFT-AM takes even more than BFT-M, by a factor of 15×, thus more executions timed out. GAM is much faster and completes execution in all cases. The reason, as explained in Sec. IV-A, is that breadth-first algorithms waste effort by minimizing results, and may find a tree in even more different ways than GAM, since they grow from any node. Thus, we exclude breadth-first algorithms from the subsequent comparisons.</p><p>2) GAM algorithm variants: We now compare GAM with our proposed ESP, MOESP, LESP and MOLESP. Fig. <ref type="figure">9</ref> shows the algorithm running times on Line, Comb and Star graphs; in all but Fig. <ref type="figure">9d</ref>, the y axis is logarithmic.  The plots show, first, that edge set pruning significantly reduces the running time: MOLESP is faster than GAM by 1.3× (Line graphs) up to 15× (Comb graphs, nA=6, m=18). Second, on the Star graphs, where LESP (Sec. IV-F) applies, the performance difference between MOESP and MOLESP is small. This shows that the extra cost incurred by LESP and MOLESP, which limit or compensate for edge-set pruning (by injecting more trees), is worth paying for the completeness guarantees of MOLESP.</p><p>Next, we compare these algorithms on our Barabasi-Albert graphs with T =25 minutes. For m=4, GAM timed out on even the smallest graph; all our proposed algorithms ran till completion. We report the algorithm running time until the last result is found (T l ) in Fig. <ref type="figure">10a</ref>; Fig. <ref type="figure">10b</ref> shows the number of provenances built by each algorithm (logarithmic y axis). Curves are non-monotonous due to variations in the randomly generated graphs. Fig. <ref type="figure">10c</ref> plots the algorithm recall (fraction of results found), and Fig. <ref type="figure">10d</ref> their throughput (results/running time). For m=2, all the variants have a full recall (ESP itself is complete, by Prop. 3). For m&gt;2, the incomplete algorithms run faster than MOLESP but do not have a perfect recall, thus they also build less provenances. MOLESP is at least 2× faster than GAM, with a perfect recall (even for m=4, where MOLESP may be incomplete), and it builds about 5× less provenances; this shows the interest of MOLESP pruning. MOESP has the highest throughput and finds more than 80% of the results; LESP has the lowest throughput with a recall of less than 0.2. For the largest graph, we also plot the number of results found, against the running time, for m=3 (Fig. <ref type="figure">10e</ref>) and m=4 (Fig. <ref type="figure">10f</ref>). MOLESP finds the results in about half the time as GAM; for the initial results, it closely follows MOESP. LESP takes longer in order to find its (incomplete) results. MOLESP has the advantage of MOESP and thus, a higher throughput and faster result finding than GAM; it is also pulled-down by LESP which is essential in order to guarantee completeness. Overall, MOLESP is the best complete algorithm; among the incomplete ones, MOESP has the best throughput and recall.</p><p>3) Comparison with QGSTP on real-world data: We now compare our best algorithm, MOLESP, with GAM and QGSTP <ref type="bibr" target="#b12">[13]</ref> on the 18M edges DBPedia dataset and 312 CTPs used in their evaluation. Among these, 83 CTPs (respectively, 98, 85, 38, 8) have 2 (respectively, 3, 4, 5, 6) seed sets. To align with QGSTP, we added a UNI restrictor (unidirectional exploration only), and ANY 1 selector to find just one result. Each QGSTP returned result is such that Prop. 9 ensures MOLESP finds it. Fig. <ref type="figure" target="#fig_12">11a</ref> shows the average runtimes grouped by m. GAM is faster than QGSTP for m≤5, but Distance between the seeds, sL Distance between the seeds, sL  timed-out for the 8 CTPs with m=6. MOLESP is about 6-7× faster than QGSTP for all m values, and scales well as m increases. Thus, MOLESP is competitive also on large real-world graphs and queries.</p><p>E. Extended query (EQ) evaluation 1) Synthetic queries on CDF benchmark: We now compare our EQ evaluation system with the closest graph query evaluation baselines, on our CDF graphs (Sec. V-C) generated with m∈{2,3}, S L ∈{3,6}, 18K to 2.4M edges, leading to 2K up to 200K results (N L ), respectively. We used T =15 minutes. As explained in Sec. III, the paths returned by the baselines, which we stitch for m=3, semantically differ from CTP results; the baselines' reported time do not include the time to minimize nor deduplicate their results.</p><p>For m=2, Fig. <ref type="figure" target="#fig_12">11b</ref> shows that all systems scale linearly in the input size (note the logarithmic time axis). For each system, the lower curve is on graphs with S L =3, while the upper curve is on graphs with S L =6 (these curves go farther at right). All missing points correspond to time-out. JEDI succeeded only on the smallest graph, Neo4j timed-out on all. Virtuoso-SPARQL is the fastest, closely followed by Virtuoso-SQL; they are both unidirectional, require the edge labels, and do not return paths. Unidirectional MOLESP is slower by approximately 3× only. JEDI is slower than MOLESP by 10 2 × on the smallest graph, and timed-out on the others. Postgres is faster than JEDI, yet at least 10× slower than MOLESP. MOLESP is the only feasible bidirectional algorithm; it completes in less than 2 minutes on the largest graph with 2.4M edges.    Fig. <ref type="figure" target="#fig_12">11c</ref> shows similar results for m=3. Postgres timedout in all cases. Virtuoso-SPARQL is 7× faster than Virtuoso-SQL; both return non-minimal, duplicate results. UNI-MOLESP outperforms every system. Note that the bidirectional MOLESP found about 7× more results than the N L expected ones, by also connecting bottom leaves without a common parent through their grandparent node; these results are filtered by the join between the GPs and the CTP (Sec. II). Despite the much larger search space due to bidirectionality, MOLESP scales well with the size of the graph and the cost of adding CTP to graph query engines is minimal.</p><p>2) Comparison with JEDI on real-world data: JEDI [18] used a set of (unidirectional, label-constrained) SPARQL 1.1 queries over YAGO3. Table <ref type="table" target="#tab_11">III</ref> shows the queries' characteristics. We compare MOLESP similarly restricted (UNI and LABEL), on these queries, with JEDI, Virtuoso and Neo4j (Postgres timed-out on all). Query J 2 has one very large seed set, while query J 3 has a N seed set. On queries J 2 and J 3 , MOLESP timed out. Thus, we applied the optimizations described in Sec. IV-I, which enabled it to perform as shown. Virtuoso-SPARQL completed query J 1 , then ran out of memory. Compared with JEDI, our query evaluation engine is 2× faster on J 1 , close on J 2 , and around 3× slower on J 3 . MOLESP took around 30% of the total time, the rest being spent by Postgres in the GP evaluation and final joins.</p><p>This shows that the optimizations described in Sec. IV-I make MOLESP robust also to large seed sets.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>VI. RELATED WORK</head><p>We focused on integrating connecting tree patterns (CTPs) into GPML <ref type="bibr" target="#b0">[1]</ref>, for which no parser or implementation is yet available <ref type="bibr" target="#b27">[28]</ref>. Searching for connecting trees is not currently supported in any graph language. As outlined in Sec. III, languages such as SPARQL allow checking for paths connecting given nodes, but not returning them; others, including G-CORE <ref type="bibr" target="#b18">[19]</ref>, GPML, and Neo4j's Cypher return paths, however, the latter does not scale (Sec. V-E1). RPQProv <ref type="bibr" target="#b28">[29]</ref> uses recursive SQL to return path labels; JEDI <ref type="bibr" target="#b17">[18]</ref>, <ref type="bibr" target="#b29">[30]</ref> returns unidirectional paths (only). Many works focus on finding label-constrained paths between nodes <ref type="bibr" target="#b30">[31]</ref>- <ref type="bibr" target="#b44">[45]</ref>, typically by using precomputed indexes or sketches. In our CTP evaluation algorithm, an index could be integrated by "reading from it" subtrees on which to GROW and MERGE. Going beyond paths, CTPs find trees connecting an arbitrary number of seed sets (m≥3), traversing edges in any direction, independent of a scoring function; we guarantee completeness for m≤3 and finding a large set of results for arbitrary m. Path stitching leads to different results, which may require deduplication and minimization (Sec. III).</p><p>CTP evaluation is directly related to keyword search in (semi-)structured data; good surveys are <ref type="bibr" target="#b10">[11]</ref>, <ref type="bibr" target="#b11">[12]</ref>, <ref type="bibr" target="#b45">[46]</ref>. The prior studies differ from ours: (i) <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b46">[47]</ref>- <ref type="bibr" target="#b54">[55]</ref> are schemadependent; (ii) <ref type="bibr" target="#b53">[54]</ref>, <ref type="bibr" target="#b55">[56]</ref>- <ref type="bibr" target="#b57">[58]</ref> assume available a compact summary of the graph; (iii) <ref type="bibr" target="#b6">[7]</ref>, <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b58">[59]</ref> depend heavily on their score functions for pruning the search, particularly to approximate the best result <ref type="bibr" target="#b8">[9]</ref>, <ref type="bibr" target="#b58">[59]</ref>, <ref type="bibr" target="#b59">[60]</ref> or return only top-k results <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b7">[8]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b48">[49]</ref>, <ref type="bibr" target="#b60">[61]</ref>; (iv) <ref type="bibr" target="#b4">[5]</ref>, <ref type="bibr" target="#b5">[6]</ref>, <ref type="bibr" target="#b9">[10]</ref>, <ref type="bibr" target="#b22">[23]</ref>, <ref type="bibr" target="#b46">[47]</ref>, <ref type="bibr" target="#b61">[62]</ref> are only unidirectional. For these reasons, they fail to meet our requirements (R2) to (R5) as outlined in Sec. I. MOLESP brings new, orthogonal, optimizations, and novel guarantees to the multi-threaded, C++ version <ref type="bibr" target="#b3">[4]</ref> of GAM.</p><p>VII. CONCLUSIONS We introduced CTPs, a new primitive for unstructured search in graphs, and showed how to integrate it within a graph query language such as GPML. We proposed novel algorithms which enumerate CTP results fully independently of a score function used to rank the CTP result trees. Some of our algorithms are guaranteed to find all results, but risk a high computational cost; others guarantee all results for at most 3 seed sets, or all results of certain shapes. MOLESP has the best trade-off between completeness and efficiency; our evaluation against the state-of-the-art systems demonstrates its performance. As part of our future work, we optimise the evaluation of multiple (batched) CTPs by sharing computations.</p><p>An intrinsic limitation of CTP (and EQ) evaluation is the potential search space explosion, when allowing edges in any direction, and/or when querying large, highly connected graphs. In such cases, depending on the user needs, a search method guaranteeing some answers, qualified wrt a specific cost metric, e.g., <ref type="bibr" target="#b12">[13]</ref>, <ref type="bibr" target="#b13">[14]</ref>, could be preferred.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head>Fig. 1 : 4 e10--→ n 7 e9← -n 6 ,</head><label>1476</label><figDesc>Fig.1: Sample data graph.The above PP has two node patterns: (v: Alice WHERE v.τ =entrepreneur) and (w WHERE w.τ =country), specifying the conditions on, respectively, the start and the end points of the edge pattern -[e: citizenOf]→. The source node pattern is satisfied by the node n 3 in our example graph, while the target node pattern is satisfied by the nodes n 8 and n 10 . The edge pattern is satisfied by the edges e 5 , e 6 , e 12 , e 13 , e 14 and e 20 as all of them have the label citizenOf. Together, the PP is satisfied by only the edge n 3 e14 --→ n 8 . PPs may use path variables, which are bound to whole paths. For example, in the PP MATCH p = (x) -[y: founded] → (z) ←[u: investsIn] -(v), one of the bindings is as follows: p matches the path n 4 e10 --→ n 7 e9 ← -n 6 , x matches n 4 , y matches e 10 , z matches n 7 , u matches e 9 and v matches n 6 .GPML also supports regular path queries (RPs, in short). For example, MATCH p = (x) -[y: founded]→ * (z) matches all paths of 0 or more edges labeled founded. Infinitely many paths (even cyclic ones) may match an RP. To ensure finite results, GPML provides restrictors, namely: TRAIL (no repeated edges), ACYCLIC (no repeated nodes) and SIMPLE (no repeated nodes except that it could be a loop). If no restrictor is used, GPML mandates limiting RP results through a selector, e.g., ANY k for at most k results. A GPML graph pattern (GP, in short) is a set of several PPs such that each PP shares a variable with at least one other PP.GPML generalizes both RDF query languages such as SPARQL 1.1 and property graph query languages such as Cypher; significantly, GPML allows binding variables to paths and thus returning them. However, it does not allow searching for arbitrary connections between more than two variables.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>Fig. 2 :n 6 n</head><label>26</label><figDesc>Fig. 2: Sample "chain" graph. x y z a b c d e f n 4 n 6 n 12 e 6 n 10 e 13 n 8 e 20 n 8EQ semantics is defined by joining the GP semantics with the CTP set-based semantics, leading to a direct evaluation strategy as follows. Assume that evaluating all the GPs in the EQ, and joining their results, leads to a table of bindings as above, where each node variable v i is successively bound to a set of nodes; call that set S i . This provides seed sets for each of the CTPs in the EQ, whose set-based results can thus be computed (Def. II.4). The EQ result is obtained as the natural join of all the GP and CTP results, on their shared variables. In our example, GP semantics provide S 1 ={n 4 }, S 2 ={n 6 } and S 3 ={n 12 } to the CTP; CTP evaluation binds w to the tree having the edges n 4</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>Fig. 3 :</head><label>3</label><figDesc>Fig. 3: ESP incompleteness example.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head>Fig. 4 :</head><label>4</label><figDesc>Fig. 4: Sample graph for MoESP discussion.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_4"><head></head><label></label><figDesc>. Namely, after creating A, B, C: 1) GROW leads to the trees: A-1, B-2, B-3, C-3. 2) B-3 and C-3 merge into B-3-C. MoESP trees are added at this point: B-3-C and B-3-C. 3) GROW on A-1 leads to A-1-2, which merges with B-2, into A-1-2-B. We similarly get A-1-2-B and A-1-2-B. 4) A-1-2-B merges with B-3-C, leading to the result. We now generalize the example by establishing completeness guarantees for MoESP.Definition IV.4 (Simple and p-simple edge set). A simple edge set is an edge set (Def. IV.2) where each leaf is a seed and no internal (non-leaf) node is a seed. A simple edge set is p-simple, for some integer p, if it has at most p leaves.For instance, on the sample graph in Fig.4, and the 6 seed sets {A}, {B}, {C}, {D}, {E}, {F }, 2-simple edge sets are: A-4-D, shown in red; A-1-2-B, shown in blue; B-8-F, etc.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_5"><head>Fig. 5 :</head><label>5</label><figDesc>Fig. 5: MoESP(left) and LESP(right) incompleteness example. decomposition of this solution is: {A-4-D, A-1-2-B, B-7-E, B-8-F, B-3-C}. A tree t has a unique simple tree decomposition.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_6"><head></head><label></label><figDesc>GROW builds C-3-4, merging with D-4 into C-3-4-D. 4) GROW builds: A-1-2; B-2-x which cannot merge with B-2 due to A-1-2-B, and (ss 2 )=2; D-4-3 which cannot merge with C-3 as C-3-4-D exists, and(ss 3 )=2. 5) C-3-x merges with B-2-x to build B-2-x-3-C. 6) C-3-x-2 merges with: A-1-2, leading to C-3-x-2-1-A;and B-2, leading to C-3-x-2-B. 7) Similarly, B-2-x-3, aggressively merges with C-3, leading to B-2-x-3-C, and D-4-3, leading to B-2-x-3-4-D. 8) Progressing similarly, we can only merge at most 3 rooted paths, in nodes 2, x or 3. We cannot merge with a path leading to the 4th seed, because the trees with the edge sets A-1-2-B and C-3-4-D, built at (2), (3) above, are not rooted in 2 nor 3, respectively, and these are the only nodes satisfying the LESP condition that "spares" some MERGE trees.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_7"><head>Fig. 7 :</head><label>7</label><figDesc>Fig. 7: Synthetic graphs: Comb(3, 1, 2, 3) at the left, Star(4, 2) at the top right, and Line(3, 1) at the bottom right.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_8"><head>Fig. 8 :</head><label>8</label><figDesc>Fig. 8: CDF graphs generated with m=2, S L =2 (left), and with m=3, S L = 3 (right).</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_10"><head>Fig. 9 :Fig. 10 :</head><label>910</label><figDesc>Fig. 9: Comparison of complete CTP evaluation baselines (top) and GAM variants (below) on synthetic benchmarks.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_11"><head></head><label></label><figDesc>CDF benchmark performance for m=2, S L ∈{3,6}.Query evaluation time (ms)(c) CDF benchmark performance for m=3, S L ∈{3,6}.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_12"><head>Fig. 11 :</head><label>11</label><figDesc>Fig. 11: Comparison with state-of-the-art systems.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_1"><head></head><label></label><figDesc>1, let S 1 ={n 2 , n 4 } (US entrepreneurs), S 2 ={n 3 , n 6 } (French entrepreneurs), and S 3 ={n 9 , n 12 } (French politicians). Then, g 1 (S 1 , S 2 , S 3 ) includes (n 4 , n 6 , n 12 , t β ) where the tree t β consists of the edges n 4 12 , also denoted by {e 10 , e 9 , e 19 } for brevity. Another result of this CTP is (n 2 , n 3 , n 9 , t γ ), with t γ = {e 1 , e 2 , e 17 , e 16 }. This result only exists because Def. II.4 allows trees to span over G edges regardless of the edge direction. Had it required directed trees, t γ would not qualify, since none of its nodes can reach the others through unidirectional paths.</figDesc><table><row><cell>e10 --→ n 7</cell><cell>e9 ← -n 6 , n 7</cell><cell>e19 ← --</cell></row><row><cell>n</cell><cell></cell><cell></cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_3"><head>TABLE I :</head><label>I</label><figDesc>Acronyms and notations used in this work</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_4"><head></head><label></label><figDesc>Set of results, Res 1 Priority queue PrioQ ← new priority queue; 2 History Hist ← new set of edge sets; 3 foreach S i , 1 ≤ i ≤ m do</figDesc><table><row><cell cols="5">4 5 6 7 end 8 while PrioQ is not empty do foreach n j i ∈ S i do t j i ← INIT (n j i ); PROCESSTREE(t j i ); end 9 (t, e) ← poll(PrioQ); t ′ ← GROW (t, e); 10 Update ss root(t ′ ) ; PROCESSTREE(t ′ );</cell></row><row><cell>11 end</cell><cell></cell><cell></cell><cell></cell><cell></cell></row><row><cell cols="5">Algorithm 2: Procedure PROCESSTREE(provenance t)</cell></row><row><cell cols="4">1 if ISNEW(t) then</cell><cell></cell></row><row><cell>2</cell><cell cols="4">Add t to Hist ;</cell></row><row><cell>3</cell><cell cols="4">if ISRESULT(t) then</cell></row><row><cell>4 5 6</cell><cell>end else</cell><cell cols="3">Add t to Res;</cell></row><row><cell>7</cell><cell></cell><cell cols="3">RECORDFORMERGE(t);</cell></row><row><cell>8 9</cell><cell></cell><cell cols="3">if t is not a MoESP tree then for edge e ∈ adjacentEdges(t.root) do</cell></row><row><cell>10</cell><cell></cell><cell></cell><cell></cell><cell>if hasN otBeenInQueue(t, e) then</cell></row><row><cell>11</cell><cell></cell><cell></cell><cell></cell><cell>Add (t, e) to PrioQ;</cell></row><row><cell>12 13 14 15 16 end</cell><cell>end</cell><cell>end</cell><cell>end</cell><cell>end</cell></row></table><note><p><p>• We assign to each node n, and maintain during LESP execution, a seed signature ss n , indicating the seed sets Algorithm 1: MOLESP(G, seed sets (S 1 . . . , S m ))</p>Output:</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_5"><head>1</head><label></label><figDesc>Add t to TreesRootedIn[t.root]; 2 for n ∈ (nodes(t) ∩ ∪ i (S i )) do Copy t into a new tree t ′ , rooted at n, with provenance MO(t, n); MoLESP algorithm Algorithms 1 to 5, together, implement MoLESP. They share global variables whose names start with an uppercase: Res, PrioQ, Hist (the search history), and TreesRootedIn (to store the trees by their roots); the latter is used to find MERGE candidates fast. Variables with lowercase names are local to each algorithm. PROCESSTREE feeds the priority queue with (tree, edge) pairs at line 11. RECORD-FORMERGE injects the extra MoESP trees (Sec. IV-E) at lines 2 to 4. ISNEW implements limited edge-set pruning based on the history, and the two conditions that can "spare" a tree from pruning (Sec. IV-F). MERGEALL implements aggressive merging; by calling PROCESSTREE on each new MERGE result, through RECORDFORMERGE, the result is available in the future iterations of MERGEALL.</figDesc><table><row><cell>5</cell><cell>MERGEALL(t ′ );</cell></row><row><cell>6 end</cell><cell></cell></row><row><cell cols="2">Algorithm 4: Procedure ISNEW(tree t)</cell></row><row><cell cols="2">1 if t / ∈ Hist then 2 return true; 3 end</cell></row><row><cell cols="2">4 if Σ(sst.root) ≥ 3 and dt.root ≥ 3 then</cell></row><row><cell cols="2">5 6 7 8 end 9 return f alse; if t / ∈ TreesRootedIn[t.root] then return true; end</cell></row></table><note><p>3 4 Add t ′ to TreesRootedIn[n];</p></note></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_6"><head></head><label></label><figDesc>′ ) ∩ sat(tp) = ∅ and t ′ ∩ tp = {t ′ .root} then 8 t ′′ ← MERGE (t ′ , tp);</figDesc><table><row><cell cols="2">1 toBeMerged ← {t};</cell></row><row><cell cols="2">2 while toBeMerged ̸ = ∅ do</cell></row><row><cell>3 4 5</cell><cell>currentTrees ← toBeMerged; toBeMerged ← ∅; for t ′ ∈ currentTrees do mergePartners ← TreesRootedIn[t ′ .root];</cell></row><row><cell>6</cell><cell>for tp ∈ mergePartners do</cell></row><row><cell cols="2">7 if sat(t 9 if ISNEW(t ′′ ) then 10 Add t ′′ to toBeMerged; 11 PROCESSTREE(t ′′ ); 12 end 13 end 14 end 15 end 16 end</cell></row></table></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_8"><head>TABLE II :</head><label>II</label><figDesc>Number of results in Barabasi-Albert graphs. On Line and Comb graphs, ESP and LESP failed to find results due to edge set pruning, as explained in Sec. IV-D, thus the corresponding curves are missing.</figDesc><table /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_11"><head>TABLE III :</head><label>III</label><figDesc>Query evaluation times (seconds) on YAGO3.</figDesc><table /></figure>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Graph pattern matching in GQL and SQL/PGQ</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Deutsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Francis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Green</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hare</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Libkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lindaaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Marsault</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Michels</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Murlak</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Plantikow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Selmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Van Rest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Vrgoc</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Zemke</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3514221.3526057</idno>
+		<ptr target="https://doi.org/10.1145/3514221.3526057" />
+	</analytic>
+	<monogr>
+		<title level="m">SIGMOD &apos;22: International Conference on Management of Data</title>
+		<meeting><address><addrLine>Philadelphia, PA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2022">June 12 -17, 2022, 2022</date>
+			<biblScope unit="page" from="2246" to="2258" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The future is big graphs: a community view on graph processing systems</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sakr</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iosup</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Ammar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Angles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">G</forename><surname>Aref</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Besta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Boncz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Daudjee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">D</forename><surname>Valle</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Dumbrava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Hartig</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Haslhofer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Hegeman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hidders</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hose</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Iamnitchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kalavri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Martens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">T</forename><surname>Özsu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Peukert</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Plantikow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ragab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ripeanu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Salihoglu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Schulz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Selmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Sequeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shinavier</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Szárnyas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Tommasini</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Tumeo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Uta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">L</forename><surname>Varbanescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yakovets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Yan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Yoneki</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3434642</idno>
+		<ptr target="https://doi.org/10.1145/3434642" />
+	</analytic>
+	<monogr>
+		<title level="j">Commun. ACM</title>
+		<imprint>
+			<biblScope unit="volume">64</biblScope>
+			<biblScope unit="issue">9</biblScope>
+			<biblScope unit="page" from="62" to="71" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<monogr>
+		<title level="m" type="main">SPARQL 1.1</title>
+		<author>
+			<persName><surname>W3c</surname></persName>
+		</author>
+		<ptr target="https://www.w3.org/TR/sparql11-overview/" />
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<analytic>
+		<title level="a" type="main">Empowering Investigative Journalism with Graphbased Heterogeneous Data Management</title>
+		<author>
+			<persName><forename type="first">A.-C</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Balalau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Bouganim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Chimienti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Haddad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Horel</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Youssef</surname></persName>
+		</author>
+		<ptr target="https://hal.archives-ouvertes.fr/hal-03337650" />
+	</analytic>
+	<monogr>
+		<title level="j">Bulletin of the Technical Committee on Data Engineering</title>
+		<imprint>
+			<date type="published" when="2021-09">Sep. 2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<analytic>
+		<title level="a" type="main">Keyword searching and browsing in databases using BANKS</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bhalotia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hulgeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nakhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chakrabarti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sudarshan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2002.994756</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2002.994756" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th International Conference on Data Engineering</title>
+		<meeting>the 18th International Conference on Data Engineering<address><addrLine>San Jose, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2002-03-01">February 26 -March 1, 2002, 2002</date>
+			<biblScope unit="page" from="431" to="440" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">BANKS: browsing and keyword searching in relational databases</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Aditya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Bhalotia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chakrabarti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hulgeri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Nakhe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Parag</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Sudarshan</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/conf/2002/S33P11.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of 28th International Conference on Very Large Data Bases, VLDB 2002</title>
+		<meeting>28th International Conference on Very Large Data Bases, VLDB 2002<address><addrLine>Hong Kong</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2002">August 20-23, 2002, 2002</date>
+			<biblScope unit="page" from="1083" to="1086" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<analytic>
+		<title level="a" type="main">Bidirectional expansion for keyword search on graph databases</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Kacholia</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Pandit</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chakrabarti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Sudarshan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Desai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Karambelkar</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/archives/website/2005/program/paper/wed/p505-kacholia.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 31st International Conference on Very Large Data Bases</title>
+		<meeting>the 31st International Conference on Very Large Data Bases<address><addrLine>Trondheim, Norway</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2005-09-02">August 30 -September 2, 2005, 2005</date>
+			<biblScope unit="page" from="505" to="516" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">EASE: an effective 3-in-1 keyword search method for unstructured, semi-structured and structured data</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">C</forename><surname>Ooi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Feng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1376616.1376706</idno>
+		<ptr target="https://doi.org/10.1145/1376616.1376706" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGMOD International Conference on Management of Data, SIGMOD 2008</title>
+		<meeting>the ACM SIGMOD International Conference on Management of Data, SIGMOD 2008<address><addrLine>Vancouver, BC, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2008">June 10-12, 2008, 2008</date>
+			<biblScope unit="page" from="903" to="914" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<monogr>
+		<title level="m" type="main">Finding top-k min-cost connected trees in databases</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lin</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2007.367929</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2007.367929" />
+		<editor>ICDE, R. Chirkova, A. Dogac, M. T. Özsu, and T. K. Sellis</editor>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>IEEE Computer Society</publisher>
+			<biblScope unit="page" from="836" to="845" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<analytic>
+		<title level="a" type="main">Dbxplorer: A system for keyword-based search over relational databases</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Chaudhuri</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Das</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2002.994693</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2002.994693" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 18th International Conference on Data Engineering</title>
+		<editor>
+			<persName><forename type="first">R</forename></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><forename type="middle">R</forename><surname>Dittrich</surname></persName>
+		</editor>
+		<meeting>the 18th International Conference on Data Engineering<address><addrLine>San Jose, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<publisher>IEEE Computer Society</publisher>
+			<date type="published" when="2002-03-01">February 26 -March 1, 2002. 2002</date>
+			<biblScope unit="page" from="5" to="16" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<analytic>
+		<title level="a" type="main">A survey of algorithms for keyword search on graph data</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Aggarwal</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/978-1-4419-6045-0_8</idno>
+		<ptr target="https://doi.org/10.1007/978-1-4419-6045-08" />
+	</analytic>
+	<monogr>
+		<title level="m">Managing and Mining Graph Data, ser. Advances in Database Systems</title>
+		<editor>
+			<persName><forename type="first">C</forename><forename type="middle">C</forename><surname>Aggarwal</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</editor>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="volume">40</biblScope>
+			<biblScope unit="page" from="249" to="273" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">An empirical performance evaluation of relational keyword search techniques</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Coffman</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Weaver</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2012.228</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2012.228" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="30" to="42" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Efficient computation of semantically cohesive subgraphs for keyword-based knowledge graph exploration</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Cheng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Kharlamov</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Shen</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3442381.3449900</idno>
+		<ptr target="https://doi.org/10.1145/3442381.3449900" />
+	</analytic>
+	<monogr>
+		<title level="m">WWW &apos;21: The Web Conference 2021</title>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Leskovec</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Grobelnik</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Najork</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">J</forename><surname>Tang</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Zia</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Virtual Event / Ljubljana, Slovenia</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">April 19-23, 2021. 2021</date>
+			<biblScope unit="page" from="1410" to="1421" />
+		</imprint>
+	</monogr>
+	<note>ACM / IW3C2</note>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Finding group steiner trees in graphs with both vertex and edge weights</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Sun</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Xiao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Cui</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">K</forename><surname>Halgamuge</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lappas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Luo</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/pvldb/vol14/p1137-sun.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="1137" to="1149" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Graph integration of structured, semistructured and unstructured data for data journalism</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">G</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Balalau</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Conceic ¸ão</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Galhardas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">Y</forename><surname>Haddad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Merabti</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>You</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.is.2021.101846</idno>
+		<ptr target="https://doi.org/10.1016/j.is.2021.101846" />
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">104</biblScope>
+			<biblScope unit="page">101846</biblScope>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<monogr>
+		<title level="m" type="main">A graphical query language supporting recursion</title>
+		<author>
+			<persName><forename type="first">I</forename><forename type="middle">F</forename><surname>Cruz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">O</forename><surname>Mendelzon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">T</forename><surname>Wood</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/38713.38749</idno>
+		<ptr target="https://doi.org/10.1145/38713.38749" />
+		<editor>SIGMOD, U. Dayal and I. L. Traiger</editor>
+		<imprint>
+			<date type="published" when="1987">1987</date>
+			<publisher>ACM Press</publisher>
+			<biblScope unit="page" from="323" to="330" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">Querying regular graph patterns</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barceló</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Libkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Reutter</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2559905</idno>
+		<ptr target="https://doi.org/10.1145/2559905" />
+	</analytic>
+	<monogr>
+		<title level="j">J. ACM</title>
+		<imprint>
+			<biblScope unit="volume">61</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="1" to="8" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Discovering diversified paths in knowledge bases</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Aebeloe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Montoya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Setty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hose</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/pvldb/vol11/p2002-aebeloe.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<biblScope unit="volume">11</biblScope>
+			<biblScope unit="page" from="2002" to="2005" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">G-CORE: A core for future graph query languages</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Angles</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Arenas</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Barceló</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">A</forename><surname>Boncz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">H L</forename><surname>Fletcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Gutierrez</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lindaaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Paradies</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Plantikow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">F</forename><surname>Sequeda</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Van Rest</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Voigt</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3183713.3190654</idno>
+		<ptr target="https://doi.org/10.1145/3183713.3190654" />
+		<editor>SIGMOD, G. Das, C. M. Jermaine, and P. A. Bernstein</editor>
+		<imprint>
+			<date type="published" when="2018">2018</date>
+			<publisher>ACM</publisher>
+			<biblScope unit="page" from="1421" to="1432" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">Optimization of linear recursive queries in SQL</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Ordonez</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2009.83</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2009.83" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">22</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="264" to="277" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Beyond equijoins: Ranking, enumeration and factorization</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Tziavelis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Gatterbauer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Riedewald</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/pvldb/vol14/p2599-tziavelis.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">14</biblScope>
+			<biblScope unit="page" from="2599" to="2612" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Cypher Query Language</title>
+		<ptr target="https://neo4j.com/developer/cypher/" />
+	</analytic>
+	<monogr>
+		<title level="m">Neo4j</title>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<analytic>
+		<title level="a" type="main">BLINKS: ranked keyword searches on graphs</title>
+		<author>
+			<persName><forename type="first">H</forename><surname>He</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">S</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1247480.1247516</idno>
+		<ptr target="https://doi.org/10.1145/1247480.1247516" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGMOD International Conference on Management of Data</title>
+		<meeting>the ACM SIGMOD International Conference on Management of Data<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2007">June 12-14, 2007, 2007</date>
+			<biblScope unit="page" from="305" to="316" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">C</forename><surname>Anadiotis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Mohanty</surname></persName>
+		</author>
+		<ptr target="https://hal.inria.fr/hal-03923293" />
+		<title level="m">Integrating connection search in graph queries</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+	<note>technical report</note>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Root rank: A relational operator for KWS result ranking</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">M S</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Haritsa</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3297001.3297014</idno>
+		<ptr target="https://doi.org/10.1145/3297001.3297014" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM India Joint International Conference on Data Science and Management of Data, COMAD/CODS 2019</title>
+		<meeting>the ACM India Joint International Conference on Data Science and Management of Data, COMAD/CODS 2019<address><addrLine>Kolkata, India</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">January 3-5, 2019, 2019</date>
+			<biblScope unit="page" from="103" to="111" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">Operator implementation of result set dependent KWS scoring functions</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">M S</forename></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">R</forename><surname>Haritsa</surname></persName>
+		</author>
+		<idno type="DOI">10.1016/j.is.2019.101465</idno>
+		<ptr target="https://doi.org/10.1016/j.is.2019.101465" />
+	</analytic>
+	<monogr>
+		<title level="j">Inf. Syst</title>
+		<imprint>
+			<biblScope unit="volume">89</biblScope>
+			<biblScope unit="page">101465</biblScope>
+			<date type="published" when="2020">2020</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Emergence of scaling in random networks</title>
+		<author>
+			<persName><forename type="first">A.-L</forename><surname>Barabási</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Albert</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Science</title>
+		<imprint>
+			<biblScope unit="volume">286</biblScope>
+			<biblScope unit="page">5439</biblScope>
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Email communication with GPML authors</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Deutsch</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Francis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Libkin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Marsault</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">initiated</title>
+		<imprint>
+			<biblScope unit="page" from="2022" to="2028" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">On implementing provenance-aware regular path queries with relational query engines</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Dey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Cuevas-Vicenttín</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Köhler</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><surname>Gribkoff</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">B</forename><surname>Ludäscher</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2457317.2457353</idno>
+		<ptr target="https://doi.org/10.1145/2457317.2457353" />
+	</analytic>
+	<monogr>
+		<title level="m">Joint 2013 EDBT/ICDT Conferences, EDBT/ICDT &apos;13</title>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Proceedings</surname></persName>
+		</editor>
+		<editor>
+			<persName><surname>Guerrini</surname></persName>
+		</editor>
+		<meeting><address><addrLine>Genoa, Italy</addrLine></address></meeting>
+		<imprint>
+			<publisher>ACM</publisher>
+			<date type="published" when="2013-03-22">March 22, 2013. 2013</date>
+			<biblScope unit="page" from="214" to="223" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<analytic>
+		<title level="a" type="main">Top-k diversification for path queries in knowledge graphs</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Aebeloe</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Setty</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Montoya</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hose</surname></persName>
+		</author>
+		<ptr target="http://ceur-ws.org/Vol-2180/paper-01.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ISWC 2018 Posters &amp; Demonstrations, Industry and Blue Sky Ideas Tracks co-located with 17th International Semantic Web Conference (ISWC 2018)</title>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Van Erp</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">M</forename><surname>Atre</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">V</forename><surname>López</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Srinivas</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><surname>Fortuna</surname></persName>
+		</editor>
+		<meeting>the ISWC 2018 Posters &amp; Demonstrations, Industry and Blue Sky Ideas Tracks co-located with 17th International Semantic Web Conference (ISWC 2018)<address><addrLine>Monterey, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">October 8th -to -12th, 2018. 2018</date>
+			<biblScope unit="volume">2180</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<analytic>
+		<title level="a" type="main">SPARQ2L: towards support for subgraph extraction queries in RDF databases</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Anyanwu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Maduko</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">P</forename><surname>Sheth</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1242572.1242680</idno>
+		<ptr target="https://doi.org/10.1145/1242572.1242680" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 16th International Conference on World Wide Web, WWW 2007</title>
+		<meeting>the 16th International Conference on World Wide Web, WWW 2007<address><addrLine>Banff, Alberta, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2007">May 8-12, 2007, 2007</date>
+			<biblScope unit="page" from="797" to="806" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">Path query processing on very large RDF graphs</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gubichev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Neumann</surname></persName>
+		</author>
+		<ptr target="http://webdb2011.rutgers.edu/papers/Paper21/pathwebdb.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 14th International Workshop on the Web and Databases 2011</title>
+		<meeting>the 14th International Workshop on the Web and Databases 2011<address><addrLine>WebDB; Athens, Greece</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2011-06-12">2011. June 12, 2011, 2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Sparqling kleene: fast property paths in RDF-3X</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Gubichev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Bedathur</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Seufert</surname></persName>
+		</author>
+		<ptr target="http://event.cwi.nl/grades2013/14-gubichev.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">First International Workshop on Graph Data Management Experiences and Systems, GRADES 2013, co-located with SIGMOD/PODS 2013</title>
+		<meeting><address><addrLine>New York, NY, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2013-06-24">June 24, 2013, 2013</date>
+			<biblScope unit="page">14</biblScope>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<analytic>
+		<title level="a" type="main">Efficient regular path query evaluation using path indexes</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">H L</forename><surname>Fletcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Peters</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Poulovassilis</surname></persName>
+		</author>
+		<idno type="DOI">10.5441/002/edbt.2016.67</idno>
+		<ptr target="https://doi.org/10.5441/002/edbt.2016.67" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Extending Database Technology, EDBT 2016</title>
+		<editor>
+			<persName><forename type="first">G</forename><surname>Koutrika</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Marian</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">L</forename><surname>Tanca</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">I</forename><surname>Manolescu</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">K</forename><surname>Stefanidis</surname></persName>
+		</editor>
+		<meeting>the 19th International Conference on Extending Database Technology, EDBT 2016<address><addrLine>Bordeaux, France; Bordeaux, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-03-16">March 15-16, 2016. March 15-16, 2016. 2016</date>
+			<biblScope unit="page" from="636" to="639" />
+		</imprint>
+	</monogr>
+	<note>OpenProceedings.org</note>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">Query planning for evaluating SPARQL property paths</title>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yakovets</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Godfrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Gryz</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2882903.2882944</idno>
+		<ptr target="https://doi.org/10.1145/2882903.2882944" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2016 International Conference on Management of Data, SIGMOD Conference 2016</title>
+		<meeting>the 2016 International Conference on Management of Data, SIGMOD Conference 2016<address><addrLine>San Francisco, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-07-01">June 26 -July 01, 2016, 2016</date>
+			<biblScope unit="page" from="1875" to="1889" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Landmark indexing for evaluation of label-constrained reachability queries</title>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">D J</forename><surname>Valstar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">H L</forename><surname>Fletcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yoshida</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3035918.3035955</idno>
+		<ptr target="https://doi.org/10.1145/3035918.3035955" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2017 ACM International Conference on Management of Data, SIGMOD Conference 2017</title>
+		<meeting>the 2017 ACM International Conference on Management of Data, SIGMOD Conference 2017<address><addrLine>Chicago, IL, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2017">May 14-19, 2017, 2017</date>
+			<biblScope unit="page" from="345" to="358" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Efficiently answering regular simple path queries on large labeled networks</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wadhwa</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Prasad</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Ranu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bagchi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Bedathur</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/3299869.3319882</idno>
+		<ptr target="https://doi.org/10.1145/3299869.3319882" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2019 International Conference on Management of Data, SIGMOD Conference 2019</title>
+		<meeting>the 2019 International Conference on Management of Data, SIGMOD Conference 2019<address><addrLine>Amsterdam, The Netherlands</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019-07-05">June 30 -July 5, 2019, 2019</date>
+			<biblScope unit="page" from="1463" to="1480" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<analytic>
+		<title level="a" type="main">Path indexing in the cypher query pipeline</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kuijpers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Fletcher</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lindaaker</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">N</forename><surname>Yakovets</surname></persName>
+		</author>
+		<idno type="DOI">10.5441/002/edbt.2021.68</idno>
+		<ptr target="https://doi.org/10.5441/002/edbt.2021.68" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 24th International Conference on Extending Database Technology, EDBT 2021</title>
+		<meeting>the 24th International Conference on Extending Database Technology, EDBT 2021<address><addrLine>Nicosia, Cyprus</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2021">March 23 -26, 2021, 2021</date>
+			<biblScope unit="page" from="582" to="587" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<analytic>
+		<title level="a" type="main">Answering reachability and k-reach queries on large graphs with label constraints</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s00778-021-00695-0</idno>
+		<ptr target="https://doi.org/10.1007/s00778-021-00695-0" />
+	</analytic>
+	<monogr>
+		<title level="j">VLDB J</title>
+		<imprint>
+			<biblScope unit="volume">31</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="101" to="127" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<analytic>
+		<title level="a" type="main">Timeand space-efficient regular path queries on graphs</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Arroyuelo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Hogan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Navarro</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Rojas-Ledesma</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">38th IEEE International Conference on Data Engineering, ICDE 2022</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Regular path query evaluation sharing a reduced transitive closure based on graph reduction</title>
+		<author>
+			<persName><forename type="first">I</forename><surname>Na</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">I</forename><surname>Yi</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Whang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Moon</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">J</forename><surname>Hyun</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">38th IEEE International Conference on Data Engineering, ICDE 2022</title>
+		<imprint>
+			<publisher>IEEE</publisher>
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Distributed hop-constrained s-t simple path enumeration at billion scale</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Hao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/pvldb/vol15/p169-hao.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2021">2021</date>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="169" to="182" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">DLCR: efficient indexing for label-constrained reachability queries on large dynamic graphs</title>
+		<author>
+			<persName><forename type="first">X</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Peng</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<ptr target="https://www.vldb.org/pvldb/vol15/p1645-chen.pdf" />
+	</analytic>
+	<monogr>
+		<title level="j">Proc. VLDB Endow</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1645" to="1657" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">Dynamic spanning trees for connectivity queries on fully-dynamic undirected graphs</title>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Chen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">O</forename><surname>Lachish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Helmer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename><surname>Böhlen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proc. VLDB Endow</title>
+		<meeting>VLDB Endow</meeting>
+		<imprint>
+			<date type="published" when="2022">2022</date>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="1645" to="1657" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">A reachability index for recursive label-concatenated graph queries</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Bonifati</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Kapp</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">I</forename><surname>Haprian</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Lozi</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">ICDE</title>
+		<imprint>
+			<date type="published" when="2023">2023</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Keyword search on large graphs: A survey</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Yao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Zhang</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s41019-021-00154-4</idno>
+		<ptr target="https://doi.org/10.1007/s41019-021-00154-4" />
+	</analytic>
+	<monogr>
+		<title level="j">Data Sci. Eng</title>
+		<imprint>
+			<biblScope unit="volume">6</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="142" to="162" />
+			<date type="published" when="2021">2021</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">DISCOVER: keyword search in relational databases</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hristidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/conf/2002/S19P02.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">VLDB</title>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<analytic>
+		<title level="a" type="main">Efficient ir-style keyword search over relational databases</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hristidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Gravano</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/conf/2003/papers/S25P03.pdf" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of 29th International Conference on Very Large Data Bases, VLDB 2003</title>
+		<meeting>29th International Conference on Very Large Data Bases, VLDB 2003<address><addrLine>Berlin, Germany</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2003">September 9-12, 2003, 2003</date>
+			<biblScope unit="page" from="850" to="861" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Spark: top-k keyword query in relational databases</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/1247480.1247495</idno>
+		<ptr target="https://doi.org/10.1145/1247480.1247495" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the ACM SIGMOD International Conference on Management of Data</title>
+		<meeting>the ACM SIGMOD International Conference on Management of Data<address><addrLine>Beijing, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2007">June 12-14, 2007, 2007</date>
+			<biblScope unit="page" from="115" to="126" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<analytic>
+		<title level="a" type="main">SPARK2: top-k keyword query in relational databases</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Luo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Lin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">X</forename><surname>Zhou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Li</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2011.60</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2011.60" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">23</biblScope>
+			<biblScope unit="issue">12</biblScope>
+			<biblScope unit="page" from="1763" to="1780" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b50">
+	<analytic>
+		<title level="a" type="main">Matchbased candidate network generation for keyword queries over relational databases</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Oliveira</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">S</forename><surname>Da Silva</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">S</forename><surname>De Moura</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Rodrigues</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2018.00146</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2018.00146" />
+	</analytic>
+	<monogr>
+		<title level="m">34th IEEE International Conference on Data Engineering, ICDE 2018</title>
+		<meeting><address><addrLine>Paris, France</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2018">April 16-19, 2018, 2018</date>
+			<biblScope unit="page" from="1344" to="1347" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b51">
+	<analytic>
+		<title level="a" type="main">XRANK: ranked keyword search over XML documents</title>
+		<author>
+			<persName><forename type="first">L</forename><surname>Guo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Shao</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Botev</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Shanmugasundaram</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/872757.872762</idno>
+		<ptr target="https://doi.org/10.1145/872757.872762" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2003 ACM SIGMOD International Conference on Management of Data</title>
+		<meeting>the 2003 ACM SIGMOD International Conference on Management of Data<address><addrLine>San Diego, California, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2003">June 9-12, 2003, 2003</date>
+			<biblScope unit="page" from="16" to="27" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b52">
+	<analytic>
+		<title level="a" type="main">Keyword proximity search on XML graphs</title>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hristidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Balmin</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2003.1260806</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2003.1260806" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 19th International Conference on Data Engineering</title>
+		<meeting>the 19th International Conference on Data Engineering<address><addrLine>Bangalore, India</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2003">March 5-8, 2003. 2003</date>
+			<biblScope unit="page" from="367" to="378" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b53">
+	<analytic>
+		<title level="a" type="main">Top-k exploration of query candidates for efficient keyword search on graph-shaped (RDF) data</title>
+		<author>
+			<persName><forename type="first">T</forename><surname>Tran</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Rudolph</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Cimiano</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2009.119</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2009.119" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th International Conference on Data Engineering, ICDE 2009</title>
+		<meeting>the 25th International Conference on Data Engineering, ICDE 2009<address><addrLine>Shanghai, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2009-03-29">March 29 2009 -April 2 2009. 2009</date>
+			<biblScope unit="page" from="405" to="416" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b54">
+	<analytic>
+		<title level="a" type="main">STAR: steiner-tree approximation in relationship graphs</title>
+		<author>
+			<persName><forename type="first">G</forename><surname>Kasneci</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Ramanath</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Sozio</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><forename type="middle">M</forename><surname>Suchanek</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Weikum</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2009.64</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2009.64" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 25th International Conference on Data Engineering, ICDE 2009</title>
+		<meeting>the 25th International Conference on Data Engineering, ICDE 2009<address><addrLine>Shanghai, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2009-03-29">March 29 2009 -April 2 2009. 2009</date>
+			<biblScope unit="page" from="868" to="879" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b55">
+	<analytic>
+		<title level="a" type="main">Objectrank: Authority-based keyword search in databases</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Balmin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Hristidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Papakonstantinou</surname></persName>
+		</author>
+		<ptr target="http://www.vldb.org/conf/2004/RS15P2.PDF" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Thirtieth International Conference on Very Large Data Bases, VLDB 2004</title>
+		<meeting>the Thirtieth International Conference on Very Large Data Bases, VLDB 2004<address><addrLine>Toronto, Canada</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2004-09-03">August 31 -September 3 2004, 2004</date>
+			<biblScope unit="page" from="564" to="575" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b56">
+	<analytic>
+		<title level="a" type="main">Scalable keyword search on large RDF data</title>
+		<author>
+			<persName><forename type="first">W</forename><surname>Le</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">F</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Kementsietsidis</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Duan</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2014.2302294</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2014.2302294" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">26</biblScope>
+			<biblScope unit="issue">11</biblScope>
+			<biblScope unit="page" from="2774" to="2788" />
+			<date type="published" when="2014">2014</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b57">
+	<analytic>
+		<title level="a" type="main">Cohesive subgraph search using keywords in large networks</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Q</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2020.2975793</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2020.2975793" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="178" to="191" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b58">
+	<analytic>
+		<title level="a" type="main">Efficient and progressive group steiner tree search</title>
+		<author>
+			<persName><forename type="first">R</forename><surname>Li</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Qin</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Mao</surname></persName>
+		</author>
+		<idno type="DOI">10.1145/2882903.2915217</idno>
+		<ptr target="https://doi.org/10.1145/2882903.2915217" />
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the 2016 International Conference on Management of Data, SIGMOD Conference 2016</title>
+		<meeting>the 2016 International Conference on Management of Data, SIGMOD Conference 2016<address><addrLine>San Francisco, CA, USA</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2016-07-01">June 26 -July 01, 2016, 2016</date>
+			<biblScope unit="page" from="91" to="106" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b59">
+	<analytic>
+		<title level="a" type="main">Effective keyword search over weighted graphs</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Kargar</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Golab</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Srivastava</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Szlichta</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Zihayat</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/TKDE.2020.2985376</idno>
+		<ptr target="https://doi.org/10.1109/TKDE.2020.2985376" />
+	</analytic>
+	<monogr>
+		<title level="j">IEEE Trans. Knowl. Data Eng</title>
+		<imprint>
+			<biblScope unit="volume">34</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="601" to="616" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b60">
+	<analytic>
+		<title level="a" type="main">An efficient parallel keyword search engine on knowledge graphs</title>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Agrawal</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><forename type="middle">V</forename><surname>Jagadish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">K H</forename><surname>Tung</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Wu</surname></persName>
+		</author>
+		<idno type="DOI">10.1109/ICDE.2019.00038</idno>
+		<ptr target="https://doi.org/10.1109/ICDE.2019.00038" />
+	</analytic>
+	<monogr>
+		<title level="m">35th IEEE International Conference on Data Engineering, ICDE 2019</title>
+		<meeting><address><addrLine>Macao, China</addrLine></address></meeting>
+		<imprint>
+			<date type="published" when="2019">April 8-11, 2019, 2019</date>
+			<biblScope unit="page" from="338" to="349" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b61">
+	<analytic>
+		<title level="a" type="main">Key-core: cohesive keyword subgraph exploration in large graphs</title>
+		<author>
+			<persName><forename type="first">Z</forename><surname>Zhang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">X</forename><surname>Yu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Wang</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Yuan</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Chen</surname></persName>
+		</author>
+		<idno type="DOI">10.1007/s11280-021-00926-y</idno>
+		<ptr target="https://doi.org/10.1007/s11280-021-00926-y" />
+	</analytic>
+	<monogr>
+		<title level="j">World Wide Web</title>
+		<imprint>
+			<biblScope unit="volume">25</biblScope>
+			<biblScope unit="issue">2</biblScope>
+			<biblScope unit="page" from="831" to="856" />
+			<date type="published" when="2022">2022</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>

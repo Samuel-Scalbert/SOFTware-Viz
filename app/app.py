@@ -7,8 +7,8 @@ import sys
 
 app = Flask(__name__,template_folder='templates',static_folder='static')
 
-app.config['ARANGO_HOST'] = 'arangodb'
-#app.config['ARANGO_HOST'] = 'localhost'
+#app.config['ARANGO_HOST'] = 'arangodb'
+app.config['ARANGO_HOST'] = 'localhost'
 app.config['ARANGO_PORT'] = 8529
 app.config['ARANGO_DB'] = 'SOF-viz'
 app.config['ARANGO_USERNAME'] = 'root'
