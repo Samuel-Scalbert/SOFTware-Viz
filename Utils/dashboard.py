@@ -30,7 +30,7 @@ def dashboard(db, structure):
             bind_vars = {}
 
         # Execute queries
-        file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=1000)
+        file_id_list = db.AQLQuery(query, bindVars=bind_vars, rawResults=True, batchSize=2000)
 
     except AQLQueryError:
         return 'AQL query error: Unable to fetch files'
