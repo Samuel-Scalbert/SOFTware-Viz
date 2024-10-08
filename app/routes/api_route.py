@@ -270,3 +270,14 @@ def list_auth_from_halid(hal_id):
     # Execute the query and return the response as a list
     data = db.AQLQuery(query, rawResults=True, batchSize=2000)
     return data[0:]
+
+@app.route("/api/soft/<struc_id>")
+def str_from_halid(struc_id):
+    query = f'''
+    FOR stru in structures
+        FILTER stru.id_haureal == "{struc_id}"
+        RETURN stru.name
+                    '''
+    # Execute the query and return the response as a list
+    data = db.AQLQuery(query, rawResults=True, batchSize=1)
+    return data[0:]

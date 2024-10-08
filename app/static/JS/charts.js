@@ -110,7 +110,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                         var value = context.dataset.data[context.dataIndex];
                         var size = context.chart.width;
                         var base = Math.abs(value.v) / 15;
-                        return (size / 24) * base;
+                        return (size / 24) * base ;
                     }
                 }
             },
