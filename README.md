@@ -14,6 +14,31 @@
 
 ![Capture d’écran du 2024-06-03 16-39-41](https://github.com/Samuel-Scalbert/SOFTware-Viz/assets/32683708/6be2a593-0508-4e52-a7cb-2cf28b768f00)
 
+## Presentation of the project
+
+### DB of PDF
+The process begins with a Database of PDF files. These PDFs are scholarly PDFs that need to be extracted and processed.
+
+### GROBID
+The PDFs are sent to GROBID, a tool used to extract structured data (like bibliographic information) from scholarly PDFs. GROBID processes the PDFs and outputs XML files. This is a crucial step in extracting machine-readable information from the documents.
+
+### SOFTCITE
+After GROBID, the extracted data (likely enriched or supplemented data) is passed to SOFTCITE, which generates JSON outputs. SOFTCITE analyzes citations, software mentions, or related information in the PDF files like references.
+
+### SOFTware-Sync
+The extracted data (XML and JSON) is then passed to SOFTware-Sync, which is a tool that synchronizes the data into one single XML.
+
+### SOFTware-Viz
+SOFTware-Viz is responsible for visualizing the processed data. It likely takes the synchronized data from SOFTware-Sync and transforms it into visual outputs or dashboards.
+
+### ArangoDB
+The processed data is stored in ArangoDB, a multi-model NoSQL database, to manage both structured data. This database serves as the main storage for the extracted information/mentions.
+
+### Flask
+Flask is a web framework used for developing web applications. Flask interacts with both SOFTware-Viz (for visualizations) and ArangoDB (for retrieving data).
+
+
+
 ##  Repository Structure
 
 ```sh
@@ -63,7 +88,6 @@
 ```
 
 ---
-
 ##  Getting Started
 
 **System Requirements:**
