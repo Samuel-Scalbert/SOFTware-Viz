@@ -14,6 +14,8 @@
 
 ![Capture d’écran du 2024-06-03 16-39-41](https://github.com/Samuel-Scalbert/SOFTware-Viz/assets/32683708/6be2a593-0508-4e52-a7cb-2cf28b768f00)
 
+![Capture d’écran du 2024-10-18 10-44-19](https://github.com/user-attachments/assets/e8d7bcea-9881-49af-abfc-d92f536b9233)
+
 ## Presentation of the project
 
 ### DB of PDF
