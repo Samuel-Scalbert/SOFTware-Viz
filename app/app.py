@@ -1,10 +1,7 @@
 from flask import Flask, render_template
 from pyArango.connection import Connection
-from arango import ArangoClient
 from Utils.db import insert_json_db
-from Utils.dashboard import dashboard
-import sys
-
+from Utils.home import home_data
 app = Flask(__name__,template_folder='templates',static_folder='static')
 
 app.config['ARANGO_HOST'] = 'arangodb'
@@ -47,5 +44,6 @@ from app.routes import doc_route, dashboard_route,reset_db, software_route, api_
 
 @app.route('/')
 def home():
-    return render_template('partials/conteneur.html')
+    data = home_data(db)
+    return render_template('pages/home.html', data=data[0])
 
