@@ -103,27 +103,27 @@ Flask is a web framework used for developing web applications. Flask interacts w
 > 1. Clone the  repository:
 >
 > ```console
-> $ git clone ../
+> git clone ../
 > ```
 >
 > 2. Change to the project directory:
 > ```console
-> $ cd ./SOFTware-viz
+> cd ./SOFTware-viz
 > ```
 >
 > 3. Create a virtualenv:
 > ```console
-> $ python -m venv env
+> python -m venv env
 > ```
 >
 > 4. Install docker image
 > ```console
-> $ docker pull arangodb/arangodb:3.11.6
+> docker pull arangodb/arangodb:3.11.6
 > ```
 >
 > 5. Launch docker container
 > ```console
-> $ docker run -p 8529:8529 -e ARANGO_NO_AUTH=1 arangodb/arangodb:3.11.6
+> docker run -p 8529:8529 -e ARANGO_NO_AUTH=1 arangodb/arangodb:3.11.6
 > ```
 >
 > 6. Create the database "SOF-viz"
@@ -133,17 +133,17 @@ Flask is a web framework used for developing web applications. Flask interacts w
 >
 > 7. Launch the virtualenv
 > ```console
-> $ source env/bin/activate
+> source env/bin/activate
 > ```
 >
 > 8. Install the dependencies:
 > ```console
-> $ pip install -r requirement.txt
+> pip install -r requirement.txt
 > ```
 > 
 > 9. Launch the app
 > ```console
-> $ python run.py
+> python run.py
 > ```
 >
 ###  Usage
@@ -152,7 +152,7 @@ Flask is a web framework used for developing web applications. Flask interacts w
 
 > Run  using the command below:
 > ```console
-> (env) $ python run.py
+> (env) python run.py
 > ```
 
 ##  Contributing
