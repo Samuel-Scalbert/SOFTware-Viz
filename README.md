@@ -1,6 +1,10 @@
 <p align="center">
     <h1 align="center">SOFTware-Viz</h1>
 </p>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/43b01db2-450e-4d9d-a805-cb37f861bdb2" alt="logo_full_HUB" width="250" />
+</div>
+
 <p align="center">
 	<!-- local repository, no metadata badges. -->
 <p>
