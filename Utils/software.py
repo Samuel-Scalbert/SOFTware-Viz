@@ -1,6 +1,197 @@
 from collections import defaultdict
 
-def software_all_mentions(software,structure, db):
+def software_all_mentions(software, db):
+
+    # DOCUMENTS -------------------------------------------------------------
+    query_list_doc = f"""
+        LET list_doc = (
+            FOR soft IN softwares
+                FILTER soft.software_name.normalizedForm == "{software}"
+                FOR doc IN edge_doc_to_software
+                    FILTER doc._to == soft._id
+                    RETURN DISTINCT doc._from
+        )
+        RETURN list_doc
+    """
+    list_doc_result = db.AQLQuery(query_list_doc, rawResults=True)
+    list_doc = list_doc_result[0] if list_doc_result else []
+    list_doc_name = db.AQLQuery(f"for id in {list_doc} let doc = document(id) return [doc.title, doc.file_hal_id]", rawResults=True)
+    list_doc_contexts = []
+    for id in list_doc:
+        list_to_apppend = []
+        title = db.AQLQuery(f"let doc = document('{id}') return doc.title", rawResults=True)
+        list_to_apppend.append(title)
+        dic_context = {"used": [], "created": [], "shared": []}
+        query = f"""
+                            FOR ids IN edge_doc_to_software
+                                FILTER ids._from == '{id}'
+                                LET software_mention = DOCUMENT(ids._to)
+                                RETURN distinct software_mention
+                        """
+        json_software_all = db.AQLQuery(query, rawResults=True)
+        for json_software in json_software_all:
+            if json_software['software_name']['normalizedForm'] == software:
+                offsetStart = json_software["software_name"]["offsetStart"]
+                offsetEnd = json_software["software_name"]["offsetEnd"]
+                context = json_software['context']
+                context = context[:offsetStart] + '<span class="software-name"><strong>' + context[
+                                                                                           offsetStart:offsetEnd] + '</strong></span>' + context[
+                                                                                                                                         offsetEnd:]
+                max_score = float('-inf')
+                for attribute, details in json_software["mentionContextAttributes"].items():
+                    if details["score"] > max_score:
+                        max_score = details["score"]
+                        max_attribute = attribute
+                        software_title = f"{json_software['software_name']['normalizedForm']}"
+                dic_context[max_attribute].append(context)
+        list_to_apppend.append(dic_context)
+        list_doc_contexts.append(list_to_apppend)
+    # STAT --------------------------------------------------------------------
+
+    query_list_stat = f"""
+        FOR soft IN softwares
+            FILTER soft.software_name.normalizedForm == "{software}"
+            LET max_field = (
+                        FOR field IN ['used', 'created', 'shared'] 
+                            LET score = soft.mentionContextAttributes[field].score 
+                            SORT score DESC 
+                            LIMIT 1 
+                            RETURN field 
+                    )[0]
+            RETURN max_field 
+        """
+    list_stat_result = db.AQLQuery(query_list_stat, rawResults=True)
+    dict_stat =  {"used": 0,"created": 0,"shared": 0}
+    for attribute in list_stat_result:
+        dict_stat[attribute] += 1
+    print(dict_stat)
+
+
+    query_mentions = f"""
+        FOR docid IN {list_doc}
+            LET doc = DOCUMENT(docid)
+
+            // Collect all mentions for the current document
+            LET list_all_mentions = (
+                FOR soft IN edge_doc_to_software
+                    FILTER soft._from == doc._id
+                    LET software = DOCUMENT(soft._to)
+                    FILTER software.software_name.normalizedForm == "{software}"
+
+                    // Collect the field with the highest score and its context
+                    LET max_field = (
+                        FOR field IN ['used', 'created', 'shared']
+                            LET score = software.mentionContextAttributes[field].score
+                            FILTER score != null
+                            SORT score DESC
+                            LIMIT 1
+                            RETURN field
+                    )[0]
+
+                    RETURN [max_field, software.context, software.software_name.offsetStart]
+            )
+
+            // Return document with aggregated mentions
+            RETURN {{ doc: doc.title, mentions: list_all_mentions }}
+    """
+    list_mentions = db.AQLQuery(query_mentions, rawResults=True)
+
+    # AUTHORS -----------------------------------------------------
+    query_authors = f"""
+        FOR docid IN {list_doc}
+            LET doc = DOCUMENT(docid)
+
+            // Collect all authors for the current document
+            LET list_all_authors = (
+                FOR auth IN edge_doc_to_author
+                    FILTER auth._from == docid
+                    LET auth_doc = DOCUMENT(auth._to)
+                    FILTER auth_doc.name.forename != null
+                    FILTER auth_doc.name.surname != null
+                    RETURN CONCAT(auth_doc.name.forename, " ", auth_doc.name.surname)
+            )
+
+            // Return document with aggregated authors
+            RETURN {{ doc: doc._id, authors: list_all_authors }}
+    """
+    list_authors = db.AQLQuery(query_authors, rawResults=True)
+    top_list_authors = {}
+    for doc in list_authors:
+        doc_name = doc['doc']
+        for authors in doc['authors']:
+            if authors not in top_list_authors:
+                top_list_authors[authors] = [doc_name]  # Add a new list with doc_name
+            else:
+                top_list_authors[authors].append(doc_name)  # Append doc_name, not authors
+    sorted_top_list_authors = {k: v for k, v in sorted(
+        top_list_authors.items(),
+        key=lambda item: (-len(item[1]), item[0]))}
+
+    # INSTITUTION ----------------------------------------------------
+    query_inst = f"""
+           FOR docid IN {list_doc}
+               LET doc = DOCUMENT(docid)
+
+               // Collect all structures for the current document
+               LET list_all_struc = (
+                   FOR struc IN edge_doc_to_struc
+                       FILTER struc._from == docid
+                       LET struc_doc = DOCUMENT(struc._to)
+                       filter struc_doc.type == "institution"
+                       RETURN struc_doc.name
+               )
+
+               // Return document with aggregated structures
+               RETURN {{ doc: doc.file_hal_id, structures: list_all_struc }}
+       """
+    list_inst = db.AQLQuery(query_inst, rawResults=True)
+    top_list_inst = {}
+    for doc in list_inst:
+        doc_name = doc['doc']
+        for inst in doc['structures']:
+            if inst not in top_list_inst:
+                top_list_inst[inst] = [doc_name]  # Add a new list with doc_name
+            else:
+                top_list_inst[inst].append(doc_name)  # Append doc_name, not inst
+    sorted_top_list_inst = {k: v for k, v in sorted(
+        top_list_inst.items(),
+        key=lambda item: (-len(item[1]), item[0]))}
+
+    # LABORATORY ----------------------------------------------------
+    query_lab = f"""
+        FOR docid IN {list_doc}
+            LET doc = DOCUMENT(docid)
+
+            // Collect all structures for the current document
+            LET list_all_struc = (
+                FOR struc IN edge_doc_to_struc
+                    FILTER struc._from == docid
+                    LET struc_doc = DOCUMENT(struc._to)
+                    filter struc_doc.type == "laboratory"
+                    RETURN struc_doc.name
+            )
+
+            // Return document with aggregated structures
+            RETURN {{ doc: doc.file_hal_id, structures: list_all_struc }}
+    """
+    list_lab = db.AQLQuery(query_lab, rawResults=True)
+    top_list_lab = {}
+    for doc in list_lab:
+        doc_name = doc['doc']
+        for inst in doc['structures']:
+            if inst not in top_list_lab:
+                top_list_lab[inst] = [doc_name]  # Add a new list with doc_name
+            else:
+                top_list_lab[inst].append(doc_name)  # Append doc_name, not inst
+    sorted_top_list_lab = {k: v for k, v in sorted(
+        top_list_lab.items(),
+        key=lambda item: (-len(item[1]), item[0]))}
+
+    #-------------------------------------------------------------
+
+    return dict_stat, sorted_top_list_authors, sorted_top_list_inst , sorted_top_list_lab, list_doc_name, software, list_doc_contexts
+
+def software_all_mentions_chart_api(software,structure, db):
     list_file_hal_id = []
     if structure is None:
         query = f"""

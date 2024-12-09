@@ -383,30 +383,32 @@ function generateCircleChart(selector, value1, value2, value3) {
         },
         options: {
             responsive: true,
+            animation: {
+                animateScale: true, // This enables scaling animation on initial load
+                animateRotate: true, // This animates rotation if desired
+                duration: 1000, // Adjust the duration of the animation (1 second)
+                easing: 'easeOutQuart', // Smooth easing for animation
+            },
             plugins: {
                 tooltip: {
-                    enabled: true, // Disables tooltips
+                    enabled: true, // Enable tooltips
                 },
                 legend: {
-                    display: true, // Hides the legend
+                    display: true, // Display the legend
                 },
                 datalabels: {
-                    display: false // Hides data labels
+                    display: false, // Disable data labels
                 }
             },
-            animation: {
-                animateScale: true, // Enables scaling animation
-            },
             layout: {
-                padding: 20 // Adds padding around the chart
+                padding: 20 // Add padding around the chart
             },
             elements: {
                 arc: {
-                    borderWidth: 1 // Sets the border width of each slice
+                    borderWidth: 1 // Set border width of each pie slice
                 }
             },
         },
-
         plugins: [{
             beforeDraw: function(chart) {
                 const width = chart.width;
@@ -422,7 +424,10 @@ function generateCircleChart(selector, value1, value2, value3) {
     };
 
     const ctx = document.querySelector(selector);
+    if (!ctx) {
+        console.error("Canvas element not found!");
+        return;
+    }
 
-    circleChart = new Chart(ctx.getContext('2d'), chartConfig);
-
+    new Chart(ctx.getContext('2d'), chartConfig);
 }

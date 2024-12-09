@@ -1,15 +1,16 @@
 from app.app import app, db
 from flask import render_template, jsonify
-from Utils.software import software_all_mentions, dataset_creator
+from Utils.software import software_all_mentions,software_all_mentions_chart_api, dataset_creator
 
 @app.route('/<software>')
 def software_mentions(software):
-    return render_template('pages/software_mentions.html',data = [software])
+    data = software_all_mentions(software, db)
+    return render_template('pages/software_mentions.html', data=data, software=software)
 
 @app.route('/chart/<software>')
 def software_chart_mentions(software):
     structure = None
-    data, min_year, max_year, max_occurrences,list_file_hal_id = software_all_mentions(software,structure,db)
+    data, min_year, max_year, max_occurrences,list_file_hal_id = software_all_mentions_chart_api(software,structure,db)
     dataset = dataset_creator(data)
     return [dataset,min_year, max_year, max_occurrences, list_file_hal_id]
 
