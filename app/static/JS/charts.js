@@ -14,17 +14,64 @@ function affi_type(str) {
     return typeMap[str] || str;
 }
 
-function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, maxoccu) {
-    var labels = [];
-    let xdatamin = minyear - 1;
-    let xdatamax = maxyear + 1;
+async function generateBubbleChart(selector) {
+    // Get the current URL
+    let url = window.location.href;
+    let parts = url.split('/');
+    let software_hash;
+
+    if (parts.slice(-1)[0].startsWith("struct-")) {
+        software_hash = parts.slice(-2)[0];
+    } else {
+        software_hash = parts.slice(-1)[0];
+    }
+
+    async function getChartData(software_hash) {
+        try {
+            const response = await fetch(`/chart/${software_hash}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data_chart = await response.json();
+            return data_chart;  // Return the data
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+            return null;  // Return null if there was an error
+        }
+    }
+
+    // Fetch the chart data
+    let full_dataset = await getChartData(software_hash);
+
+    // Check if data is valid
+    if (!full_dataset || !Array.isArray(full_dataset) || full_dataset.length === 0) {
+        console.error("Invalid chart data:", full_dataset);
+        return; // Stop execution if data is invalid
+    }
+
+    console.log("full_dataset", full_dataset);
+
+    // Variables to control the chart's axis range
+    let xdatamin = full_dataset[1] - 1;
+    let xdatamax = full_dataset[2] + 1;
     let ydatamin = 0;
-    let ydatamax = maxoccu + 2;
+    let ydatamax = full_dataset[3] + 2;
+
+    // Assuming `full_dataset[0]` contains the chart data (datasets)
+    let parsedData = full_dataset[0];
+
+    // Make sure parsedData is in the correct format
+    if (!Array.isArray(parsedData)) {
+        console.error("Invalid data format for chart:", parsedData);
+        return; // Stop execution if parsedData is not in the expected format
+    }
+
+    console.log('type', typeof parsedData);
 
     const chartConfig = {
         type: 'bubble',
         data: {
-            datasets: dictionnary_data_raw,
+            datasets: parsedData, // Use the fetched dataset
         },
         options: {
             responsive: true,
@@ -38,7 +85,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                     },
                     title: {
                         display: false,
-                        text: 'Nb of occurences',
+                        text: 'Nb of occurrences',
                         font: { size: 25 }
                     }
                 },
@@ -48,7 +95,7 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                     ticks: {
                         display: true,
                         font: { size: 25 },
-                        callback: function(value, index, values) {
+                        callback: function(value) {
                             return Math.floor(value);  // Only show whole numbers (years)
                         },
                         stepSize: 1
@@ -60,15 +107,15 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                     }
                 }
             },
-            events: ['mouseout'], // Remove 'click' from here
+            events: ['mouseout'],
             plugins: {
                 legend: {
                     position: 'top',
                     labels: {
                         font: {
-                            size: function(size) { return 25; }
+                            size: 25
                         },
-                        filter: function(item, chart) {
+                        filter: function(item) {
                             return !item.text.includes('label');
                         }
                     }
@@ -88,19 +135,16 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                         size: 25,
                     },
                     formatter: function(value) {
-                        var display = value.display_custom;
-                        if (display) {
-                            return display == 'on' ? Math.round(value.v) : null;
+                        if (value.display_custom && value.display_custom === 'on') {
+                            return Math.round(value.v);
                         }
-                        else return Math.round(value.v);
+                        return value.display_custom === 'off' ? null : Math.round(value.v);
                     },
                     offset: 1,
                     padding: 0
                 },
                 tooltip: { enabled: false }
             },
-
-            // Core options
             layout: {
                 padding: 30
             },
@@ -114,7 +158,6 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
                     }
                 }
             },
-            // Disable animations
             animation: {
                 duration: 0
             },
@@ -125,30 +168,32 @@ function generateBubbleChart(selector, dictionnary_data_raw, minyear, maxyear, m
         }
     };
 
+    // Initialize the chart
     const ctx = document.querySelector(selector);
     const chart = new Chart(ctx.getContext('2d'), chartConfig);
 
+    // Handle chart click events
     ctx.onclick = (evt) => {
-      const points = chart.getElementsAtEventForMode(
-        evt,
-        'nearest',
-        { intersect: true },
-        true
-      );
-      if (points.length) {
-          const firstPoint = points[0]
-          const datasetPoint = firstPoint.datasetIndex;
-          const dataPoint = firstPoint.index;
-          if (chart.data.datasets[datasetPoint].data[dataPoint].label)
-          {
-              const software = document.getElementById("software_name")
-              showSources(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
-              showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
-              showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
-          }
-      }
+        const points = chart.getElementsAtEventForMode(
+            evt,
+            'nearest',
+            { intersect: true },
+            true
+        );
+        if (points.length) {
+            const firstPoint = points[0];
+            const datasetPoint = firstPoint.datasetIndex;
+            const dataPoint = firstPoint.index;
+            if (chart.data.datasets[datasetPoint].data[dataPoint].label) {
+                const software = document.getElementById("software_name");
+                showSources(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
+                showStructures(chart.data.datasets[datasetPoint].data[dataPoint].label, software.getAttribute("class"));
+                showAuthors(chart.data.datasets[datasetPoint].data[dataPoint].label);
+            }
+        }
     };
 }
+
 
 async function showStructures(hal_id_list, software) {
     const uniqueStructures = new Set();
