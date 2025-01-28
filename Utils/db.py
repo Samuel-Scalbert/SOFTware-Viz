@@ -101,7 +101,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
     dict_registered = {}
     dict_edge_author = {}
 
-    for data_file_xml in tqdm(data_xml_list):
+    for data_file_xml in tqdm(data_xml_list[:200]):
         file_path = f'{data_path_xml}/{data_file_xml}'
         file_name = os.path.basename(file_path)
         while "." in file_name:
