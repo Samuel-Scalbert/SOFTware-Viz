@@ -12,4 +12,5 @@ def doc_info_wsoftware(doc_id,software):
     data = doc_software(doc_id,software,db)
     data.append(doc_id)
     data.append(software)
+    print(len(data))
     return render_template('pages/doc_wsoftware.html',data = data)

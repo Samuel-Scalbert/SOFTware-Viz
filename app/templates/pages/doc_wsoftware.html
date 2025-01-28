@@ -1,56 +1,70 @@
 {% extends "partials/conteneur.html" %}
 {% block body %}
-    <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='/css/styles.css') }}">
-</head>
-<body>
 <div>
-<p class="titre-block"><strong>{{ data[3] }}</strong></p>
-<div class="flex-container">
-    {% for attrib,lists_context in data[0].items() %}
-    {% if lists_context|length > 0 %}
-<div class="contexts">
-    <p class="titre">Contexts «{{ attrib }}»</p>
-    <ul class="software-list" style="padding-left:15px">
-    {% for context in lists_context %}
-        <li>"{{ context | safe  }}"</li>
-    {% endfor %}
-    </ul>
-</div>
-    {% endif %}
-{% endfor %}
+    <div class="titre-block"><h2 style="padding: 5px">{{ data[4] }} (<span style="color: red">{{ data[9] }}</span>)</h2></div>
+   <div class="flex-container">
+       <div class="info_doc">
 
-{% if data[1] != None %}
-<div class="abstract">
-    <p class="titre">abstract</p>
-    {{ " ".join(data[1]) }}
+           <div class="doc_abstract">
+               {% if data[1][0] == "GROBID" %}
+                   <h1>Abstract (<span style="color: red">scrapped with Grobid</span>)</h1>
+               {% else %}
+                   <h1>Abstract (<span style="color: green">scrapped from HAL</span>)</h1>
+               {% endif %}
+               <p style="overflow-y: auto;">{{ data[1][1] }}</p>
+           </div>
+
+           <div class="doc_author">
+               <h1>Authors (ajouter les rôles)</h1>
+               <ul class="top_ul">
+                   {% for author in data[6] %}
+                   <li>{{ author }}</li>
+                   {% endfor %}
+               </ul>
+           </div>
+
+           <div class="doc_affi">
+               <h1>Affiliations</h1>
+               <ul class="top_ul">
+               {% for dic in data[7] %}
+                   {% for type,affiliations in dic.items() %}
+                       <h4>{{ type }}</h4>
+                       {% for affi in affiliations %}
+                           <li style="padding-left: 10px">{{ affi }}</li>
+                        {% endfor %}
+                   {% endfor %}
+               {% endfor %}
+               </ul>
+           </div>
+
+           <div class="doc_soft">
+             <h1>Softwares cited in this article :</h1>
+             <ul class="top_ul">
+                {% for hal_id in data[3] %}
+                <li>
+                   <a href="{{ url_for('doc_info_wsoftware',doc_id=data[5], software=hal_id) }}">{{ hal_id }}</a>
+                </li>
+                {% endfor %}
+             </ul>
+          </div>
+
+       </div>
+      {% for attrib,lists_context in data[0].items() %}
+      {% if lists_context|length > 0 %}
+      <div class="contexts">
+         <p class="titre">Contexts «{{ attrib }}»</p>
+         <ul class="software-list" style="padding-left:15px">
+            {% for context in lists_context %}
+            <li>"{{ context | safe  }}"</li>
+            {% endfor %}
+         </ul>
+      </div>
+      {% endif %}
+      {% endfor %}
+      <!--<div class="source">
+         <p class="titre">Source</p>
+         {{ data[2] | safe }}
+      </div>-->
+   </div>
 </div>
-{% endif %}
-<div class="source">
-    <p class="titre">Source</p>
-    {{ data[2] | safe }}
-    </div>
-<div class="all-sources">
-    <p class="titre">All sources</p>
-    <ul>
-    {% for hal_id in data[4] %}
-        <li>
-        <a href="{{ url_for('doc_info_wsoftware',doc_id=hal_id, software=data[7]) }}">{{ hal_id }}</a>
-        </li>
-    {% endfor %}
-    </ul>
-</div>
-<div class="other-software">
-    <p class="titre">Other softwares</p>
-    <ul>
-    {% for software in data[5] %}
-        <li>
-        <a href="{{ url_for('doc_info_wsoftware',doc_id=data[6], software=software) }}">{{ software }}</a>
-        </li>
-    {% endfor %}
-     </ul>
-</div>
-</div>
-</div>
-</body>
 {% endblock %}
