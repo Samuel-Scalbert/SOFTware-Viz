@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   arangodb:
     restart: always
@@ -16,13 +14,21 @@ services:
       - ARANGO_NO_AUTH=1
     volumes:
       - arangodb_data:/var/lib/arangodb3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8529/_api/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   flask-app:
     restart: always
     image: samuelscalbert/software-viz_flask-app:latest
     depends_on:
-      - arangodb
-      - traefik
+      arangodb:
+        condition: service_healthy
+      traefik:
+        condition: service_started
     environment:
       - ARANGO_HOST=arangodb
       - ARANGO_PORT=8529
