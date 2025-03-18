@@ -113,9 +113,9 @@ def doc_info_from_id(file_id,db):
         abstract = (file_meta[0]['abstract'])
     except KeyError:
         abstract = 'No abstract'
-    print(abstract)
+    print(file_meta)
+    urls = file_meta[0]['urls_verified_SH']
     max_attribute = None
-    print(file_meta_id)
     query = f"""
                    LET doc = DOCUMENT('{file_meta_id}')
                    FOR edge IN edge_doc_to_software
@@ -185,6 +185,6 @@ def doc_info_from_id(file_id,db):
 
     title = db.AQLQuery(f"LET doc = DOCUMENT('{file_meta_id}') RETURN doc.title", rawResults=True)
     title = title[0]
-    data = [dic_context, abstract, "null", list_other_softwares, title,file_id, list_authors, list_affi]
+    data = [dic_context, abstract, "null", list_other_softwares, title,file_id, list_authors, list_affi, urls]
 
     return data

@@ -3,7 +3,6 @@ import json
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 import requests
-import time
 from openpyxl import load_workbook
 from Utils.TEI_to_JSON import transformer_TEI_JSON
 
@@ -79,6 +78,11 @@ def insert_json_db(data_path_json,data_path_xml,db):
     for row in data[1:]:
         blacklist.append(row[0])
 
+    #load the urls verified with SH
+
+    with open('app/static/data/url_verified_with_SH/urls.json', 'r') as file:
+        urls_verified_sh = json.load(file)
+
     # Create or retrieve collections
     documents_collection = check_or_create_collection(db, 'documents')
     softwares_collection = check_or_create_collection(db, 'softwares')
@@ -97,7 +101,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
 
     data_json_files = os.listdir(data_path_json)
     data_xml_list = os.listdir(data_path_xml)
-    files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.file_hal_id', rawResults=True)
+    files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.file_hal_id', rawResults=True, batchSize=2000)
     dict_registered = {}
     dict_edge_author = {}
 
@@ -109,6 +113,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
 
         if file_name in files_list_registered:
             continue
+
         url = "https://api.archives-ouvertes.fr/search/"
         params = {
             "q": f"halId_id:{file_name}",
@@ -133,6 +138,10 @@ def insert_json_db(data_path_json,data_path_xml,db):
 
 
             # DOCUMENT -----------------------------------------------------
+
+            if file_name in urls_verified_sh:
+                urls_list = urls_verified_sh[file_name]
+                data_json_get_document['urls_verified_SH'] = urls_list
 
             title = tree.find(".//tei:listBibl//tei:titleStmt//tei:title", ns)
             title = title.text
