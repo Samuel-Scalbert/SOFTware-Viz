@@ -114,7 +114,10 @@ def doc_info_from_id(file_id,db):
     except KeyError:
         abstract = 'No abstract'
     print(file_meta)
-    urls = file_meta[0]['urls_verified_SH']
+    try :
+        urls = file_meta[0]['urls_verified_SH']
+    except KeyError:
+        urls = None
     max_attribute = None
     query = f"""
                    LET doc = DOCUMENT('{file_meta_id}')
