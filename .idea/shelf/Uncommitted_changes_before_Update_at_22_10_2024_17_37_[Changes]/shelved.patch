@@ -1,0 +1,380 @@
+Index: app/app.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flask import Flask, render_template\nfrom pyArango.connection import Connection\nfrom arango import ArangoClient\nfrom Utils.db import insert_json_db\nfrom Utils.dashboard import dashboard\nimport sys\n\napp = Flask(__name__,template_folder='templates',static_folder='static')\n\napp.config['ARANGO_HOST'] = 'arangodb'\n#app.config['ARANGO_HOST'] = 'localhost'\napp.config['ARANGO_PORT'] = 8529\napp.config['ARANGO_DB'] = 'SOF-viz'\napp.config['ARANGO_USERNAME'] = 'root'\napp.config['ARANGO_PASSWORD'] = 'root'\n\ndef init_db():\n    global db\n    db = Connection(\n        arangoURL='http://{host}:{port}'.format(\n            host=app.config['ARANGO_HOST'],\n            port=app.config['ARANGO_PORT']\n        ),\n        username=app.config['ARANGO_USERNAME'],\n        password=app.config['ARANGO_PASSWORD']\n    )\n    if not db.hasDatabase('SOF-viz'):\n        db.createDatabase('SOF-viz')\n    db = Connection(\n        arangoURL='http://{host}:{port}'.format(\n            host=app.config['ARANGO_HOST'],\n            port=app.config['ARANGO_PORT']\n        ),\n        username=app.config['ARANGO_USERNAME'],\n        password=app.config['ARANGO_PASSWORD']\n    )[app.config['ARANGO_DB']]\n\ninit_db()  # Call the init_db function to initialize the db variable\n\ninsert_json_db('./app/static/data/json_files/from_xml','./app/static/data/xml_meta', db)\nstructure = None\nglobal data_dashboard\ndata_dashboard = None\n#data_dashboard = dashboard(db, structure)\n\nfrom app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route, author_route\n\n@app.route('/')\ndef home():\n    return render_template('partials/conteneur.html')\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/app.py b/app/app.py
+--- a/app/app.py	(revision 5a526e39d53bd244fd1aa4e3d7809e851a238eab)
++++ b/app/app.py	(date 1729253883478)
+@@ -1,14 +1,11 @@
+ from flask import Flask, render_template
+ from pyArango.connection import Connection
+-from arango import ArangoClient
+ from Utils.db import insert_json_db
+-from Utils.dashboard import dashboard
+-import sys
+-
++from Utils.home import home_data
+ app = Flask(__name__,template_folder='templates',static_folder='static')
+ 
+-app.config['ARANGO_HOST'] = 'arangodb'
+-#app.config['ARANGO_HOST'] = 'localhost'
++#app.config['ARANGO_HOST'] = 'arangodb'
++app.config['ARANGO_HOST'] = 'localhost'
+ app.config['ARANGO_PORT'] = 8529
+ app.config['ARANGO_DB'] = 'SOF-viz'
+ app.config['ARANGO_USERNAME'] = 'root'
+@@ -47,5 +44,6 @@
+ 
+ @app.route('/')
+ def home():
+-    return render_template('partials/conteneur.html')
++    data = home_data(db)
++    return render_template('pages/home.html', data=data[0])
+ 
+Index: test.ipynb
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/test.ipynb b/test.ipynb
+new file mode 100644
+--- /dev/null	(date 1729241306818)
++++ b/test.ipynb	(date 1729241306818)
+@@ -0,0 +1,189 @@
++{
++ "cells": [
++  {
++   "cell_type": "code",
++   "id": "initial_id",
++   "metadata": {
++    "collapsed": true,
++    "ExecuteTime": {
++     "end_time": "2024-09-24T15:16:17.056Z",
++     "start_time": "2024-09-24T15:16:17.049012Z"
++    }
++   },
++   "source": [
++    "def filter_full_paths(paths):\n",
++    "    full_paths = []\n",
++    "\n",
++    "    # Create a set for all paths as strings for easy comparison\n",
++    "    path_set = {tuple(path) for path in paths}\n",
++    "\n",
++    "    for path in paths:\n",
++    "        # Check if the current path is a prefix of any other path\n",
++    "        if not any(other_path[:len(path)] == path and other_path != path for other_path in path_set):\n",
++    "            full_paths.append(path)\n",
++    "\n",
++    "    return full_paths"
++   ],
++   "outputs": [],
++   "execution_count": 1
++  },
++  {
++   "metadata": {},
++   "cell_type": "code",
++   "outputs": [],
++   "execution_count": null,
++   "source": "",
++   "id": "2e4122052fbb7bc7"
++  },
++  {
++   "metadata": {
++    "ExecuteTime": {
++     "end_time": "2024-09-24T15:31:28.946602Z",
++     "start_time": "2024-09-24T15:31:28.942606Z"
++    }
++   },
++   "cell_type": "code",
++   "source": [
++    "\n",
++    "\n",
++    "# Example usage with your existing paths\n",
++    "all_paths = [\n",
++    "    [\"structures/2405\", \"structures/2481\"],\n",
++    "    [\"structures/2405\", \"structures/2481\", \"structures/2443\"],\n",
++    "    [\"structures/2405\", \"structures/2409\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2463\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2443\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2413\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2413\", \"structures/2417\"]\n",
++    "]\n",
++    "# Supposons que nous voulons filtrer les sous-ensembles\n",
++    "full_paths = []\n",
++    "for path in all_paths:\n",
++    "    list_legnth_all_pahts = [paths[:len(path)] for paths in all_paths]\n",
++    "    if path not in list_legnth_all_pahts:\n",
++    "        full_paths.append(path)\n",
++    "\n",
++    "print(full_paths)\n"
++   ],
++   "id": "d22cba7094703c1b",
++   "outputs": [
++    {
++     "name": "stdout",
++     "output_type": "stream",
++     "text": [
++      "[]\n"
++     ]
++    }
++   ],
++   "execution_count": 9
++  },
++  {
++   "metadata": {
++    "ExecuteTime": {
++     "end_time": "2024-09-24T15:32:02.199212Z",
++     "start_time": "2024-09-24T15:32:02.195172Z"
++    }
++   },
++   "cell_type": "code",
++   "source": [
++    "# Example usage with your existing paths\n",
++    "all_paths = [\n",
++    "    [\"structures/2405\", \"structures/2481\"],\n",
++    "    [\"structures/2405\", \"structures/2481\", \"structures/2443\"],\n",
++    "    [\"structures/2405\", \"structures/2409\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2463\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2443\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2413\"],\n",
++    "    [\"structures/2405\", \"structures/2409\", \"structures/2413\", \"structures/2417\"]\n",
++    "]\n",
++    "\n",
++    "# List to hold only the full paths\n",
++    "full_paths = []\n",
++    "\n",
++    "for path in all_paths:\n",
++    "    is_subset = False\n",
++    "    for other_path in all_paths:\n",
++    "        if path != other_path and set(path).issubset(set(other_path)):\n",
++    "            is_subset = True\n",
++    "            break\n",
++    "    if not is_subset:\n",
++    "        full_paths.append(path)\n",
++    "\n",
++    "print(full_paths)\n"
++   ],
++   "id": "afcff425464817f",
++   "outputs": [
++    {
++     "name": "stdout",
++     "output_type": "stream",
++     "text": [
++      "[['structures/2405', 'structures/2481', 'structures/2443'], ['structures/2405', 'structures/2409', 'structures/2463'], ['structures/2405', 'structures/2409', 'structures/2443'], ['structures/2405', 'structures/2409', 'structures/2413', 'structures/2417']]\n"
++     ]
++    }
++   ],
++   "execution_count": 10
++  },
++  {
++   "metadata": {},
++   "cell_type": "code",
++   "outputs": [],
++   "execution_count": null,
++   "source": [
++    "\"\"\"\n",
++    "FOR edge_vertex IN edge_vertex_structures\n",
++    "    FILTER edge_vertex.document_id == \"documents/1405998\" \n",
++    "    AND edge_vertex.author_id == \"authors/1406000\"\n",
++    "    \n",
++    "    FOR v, e, p IN 1..10 OUTBOUND \"structures/1406006\" edge_vertex_structures\n",
++    "        FILTER e._id == edge_vertex._id  // Ensuring the edge matches\n",
++    "        RETURN DISTINCT p.vertices[*]._id\n",
++    "\"\"\"\n",
++    "\n",
++    "\"\"\"\n",
++    "for edge in edge_auth_to_rel_struc\n",
++    " filter edge._from == \"authors/66504\"\n",
++    " let doc = document(edge._to)\n",
++    " let result = (\n",
++    " for struc in doc.list_relation\n",
++    " let stru = document(struc)\n",
++    " return [stru.name,stru.type])\n",
++    " return distinct result\n",
++    "\"\"\"\n",
++    "\n",
++    "\"\"\"\n",
++    "FOR edge IN edge_auth_to_struc\n",
++    "  FILTER edge._from == \"authors/72956\"\n",
++    "  LET doc = DOCUMENT(edge._to)\n",
++    "  COLLECT type = doc.type INTO groups\n",
++    "  RETURN {\n",
++    "    type: type,\n",
++    "    names: UNIQUE(FOR g IN groups RETURN [g.doc.name, g.doc.id_haureal])\n",
++    "  }\n",
++    "\n",
++    "\"\"\""
++   ],
++   "id": "405ccb2d80b884ad"
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python 3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "codemirror_mode": {
++    "name": "ipython",
++    "version": 2
++   },
++   "file_extension": ".py",
++   "mimetype": "text/x-python",
++   "name": "python",
++   "nbconvert_exporter": "python",
++   "pygments_lexer": "ipython2",
++   "version": "2.7.6"
++  }
++ },
++ "nbformat": 4,
++ "nbformat_minor": 5
++}
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"d4ff7c56-eadf-4a19-8d04-3bdf1d26371c\" name=\"Changes\" comment=\"Adding of the new logos\">\n      <change afterPath=\"$PROJECT_DIR$/app/static/JS/timeline.js\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/app/static/img/arangodb.svg\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/app/static/img/database.svg\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/app/static/img/docker.svg\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/app/static/img/flask.svg\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/app/static/img/viz.png\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/corpus_I.zip\" afterDir=\"false\" />\n      <change afterPath=\"$PROJECT_DIR$/test.ipynb\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/app.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/app.py\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/JS/disambiguate.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/JS/disambiguate.js\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/css/styles.css\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/css/styles.css\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/github_debug.png\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/img/github_debug.png\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/logo_home.png\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/img/logo_home.png\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/logo_home.svg\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/img/logo_home.svg\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/logo_ico_black.png\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/img/logo_ico_black.png\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/static/logo_ico_white.jpg\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/static/img/logo_ico_white.jpg\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/templates/pages/home.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/templates/pages/home.html\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/app/templates/partials/conteneur.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/app/templates/partials/conteneur.html\" afterDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"FileTemplateManagerImpl\">\n    <option name=\"RECENT_TEMPLATES\">\n      <list>\n        <option value=\"Dockerfile\" />\n        <option value=\"HTML File\" />\n        <option value=\"Jupyter Notebook\" />\n        <option value=\"Python Script\" />\n        <option value=\"JavaScript File\" />\n      </list>\n    </option>\n  </component>\n  <component name=\"FlaskConsoleOptions\" custom-start-script=\"import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\\nApp: %s [%s]\\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))\">\n    <envs>\n      <env key=\"FLASK_APP\" value=\"app\" />\n    </envs>\n    <option name=\"myCustomStartScript\" value=\"import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\\nApp: %s [%s]\\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))\" />\n    <option name=\"myEnvs\">\n      <map>\n        <entry key=\"FLASK_APP\" value=\"app\" />\n      </map>\n    </option>\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"PUSH_AUTO_UPDATE\" value=\"true\" />\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"GitHubPullRequestSearchHistory\">{\n  &quot;lastFilter&quot;: {\n    &quot;state&quot;: &quot;OPEN&quot;,\n    &quot;assignee&quot;: &quot;Samuel-Scalbert&quot;\n  }\n}</component>\n  <component name=\"GithubPullRequestsUISettings\">{\n  &quot;selectedUrlAndAccountId&quot;: {\n    &quot;url&quot;: &quot;https://github.com/Samuel-Scalbert/SOFTware-Viz.git&quot;,\n    &quot;accountId&quot;: &quot;17538fa1-4b8d-4857-8ffc-187f70c2e8ad&quot;\n  }\n}</component>\n  <component name=\"MarkdownSettingsMigration\">\n    <option name=\"stateVersion\" value=\"1\" />\n  </component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 6\n}</component>\n  <component name=\"ProjectId\" id=\"2gas4pipszPJUXlPngewRRULMyW\" />\n  <component name=\"ProjectLevelVcsManager\">\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\n  </component>\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n    <option name=\"showMembers\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\">{\n  &quot;keyToString&quot;: {\n    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,\n    &quot;HTTP Request.generated-requests | #1.executor&quot;: &quot;Run&quot;,\n    &quot;Python tests.Python tests in test_db.py.executor&quot;: &quot;Run&quot;,\n    &quot;Python.dashboard.executor&quot;: &quot;Run&quot;,\n    &quot;Python.run.executor&quot;: &quot;Run&quot;,\n    &quot;Python.test.executor&quot;: &quot;Run&quot;,\n    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\n    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,\n    &quot;database.data.extractors.current.export.id&quot;: &quot;Comma-separated (CSV)_id&quot;,\n    &quot;database.data.extractors.current.id&quot;: &quot;Comma-separated (CSV)_id&quot;,\n    &quot;git-widget-placeholder&quot;: &quot;main&quot;,\n    &quot;last_opened_file_path&quot;: &quot;/home/sscalber/Bureau/SOFTware/SOFTware-Viz/app/static/img&quot;,\n    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,\n    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,\n    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,\n    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,\n    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,\n    &quot;settings.editor.selected.configurable&quot;: &quot;watcher.settings&quot;,\n    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;\n  }\n}</component>\n  <component name=\"PyCoverageOptionsProvider\">\n    <option name=\"myUseBundledCoveragePy\" value=\"true\" />\n  </component>\n  <component name=\"RecentsManager\">\n    <key name=\"CopyFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/app/static/img\" />\n      <recent name=\"$PROJECT_DIR$/app/static/css\" />\n      <recent name=\"$PROJECT_DIR$/app/static/JS\" />\n      <recent name=\"$PROJECT_DIR$/app/static\" />\n      <recent name=\"$PROJECT_DIR$/app\" />\n    </key>\n    <key name=\"MoveFile.RECENT_KEYS\">\n      <recent name=\"$PROJECT_DIR$/app/static/img\" />\n      <recent name=\"$PROJECT_DIR$/app/static/css\" />\n      <recent name=\"$PROJECT_DIR$/app/static\" />\n      <recent name=\"$PROJECT_DIR$/Utils\" />\n      <recent name=\"$PROJECT_DIR$/app/templates/partials\" />\n    </key>\n  </component>\n  <component name=\"RunManager\" selected=\"Python.run\">\n    <configuration name=\"generated-requests | #1\" type=\"HttpClient.HttpRequestRunConfigurationType\" factoryName=\"HTTP Request\" temporary=\"true\" nameIsGenerated=\"true\" path=\"$APPLICATION_CONFIG_DIR$/scratches/generated-requests.http\" requestIdentifier=\"#1\" runType=\"Run single request\">\n      <method v=\"2\" />\n    </configuration>\n    <configuration name=\"dashboard\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\n      <module name=\"SOFTware-Viz\" />\n      <option name=\"ENV_FILES\" value=\"\" />\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\n      <option name=\"PARENT_ENVS\" value=\"true\" />\n      <envs>\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\n      </envs>\n      <option name=\"SDK_HOME\" value=\"\" />\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/Utils\" />\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/Utils/dashboard.py\" />\n      <option name=\"PARAMETERS\" value=\"\" />\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\n      <option name=\"MODULE_MODE\" value=\"false\" />\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\n      <option name=\"INPUT_FILE\" value=\"\" />\n      <method v=\"2\" />\n    </configuration>\n    <configuration name=\"run\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\n      <module name=\"SOFTware-Viz\" />\n      <option name=\"ENV_FILES\" value=\"\" />\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\n      <option name=\"PARENT_ENVS\" value=\"true\" />\n      <envs>\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\n      </envs>\n      <option name=\"SDK_HOME\" value=\"\" />\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/run.py\" />\n      <option name=\"PARAMETERS\" value=\"\" />\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\n      <option name=\"MODULE_MODE\" value=\"false\" />\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\n      <option name=\"INPUT_FILE\" value=\"\" />\n      <method v=\"2\" />\n    </configuration>\n    <configuration name=\"test\" type=\"PythonConfigurationType\" factoryName=\"Python\">\n      <module name=\"SOFTware-Viz\" />\n      <option name=\"ENV_FILES\" value=\"\" />\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\n      <option name=\"PARENT_ENVS\" value=\"true\" />\n      <envs>\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\n      </envs>\n      <option name=\"SDK_HOME\" value=\"\" />\n      <option name=\"SDK_NAME\" value=\"Python 3.10 (SOFTware-Viz)\" />\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/test_db.py\" />\n      <option name=\"PARAMETERS\" value=\"\" />\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\n      <option name=\"MODULE_MODE\" value=\"false\" />\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\n      <option name=\"INPUT_FILE\" value=\"\" />\n      <method v=\"2\" />\n    </configuration>\n    <configuration default=\"true\" type=\"docker-deploy\" factoryName=\"docker-compose.yml\" temporary=\"true\">\n      <deployment type=\"docker-compose.yml\">\n        <settings />\n      </deployment>\n      <method v=\"2\" />\n    </configuration>\n    <list>\n      <item itemvalue=\"HTTP Request.generated-requests | #1\" />\n      <item itemvalue=\"Python.test\" />\n      <item itemvalue=\"Python.dashboard\" />\n      <item itemvalue=\"Python.run\" />\n    </list>\n    <recent_temporary>\n      <list>\n        <item itemvalue=\"Python.run\" />\n        <item itemvalue=\"Python.dashboard\" />\n        <item itemvalue=\"HTTP Request.generated-requests | #1\" />\n      </list>\n    </recent_temporary>\n  </component>\n  <component name=\"SharedIndexes\">\n    <attachedChunks>\n      <set>\n        <option value=\"bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-PY-242.22855.92\" />\n        <option value=\"bundled-python-sdk-b068d85d1acf-399fe30bd8c1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-242.22855.92\" />\n      </set>\n    </attachedChunks>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"d4ff7c56-eadf-4a19-8d04-3bdf1d26371c\" name=\"Changes\" comment=\"\" />\n      <created>1715946834143</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1715946834143</updated>\n      <workItem from=\"1715946835146\" duration=\"2179000\" />\n      <workItem from=\"1716388940252\" duration=\"24456000\" />\n      <workItem from=\"1716912503795\" duration=\"1114000\" />\n      <workItem from=\"1716966557747\" duration=\"9828000\" />\n      <workItem from=\"1717053155939\" duration=\"2520000\" />\n      <workItem from=\"1717059000151\" duration=\"3000\" />\n      <workItem from=\"1717059038309\" duration=\"2000\" />\n      <workItem from=\"1717059190630\" duration=\"254000\" />\n      <workItem from=\"1717059455398\" duration=\"10000\" />\n      <workItem from=\"1717059503401\" duration=\"11000\" />\n      <workItem from=\"1717059526794\" duration=\"7000\" />\n      <workItem from=\"1717062533191\" duration=\"13176000\" />\n      <workItem from=\"1717424322054\" duration=\"772000\" />\n      <workItem from=\"1717660189015\" duration=\"41691000\" />\n      <workItem from=\"1718269807370\" duration=\"6000\" />\n      <workItem from=\"1718786683128\" duration=\"62000\" />\n      <workItem from=\"1718786956706\" duration=\"16000\" />\n      <workItem from=\"1718793447273\" duration=\"8563000\" />\n      <workItem from=\"1719299747255\" duration=\"15592000\" />\n      <workItem from=\"1719490037708\" duration=\"11522000\" />\n      <workItem from=\"1719912302597\" duration=\"17000\" />\n      <workItem from=\"1719915067868\" duration=\"58980000\" />\n      <workItem from=\"1720106001588\" duration=\"6583000\" />\n      <workItem from=\"1721224082603\" duration=\"2749000\" />\n      <workItem from=\"1721296210313\" duration=\"1943000\" />\n      <workItem from=\"1721306331675\" duration=\"7710000\" />\n      <workItem from=\"1721639785989\" duration=\"18872000\" />\n      <workItem from=\"1721894136037\" duration=\"11000\" />\n      <workItem from=\"1721895861077\" duration=\"43000\" />\n      <workItem from=\"1721895911601\" duration=\"6000\" />\n      <workItem from=\"1721896001303\" duration=\"43000\" />\n      <workItem from=\"1721896208432\" duration=\"495000\" />\n      <workItem from=\"1721897667828\" duration=\"564000\" />\n      <workItem from=\"1721898250822\" duration=\"14560000\" />\n      <workItem from=\"1723114906806\" duration=\"51000\" />\n      <workItem from=\"1723114965830\" duration=\"7000\" />\n      <workItem from=\"1723114990345\" duration=\"1056000\" />\n      <workItem from=\"1723116139902\" duration=\"41000\" />\n      <workItem from=\"1723466366060\" duration=\"1205000\" />\n      <workItem from=\"1723472255181\" duration=\"5986000\" />\n      <workItem from=\"1723540054245\" duration=\"42979000\" />\n      <workItem from=\"1724835144842\" duration=\"81255000\" />\n      <workItem from=\"1725979379019\" duration=\"1326000\" />\n      <workItem from=\"1725981957362\" duration=\"9000\" />\n      <workItem from=\"1726050491827\" duration=\"2782000\" />\n      <workItem from=\"1726060824560\" duration=\"84000\" />\n      <workItem from=\"1726061166763\" duration=\"267000\" />\n      <workItem from=\"1727168497290\" duration=\"714000\" />\n      <workItem from=\"1727185382320\" duration=\"241000\" />\n      <workItem from=\"1727187846238\" duration=\"26125000\" />\n      <workItem from=\"1727362413760\" duration=\"7184000\" />\n      <workItem from=\"1727787071327\" duration=\"16420000\" />\n      <workItem from=\"1727875388661\" duration=\"27811000\" />\n      <workItem from=\"1728307717828\" duration=\"12709000\" />\n      <workItem from=\"1728382218092\" duration=\"15490000\" />\n      <workItem from=\"1728461992802\" duration=\"10389000\" />\n    </task>\n    <task id=\"LOCAL-00068\" summary=\"better display in disambiguate of the Rawform and Normalizedform\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724923193678</created>\n      <option name=\"number\" value=\"00068\" />\n      <option name=\"presentableId\" value=\"LOCAL-00068\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724923193678</updated>\n    </task>\n    <task id=\"LOCAL-00069\" summary=\"new sdk\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724923215785</created>\n      <option name=\"number\" value=\"00069\" />\n      <option name=\"presentableId\" value=\"LOCAL-00069\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724923215785</updated>\n    </task>\n    <task id=\"LOCAL-00070\" summary=\"ajout des nouveaux auteurs de la db dans disambiguate\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724930189823</created>\n      <option name=\"number\" value=\"00070\" />\n      <option name=\"presentableId\" value=\"LOCAL-00070\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724930189823</updated>\n    </task>\n    <task id=\"LOCAL-00071\" summary=\"ajout des nouveaux auteurs dans la db\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724930205215</created>\n      <option name=\"number\" value=\"00071\" />\n      <option name=\"presentableId\" value=\"LOCAL-00071\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724930205215</updated>\n    </task>\n    <task id=\"LOCAL-00072\" summary=\"suppression de log\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724930234369</created>\n      <option name=\"number\" value=\"00072\" />\n      <option name=\"presentableId\" value=\"LOCAL-00072\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724930234370</updated>\n    </task>\n    <task id=\"LOCAL-00073\" summary=\"correction mineur css et reset\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724930250206</created>\n      <option name=\"number\" value=\"00073\" />\n      <option name=\"presentableId\" value=\"LOCAL-00073\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724930250206</updated>\n    </task>\n    <task id=\"LOCAL-00074\" summary=\"ajout des url et association à l'INRIA des équipes dans la DB\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1724944677270</created>\n      <option name=\"number\" value=\"00074\" />\n      <option name=\"presentableId\" value=\"LOCAL-00074\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1724944677270</updated>\n    </task>\n    <task id=\"LOCAL-00075\" summary=\"ajout de la route author\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725265449814</created>\n      <option name=\"number\" value=\"00075\" />\n      <option name=\"presentableId\" value=\"LOCAL-00075\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725265449814</updated>\n    </task>\n    <task id=\"LOCAL-00076\" summary=\"ajout d'un bouton pour le debug\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725369132721</created>\n      <option name=\"number\" value=\"00076\" />\n      <option name=\"presentableId\" value=\"LOCAL-00076\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725369132721</updated>\n    </task>\n    <task id=\"LOCAL-00077\" summary=\"ajout d'un bouton pour le debug\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725370291113</created>\n      <option name=\"number\" value=\"00077\" />\n      <option name=\"presentableId\" value=\"LOCAL-00077\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725370291113</updated>\n    </task>\n    <task id=\"LOCAL-00078\" summary=\"ajout d'un bouton pour le debug\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725374661417</created>\n      <option name=\"number\" value=\"00078\" />\n      <option name=\"presentableId\" value=\"LOCAL-00078\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725374661417</updated>\n    </task>\n    <task id=\"LOCAL-00079\" summary=\"correction des affilliations\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725374701867</created>\n      <option name=\"number\" value=\"00079\" />\n      <option name=\"presentableId\" value=\"LOCAL-00079\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725374701867</updated>\n    </task>\n    <task id=\"LOCAL-00080\" summary=\"bug with the VM\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725439957009</created>\n      <option name=\"number\" value=\"00080\" />\n      <option name=\"presentableId\" value=\"LOCAL-00080\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725439957009</updated>\n    </task>\n    <task id=\"LOCAL-00081\" summary=\"adding of the softwares with each authors\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725444176062</created>\n      <option name=\"number\" value=\"00081\" />\n      <option name=\"presentableId\" value=\"LOCAL-00081\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725444176062</updated>\n    </task>\n    <task id=\"LOCAL-00082\" summary=\"correction of bugged links (for other software) in the route doc\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725444415170</created>\n      <option name=\"number\" value=\"00082\" />\n      <option name=\"presentableId\" value=\"LOCAL-00082\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725444415170</updated>\n    </task>\n    <task id=\"LOCAL-00083\" summary=\"adding of the status for the affiliations\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725447437472</created>\n      <option name=\"number\" value=\"00083\" />\n      <option name=\"presentableId\" value=\"LOCAL-00083\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725447437472</updated>\n    </task>\n    <task id=\"LOCAL-00084\" summary=\"adding of the status for the affiliations\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725447443749</created>\n      <option name=\"number\" value=\"00084\" />\n      <option name=\"presentableId\" value=\"LOCAL-00084\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725447443749</updated>\n    </task>\n    <task id=\"LOCAL-00085\" summary=\"correction of the datalabels bugged\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725448786397</created>\n      <option name=\"number\" value=\"00085\" />\n      <option name=\"presentableId\" value=\"LOCAL-00085\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725448786397</updated>\n    </task>\n    <task id=\"LOCAL-00086\" summary=\"correction of the selection of software in dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725449553531</created>\n      <option name=\"number\" value=\"00086\" />\n      <option name=\"presentableId\" value=\"LOCAL-00086\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725449553531</updated>\n    </task>\n    <task id=\"LOCAL-00087\" summary=\"correction for the VM\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1725526947280</created>\n      <option name=\"number\" value=\"00087\" />\n      <option name=\"presentableId\" value=\"LOCAL-00087\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1725526947280</updated>\n    </task>\n    <task id=\"LOCAL-00088\" summary=\"better collection creation / adding of the structures relations\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727266094753</created>\n      <option name=\"number\" value=\"00088\" />\n      <option name=\"presentableId\" value=\"LOCAL-00088\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727266094754</updated>\n    </task>\n    <task id=\"LOCAL-00089\" summary=\"adding of the news structures in the dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727273876503</created>\n      <option name=\"number\" value=\"00089\" />\n      <option name=\"presentableId\" value=\"LOCAL-00089\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727273876503</updated>\n    </task>\n    <task id=\"LOCAL-00090\" summary=\"correction of the edges with the structures\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727273907843</created>\n      <option name=\"number\" value=\"00090\" />\n      <option name=\"presentableId\" value=\"LOCAL-00090\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727273907843</updated>\n    </task>\n    <task id=\"LOCAL-00091\" summary=\"handling of the documents without an abstract\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727273951517</created>\n      <option name=\"number\" value=\"00091\" />\n      <option name=\"presentableId\" value=\"LOCAL-00091\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727273951517</updated>\n    </task>\n    <task id=\"LOCAL-00092\" summary=\"adding of the JS file for the dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727273995824</created>\n      <option name=\"number\" value=\"00092\" />\n      <option name=\"presentableId\" value=\"LOCAL-00092\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727273995824</updated>\n    </task>\n    <task id=\"LOCAL-00093\" summary=\"handling of the authors without affiliations\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274026820</created>\n      <option name=\"number\" value=\"00093\" />\n      <option name=\"presentableId\" value=\"LOCAL-00093\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274026820</updated>\n    </task>\n    <task id=\"LOCAL-00094\" summary=\"corrections of the api calls for the line chart, for the software retrieval from a struct, and adding of a call to retrieve all the type of institutions in the DB\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274155182</created>\n      <option name=\"number\" value=\"00094\" />\n      <option name=\"presentableId\" value=\"LOCAL-00094\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274155182</updated>\n    </task>\n    <task id=\"LOCAL-00095\" summary=\"moving files for dev\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274195813</created>\n      <option name=\"number\" value=\"00095\" />\n      <option name=\"presentableId\" value=\"LOCAL-00095\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274195813</updated>\n    </task>\n    <task id=\"LOCAL-00096\" summary=\"moving files for dev\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274209554</created>\n      <option name=\"number\" value=\"00096\" />\n      <option name=\"presentableId\" value=\"LOCAL-00096\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274209554</updated>\n    </task>\n    <task id=\"LOCAL-00097\" summary=\"cleaning of the main JS file (I mooved the JS to the new dashboard.js file)\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274278864</created>\n      <option name=\"number\" value=\"00097\" />\n      <option name=\"presentableId\" value=\"LOCAL-00097\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274278865</updated>\n    </task>\n    <task id=\"LOCAL-00098\" summary=\"cleaning of a print\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274303392</created>\n      <option name=\"number\" value=\"00098\" />\n      <option name=\"presentableId\" value=\"LOCAL-00098\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274303392</updated>\n    </task>\n    <task id=\"LOCAL-00099\" summary=\"adding of the css for the institutions type\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274333436</created>\n      <option name=\"number\" value=\"00099\" />\n      <option name=\"presentableId\" value=\"LOCAL-00099\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274333436</updated>\n    </task>\n    <task id=\"LOCAL-00100\" summary=\"update of the old edges collections' names\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727274999792</created>\n      <option name=\"number\" value=\"00100\" />\n      <option name=\"presentableId\" value=\"LOCAL-00100\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727274999792</updated>\n    </task>\n    <task id=\"LOCAL-00101\" summary=\"correction of the display of the authors and the structure for the bubble chart\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727797119837</created>\n      <option name=\"number\" value=\"00101\" />\n      <option name=\"presentableId\" value=\"LOCAL-00101\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727797119837</updated>\n    </task>\n    <task id=\"LOCAL-00102\" summary=\"deletion of the relation structures and the vertexes\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727799531225</created>\n      <option name=\"number\" value=\"00102\" />\n      <option name=\"presentableId\" value=\"LOCAL-00102\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727799531225</updated>\n    </task>\n    <task id=\"LOCAL-00103\" summary=\"correction of the links for authors with the new db\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727799556080</created>\n      <option name=\"number\" value=\"00103\" />\n      <option name=\"presentableId\" value=\"LOCAL-00103\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727799556080</updated>\n    </task>\n    <task id=\"LOCAL-00104\" summary=\"correction of the data directory path\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727800236667</created>\n      <option name=\"number\" value=\"00104\" />\n      <option name=\"presentableId\" value=\"LOCAL-00104\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727800236667</updated>\n    </task>\n    <task id=\"LOCAL-00105\" summary=\"workspace\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727800716756</created>\n      <option name=\"number\" value=\"00105\" />\n      <option name=\"presentableId\" value=\"LOCAL-00105\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727800716756</updated>\n    </task>\n    <task id=\"LOCAL-00106\" summary=\"adding of the gitignore\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727800988755</created>\n      <option name=\"number\" value=\"00106\" />\n      <option name=\"presentableId\" value=\"LOCAL-00106\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727800988756</updated>\n    </task>\n    <task id=\"LOCAL-00107\" summary=\"adding of the gitignore\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727801065014</created>\n      <option name=\"number\" value=\"00107\" />\n      <option name=\"presentableId\" value=\"LOCAL-00107\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727801065014</updated>\n    </task>\n    <task id=\"LOCAL-00108\" summary=\"order the types of institutions and then alphabeticaly the institutions' name\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727876435216</created>\n      <option name=\"number\" value=\"00108\" />\n      <option name=\"presentableId\" value=\"LOCAL-00108\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727876435216</updated>\n    </task>\n    <task id=\"LOCAL-00109\" summary=\"rerouting dashboard/structure adding of the icons with links\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727967314139</created>\n      <option name=\"number\" value=\"00109\" />\n      <option name=\"presentableId\" value=\"LOCAL-00109\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727967314139</updated>\n    </task>\n    <task id=\"LOCAL-00110\" summary=\"debugging the software route to be different from the dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1727968608990</created>\n      <option name=\"number\" value=\"00110\" />\n      <option name=\"presentableId\" value=\"LOCAL-00110\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1727968608990</updated>\n    </task>\n    <task id=\"LOCAL-00111\" summary=\"Adding of a bigger corpus\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728308570776</created>\n      <option name=\"number\" value=\"00111\" />\n      <option name=\"presentableId\" value=\"LOCAL-00111\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728308570777</updated>\n    </task>\n    <task id=\"LOCAL-00112\" summary=\"Correction for arango's connexion in the VM\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728309581314</created>\n      <option name=\"number\" value=\"00112\" />\n      <option name=\"presentableId\" value=\"LOCAL-00112\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728309581314</updated>\n    </task>\n    <task id=\"LOCAL-00113\" summary=\"Correction of the display of the structures in the dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728309805536</created>\n      <option name=\"number\" value=\"00113\" />\n      <option name=\"presentableId\" value=\"LOCAL-00113\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728309805536</updated>\n    </task>\n    <task id=\"LOCAL-00114\" summary=\"Correction of query for the display of the dashboard\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728312760869</created>\n      <option name=\"number\" value=\"00114\" />\n      <option name=\"presentableId\" value=\"LOCAL-00114\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728312760870</updated>\n    </task>\n    <task id=\"LOCAL-00115\" summary=\"Adding of a title for the software route\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728377406529</created>\n      <option name=\"number\" value=\"00115\" />\n      <option name=\"presentableId\" value=\"LOCAL-00115\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728377406529</updated>\n    </task>\n    <task id=\"LOCAL-00116\" summary=\"Adding of the new logos\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1728380758574</created>\n      <option name=\"number\" value=\"00116\" />\n      <option name=\"presentableId\" value=\"LOCAL-00116\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1728380758574</updated>\n    </task>\n    <option name=\"localTasksCounter\" value=\"117\" />\n    <servers />\n  </component>\n  <component name=\"TypeScriptGeneratedFilesManager\">\n    <option name=\"version\" value=\"3\" />\n  </component>\n  <component name=\"Vcs.Log.Tabs.Properties\">\n    <option name=\"TAB_STATES\">\n      <map>\n        <entry key=\"MAIN\">\n          <value>\n            <State />\n          </value>\n        </entry>\n      </map>\n    </option>\n  </component>\n  <component name=\"VcsManagerConfiguration\">\n    <MESSAGE value=\"handling of the documents without an abstract\" />\n    <MESSAGE value=\"adding of the JS file for the dashboard\" />\n    <MESSAGE value=\"handling of the authors without affiliations\" />\n    <MESSAGE value=\"corrections of the api calls for the line chart, for the software retrieval from a struct, and adding of a call to retrieve all the type of institutions in the DB\" />\n    <MESSAGE value=\"moving files for dev\" />\n    <MESSAGE value=\"cleaning of the main JS file (I mooved the JS to the new dashboard.js file)\" />\n    <MESSAGE value=\"cleaning of a print\" />\n    <MESSAGE value=\"adding of the css for the institutions type\" />\n    <MESSAGE value=\"update of the old edges collections' names\" />\n    <MESSAGE value=\"correction of the display of the authors and the structure for the bubble chart\" />\n    <MESSAGE value=\"deletion of the relation structures and the vertexes\" />\n    <MESSAGE value=\"correction of the links for authors with the new db\" />\n    <MESSAGE value=\"correction of the data directory path\" />\n    <MESSAGE value=\"workspace\" />\n    <MESSAGE value=\"adding of the gitignore\" />\n    <MESSAGE value=\"order the types of institutions and then alphabeticaly the institutions' name\" />\n    <MESSAGE value=\"rerouting dashboard/structure adding of the icons with links\" />\n    <MESSAGE value=\"debugging the software route to be different from the dashboard\" />\n    <MESSAGE value=\"Save of the initial corpus\" />\n    <MESSAGE value=\"Adding of a bigger corpus\" />\n    <MESSAGE value=\"Correction for arango's connexion in the VM\" />\n    <MESSAGE value=\"Correction of the display of the structures in the dashboard\" />\n    <MESSAGE value=\"Correction of query for the display of the dashboard\" />\n    <MESSAGE value=\"Adding of a title for the software route\" />\n    <MESSAGE value=\"Adding of the new logos\" />\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"Adding of the new logos\" />\n  </component>\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\n    <SUITE FILE_PATH=\"coverage/SOFTware_Viz$.coverage\" NAME=\" Coverage Results\" MODIFIED=\"1723627198648\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\n    <SUITE FILE_PATH=\"coverage/SOFTware_Viz$SOFTware_Viz.coverage\" NAME=\"SOFTware-Viz Coverage Results\" MODIFIED=\"1713173435556\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"\" />\n    <SUITE FILE_PATH=\"coverage/SOFTware_Viz$dashboard.coverage\" NAME=\"dashboard Coverage Results\" MODIFIED=\"1716448844500\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/Utils\" />\n    <SUITE FILE_PATH=\"coverage/SOFTware_Viz$test.coverage\" NAME=\"test Coverage Results\" MODIFIED=\"1723646975241\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"\" />\n    <SUITE FILE_PATH=\"coverage/SOFTware_Viz$run.coverage\" NAME=\"run Coverage Results\" MODIFIED=\"1728910246405\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 5a526e39d53bd244fd1aa4e3d7809e851a238eab)
++++ b/.idea/workspace.xml	(date 1729256545047)
+@@ -4,24 +4,14 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="d4ff7c56-eadf-4a19-8d04-3bdf1d26371c" name="Changes" comment="Adding of the new logos">
+-      <change afterPath="$PROJECT_DIR$/app/static/JS/timeline.js" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/app/static/img/arangodb.svg" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/app/static/img/database.svg" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/app/static/img/docker.svg" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/app/static/img/flask.svg" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/app/static/img/viz.png" afterDir="false" />
++    <list default="true" id="d4ff7c56-eadf-4a19-8d04-3bdf1d26371c" name="Changes" comment="deleted screenshot">
++      <change afterPath="$PROJECT_DIR$/Utils/home.py" afterDir="false" />
+       <change afterPath="$PROJECT_DIR$/corpus_I.zip" afterDir="false" />
+       <change afterPath="$PROJECT_DIR$/test.ipynb" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/app.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/JS/disambiguate.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/JS/disambiguate.js" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/app/static/JS/timeline.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/JS/timeline.js" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/app/static/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/css/styles.css" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/github_debug.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/img/github_debug.png" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/logo_home.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/img/logo_home.png" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/logo_home.svg" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/img/logo_home.svg" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/logo_ico_black.png" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/img/logo_ico_black.png" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/app/static/logo_ico_white.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/img/logo_ico_white.jpg" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/app/templates/pages/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/pages/home.html" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/app/templates/partials/conteneur.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/partials/conteneur.html" afterDir="false" />
+     </list>
+@@ -36,8 +26,8 @@
+         <option value="Dockerfile" />
+         <option value="HTML File" />
+         <option value="Jupyter Notebook" />
+-        <option value="Python Script" />
+         <option value="JavaScript File" />
++        <option value="Python Script" />
+       </list>
+     </option>
+   </component>
+@@ -291,31 +281,8 @@
+       <workItem from="1727875388661" duration="27811000" />
+       <workItem from="1728307717828" duration="12709000" />
+       <workItem from="1728382218092" duration="15490000" />
+-      <workItem from="1728461992802" duration="10389000" />
+-    </task>
+-    <task id="LOCAL-00068" summary="better display in disambiguate of the Rawform and Normalizedform">
+-      <option name="closed" value="true" />
+-      <created>1724923193678</created>
+-      <option name="number" value="00068" />
+-      <option name="presentableId" value="LOCAL-00068" />
+-      <option name="project" value="LOCAL" />
+-      <updated>1724923193678</updated>
+-    </task>
+-    <task id="LOCAL-00069" summary="new sdk">
+-      <option name="closed" value="true" />
+-      <created>1724923215785</created>
+-      <option name="number" value="00069" />
+-      <option name="presentableId" value="LOCAL-00069" />
+-      <option name="project" value="LOCAL" />
+-      <updated>1724923215785</updated>
+-    </task>
+-    <task id="LOCAL-00070" summary="ajout des nouveaux auteurs de la db dans disambiguate">
+-      <option name="closed" value="true" />
+-      <created>1724930189823</created>
+-      <option name="number" value="00070" />
+-      <option name="presentableId" value="LOCAL-00070" />
+-      <option name="project" value="LOCAL" />
+-      <updated>1724930189823</updated>
++      <workItem from="1728461992802" duration="22072000" />
++      <workItem from="1729087284598" duration="4996000" />
+     </task>
+     <task id="LOCAL-00071" summary="ajout des nouveaux auteurs dans la db">
+       <option name="closed" value="true" />
+@@ -685,7 +652,31 @@
+       <option name="project" value="LOCAL" />
+       <updated>1728380758574</updated>
+     </task>
+-    <option name="localTasksCounter" value="117" />
++    <task id="LOCAL-00117" summary="Adding of the new route /home">
++      <option name="closed" value="true" />
++      <created>1728980827237</created>
++      <option name="number" value="00117" />
++      <option name="presentableId" value="LOCAL-00117" />
++      <option name="project" value="LOCAL" />
++      <updated>1728980827238</updated>
++    </task>
++    <task id="LOCAL-00118" summary="Adding of a screenshot and correction of the ./home">
++      <option name="closed" value="true" />
++      <created>1729241183141</created>
++      <option name="number" value="00118" />
++      <option name="presentableId" value="LOCAL-00118" />
++      <option name="project" value="LOCAL" />
++      <updated>1729241183141</updated>
++    </task>
++    <task id="LOCAL-00119" summary="deleted screenshot">
++      <option name="closed" value="true" />
++      <created>1729241302347</created>
++      <option name="number" value="00119" />
++      <option name="presentableId" value="LOCAL-00119" />
++      <option name="project" value="LOCAL" />
++      <updated>1729241302347</updated>
++    </task>
++    <option name="localTasksCounter" value="120" />
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+@@ -703,9 +694,6 @@
+     </option>
+   </component>
+   <component name="VcsManagerConfiguration">
+-    <MESSAGE value="handling of the documents without an abstract" />
+-    <MESSAGE value="adding of the JS file for the dashboard" />
+-    <MESSAGE value="handling of the authors without affiliations" />
+     <MESSAGE value="corrections of the api calls for the line chart, for the software retrieval from a struct, and adding of a call to retrieve all the type of institutions in the DB" />
+     <MESSAGE value="moving files for dev" />
+     <MESSAGE value="cleaning of the main JS file (I mooved the JS to the new dashboard.js file)" />
+@@ -728,13 +716,16 @@
+     <MESSAGE value="Correction of query for the display of the dashboard" />
+     <MESSAGE value="Adding of a title for the software route" />
+     <MESSAGE value="Adding of the new logos" />
+-    <option name="LAST_COMMIT_MESSAGE" value="Adding of the new logos" />
++    <MESSAGE value="Adding of the new route /home" />
++    <MESSAGE value="Adding of a screenshot and correction of the ./home" />
++    <MESSAGE value="deleted screenshot" />
++    <option name="LAST_COMMIT_MESSAGE" value="deleted screenshot" />
+   </component>
+   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+     <SUITE FILE_PATH="coverage/SOFTware_Viz$.coverage" NAME=" Coverage Results" MODIFIED="1723627198648" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+     <SUITE FILE_PATH="coverage/SOFTware_Viz$SOFTware_Viz.coverage" NAME="SOFTware-Viz Coverage Results" MODIFIED="1713173435556" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+     <SUITE FILE_PATH="coverage/SOFTware_Viz$dashboard.coverage" NAME="dashboard Coverage Results" MODIFIED="1716448844500" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Utils" />
+     <SUITE FILE_PATH="coverage/SOFTware_Viz$test.coverage" NAME="test Coverage Results" MODIFIED="1723646975241" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+-    <SUITE FILE_PATH="coverage/SOFTware_Viz$run.coverage" NAME="run Coverage Results" MODIFIED="1728910246405" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
++    <SUITE FILE_PATH="coverage/SOFTware_Viz$run.coverage" NAME="run Coverage Results" MODIFIED="1729254232843" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+   </component>
+ </project>
+\ No newline at end of file
