@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import requests
 from openpyxl import load_workbook
 from Utils.TEI_to_JSON import transformer_TEI_JSON
+from elasticsearch import Elasticsearch
 
 def check_or_create_collection(db, collection_name, collection_type='Collection'):
     """
@@ -79,9 +80,11 @@ def insert_json_db(data_path_json,data_path_xml,db):
         blacklist.append(row[0])
 
     #load the urls verified with SH
-
-    with open('app/static/data/url_verified_with_SH/urls.json', 'r') as file:
-        urls_verified_sh = json.load(file)
+    try:
+        with open('app/static/data/url_verified_with_SH/urls.json', 'r') as file:
+            urls_verified_sh = json.load(file)
+    except FileNotFoundError:
+        urls_verified_sh = []
 
     # Create or retrieve collections
     documents_collection = check_or_create_collection(db, 'documents')
@@ -105,7 +108,7 @@ def insert_json_db(data_path_json,data_path_xml,db):
     dict_registered = {}
     dict_edge_author = {}
 
-    for data_file_xml in tqdm(data_xml_list):
+    for data_file_xml in tqdm(data_xml_list[:150]):
         file_path = f'{data_path_xml}/{data_file_xml}'
         file_name = os.path.basename(file_path)
         while "." in file_name:
@@ -457,6 +460,229 @@ def insert_json_db(data_path_json,data_path_xml,db):
                         edge_auth_rel_struc['_from'] = author_document_id
                         edge_auth_rel_struc['_to'] = list_relation_documents._id
                         edge_auth_rel_struc.save()
+
+    #Elasticsearch feeding
+    es = Elasticsearch('http://localhost:9200')
+
+    # SOFTWARE ---------------------------------
+    collection_software = db['softwares']
+    # Delete index if exists
+    if es.indices.exists(index="softwares"):
+        es.indices.delete(index="softwares")
+    # Create index with lowercase normalizer mapping
+    index_body = {
+        "settings": {
+            "analysis": {
+                "normalizer": {
+                    "lowercase_normalizer": {
+                        "type": "custom",
+                        "filter": ["lowercase"]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "fields": {
+                        "lowercase": {
+                            "type": "keyword",
+                            "normalizer": "lowercase_normalizer"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    es.indices.create(index="softwares", body=index_body)
+    # Fetch distinct software names from ArangoDB
+    cursor = db.AQLQuery('FOR software IN softwares RETURN DISTINCT {name : software.software_name.normalizedForm}',
+                         rawResults=True)
+    list_software_names = list(cursor)
+    # Index each document into Elasticsearch
+    for doc in list_software_names:
+        es.index(index='softwares', document=doc)
+
+    # DOCUMENT -----------------------------
+    # Delete if index exists
+    if es.indices.exists(index="titles"):
+        es.indices.delete(index="titles")
+    # Create index with n-gram analyzer for partial matching
+    index_body = {
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "ngram_analyzer": {
+                        "tokenizer": "ngram_tokenizer",
+                        "filter": ["lowercase"]
+                    }
+                },
+                "tokenizer": {
+                    "ngram_tokenizer": {
+                        "type": "ngram",
+                        "min_gram": 3,
+                        "max_gram": 4,
+                        "token_chars": [
+                            "letter",
+                            "digit"
+                        ]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "title": {
+                    "type": "text",
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard"
+                },
+                "doc_id": {
+                    "type": "keyword"
+                }
+            }
+        }
+    }
+    es.indices.create(index="titles", body=index_body)
+    # Fetch distinct titles and ids from ArangoDB
+    cursor = db.AQLQuery('FOR doc IN documents RETURN DISTINCT { title: doc.title, hal_id: doc.file_hal_id}',
+                         rawResults=True)
+    list_titles = list(cursor)
+    # Index each document into Elasticsearch
+    for doc in list_titles:
+        es.index(index="titles", document={"title": doc['title'], "doc_id": doc['hal_id']})
+
+    #AUTHOR ---------------------------------
+    # Delete if exists
+    if es.indices.exists(index="authors"):
+        es.indices.delete(index="authors")
+
+    index_body = {
+        "settings": {
+            "analysis": {
+                "normalizer": {
+                    "lowercase_normalizer": {
+                        "type": "custom",
+                        "filter": ["lowercase"]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "first_name": {
+                    "type": "keyword",
+                    "normalizer": "lowercase_normalizer"
+                },
+                "last_name": {
+                    "type": "keyword",
+                    "normalizer": "lowercase_normalizer"
+                },
+                "author_id": {
+                    "type": "keyword"
+                }
+            }
+        }
+    }
+    es.indices.create(index="authors", body=index_body)
+    # Fetch distinct authors from ArangoDB
+    cursor = db.AQLQuery('''
+        FOR author IN authors
+        RETURN DISTINCT {
+            first_name: author.name.forename,
+            last_name: author.name.surname,
+            author_id: author.id.halauthorid
+        }
+    ''', rawResults=True)
+    authors_list = list(cursor)
+    # Index authors into Elasticsearch
+    for author in authors_list:
+        es.index(index='authors', document={
+            'first_name': author['first_name'],
+            'last_name': author['last_name'],
+            'author_id': author['author_id']
+        })
+
+    # STRUCTURE ---------------------------------------------
+    # Delete index if exists
+    if es.indices.exists(index="structures"):
+        es.indices.delete(index="structures")
+
+    index_body = {
+        "settings": {
+            "analysis": {
+                "analyzer": {
+                    "ngram_analyzer": {
+                        "tokenizer": "ngram_tokenizer",
+                        "filter": ["lowercase"]
+                    },
+                    "lowercase_keyword_analyzer": {
+                        "tokenizer": "keyword",
+                        "filter": ["lowercase"]
+                    }
+                },
+                "tokenizer": {
+                    "ngram_tokenizer": {
+                        "type": "ngram",
+                        "min_gram": 2,
+                        "max_gram": 3,
+                        "token_chars": [
+                            "letter",
+                            "digit"
+                        ]
+                    }
+                },
+                "normalizer": {
+                    "lowercase_normalizer": {
+                        "type": "custom",
+                        "filter": ["lowercase"]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "structure": {
+                    "type": "text",
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "ngram_analyzer"
+                },
+                "struct_acronym": {
+                    "type": "keyword",
+                    "normalizer": "lowercase_normalizer"
+                },
+                "structure_id": {
+                    "type": "keyword"
+                }
+            }
+        }
+    }
+
+    es.indices.create(index="structures", body=index_body)
+
+    # Fetch distinct structures and acronyms from ArangoDB
+    cursor = db.AQLQuery('''
+        FOR struc IN structures
+        RETURN DISTINCT {
+            struct_title: struc.name,
+            struct_acronym: struc.acronym,
+            struct_id: struc.id_haureal
+        }
+    ''', rawResults=True)
+
+    list_structures = list(cursor)
+
+    # Index each structure document
+    for struc in list_structures:
+        es.index(
+            index="structures",
+            document={
+                "structure": struc['struct_title'],
+                "struct_acronym": struc['struct_acronym'],
+                "structure_id": struc['struct_id']
+            }
+        )
 
     if len(list_errors) > 0:
        print(list_errors)
