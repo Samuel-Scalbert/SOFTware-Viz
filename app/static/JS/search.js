@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const searchBar = document.getElementById('searchBar');
+  const searchBar = document.getElementById('es-searchBar');
   const filterButtons = document.querySelectorAll('.filter-buttons button');
   const resultsContainer = document.getElementById('results'); // Assuming you have a div to show results
 
@@ -28,31 +28,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const results = await response.json();
     console.log('ss',filter)
     if (results.length === 0) {
-      resultsContainer.innerHTML = '<div>No results found</div>';
+      resultsContainer.innerHTML = '<a href="#" class="no-result">No results found</a>';
       return;
     }
 
     else if (filter === 'software') {
-      resultsContainer.innerHTML = results.map(r => `<div>${r.name}</div>`).join('');
+      resultsContainer.innerHTML = results.map(r => `<a href="/software/${r.name}">${r.name}</a>`).join('');
     }
 
     else if (filter === 'document') {
       resultsContainer.innerHTML = results.map(r =>
-        `<div class="${r.doc_id}">${r.title}</div>`
+        `<a href="/doc/${r.doc_id}" class="${r.doc_id}">
+           <div>${r.title}</div>
+         </a>`
       ).join('');
     }
 
     else if (filter === 'author') {
       resultsContainer.innerHTML = results.map(r =>
-        `<div class="${r.author_id}">${r.first_name} ${r.last_name}</div>`
+        `<a href="/author?author-id=${r.author_id}">${r.first_name} ${r.last_name}</a>`
       ).join('');
     }
 
     else if (filter === 'structure') {
-      resultsContainer.innerHTML = results.map(r =>
-        `<div class="${r.structure_id}">${r.structure} (${r.struct_acronym})</div>`
+  resultsContainer.innerHTML = results.map(r =>
+        `<a href="/dashboard/${r.structure_id}">${r.structure}${r.struct_acronym ? ` (${r.struct_acronym})` : ''}</a>`
       ).join('');
     }
+
 
     // You can add more if blocks here for other filters
 
