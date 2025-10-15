@@ -107,14 +107,15 @@ def insert_json_db(data_path_json,data_path_xml,db):
     files_list_registered = db.AQLQuery('FOR hal_id in documents RETURN hal_id.file_hal_id', rawResults=True, batchSize=2000)
     dict_registered = {}
     dict_edge_author = {}
+    new_file = False
 
-    for data_file_xml in tqdm(data_xml_list[0:]):
+    for data_file_xml in tqdm(data_xml_list[:0]):
         file_path = f'{data_path_xml}/{data_file_xml}'
         file_name = os.path.basename(file_path)
         while "." in file_name:
             file_name, extension = os.path.splitext(file_name)
 
-        new_file = False
+
 
         if file_name in files_list_registered:
             continue
