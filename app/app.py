@@ -34,13 +34,12 @@ def init_db():
 
 init_db()  # Call the init_db function to initialize the db variable
 
-insert_json_db('./app/static/data/json_files/from_xml','./app/static/data/xml_meta', db)
 structure = None
 global data_dashboard
 data_dashboard = None
 #data_dashboard = dashboard(db, structure)
 
-from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route, author_route
+from app.routes import doc_route, dashboard_route,reset_db, software_route, api_route, disambiguate_route, author_route, search_route, insert_json_route
 
 @app.route('/')
 def home():
