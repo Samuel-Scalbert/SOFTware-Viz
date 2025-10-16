@@ -1,5 +1,17 @@
 from elasticsearch import Elasticsearch
 
+'''
+sudo docker run -d \
+  --name elasticsearch \
+  -p 9200:9200 \
+  -p 9300:9300 \
+  -e "discovery.type=single-node" \
+  -e "ES_JAVA_OPTS=-Xms1g -Xmx1g" \
+  -e "xpack.security.enabled=false" \
+  --memory="2g" \
+  docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+'''
+
 def sync_to_elasticsearch(db):
     # Elasticsearch feeding
     es = Elasticsearch('http://localhost:9200')
