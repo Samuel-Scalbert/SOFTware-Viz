@@ -1,11 +1,34 @@
 import os
 import json
+from logging import exception
+
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 import requests
 from openpyxl import load_workbook
 from Utils.TEI_to_JSON import transformer_TEI_JSON
 from Utils.elastic_search import sync_to_elasticsearch
+import requests
+
+def is_elasticsearch_alive(host="http://localhost", port=9200, timeout=3):
+    url = f"{host}:{port}/_cluster/health"
+    try:
+        response = requests.get(url, timeout=timeout)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") in ["green", "yellow"]:
+                return True
+            else:
+                return False
+        else:
+            return False
+    except requests.ConnectionError:
+        return False
+    except requests.Timeout:
+        return False
+    except Exception as e:
+        return False
+
 
 def check_or_create_collection(db, collection_name, collection_type='Collection'):
     """
@@ -66,10 +89,13 @@ def find_ancestor_paths(current_affiliation_id, ns, tree):
     return all_paths  # Return all paths for the current structure
 
 def insert_json_db(data_path_json,data_path_xml,db):
+
+    if not is_elasticsearch_alive():
+        return "Elasticsearch is not alive (launch the docker)"
+
     software_document = []
     list_errors = []
     #db.dropAllCollections()
-
     workbook = load_workbook(filename='./app/static/data/Logiciels_Blacklist_et_autres_remarques.xlsx')
     sheet = workbook.active
     data = []
@@ -108,17 +134,14 @@ def insert_json_db(data_path_json,data_path_xml,db):
     dict_registered = {}
     dict_edge_author = {}
     new_file = False
-
-    for data_file_xml in tqdm(data_xml_list[:0]):
+    for data_file_xml in tqdm(data_xml_list):
         file_path = f'{data_path_xml}/{data_file_xml}'
         file_name = os.path.basename(file_path)
         while "." in file_name:
             file_name, extension = os.path.splitext(file_name)
 
-
-
         if file_name in files_list_registered:
-            continue
+            return False
         else:
             new_file = True
 
@@ -138,6 +161,13 @@ def insert_json_db(data_path_json,data_path_xml,db):
                 citations = None
         else:
             print("Error:", response.status_code)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as xml_file:
+                data_json_get_document = {}
+                tree = ET.parse(xml_file)
+        except Exception as e:
+            return f'Error with the xml parsing of the file: {e}'
+
         with open(file_path, 'r', encoding='utf-8') as xml_file:
             data_json_get_document = {}
             tree = ET.parse(xml_file)
@@ -196,8 +226,8 @@ def insert_json_db(data_path_json,data_path_xml,db):
 
             # SOFTWARE -----------------------------------------------------
 
-            if f"{file_name}.software.json" in data_json_files:
-                with open(f'{data_path_json}/{file_name}.software.json', 'r') as json_file:
+            if f"{file_name}.json" in data_json_files:
+                with open(f'{data_path_json}/{file_name}.json', 'r') as json_file:
                     data_json = json.load(json_file)
                     data_json_get_mentions = data_json.get("mentions")
 
@@ -465,7 +495,9 @@ def insert_json_db(data_path_json,data_path_xml,db):
                         edge_auth_rel_struc['_from'] = author_document_id
                         edge_auth_rel_struc['_to'] = list_relation_documents._id
                         edge_auth_rel_struc.save()
-    if new_file == True:
-        sync_to_elasticsearch(db)
-    if len(list_errors) > 0:
-       print(list_errors)
+    if new_file:
+        try:
+            sync_to_elasticsearch(db)
+        except Exception as e:
+            return f"Elasticsearch sync failed: {e}"
+    return True
